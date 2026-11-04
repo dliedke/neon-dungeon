@@ -560,3 +560,6 @@ body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3
 .pad-hints .pg, .help .pg { font-size: 15px; }
 .pad-name { color: var(--muted); font-size: 12px; margin: -4px 0 6px; }
 .tslot { font-family: 'Rajdhani', system-ui, sans-serif; }
+
+.td-tip { margin-top: 14px; font-size: 13px; color: var(--muted); }
+.td-tip .pg { font-size: 14px; }

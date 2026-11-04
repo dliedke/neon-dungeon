@@ -18,6 +18,7 @@ const DICT = {
   recycleAll: ['Reciclar tudo', 'Recycle all'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
   padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Switch tab · {B} Close'],
+  padHintsTree: ['{A} Desbloquear/Evoluir · {X} Trocar de botão · {Y} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {X} Change button · {Y} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
   resume: ['Continuar', 'Resume'],
   character: ['Personagem', 'Character'],

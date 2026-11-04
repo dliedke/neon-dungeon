@@ -575,6 +575,16 @@ function setTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   $('tab-equip').classList.toggle('hidden', tab !== 'equip');
   $('tab-skills').classList.toggle('hidden', tab !== 'skills');
+  const hints = document.querySelector('.pad-hints');
+  hints.dataset.padText = tab === 'skills' ? 'padHintsTree' : 'padHints';
+  hints.innerHTML = padText(t(hints.dataset.padText));
+  // no controle, a seleção já começa num poder (de preferência um que dá para desbloquear)
+  if (tab === 'skills' && G.lastInput === 'pad') {
+    setTimeout(() => {
+      const target = document.querySelector('#skill-list .tnode.available.can') || document.querySelector('#skill-list .tnode.can') || document.querySelector(`#skill-list [data-node="${treeSel}"]`);
+      if (target) setFocus(target);
+    }, 0);
+  }
   renderChar();
 }
 
@@ -656,6 +666,37 @@ function slotKey(k) {
   return ['Q', 'E', 'R'][k];
 }
 
+// Desbloqueia ou evolui o poder (botão de confirmar do controle ou clique duplo)
+function treeSpend(i) {
+  treeSel = i;
+  if (spendPoint(i)) {
+    sfx.levelup();
+    const sk = CLASSES[G.char.cls].skills[i];
+    toast(`${sk.name}: ${L('nível', 'level')} ${G.char.skills[i]}`, 'up', 'tree');
+    refreshSkillBar();
+  } else {
+    sfx.deny();
+    const c = G.char;
+    const req = CLASSES[c.cls].skills[i].req || 1;
+    if (c.level < req) toast(L(`Liberado no nível ${req}`, `Unlocks at level ${req}`), 'warn', 'tree');
+    else if (c.skillPoints <= 0) toast(L('Sem pontos de habilidade: suba de nível para ganhar mais.', 'No skill points: level up to earn more.'), 'warn', 'tree');
+  }
+  renderChar();
+  restoreFocus(`[data-node="${i}"]`);
+}
+
+// Coloca o poder no próximo botão (Q → E → R)
+function treeCycleSlot(i) {
+  const c = G.char;
+  if (i === 0 || !(c.skills[i] > 0)) return sfx.deny();
+  const cur = c.slots.indexOf(i);
+  assignSlot((cur + 1) % 3, i);
+  sfx.click();
+  refreshSkillBar();
+  renderTree();
+  restoreFocus(`[data-node="${i}"]`);
+}
+
 function renderTree() {
   const c = G.char;
   const C = CLASSES[c.cls];
@@ -701,18 +742,23 @@ function renderTree() {
   if (i > 0 && !locked) {
     actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${[0, 1, 2].map((k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
   }
+  const tip = G.lastInput === 'pad' ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão', '{A} on a power: unlock/upgrade · {X}: change button')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
     <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
     ${status}
     <div class="td-actions">${actions}</div>
+    ${tip ? `<div class="td-tip">${tip}</div>` : ''}
   </div></div>`;
   $('skill-list').innerHTML = html;
-  $('skill-list').querySelectorAll('[data-node]').forEach((b) => (b.onclick = () => {
-    treeSel = +b.dataset.node;
-    renderTree();
-    restoreFocus(`[data-node="${treeSel}"]`);
-  }));
+  $('skill-list').querySelectorAll('[data-node]').forEach((b) => {
+    b.onclick = () => {
+      treeSel = +b.dataset.node;
+      renderTree();
+      restoreFocus(`[data-node="${treeSel}"]`);
+    };
+    b.ondblclick = () => treeSpend(+b.dataset.node);
+  });
   const sp = $('skill-list').querySelector('[data-spend]');
   if (sp) sp.onclick = () => {
     if (spendPoint(i)) {
@@ -963,12 +1009,15 @@ export function uiPadUpdate() {
     moveFocus(dir, list);
   }
   if (Input.nav('a') && focused) {
-    if (focused.matches('.cell[data-uid]')) {
+    if (focused.matches('[data-node]')) {
+      treeSpend(+focused.dataset.node);
+    } else if (focused.matches('.cell[data-uid]')) {
       if (focused.dataset.where === 'inv') equipItem(focused.dataset.uid);
       else unequip(focused.dataset.slot);
     } else focused.click();
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
+  if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
   if (Input.nav('y') && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
   if (Input.nav('b')) uiBack(root);
 }
