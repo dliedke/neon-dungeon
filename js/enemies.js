@@ -10,12 +10,12 @@ import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 
 export const ETYPES = {
-  punk: { name: 'Punk de Rua', hp: 42, dmg: 8, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
-  drone: { name: 'Drone Vigia', hp: 24, dmg: 6, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
-  soldier: { name: 'Agente Corporativo', hp: 58, dmg: 6, speed: 3.0, r: 0.34, h: 1.4, xp: 12, minFloor: 2, weight: 7, ai: 'ranged', range: 9, keep: [5, 8], atkCd: 2.4, burst: 3, proj: { speed: 12, color: 0xffaa00, size: 0.12 }, blood: 0xff2244 },
-  bomber: { name: 'Aranha-Bomba', hp: 18, dmg: 22, speed: 5.3, r: 0.3, h: 0.7, xp: 6, minFloor: 2, weight: 5, ai: 'bomber', blood: 0xff3300 },
-  brute: { name: 'Mech Brutamontes', hp: 210, dmg: 24, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, blood: 0xffc400 },
-  boss: { name: 'Executor ARC-9', hp: 720, dmg: 14, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
+  punk: { name: 'Punk de Rua', hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
+  drone: { name: 'Drone Vigia', hp: 18, dmg: 5, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
+  soldier: { name: 'Agente Corporativo', hp: 42, dmg: 5, speed: 3.0, r: 0.34, h: 1.4, xp: 12, minFloor: 2, weight: 7, ai: 'ranged', range: 9, keep: [5, 8], atkCd: 2.4, burst: 3, proj: { speed: 12, color: 0xffaa00, size: 0.12 }, blood: 0xff2244 },
+  bomber: { name: 'Aranha-Bomba', hp: 14, dmg: 16, speed: 5.3, r: 0.3, h: 0.7, xp: 6, minFloor: 2, weight: 5, ai: 'bomber', blood: 0xff3300 },
+  brute: { name: 'Mech Brutamontes', hp: 160, dmg: 18, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, blood: 0xffc400 },
+  boss: { name: 'Executor ARC-9', hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
 };
 
 const ELITE = {
@@ -25,8 +25,17 @@ const ELITE = {
   instavel: { name: 'Instável', color: 0xff7a1a, apply: (e) => { e.explodeOnDeath = true; } },
 };
 
+// Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos
+export const DIFFICULTY = {
+  easy: { name: 'Fácil', hp: 0.7, dmg: 0.6, count: 0.85 },
+  normal: { name: 'Normal', hp: 1, dmg: 1, count: 1 },
+  hard: { name: 'Difícil', hp: 1.35, dmg: 1.35, count: 1.25 },
+};
+const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
+
 export function floorScale(f) {
-  return { hp: 1 + (f - 1) * 0.42 + Math.pow(f - 1, 2) * 0.03, dmg: 1 + (f - 1) * 0.2 };
+  const D = diff();
+  return { hp: (1 + (f - 1) * 0.35 + Math.pow(f - 1, 2) * 0.025) * D.hp, dmg: (1 + (f - 1) * 0.18) * D.dmg };
 }
 
 export function pickEnemyType(floor) {
@@ -141,7 +150,7 @@ export function updateEnemies(dt, cam) {
     }
     if (e.alerted) {
       e.alerted = false;
-      for (const o of G.enemies) if (o.alive && !o.aggro && Math.hypot(o.x - e.x, o.z - e.z) < 7) o.aggro = true;
+      for (const o of G.enemies) if (o.alive && !o.aggro && Math.hypot(o.x - e.x, o.z - e.z) < 5) o.aggro = true;
       if (e.boss && !G.boss) startBoss(e);
     }
     if (e.aggro && p.alive) anyAggro = true;
@@ -589,17 +598,22 @@ function chooseBossAttack(e, dist) {
 
 // ---------------- Povoamento do andar ----------------
 export function populateFloor(d, floor, boss) {
-  const eliteChance = Math.min(0.35, 0.12 + floor * 0.02);
+  const D = diff();
+  const eliteChance = floor <= 1 ? 0 : Math.min(0.3, 0.04 + floor * 0.025);
+  const emptyChance = Math.max(0, 0.4 - floor * 0.08); // algumas salas vazias nos primeiros andares
+  const perPack = Math.max(36, 80 - floor * 8); // área por grupo (menor = mais grupos)
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
-    const area = r.w * r.h;
-    let packs = Math.max(1, Math.round(area / 40));
     if (boss && r === d.exitRoom) continue;
+    if (chance(emptyChance)) continue;
+    const area = r.w * r.h;
+    const packs = Math.max(1, Math.round((area / perPack) * D.count));
     for (let k = 0; k < packs; k++) {
       const cx = r.x + rr(1.5, r.w - 1.5);
       const cz = r.y + rr(1.5, r.h - 1.5);
       const type = pickEnemyType(floor);
-      const n = type === 'brute' ? 1 : type === 'bomber' ? 3 + Math.floor(rr(0, 3)) : 2 + Math.floor(rr(0, 2 + floor / 3));
+      const base = type === 'brute' ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 1.5 + floor / 2.5));
+      const n = Math.max(1, Math.round(base * D.count));
       const elite = chance(eliteChance);
       for (let i = 0; i < n; i++) {
         let x = cx + rr(-1.5, 1.5);
@@ -612,7 +626,7 @@ export function populateFloor(d, floor, boss) {
         spawnEnemy(type, x, z, { elite: elite && i === 0 });
       }
       // mistura alguns inimigos de outro tipo
-      if (floor >= 2 && chance(0.5)) {
+      if (floor >= 3 && chance(0.4)) {
         const t2 = pickEnemyType(floor);
         if (t2 !== 'brute') {
           const x = cx + rr(-1, 1);

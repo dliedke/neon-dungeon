@@ -13,13 +13,13 @@ import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
 import { screenToWorld, clamp } from './utils.js';
 
 export const MAX_LEVEL = 50;
-export const xpNeeded = (lvl) => Math.floor(60 * Math.pow(lvl, 1.55));
+export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
 export const stimPrice = () => 30 + G.floor * 6;
 export const MAX_STIMS = 9;
 
 export function newCharacter(cls) {
   return {
-    cls, level: 1, xp: 0, credits: 0, stims: 3, floor: 1, maxFloor: 1,
+    cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
     skills: [1, 1, 1, 1], skillPoints: 0,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
@@ -30,13 +30,13 @@ export function computeStats(c) {
   const b = C.base;
   const L = c.level;
   const s = {
-    maxHp: b.hp + 14 * (L - 1),
+    maxHp: b.hp + 20 * (L - 1),
     maxEn: b.en + 2 * (L - 1),
     armor: b.armor + 2 * (L - 1),
     speed: b.speed,
     wMin: b.wMin,
     wMax: b.wMax,
-    dmgPct: 5 * (L - 1),
+    dmgPct: 7 * (L - 1),
     crit: b.crit,
     critDmg: b.critDmg,
     atkRate: b.atkRate,
@@ -54,8 +54,9 @@ export function computeStats(c) {
     const it = c.equip[slot];
     if (!it) continue;
     if (slot === 'weapon') {
-      s.wMin = it.wMin;
-      s.wMax = it.wMax;
+      // nunca abaixo da arma base da classe (protege saves antigos)
+      s.wMin = Math.max(it.wMin, b.wMin);
+      s.wMax = Math.max(it.wMax, b.wMax);
     }
     if (it.armor) s.armor += it.armor;
     for (const [k, v] of Object.entries(it.affixes)) {
@@ -171,7 +172,7 @@ export function useStim() {
   }
   c.stims--;
   p.stimCd = 1;
-  healPlayer(p.stats.maxHp * 0.5);
+  healPlayer(p.stats.maxHp * 0.6);
   p.buffs.regen = 4;
   burst(p.x, 1, p.z, 0x39ff88, 20, 3, 0.06, 0.6, { up: 1.5, grav: -1 });
   sfx.stim();

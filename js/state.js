@@ -20,7 +20,7 @@ export const G = {
   floor: 1,
   save: null,
   char: null,
-  settings: { music: 0.45, sfx: 0.75, quality: 'auto', shake: true },
+  settings: { music: 0.45, sfx: 0.75, quality: 'auto', shake: true, difficulty: 'normal' },
   shake: 0,
   isTouch: false,
   lastInput: 'kb', // kb | pad | touch

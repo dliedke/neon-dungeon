@@ -54,6 +54,7 @@ Cada classe tem um save próprio, salvo no navegador (`localStorage`).
 - **Chefe:** Executor ARC-9, com rajadas em anel, investida telegrafada, pisão em área, invocações e uma segunda fase
 - **Loot** com 4 raridades (Comum, Modificado, Raro e Protótipo), 13 tipos de atributo e 6 efeitos lendários
 - **Progressão:** níveis, pontos de habilidade (cada habilidade vai até o nível 10), créditos, reciclagem de itens e compra de stims
+- **Dificuldade** ajustável nas opções (Fácil, Normal e Difícil)
 - **Interface:** HUD, minimapa com névoa de guerra, inventário com comparação de itens, opções de áudio e gráficos
 
 ## Estrutura

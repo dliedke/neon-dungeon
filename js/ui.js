@@ -5,6 +5,7 @@ import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL } from './player.js';
 import { INV_SIZE } from './loot.js';
+import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './main.js';
 import { fmt } from './utils.js';
@@ -75,6 +76,15 @@ export function initUI() {
     updQ();
     applyQuality();
     saveSettings();
+  };
+  const diffOrder = ['easy', 'normal', 'hard'];
+  const updD = () => ($('opt-diff').textContent = DIFFICULTY[s.difficulty]?.name || 'Normal');
+  updD();
+  $('opt-diff').onclick = () => {
+    s.difficulty = diffOrder[(diffOrder.indexOf(s.difficulty) + 1) % diffOrder.length];
+    updD();
+    saveSettings();
+    if (G.mode !== 'menu') toast('A nova dificuldade vale a partir do próximo andar.');
   };
   const updS = () => ($('opt-shake').textContent = s.shake ? 'Ligado' : 'Desligado');
   updS();

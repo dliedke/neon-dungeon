@@ -36,7 +36,7 @@ export const CLASSES = {
     accent: 0xff2bd6,
     melee: true,
     range: 1.9,
-    base: { hp: 160, en: 100, armor: 18, speed: 5.0, wMin: 11, wMax: 17, enRegen: 4, hpRegen: 1.2, crit: 5, critDmg: 50, atkRate: 2.1 },
+    base: { hp: 190, en: 100, armor: 20, speed: 5.2, wMin: 14, wMax: 21, enRegen: 5, hpRegen: 2, crit: 5, critDmg: 50, atkRate: 2.1 },
     weaponNames: ['Katana de Plasma', 'Lâmina Monomolecular', 'Wakizashi Térmica', 'Nodachi Vibratória'],
     skills: [
       { id: 'slash', name: 'Corte de Plasma', icon: 'slash', cost: 0, cd: 0, desc: (r) => `Golpe em arco que causa ${pct(1.0 * rankMult(r))} do dano da arma. Todo 3º golpe é ampliado. Gera 4 de energia por acerto.` },
@@ -54,7 +54,7 @@ export const CLASSES = {
     accent: 0x00f0ff,
     melee: false,
     range: 12,
-    base: { hp: 120, en: 100, armor: 8, speed: 5.4, wMin: 8, wMax: 12, enRegen: 7, hpRegen: 0.8, crit: 8, critDmg: 60, atkRate: 3.4 },
+    base: { hp: 150, en: 100, armor: 10, speed: 5.6, wMin: 10, wMax: 15, enRegen: 8, hpRegen: 1.5, crit: 8, critDmg: 60, atkRate: 3.4 },
     weaponNames: ['Pistola Gêmea', 'Revólver Magnético', 'Pistola Smart', 'Blaster Compacto'],
     skills: [
       { id: 'shot', name: 'Disparo Duplo', icon: 'bullet', cost: 0, cd: 0, desc: (r) => `Dispara alternando as pistolas, causando ${pct(0.85 * rankMult(r))} do dano da arma.` },
@@ -72,7 +72,7 @@ export const CLASSES = {
     accent: 0x39ff14,
     melee: false,
     range: 11,
-    base: { hp: 110, en: 140, armor: 6, speed: 5.0, wMin: 11, wMax: 16, enRegen: 10, hpRegen: 0.8, crit: 5, critDmg: 50, atkRate: 2.0 },
+    base: { hp: 140, en: 140, armor: 8, speed: 5.2, wMin: 14, wMax: 20, enRegen: 11, hpRegen: 1.5, crit: 5, critDmg: 50, atkRate: 2.0 },
     weaponNames: ['Cyberdeck', 'Deck Quântico', 'Matriz Neural', 'Console Fantasma'],
     skills: [
       { id: 'orb', name: 'Pulso de Dados', icon: 'orb', cost: 0, cd: 0, desc: (r) => `Lança um orbe teleguiado que causa ${pct(1.05 * rankMult(r))} e salta para mais 1 inimigo (50%).` },
