@@ -141,11 +141,17 @@ export function initInput(canvas) {
 
   window.addEventListener('gamepadconnected', () => {
     Input.padConnected = true;
-    G.lastInput = 'pad';
+    setPadMode();
   });
   window.addEventListener('gamepaddisconnected', () => {
     Input.padConnected = false;
   });
+}
+
+// Modo controle: liga o destaque de seleção nos menus
+export function setPadMode() {
+  G.lastInput = 'pad';
+  document.body.classList.add('pad');
 }
 
 export function setTouchMode() {
@@ -204,15 +210,26 @@ function update(dt) {
   const padNav = {};
   src.pad = {};
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  // usa o controle mexido por último (alguns sistemas listam controles virtuais/fantasmas antes do real)
   let gp = null;
-  for (const p of pads) if (p && p.connected) { gp = p; break; }
+  for (const p of pads) if (p && p.connected && (!gp || (p.timestamp || 0) > (gp.timestamp || 0))) gp = p;
   if (gp) {
     Input.padConnected = true;
     const dz = (v) => (Math.abs(v) < 0.22 ? 0 : v);
     padMove.x = dz(gp.axes[0] || 0);
     padMove.y = -dz(gp.axes[1] || 0);
-    aim.x = dz(gp.axes[2] || 0);
-    aim.y = -dz(gp.axes[3] || 0);
+    // controles "não padrão" (comum no Firefox): os eixos 2/3 podem ser gatilhos
+    // em repouso (-1) e o direcional costuma vir nos eixos 6/7
+    const std = gp.mapping === 'standard';
+    if (std) {
+      aim.x = dz(gp.axes[2] || 0);
+      aim.y = -dz(gp.axes[3] || 0);
+    } else if (gp.axes.length >= 8) {
+      const hx = gp.axes[6] || 0;
+      const hy = gp.axes[7] || 0;
+      if (Math.abs(hx) > 0.5) padMove.x = Math.sign(hx);
+      if (Math.abs(hy) > 0.5) padMove.y = -Math.sign(hy);
+    }
     const b = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
     if (b(12)) padMove.y = 1;
     if (b(13)) padMove.y = -1;
@@ -234,10 +251,7 @@ function update(dt) {
     padNav.x = b(2);
     padNav.y = b(3);
     const any = gp.buttons.some((x) => x.pressed) || Math.hypot(padMove.x, padMove.y) > 0 || Math.hypot(aim.x, aim.y) > 0;
-    if (any && G.lastInput !== 'pad') {
-      G.lastInput = 'pad';
-      document.body.classList.add('pad');
-    }
+    if (any) setPadMode();
   }
   if (G.lastInput !== 'pad') document.body.classList.remove('pad');
 
