@@ -25,6 +25,10 @@ Items marked with **▲** and a green glow are better than what you have equippe
 
 Each class has its own save slot, stored in the browser.
 
+**Cloud save (optional):** sign in with Google (☁ button on the main menu or in the pause menu) to sync your characters across devices.
+The save goes to a hidden app folder in your own Google Drive (`drive.appdata` scope), so there is no server.
+If two devices disagree, each class keeps the most advanced character and the best item for each gear slot.
+
 ### Skill tree
 
 Every class has a **skill tree with 9 powers**. You start with only the basic attack and one skill;
@@ -140,5 +144,6 @@ js/models.js      low-poly models built from primitives
 js/input.js       keyboard, mouse, gamepad and touch input
 js/audio.js       synthesized sound effects and music
 js/ui.js          menus, inventory, shop and gamepad navigation
+js/sync.js        Google sign-in and Google Drive cloud save
 vendor/three/     Three.js r160 (MIT)
 ```

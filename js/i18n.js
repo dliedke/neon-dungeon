@@ -12,6 +12,8 @@ const DICT = {
   'logo.sub': ['action rpg cyberpunk', 'cyberpunk action rpg'],
   options: ['Opções', 'Options'],
   controls: ['Controles', 'Controls'],
+  cloud: ['Nuvem (Google)', 'Cloud (Google)'],
+  cloudTitle: ['NUVEM', 'CLOUD SAVE'],
   equipment: ['Equipamento', 'Equipment'],
   skills: ['Habilidades', 'Skills'],
   buyStim: ['Comprar Stim', 'Buy Stim'],

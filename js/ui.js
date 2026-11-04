@@ -13,6 +13,7 @@ import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade } from './items.js';
+import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -43,6 +44,19 @@ export function initUI() {
   };
   $('menu-opts').onclick = () => openOverlay('panel-opts');
   $('menu-help').onclick = () => openOverlay('panel-help');
+  $('menu-sync').onclick = () => openSync();
+  $('pause-sync').onclick = () => openSync();
+  $('sync-close').onclick = () => closeOverlay('panel-sync');
+  $('sync-box').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sync]');
+    if (!b) return;
+    const act = b.dataset.sync;
+    if (act === 'in') {
+      saveGame();
+      syncAuthRedirect(false);
+    } else if (act === 'now') syncNow();
+    else if (act === 'out') syncSignOut();
+  });
   $('opts-close').onclick = () => closeOverlay('panel-opts');
   $('help-close').onclick = () => closeOverlay('panel-help');
   $('dead-retry').onclick = () => {
@@ -156,7 +170,7 @@ export function showMenu() {
   clearFocus();
 }
 
-function renderClassCards() {
+export function renderClassCards() {
   const root = $('class-cards');
   root.innerHTML = '';
   for (const id of CLASS_ORDER) {
@@ -201,6 +215,24 @@ export function confirmDialog(title, text, onYes) {
     onYes();
   };
   openOverlay('panel-confirm');
+}
+
+function openSync() {
+  renderSync();
+  openOverlay('panel-sync');
+}
+
+// caixa de login/estado da nuvem + rótulo do botão do menu
+export function renderSync() {
+  const box = $('sync-box');
+  const wasFocused = focused && box.contains(focused) ? focused.dataset.sync : null;
+  box.innerHTML = syncBoxHtml();
+  if (wasFocused) {
+    const el = box.querySelector('[data-sync]');
+    if (el) setFocus(el);
+  }
+  const ok = sync.user && sync.status === 'ok';
+  $('menu-sync').textContent = sync.user ? (ok ? L('☁ Sincronizado', '☁ Synced') : '☁ ' + L('Nuvem', 'Cloud')) : L('☁ Salvar no Google', '☁ Save to Google');
 }
 
 function openOverlay(id) {
@@ -924,7 +956,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-confirm', 'panel-opts', 'panel-help', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1034,6 +1066,7 @@ export function uiBack(root = activePanel()) {
     case 'panel-confirm':
     case 'panel-opts':
     case 'panel-help':
+    case 'panel-sync':
       closeOverlay(root.id);
       break;
     case 'panel-char':
@@ -1049,7 +1082,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-opts', 'panel-help'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------

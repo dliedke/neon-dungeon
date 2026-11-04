@@ -101,6 +101,7 @@
       <div class="menu-foot">
         <button class="btn ghost" data-nav id="menu-opts" data-i18n="options">Opções</button>
         <button class="btn ghost" data-nav id="menu-help" data-i18n="controls">Controles</button>
+        <button class="btn ghost" data-nav id="menu-sync">☁ Google</button>
       </div>
     </div>
   </div>
@@ -158,6 +159,7 @@
         <button class="btn ghost" data-nav id="pause-char" data-i18n="character">Personagem</button>
         <button class="btn ghost" data-nav id="pause-opts" data-i18n="options">Opções</button>
         <button class="btn ghost" data-nav id="pause-help" data-i18n="controls">Controles</button>
+        <button class="btn ghost" data-nav id="pause-sync" data-i18n="cloud">Nuvem (Google)</button>
         <button class="btn danger" data-nav id="pause-quit" data-i18n="saveQuit">Salvar e sair</button>
       </div>
     </div>
@@ -175,6 +177,15 @@
       <div class="opt"><span data-i18n="shake">Tremor de tela</span> <button class="btn small" id="opt-shake" data-nav></button></div>
       <div class="opt"><span data-i18n="fullscreen">Tela cheia</span> <button class="btn small" id="opt-full" data-nav data-i18n="toggle">Alternar</button></div>
       <div class="stack"><button class="btn" data-nav id="opts-close" data-i18n="back">Voltar</button></div>
+    </div>
+  </div>
+
+  <!-- NUVEM (Google Drive) -->
+  <div id="panel-sync" class="screen hidden">
+    <div class="panel narrow">
+      <h2 data-i18n="cloudTitle">NUVEM</h2>
+      <div id="sync-box"></div>
+      <div class="stack"><button class="btn" data-nav id="sync-close" data-i18n="back">Voltar</button></div>
     </div>
   </div>
 

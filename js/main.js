@@ -19,9 +19,10 @@ import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import { padText } from './padglyphs.js';
+import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation,
+  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
 
@@ -62,11 +63,13 @@ function loadSave() {
   } catch (_) {}
 }
 
-export function saveGame() {
+// fromSync: gravação feita pela própria sincronização (não reenvia para a nuvem)
+export function saveGame(fromSync) {
   if (G.char) G.save.slots[G.char.cls] = G.char;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(G.save));
   } catch (_) {}
+  if (!fromSync) syncDirty();
 }
 
 export function saveSettings() {
@@ -256,7 +259,11 @@ export function startFloor(floor) {
 
 export function startGame(cls, fresh) {
   initAudio();
-  if (fresh || !G.save.slots[cls]) G.char = newCharacter(cls);
+  if (fresh || !G.save.slots[cls]) {
+    const old = G.save.slots[cls];
+    G.char = newCharacter(cls);
+    if (old) G.char.resetAt = G.char.created; // recomeço vale mais que o progresso antigo na nuvem
+  }
   else G.char = G.save.slots[cls];
   sanitizeChar(G.char);
   if (G.player) {
@@ -294,6 +301,7 @@ export function quitToMenu() {
     G.player = null;
   }
   G.char = null;
+  syncNow();
   buildFloor(1, false);
   G.camFocus.x = G.dungeon.start.x;
   G.camFocus.z = G.dungeon.start.z;
@@ -434,6 +442,12 @@ function frame() {
 // Boot
 // ------------------------------------------------------------------
 function boot() {
+  // volta do login do Google, ou login salvo vencido: renova sem tela antes de montar o jogo
+  const back = syncReadRedirect();
+  if (syncShouldRefresh(back)) {
+    syncAuthRedirect(true);
+    return;
+  }
   translateDom();
   loadSave();
   initRenderer();
@@ -453,7 +467,16 @@ function boot() {
       saveGame();
       if (G.mode === 'play') openPause();
     }
+    if (document.hidden) syncNow();
   });
+  setSyncHooks({
+    save: () => saveGame(true),
+    applied: () => G.mode === 'menu' && renderClassCards(),
+    render: renderSync,
+    say: (m) => toast(m),
+  });
+  renderSync();
+  syncStart(back);
   addEventListener('beforeunload', () => G.char && saveGame());
   window.__G = G; // útil para depuração no console
   window.__classes = CLASSES;

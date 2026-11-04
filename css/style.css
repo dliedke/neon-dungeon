@@ -563,3 +563,12 @@ body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3
 .td-tip .pg { font-size: 14px; }
 
 body.pad .btn.gp-focus:disabled { opacity: 0.55; }
+
+/* nuvem (Google Drive) */
+#sync-box { text-align: center; font-size: 14px; line-height: 1.5; color: var(--text); }
+#sync-box p { color: var(--muted); margin: 0 0 14px; }
+#sync-box .who { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 6px 0 14px; text-align: left; }
+#sync-box .who img, #sync-box .who .ico { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--accent); display: grid; place-items: center; font-size: 22px; flex: 0 0 auto; }
+#sync-box .who b { display: block; font-size: 15px; }
+#sync-box .who small { display: block; color: var(--muted); font-size: 12px; }
+#sync-box .sync-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
