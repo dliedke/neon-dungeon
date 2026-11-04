@@ -222,8 +222,15 @@ function buildFloor(floor, withEnemies = true) {
   buildFeatures(d, theme, world);
   G.world = world;
   scene.add(world);
-  scene.fog = new THREE.Fog(theme.fog, 22, 44);
+  // iluminação e névoa de cada bioma
+  const Lt = theme.light;
+  scene.fog = new THREE.Fog(theme.fog, Lt.fogNear, Lt.fogFar);
   scene.background = new THREE.Color(theme.fog);
+  hemi.color.set(Lt.sky);
+  hemi.groundColor.set(Lt.ground);
+  hemi.intensity = Lt.hemi;
+  dirLight.color.set(Lt.dir);
+  dirLight.intensity = Lt.dirI;
   resetMinimap(d);
   if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
   return d;

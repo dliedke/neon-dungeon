@@ -12,7 +12,9 @@ import { makeItem, itemScore, isUpgrade, SLOTS } from './items.js';
 import { openShop } from './ui.js';
 
 // Tipos de piso especial (d.feat)
-export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3 }; // esteiras: 3..6 conforme a direção
+// Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
+export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12 };
+const isConv = (f) => f >= 3 && f <= 6;
 const CONV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 export function featAt(d, x, z) {
@@ -25,9 +27,11 @@ export function featAt(d, x, z) {
 // Efeito do piso em quem está em cima: multiplicador de velocidade, empurrão e gelo
 export function groundEffect(d, x, z) {
   const f = featAt(d, x, z);
-  if (f === FEAT.SLUDGE) return { speed: 0.55, sludge: true };
+  if (f === FEAT.SLUDGE) return { speed: 0.55, hurt: 0x39ff14 };
+  if (f === FEAT.THORN) return { speed: 0.65, hurt: 0xb36bff };
+  if (f === FEAT.RAD) return { speed: 0.85, hurt: 0xc8ff3a };
   if (f === FEAT.ICE) return { speed: 1.1, ice: true };
-  if (f >= FEAT.CONV) {
+  if (isConv(f)) {
     const [dx, dz] = CONV_DIRS[f - FEAT.CONV];
     return { speed: 1, push: { x: dx * 2.6, z: dz * 2.6 } };
   }
@@ -188,6 +192,72 @@ export function placeFeatures(d, theme) {
         }
         break;
       }
+      case 'trees':
+      case 'boulders':
+      case 'cacti': {
+        // obstáculos isolados (nunca bloqueiam a passagem)
+        const kind = f === 'trees' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
+        const dens = f === 'trees' ? 0.07 : f === 'boulders' ? 0.025 : 0.03;
+        for (let j = 3; j < H - 3; j++)
+          for (let i = 3; i < W - 3; i++) {
+            if (grid[j * W + i] !== TILE.FLOOR || Math.random() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
+            let free = true;
+            for (let dy = -1; dy <= 1 && free; dy++) for (let dx = -1; dx <= 1 && free; dx++) if (grid[(j + dy) * W + i + dx] !== TILE.FLOOR || d.feat[(j + dy) * W + i + dx] >= 9) free = false;
+            if (!free) continue;
+            grid[j * W + i] = TILE.OBST;
+            d.feat[j * W + i] = kind;
+            d.props.push({ type: 'obst', kind, x: i + 0.5, z: j + 0.5, s: rr(0.8, 1.25), rot: rr(0, Math.PI * 2) });
+          }
+        break;
+      }
+      case 'mushrooms':
+        for (let k = 0; k < (W * H) / 90; k++) {
+          const r = pick(d.rooms);
+          const pt = randomFloorInRoom(d, r, 0);
+          d.props.push({ type: 'mushroom', x: pt.x, z: pt.z, color: pick([0x7affc8, 0xb36bff, 0x00f0ff]), s: rr(0.6, 1.3) });
+        }
+        break;
+      case 'fireflies':
+        d.fireflies = 0x7affc8;
+        break;
+      case 'butterflies':
+        d.butterflies = true;
+        break;
+      case 'thorns':
+      case 'radiation':
+        for (const r of rooms) {
+          if (!chance(f === 'thorns' ? 0.5 : 0.6)) continue;
+          for (let k = ri(1, 2); k > 0; k--) {
+            const c = randomFloorInRoom(d, r, 1);
+            const rad = rr(1.4, f === 'thorns' ? 2.4 : 3.2);
+            for (let j = Math.floor(c.z - rad); j <= c.z + rad; j++)
+              for (let i = Math.floor(c.x - rad); i <= c.x + rad; i++) if (Math.hypot(i + 0.5 - c.x, j + 0.5 - c.z) < rad) set(i, j, f === 'thorns' ? FEAT.THORN : FEAT.RAD);
+          }
+        }
+        break;
+      case 'lakes':
+        d.pitStyle = 'water';
+        carvePits(d, rooms, 'blob');
+        break;
+      case 'void':
+        d.pitStyle = 'void';
+        carvePits(d, rooms.filter((r) => r.w >= 8 && r.h >= 8), 'rect');
+        break;
+      case 'airlocks':
+        for (const h of d.pits || []) if (chance(0.7)) d.props.push({ type: 'airlock', x: h.x, z: h.z, t: rr(2, 6), state: 'idle' });
+        break;
+      case 'stars':
+        d.stars = true;
+        break;
+      case 'grass':
+        d.grass = 0x6aa84a;
+        break;
+      case 'flowers':
+        d.flowers = true;
+        break;
+      case 'sandstorm':
+        d.sandstorm = { t: rr(10, 18), on: false };
+        break;
       case 'lanterns':
         for (const r of d.rooms) for (let k = 0; k < Math.floor((r.w * r.h) / 25); k++) d.props.push({ type: 'lantern', x: r.x + rr(1, r.w - 1), z: r.y + rr(1, r.h - 1), y: rr(2.2, 3), color: pick([theme.a, theme.b, 0xff6a00]) });
         break;
@@ -198,6 +268,77 @@ export function placeFeatures(d, theme) {
 
 // A loja sempre oferece itens MELHORES que os equipados (em espaços diferentes),
 // com preço proporcional ao tamanho da melhoria.
+// Lagos (pradaria) e buracos para o espaço (estação). Só mantém se o mapa continuar conectado.
+function carvePits(d, rooms, shape) {
+  const { W, grid } = d;
+  d.pits = [];
+  const n = Math.min(rooms.length, shape === 'blob' ? 6 : 5);
+  for (const r of shuffle(rooms.slice()).slice(0, n)) {
+    const c = randomFloorInRoom(d, r, 2);
+    const changed = [];
+    if (shape === 'blob') {
+      const rx = rr(1.8, 4);
+      const rz = rr(1.8, 4);
+      for (let j = Math.floor(c.z - rz); j <= c.z + rz; j++)
+        for (let i = Math.floor(c.x - rx); i <= c.x + rx; i++) {
+          const k = j * W + i;
+          if (((i + 0.5 - c.x) / rx) ** 2 + ((j + 0.5 - c.z) / rz) ** 2 > 1 + Math.random() * 0.2) continue;
+          if (grid[k] !== TILE.FLOOR || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
+          changed.push(k);
+        }
+    } else {
+      const w = ri(2, 3);
+      const h = ri(2, 4);
+      const i0 = Math.floor(c.x - w / 2);
+      const j0 = Math.floor(c.z - h / 2);
+      for (let j = j0; j < j0 + h; j++)
+        for (let i = i0; i < i0 + w; i++) {
+          const k = j * W + i;
+          if (grid[k] !== TILE.FLOOR || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
+          changed.push(k);
+        }
+    }
+    if (changed.length < 3) continue;
+    for (const k of changed) grid[k] = TILE.PIT;
+    if (!stillConnected(d)) {
+      for (const k of changed) grid[k] = TILE.FLOOR;
+      continue;
+    }
+    let sx = 0;
+    let sz = 0;
+    for (const k of changed) {
+      sx += (k % W) + 0.5;
+      sz += Math.floor(k / W) + 0.5;
+    }
+    d.pits.push({ x: sx / changed.length, z: sz / changed.length, tiles: changed });
+  }
+}
+
+// O fim do andar continua alcançável a partir do início?
+function stillConnected(d) {
+  const { W, H, grid } = d;
+  const seen = new Uint8Array(W * H);
+  const s = Math.floor(d.start.z) * W + Math.floor(d.start.x);
+  const q = [s];
+  seen[s] = 1;
+  let n = 0;
+  while (q.length) {
+    const c = q.pop();
+    n++;
+    const ci = c % W;
+    for (const nb of [c + 1, c - 1, c + W, c - W]) {
+      if (nb < 0 || nb >= W * H || seen[nb] || grid[nb] !== TILE.FLOOR) continue;
+      if (Math.abs((nb % W) - ci) > 1) continue;
+      seen[nb] = 1;
+      q.push(nb);
+    }
+  }
+  const e = Math.floor(d.exit.z) * W + Math.floor(d.exit.x);
+  if (!seen[e]) return false;
+  // nenhuma sala pode ficar isolada
+  return d.rooms.every((r) => seen[Math.floor(r.cy) * W + Math.floor(r.cx)] || grid[Math.floor(r.cy) * W + Math.floor(r.cx)] !== TILE.FLOOR);
+}
+
 function makeShopStock(floor) {
   const slots = ['weapon', ...shuffle(SLOTS.filter((s) => s !== 'weapon'))].slice(0, 5);
   return slots.map((slot, k) => upgradeFor(slot, floor, k === 4 && chance(0.4) ? 3 : k < 2 ? 2 : 1));
@@ -278,7 +419,7 @@ function tileMesh(d, value, mat, test = (v) => v === value) {
     const j = (k / d.W) | 0;
     const f = d.feat[k];
     let rot = 0;
-    if (f >= FEAT.CONV) rot = [-Math.PI / 2, Math.PI / 2, Math.PI, 0][f - FEAT.CONV];
+    if (isConv(f)) rot = [-Math.PI / 2, Math.PI / 2, Math.PI, 0][f - FEAT.CONV];
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot);
     m4.compose(new THREE.Vector3(i + 0.5, 0.018, j + 0.5), q, new THREE.Vector3(1, 1, 1));
     im.setMatrixAt(n, m4);
@@ -298,7 +439,16 @@ export function buildFeatures(d, theme, group) {
   if (im) group.add(im);
   if (!conveyorTex) conveyorTex = arrowTexture();
   const convMat = new THREE.MeshLambertMaterial({ map: conveyorTex });
-  const cm = tileMesh(d, 0, convMat, (v) => v >= FEAT.CONV);
+  const cm = tileMesh(d, 0, convMat, isConv);
+  // espinhos e radiação
+  const thornMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x6a2a8a).multiplyScalar(0.9), transparent: true, opacity: 0.8, depthWrite: false });
+  const tm = tileMesh(d, FEAT.THORN, thornMat);
+  if (tm) group.add(tm);
+  const radMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xc8ff3a).multiplyScalar(0.8), transparent: true, opacity: 0.6, depthWrite: false });
+  const rm = tileMesh(d, FEAT.RAD, radMat);
+  if (rm) group.add(rm);
+  B.mats.rad = radMat;
+  buildNature(d, theme, group, B);
   if (cm) group.add(cm);
 
   for (const p of d.props) {
@@ -398,6 +548,20 @@ export function buildFeatures(d, theme, group) {
         g.add(goods);
         break;
       }
+      case 'airlock': {
+        const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffaa00).multiplyScalar(gk(1.6)), transparent: true, opacity: 0.8, depthWrite: false });
+        const ring = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.55, 32).rotateX(-Math.PI / 2), ringMat);
+        ring.position.y = 0.04;
+        g.add(ring);
+        for (let k = 0; k < 4; k++) {
+          const lamp = new THREE.Mesh(box(0.15, 0.4, 0.15), glowMat(0xff2244, 1.8));
+          const a = (k / 4) * Math.PI * 2;
+          lamp.position.set(Math.cos(a) * 1.6, 0.2, Math.sin(a) * 1.6);
+          g.add(lamp);
+        }
+        p.ringMat = ringMat;
+        break;
+      }
       case 'lantern': {
         const lan = new THREE.Mesh(box(0.22, 0.3, 0.22), glowMat(p.color, 1.8));
         lan.position.y = p.y;
@@ -425,6 +589,163 @@ export function buildFeatures(d, theme, group) {
     group.add(g);
     p.group = g;
   }
+}
+
+// ------------------------------------------------------------------
+// Natureza, água, espaço
+// ------------------------------------------------------------------
+function starTexture(n = 400) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000005';
+  g.fillRect(0, 0, 512, 512);
+  for (let k = 0; k < n; k++) {
+    const b = Math.random();
+    g.fillStyle = `rgba(${200 + b * 55},${200 + b * 55},255,${0.3 + b * 0.7})`;
+    const sz = b > 0.95 ? 2 : 1;
+    g.fillRect(Math.random() * 512, Math.random() * 512, sz, sz);
+  }
+  // nebulosa
+  const grad = g.createRadialGradient(300, 200, 10, 300, 200, 220);
+  grad.addColorStop(0, 'rgba(120,60,200,0.25)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function buildNature(d, theme, group, B) {
+  const { W, H, grid } = d;
+  const m4 = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const pitTiles = [];
+  for (let k = 0; k < W * H; k++) if (grid[k] === TILE.PIT) pitTiles.push(k);
+  // água dos lagos
+  if (d.pitStyle === 'water' && pitTiles.length) {
+    const mat = new THREE.MeshLambertMaterial({ color: 0x2a7ac8, transparent: true, opacity: 0.85, emissive: new THREE.Color(0x0a3a6a) });
+    const im = new THREE.InstancedMesh(planeGeo, mat, pitTiles.length);
+    pitTiles.forEach((k, n) => im.setMatrixAt(n, m4.makeTranslation((k % W) + 0.5, -0.06, Math.floor(k / W) + 0.5)));
+    group.add(im);
+    B.water = mat;
+    // brilho na água
+    const glint = new THREE.MeshBasicMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
+    const gm = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.5, 0.06).rotateX(-Math.PI / 2), glint, Math.min(200, pitTiles.length));
+    for (let n = 0; n < gm.count; n++) {
+      const k = pick(pitTiles);
+      q.setFromAxisAngle(up, rr(0, Math.PI));
+      m4.compose(new THREE.Vector3((k % W) + rr(0.2, 0.8), -0.04, Math.floor(k / W) + rr(0.2, 0.8)), q, new THREE.Vector3(1, 1, 1));
+      gm.setMatrixAt(n, m4);
+    }
+    group.add(gm);
+    B.glint = glint;
+  }
+  // espaço: céu estrelado por baixo do mapa
+  if (d.stars) {
+    const tex = starTexture();
+    tex.repeat.set(W / 12, H / 12);
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(W + 80, H + 80).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: tex }));
+    sky.position.set(W / 2, -6, H / 2);
+    group.add(sky);
+    B.sky = tex;
+    // borda brilhante nos buracos
+    if (pitTiles.length) {
+      const rim = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff3355).multiplyScalar(gk(1.6)) });
+      const rims = [];
+      for (const k of pitTiles) {
+        const i = k % W;
+        const j = Math.floor(k / W);
+        for (const [dx, dz, rot] of [[1, 0, Math.PI / 2], [-1, 0, Math.PI / 2], [0, 1, 0], [0, -1, 0]]) if (grid[(j + dz) * W + i + dx] === TILE.FLOOR) rims.push([i + 0.5 + dx * 0.5, j + 0.5 + dz * 0.5, rot]);
+      }
+      const rm = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.05, 0.06), rim, Math.max(1, rims.length));
+      rims.forEach(([x, z, rot], n) => {
+        q.setFromAxisAngle(up, rot);
+        m4.compose(new THREE.Vector3(x, 0.03, z), q, new THREE.Vector3(1, 1, 1));
+        rm.setMatrixAt(n, m4);
+      });
+      group.add(rm);
+    }
+  }
+  // grama e flores
+  const floorTiles = [];
+  for (let k = 0; k < W * H; k++) if (grid[k] === TILE.FLOOR && !d.feat[k]) floorTiles.push(k);
+  if (d.grass && floorTiles.length) {
+    const blade = new THREE.ConeGeometry(0.05, 0.35, 3).translate(0, 0.17, 0);
+    const mat = new THREE.MeshLambertMaterial({ color: d.grass });
+    const n = Math.min(2500, floorTiles.length * 2);
+    const im = new THREE.InstancedMesh(blade, mat, n);
+    const col = new THREE.Color();
+    for (let k = 0; k < n; k++) {
+      const t = pick(floorTiles);
+      q.setFromAxisAngle(new THREE.Vector3(rr(-0.3, 0.3), 1, rr(-0.3, 0.3)).normalize(), rr(0, 6));
+      const s2 = rr(0.6, 1.4);
+      m4.compose(new THREE.Vector3((t % W) + rr(0, 1), 0, Math.floor(t / W) + rr(0, 1)), q, new THREE.Vector3(s2, s2, s2));
+      im.setMatrixAt(k, m4);
+      im.setColorAt(k, col.setRGB(rr(0.7, 1.2), rr(0.8, 1.2), rr(0.6, 1)));
+    }
+    group.add(im);
+  }
+  if (d.flowers && floorTiles.length) {
+    const geo = new THREE.SphereGeometry(0.07, 6, 4).translate(0, 0.25, 0);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const n = Math.min(500, floorTiles.length / 3);
+    const im = new THREE.InstancedMesh(geo, mat, Math.floor(n));
+    const col = new THREE.Color();
+    for (let k = 0; k < im.count; k++) {
+      const t = pick(floorTiles);
+      m4.makeTranslation((t % W) + rr(0, 1), 0, Math.floor(t / W) + rr(0, 1));
+      im.setMatrixAt(k, m4);
+      im.setColorAt(k, col.set(pick([0xff6ad5, 0xffe14d, 0xffffff, 0x8ab4ff, 0xff8a00])).multiplyScalar(gk(1.3)));
+    }
+    group.add(im);
+  }
+  // obstáculos: árvores, pedras e cactos
+  for (const p of d.props) {
+    if (p.type !== 'obst') continue;
+    const g = new THREE.Group();
+    g.position.set(p.x, 0, p.z);
+    g.rotation.y = p.rot;
+    g.scale.setScalar(p.s);
+    if (p.kind === FEAT.TREE) {
+      g.add(meshAt(new THREE.CylinderGeometry(0.14, 0.22, 1.4, 6), new THREE.MeshLambertMaterial({ color: 0x3a2a1e }), 0, 0.7, 0));
+      const leaf = new THREE.MeshLambertMaterial({ color: pick([0x1a3a24, 0x16301e, 0x22402a]), emissive: new THREE.Color(0x05100a) });
+      g.add(meshAt(new THREE.ConeGeometry(0.85, 1.4, 7), leaf, 0, 1.6, 0));
+      g.add(meshAt(new THREE.ConeGeometry(0.6, 1.1, 7), leaf, 0, 2.3, 0));
+    } else if (p.kind === FEAT.BOULDER) {
+      const rock = meshAt(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: theme.id === 'desert' ? 0x9a7a54 : 0x7a7a72 }), 0, 0.35, 0);
+      rock.scale.set(1, 0.75, 1.1);
+      g.add(rock);
+    } else {
+      const cm = new THREE.MeshLambertMaterial({ color: 0x4a7a3a });
+      g.add(meshAt(new THREE.CylinderGeometry(0.2, 0.24, 1.6, 8), cm, 0, 0.8, 0));
+      const arm = meshAt(new THREE.CylinderGeometry(0.12, 0.12, 0.6, 6), cm, 0.32, 1.0, 0);
+      arm.rotation.z = -0.9;
+      g.add(arm);
+      g.add(meshAt(new THREE.CylinderGeometry(0.11, 0.11, 0.45, 6), cm, 0.52, 1.35, 0));
+      g.add(meshAt(new THREE.SphereGeometry(0.08, 6, 4), glowMat(0xff6ad5, 1.6), 0, 1.65, 0));
+    }
+    group.add(g);
+  }
+  // cogumelos brilhantes
+  for (const p of d.props) {
+    if (p.type !== 'mushroom') continue;
+    const g = new THREE.Group();
+    g.position.set(p.x, 0, p.z);
+    g.scale.setScalar(p.s);
+    g.add(meshAt(new THREE.CylinderGeometry(0.04, 0.05, 0.25, 5), new THREE.MeshLambertMaterial({ color: 0xd8d0c0 }), 0, 0.12, 0));
+    g.add(meshAt(new THREE.SphereGeometry(0.14, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), glowMat(p.color, 1.7), 0, 0.24, 0));
+    group.add(g);
+  }
+}
+
+function meshAt(geo, mat, x, y, z) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  return m;
 }
 
 function shopSign() {
@@ -468,8 +789,17 @@ export function updateBiome(dt, camera) {
     }
   }
 
+  if (B.water) B.water.opacity = 0.8 + Math.sin(G.t * 1.5) * 0.06;
+  if (B.glint) B.glint.opacity = 0.15 + Math.abs(Math.sin(G.t * 2)) * 0.25;
+  if (B.mats.rad) B.mats.rad.opacity = 0.5 + Math.sin(G.t * 3) * 0.15;
+  if (B.sky) B.sky.offset.x += dt * 0.004;
+  if (p) ambientParticles(d, dt);
+
   for (const pr of d.props) {
     switch (pr.type) {
+      case 'airlock':
+        updateAirlock(pr, dt, p);
+        break;
       case 'puddle':
         updatePuddle(pr, dt, p);
         break;
@@ -497,6 +827,101 @@ export function updateBiome(dt, camera) {
           } else if (dist > 2.8) pr.near = false;
         }
         break;
+    }
+  }
+}
+
+// Vaga-lumes, borboletas e tempestade de areia
+let ambAcc = 0;
+function ambientParticles(d, dt) {
+  const cx = G.camFocus.x;
+  const cz = G.camFocus.z;
+  ambAcc += dt;
+  if (d.fireflies && ambAcc > 0.08) {
+    particle(cx + rr(-11, 11), rr(0.4, 2.2), cz + rr(-11, 11), rr(-0.4, 0.4), rr(-0.2, 0.3), rr(-0.4, 0.4), Math.random() < 0.7 ? d.fireflies : 0xffe14d, 0.05, rr(1.5, 3), 0, 0);
+  }
+  if (d.butterflies && ambAcc > 0.08 && Math.random() < 0.4) {
+    particle(cx + rr(-10, 10), rr(0.5, 1.6), cz + rr(-10, 10), rr(-1, 1), rr(-0.2, 0.5), rr(-1, 1), pick([0xff6ad5, 0xffe14d, 0x8ab4ff, 0xffffff]), 0.07, rr(1.5, 2.5), 0, 0);
+  }
+  if (ambAcc > 0.08) ambAcc = 0;
+  if (d.sandstorm) {
+    const st = d.sandstorm;
+    st.t -= dt;
+    if (st.t <= 0) {
+      st.on = !st.on;
+      st.t = st.on ? rr(6, 9) : rr(14, 22);
+      if (st.on) toastStorm();
+    }
+    const fog = G.scene.fog;
+    const L2 = G.theme.light;
+    const near = st.on ? 6 : L2.fogNear;
+    const far = st.on ? 18 : L2.fogFar;
+    fog.near += (near - fog.near) * Math.min(1, dt);
+    fog.far += (far - fog.far) * Math.min(1, dt);
+    if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);
+  }
+}
+function toastStorm() {
+  floatText(G.player.x, 2.2, G.player.z, L('TEMPESTADE DE AREIA!', 'SANDSTORM!'), 'info');
+}
+
+// Comportas de vácuo: alarme e depois puxam tudo em direção ao buraco
+function updateAirlock(pr, dt, p) {
+  pr.t -= dt;
+  if (pr.state === 'idle') {
+    pr.ringMat.opacity = 0.35;
+    if (pr.t <= 0) {
+      pr.state = 'warn';
+      pr.t = 1.2;
+      sfx.telegraph();
+    }
+  } else if (pr.state === 'warn') {
+    pr.ringMat.opacity = Math.floor(pr.t * 8) % 2 ? 1 : 0.2;
+    if (pr.t <= 0) {
+      pr.state = 'open';
+      pr.t = 2.2;
+      sfx.dash();
+    }
+  } else {
+    pr.ringMat.opacity = 0.9;
+    const R = 6.5;
+    const pull = (o, k) => {
+      const dx = pr.x - o.x;
+      const dz = pr.z - o.z;
+      const l = Math.hypot(dx, dz);
+      if (l > R || l < 0.01) return l;
+      const f = (1 - l / R) * k * dt;
+      o.x += (dx / l) * f;
+      o.z += (dz / l) * f;
+      return l;
+    };
+    for (let k = 0; k < 4; k++) {
+      const a = rr(0, Math.PI * 2);
+      const r = rr(2, R);
+      particle(pr.x + Math.cos(a) * r, rr(0.2, 1.4), pr.z + Math.sin(a) * r, -Math.cos(a) * r * 1.2, 0, -Math.sin(a) * r * 1.2, 0xffffff, 0.05, 0.5, 0, 0);
+    }
+    if (p && p.alive && !p.dash && !p.leap) {
+      const l = pull(p, 9);
+      p.vacT = (p.vacT || 0) - dt;
+      if (l < 2.2 && p.vacT <= 0) {
+        p.vacT = 0.5;
+        damagePlayer(p.stats.maxHp * 0.06 + G.floor);
+      }
+    }
+    for (const e of G.enemies) {
+      if (!e.alive || e.static || e.boss) continue;
+      const l = pull(e, 9);
+      if (l < 2.2) {
+        e.vacT = (e.vacT || 0) - dt;
+        if (e.vacT <= 0) {
+          e.vacT = 0.5;
+          damageEnemy(e, e.maxHp * 0.15, false, {});
+        }
+      }
+    }
+    if (pr.t <= 0) {
+      pr.state = 'idle';
+      pr.t = rr(5, 8);
     }
   }
 }

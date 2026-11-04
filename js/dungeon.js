@@ -4,14 +4,20 @@ import { G, TILE, gk } from './state.js';
 import { ri, rr, pick, clamp, shuffle } from './utils.js';
 import { L } from './i18n.js';
 
+const NEON_LIGHT = { sky: 0x8a90ff, ground: 0x1a0f2a, hemi: 1.25, dir: 0xd8ccff, dirI: 1.5, fogNear: 22, fogFar: 44 };
 export const THEMES = [
   { id: 'neon', name: L('Distrito Neon', 'Neon District'), a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, layout: 'rooms', features: ['puddles', 'rain'], hint: L('Cuidado com as poças elétricas!', 'Watch out for the electric puddles!') },
-  { id: 'sewer', name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, layout: 'sewer', features: ['sludge'], hint: L('O lodo tóxico deixa você lento e causa dano.', 'Toxic sludge slows you down and hurts.') },
+  { id: 'forest', name: L('Floresta Sombria', 'Dark Forest'), a: 0x7affc8, b: 0xb36bff, floor: 0x2a3a2a, wall: 0x14261a, cap: 0x1e3a22, fog: 0x050c0a, layout: 'cave', ground: 'soil', walls: 'natural', wallH: [1.6, 3.2], natural: true, fauna: ['ghost', 'wisp'], features: ['trees', 'mushrooms', 'fireflies', 'thorns'], light: { sky: 0x4a6a8a, ground: 0x0a1a10, hemi: 0.9, dir: 0x9ab0ff, dirI: 0.8, fogNear: 10, fogFar: 26 }, hint: L('Fantasmas atravessam paredes… e os espinhos machucam.', 'Ghosts pass through walls… and the thorns hurt.') },
   { id: 'factory', name: L('Fábrica Corporativa', 'Corporate Factory'), a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, layout: 'rooms', features: ['conveyor', 'crusher'], hint: L('Esteiras empurram tudo e prensas esmagam inimigos também!', 'Conveyors push everything and presses crush enemies too!') },
+  { id: 'meadow', name: L('Pradaria Mutante', 'Mutant Meadow'), a: 0xffe14d, b: 0xff6ad5, floor: 0x5a8a3a, wall: 0x3a6a2a, cap: 0x4a8a34, fog: 0x9ec8e8, layout: 'meadow', ground: 'grass', walls: 'natural', wallH: [0.9, 1.5], natural: true, fauna: ['boar', 'toad'], features: ['lakes', 'grass', 'flowers', 'boulders', 'butterflies'], light: { sky: 0xcfe8ff, ground: 0x4a6a2a, hemi: 2.0, dir: 0xfff0c8, dirI: 2.0, fogNear: 30, fogFar: 60 }, hint: L('Javalis mutantes avançam em linha reta: desvie para o lado!', 'Mutant boars charge in a straight line: sidestep them!') },
+  { id: 'sewer', name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, layout: 'sewer', features: ['sludge'], hint: L('O lodo tóxico deixa você lento e causa dano.', 'Toxic sludge slows you down and hurts.') },
+  { id: 'space', name: L('Estação Orbital', 'Orbital Station'), a: 0x00f0ff, b: 0xffffff, floor: 0x3a4250, wall: 0x22283a, fog: 0x000000, layout: 'rooms', ground: 'deck', sky: 'stars', fauna: ['alien'], features: ['void', 'airlocks', 'stars'], light: { sky: 0x9ab8ff, ground: 0x0a0a1a, hemi: 1.2, dir: 0xffffff, dirI: 1.6, fogNear: 34, fogFar: 70 }, hint: L('Comportas de vácuo puxam tudo para o espaço. Fique longe dos buracos!', 'Vacuum airlocks pull everything into space. Stay away from the holes!') },
   { id: 'cryo', name: L('Laboratório Criogênico', 'Cryo Lab'), a: 0x8ad8ff, b: 0xd0f0ff, floor: 0x2c3c4e, wall: 0x1a2836, fog: 0x06101a, layout: 'cave', features: ['ice', 'vents'], hint: L('Gelo escorrega; as ventoinhas congelam inimigos (e deixam você lento).', 'Ice is slippery; vents freeze enemies (and slow you down).') },
+  { id: 'desert', name: L('Deserto Radioativo', 'Radioactive Wasteland'), a: 0xc8ff3a, b: 0xff8a00, floor: 0xb08a5a, wall: 0x8a6a44, cap: 0xa88050, fog: 0xd8b088, layout: 'meadow', ground: 'sand', walls: 'natural', wallH: [1.0, 2.4], natural: true, fauna: ['scorpion'], features: ['radiation', 'cacti', 'sandstorm'], light: { sky: 0xffe0b0, ground: 0x6a4a2a, hemi: 1.9, dir: 0xffd8a0, dirI: 2.0, fogNear: 22, fogFar: 48 }, hint: L('Poças radioativas machucam e escorpiões envenenam.', 'Radioactive pools hurt and scorpions poison you.') },
   { id: 'data', name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, layout: 'grid', features: ['lasers'], hint: L('Grades de laser ligam e desligam: espere o momento certo.', 'Laser grids switch on and off: time your crossing.') },
   { id: 'market', name: L('Mercado Noturno', 'Night Market'), a: 0xffd23d, b: 0xff2bd6, floor: 0x3a2a30, wall: 0x2a1a22, fog: 0x100608, layout: 'market', features: ['stalls', 'merchant', 'lanterns'], hint: L('Há um mercador escondido em alguma praça.', 'A merchant is hiding in one of the plazas.') },
 ];
+THEMES.forEach((t) => (t.light = t.light || NEON_LIGHT));
 THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
 
 export const BOSS_EVERY = 3;
@@ -94,9 +100,9 @@ function connectRooms(grid, W, H, rooms, width) {
 }
 
 // Cavernas orgânicas (autômato celular)
-function genCave(W, H) {
+function genCave(W, H, open = 0.55) {
   let grid = new Uint8Array(W * H);
-  for (let j = 2; j < H - 2; j++) for (let i = 2; i < W - 2; i++) grid[j * W + i] = Math.random() < 0.55 ? TILE.FLOOR : TILE.WALL;
+  for (let j = 2; j < H - 2; j++) for (let i = 2; i < W - 2; i++) grid[j * W + i] = Math.random() < open ? TILE.FLOOR : TILE.WALL;
   for (let it = 0; it < 5; it++) {
     const ng = new Uint8Array(W * H);
     for (let j = 2; j < H - 2; j++)
@@ -217,6 +223,7 @@ function genGrid(W, H) {
 function tryGenerate(floor, W, H, layout, force) {
   let base;
   if (layout === 'cave') base = genCave(W, H);
+  else if (layout === 'meadow') base = genCave(W, H, 0.64);
   else if (layout === 'grid') base = genGrid(W, H);
   else if (layout === 'market') base = genRooms(W, H, floor, { target: 5, size: [13, 19], gap: 4, corridor: 3 });
   else if (layout === 'sewer') base = genRooms(W, H, floor, { corridor: 3, size: [6, 10] });
@@ -358,9 +365,15 @@ export function lineOfSight(d, x1, z1, x2, z2) {
   const steps = Math.ceil(l / 0.3);
   for (let s = 1; s < steps; s++) {
     const t = s / steps;
-    if (!isWalkable(d, x1 + dx * t, z1 + dz * t)) return false;
+    if (blocksSight(d, x1 + dx * t, z1 + dz * t)) return false;
   }
   return true;
+}
+
+// Paredes e obstáculos bloqueiam visão e tiros; lagos/vácuo (PIT) não
+export function blocksSight(d, x, z) {
+  const t = tileAt(d, Math.floor(x), Math.floor(z));
+  return t === TILE.WALL || t === TILE.OBST;
 }
 
 // BFS genérica a partir de um bloco (usada para fluxo e escolha da saída)
@@ -552,7 +565,70 @@ export function revealAround(d, x, z, radius) {
 const WALL_H = 1.7;
 const LOW_H = 0.32;
 
+function naturalTexture(style) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8' }[style];
+  g.fillStyle = base;
+  g.fillRect(0, 0, 128, 128);
+  for (let k = 0; k < 900; k++) {
+    const v = Math.random();
+    g.fillStyle = v < 0.5 ? `rgba(0,0,0,${Math.random() * 0.14})` : `rgba(255,255,255,${Math.random() * 0.1})`;
+    if (style === 'grass') {
+      const x = Math.random() * 128;
+      const y = Math.random() * 128;
+      g.fillRect(x, y, 1, 3 + Math.random() * 4);
+    } else g.fillRect(Math.random() * 128, Math.random() * 128, 2 + Math.random() * 3, 2 + Math.random() * 2);
+  }
+  if (style === 'soil') {
+    // folhas secas
+    for (let k = 0; k < 24; k++) {
+      g.fillStyle = `rgba(${60 + Math.random() * 40},${50 + Math.random() * 30},20,0.45)`;
+      g.beginPath();
+      g.ellipse(Math.random() * 128, Math.random() * 128, 3, 1.5, Math.random() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  if (style === 'sand') {
+    g.strokeStyle = 'rgba(120,80,40,0.18)';
+    for (let y = 8; y < 128; y += 16) {
+      g.beginPath();
+      for (let x = 0; x <= 128; x += 8) g.lineTo(x, y + Math.sin(x / 10 + y) * 3);
+      g.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function deckTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#b8c0cc';
+  g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = 'rgba(0,0,0,0.5)';
+  g.lineWidth = 2;
+  g.strokeRect(1, 1, 126, 126);
+  g.strokeStyle = 'rgba(0,0,0,0.18)';
+  for (let k = 16; k < 128; k += 16) {
+    g.beginPath();
+    g.moveTo(k, 6);
+    g.lineTo(k, 122);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(0,240,255,0.35)';
+  g.fillRect(6, 60, 116, 3);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function floorTexture(theme) {
+  if (theme.ground === 'soil' || theme.ground === 'grass' || theme.ground === 'sand') return naturalTexture(theme.ground);
+  if (theme.ground === 'deck') return deckTexture();
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
@@ -616,7 +692,8 @@ export function buildDungeonMeshes(d, theme) {
 
   // --- piso ---
   const floorTiles = [];
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (grid[j * W + i] !== TILE.WALL) floorTiles.push([i, j]);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (grid[j * W + i] !== TILE.WALL && grid[j * W + i] !== TILE.PIT) floorTiles.push([i, j]);
+  const natural = theme.walls === 'natural';
   const floorGeo = new THREE.PlaneGeometry(1, 1);
   floorGeo.rotateX(-Math.PI / 2);
   const floorMat = new THREE.MeshLambertMaterial({ map: floorTexture(theme), color: theme.floor });
@@ -626,11 +703,12 @@ export function buildDungeonMeshes(d, theme) {
   floorTiles.forEach(([i, j], k) => {
     m4.makeTranslation(i + 0.5, 0, j + 0.5);
     floorMesh.setMatrixAt(k, m4);
-    const v = rr(0.85, 1.1);
+    const v = natural ? rr(0.8, 1.15) : rr(0.85, 1.1);
     col.setRGB(v, v, v);
     floorMesh.setColorAt(k, col);
   });
   group.add(floorMesh);
+  if (natural) d.noLines = true;
 
   // linhas de neon no chão dos corredores/salas (decoração)
   const lineMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(0.55), transparent: true, opacity: 0.55, depthWrite: false });
@@ -638,7 +716,7 @@ export function buildDungeonMeshes(d, theme) {
   lineGeo.rotateX(-Math.PI / 2);
   const roomLines = [];
   for (const r of d.rooms) {
-    if (r.cave) continue;
+    if (r.cave || d.noLines) continue;
     const inset = 0.6;
     roomLines.push([r.x + inset, r.y + inset, r.x + r.w - inset, r.y + inset]);
     roomLines.push([r.x + inset, r.y + r.h - inset, r.x + r.w - inset, r.y + r.h - inset]);
@@ -665,7 +743,10 @@ export function buildDungeonMeshes(d, theme) {
       if (t === TILE.OBST) continue;
       let near = false;
       for (let dy = -1; dy <= 1 && !near; dy++) for (let dx = -1; dx <= 1 && !near; dx++) if (isFloorish(i + dx, j + dy)) near = true;
-      if (near) walls.push({ i, j, x: i + 0.5, z: j + 0.5, h: WALL_H, target: WALL_H, strips: [], signs: [] });
+      if (near) {
+        const base = theme.wallH ? rr(theme.wallH[0], theme.wallH[1]) : WALL_H;
+        walls.push({ i, j, x: i + 0.5, z: j + 0.5, h: base, base, target: base, strips: [], signs: [] });
+      }
     }
   }
   const wallGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -676,8 +757,8 @@ export function buildDungeonMeshes(d, theme) {
   walls.forEach((w, k) => {
     m4.makeScale(1, w.h, 1).setPosition(w.x, 0, w.z);
     wallMesh.setMatrixAt(k, m4);
-    const v = rr(0.85, 1.15);
-    col.setRGB(v, v, v);
+    const v = natural ? rr(0.7, 1.3) : rr(0.85, 1.15);
+    col.setRGB(v, v * (natural ? rr(0.9, 1.1) : 1), v);
     wallMesh.setColorAt(k, col);
   });
   group.add(wallMesh);
@@ -685,7 +766,7 @@ export function buildDungeonMeshes(d, theme) {
   // topo das paredes levemente iluminado
   const capGeo = new THREE.PlaneGeometry(1, 1);
   capGeo.rotateX(-Math.PI / 2);
-  const capMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.wall).multiplyScalar(0.7) });
+  const capMat = theme.cap ? new THREE.MeshLambertMaterial({ color: theme.cap }) : new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.wall).multiplyScalar(0.7) });
   const capMesh = new THREE.InstancedMesh(capGeo, capMat, walls.length);
   capMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   walls.forEach((w, k) => {
@@ -703,6 +784,7 @@ export function buildDungeonMeshes(d, theme) {
     [0, -1, 0],
   ];
   walls.forEach((w, wi) => {
+    if (natural) return;
     for (const [dx, dy, rot] of faces) {
       if (grid[(w.j + dy) * W + w.i + dx] === TILE.FLOOR || grid[(w.j + dy) * W + w.i + dx] === TILE.OBST) {
         if (!isFloorish(w.i + dx, w.j + dy)) continue;
@@ -728,7 +810,7 @@ export function buildDungeonMeshes(d, theme) {
   group.add(stripMesh);
 
   // letreiros de neon nas paredes do "fundo" (faces voltadas para a câmera)
-  const signCount = Math.min(4 + d.rooms.length, 18);
+  const signCount = natural ? 0 : Math.min(4 + d.rooms.length, 18);
   const candidates = shuffle(
     walls.filter((w) => isFloorish(w.i + 1, w.j) && grid[w.j * W + w.i + 1] === TILE.FLOOR && isFloorish(w.i + 1, w.j + 1) && isFloorish(w.i + 1, w.j - 1)).concat(
       walls.filter((w) => isFloorish(w.i, w.j + 1) && grid[(w.j + 1) * W + w.i] === TILE.FLOOR && isFloorish(w.i + 1, w.j + 1) && isFloorish(w.i - 1, w.j + 1))
@@ -766,7 +848,7 @@ export function buildDungeonMeshes(d, theme) {
   const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.b).multiplyScalar(gk(2.2)) });
   for (let j = 0; j < H; j++)
     for (let i = 0; i < W; i++)
-      if (grid[j * W + i] === TILE.OBST && d.feat[j * W + i] !== 9) {
+      if (grid[j * W + i] === TILE.OBST && d.feat[j * W + i] < 9) {
         const p = new THREE.Mesh(pillarGeo, pillarMat);
         p.position.set(i + 0.5, 0, j + 0.5);
         group.add(p);
@@ -825,7 +907,7 @@ export function updateWalls(d, px, pz, dt) {
     const dz = w.z - pz;
     const along = (dx + dz) * Math.SQRT1_2;
     const side = Math.abs(dx - dz) * Math.SQRT1_2;
-    const target = along > -0.2 && along < 6.5 && side < 3.2 + along * 0.25 ? LOW_H : WALL_H;
+    const target = along > -0.2 && along < 6.5 && side < 3.2 + along * 0.25 ? LOW_H : w.base || WALL_H;
     if (Math.abs(w.h - target) < 0.005) {
       if (w.h !== target) w.h = target;
       else continue;
@@ -843,7 +925,7 @@ export function updateWalls(d, px, pz, dt) {
       const q = new THREE.Quaternion();
       const s = new THREE.Vector3();
       m4.decompose(pos, q, s);
-      pos.y = Math.min(WALL_H - 0.18, w.h - 0.06);
+      pos.y = Math.min((w.base || WALL_H) - 0.18, w.h - 0.06);
       m4.compose(pos, q, s);
       M.stripMesh.setMatrixAt(si, m4);
     }

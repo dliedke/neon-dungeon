@@ -442,6 +442,7 @@ export function markMinimap(indices) {
     const i = k % d.W;
     const j = (k / d.W) | 0;
     if (t === 1) mmCtx.fillStyle = 'rgba(120,140,220,0.55)';
+    else if (t === 3) mmCtx.fillStyle = G.dungeon.pitStyle === 'water' ? 'rgba(40,130,230,0.7)' : 'rgba(0,0,0,0.9)';
     else if (t === 2) mmCtx.fillStyle = 'rgba(60,70,120,0.8)';
     else {
       // parede só se encostar em chão

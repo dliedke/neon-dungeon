@@ -401,6 +401,158 @@ export function makeEnemyModel(type, eliteColor) {
       m = { root, body, turret, treads, mats: [mBody, mDark], kind: 'tank' };
       break;
     }
+    case 'ghost': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mSheet = new THREE.MeshLambertMaterial({ color: 0xdff4ff, emissive: new THREE.Color(0x4a6a8a), transparent: true, opacity: 0.5, depthWrite: false });
+      const sheet = new THREE.Group();
+      const cloth = mesh(cached('gcloth', () => new THREE.ConeGeometry(0.5, 1.3, 9, 1, true)), mSheet, 0, 0.75, 0);
+      cloth.material.side = THREE.DoubleSide;
+      sheet.add(cloth);
+      sheet.add(mesh(cached('ghead', () => new THREE.SphereGeometry(0.34, 12, 10)), mSheet, 0, 1.45, 0));
+      body.add(sheet);
+      for (const sx of [-1, 1]) body.add(mesh(box(0.09, 0.12, 0.04), glowMat(0x7affc8, 3), sx * 0.11, 1.48, 0.3));
+      body.add(mesh(box(0.14, 0.06, 0.04), new THREE.MeshBasicMaterial({ color: 0x000000 }), 0, 1.32, 0.31));
+      m = { root, body, sheet, mats: [mSheet], kind: 'ghost' };
+      break;
+    }
+    case 'wisp': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mCore = lambert(0x2a5a4a);
+      body.add(mesh(cached('wcore', () => new THREE.SphereGeometry(0.16, 10, 8)), glowMat(0x7affc8, 3)));
+      body.add(mesh(cached('whalo', () => new THREE.SphereGeometry(0.28, 10, 8)), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x7affc8).multiplyScalar(gk(1.2)), transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending })));
+      body.position.y = 1.1;
+      m = { root, body, mats: [mCore], kind: 'wisp' };
+      break;
+    }
+    case 'boar': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mFur = lambert(0x6a4a34);
+      const mDark = lambert(0x2a1c14);
+      body.add(mesh(box(0.6, 0.55, 1.0), mFur, 0, 0.6, 0));
+      body.add(mesh(box(0.08, 0.2, 0.7), glowMat(0xff8a00, 1.6), 0, 0.92, -0.05)); // crista
+      const head = mesh(box(0.45, 0.42, 0.45), mFur, 0, 0.6, 0.65);
+      body.add(head);
+      head.add(mesh(box(0.25, 0.18, 0.12), mDark, 0, -0.06, 0.26));
+      for (const sx of [-1, 1]) {
+        const tusk = mesh(cached('tusk', () => new THREE.ConeGeometry(0.04, 0.25, 5)), glowMat(0xfff0c8, 1.6), sx * 0.15, -0.12, 0.3);
+        tusk.rotation.x = -1.2;
+        head.add(tusk);
+        head.add(mesh(box(0.06, 0.06, 0.03), glowMat(0xff3300, 2.6), sx * 0.12, 0.08, 0.23));
+      }
+      const legs = [];
+      for (const [x, z] of [[0.2, 0.32], [-0.2, 0.32], [0.2, -0.32], [-0.2, -0.32]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.4, z);
+        lg.add(mesh(box(0.14, 0.4, 0.14), mDark, 0, -0.2, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, mats: [mFur, mDark], kind: 'quad' };
+      break;
+    }
+    case 'toad': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mSkin = lambert(0x4a8a3a);
+      const b = mesh(cached('tbody', () => new THREE.SphereGeometry(0.42, 12, 9)), mSkin, 0, 0.38, 0);
+      b.scale.set(1.1, 0.75, 1.15);
+      body.add(b);
+      body.add(mesh(cached('tsac', () => new THREE.SphereGeometry(0.2, 10, 8)), glowMat(0x9dff3a, 1.5), 0, 0.3, 0.38)); // papo ácido
+      for (const sx of [-1, 1]) {
+        body.add(mesh(cached('teye', () => new THREE.SphereGeometry(0.11, 8, 6)), lambert(0xe8e0a0), sx * 0.2, 0.68, 0.2));
+        body.add(mesh(box(0.05, 0.08, 0.03), new THREE.MeshBasicMaterial({ color: 0x000000 }), sx * 0.2, 0.68, 0.31));
+      }
+      const legs = [];
+      for (const [x, z] of [[0.32, 0.2], [-0.32, 0.2], [0.34, -0.25], [-0.34, -0.25]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.2, z);
+        lg.add(mesh(box(0.14, 0.2, 0.22), mSkin, 0, -0.1, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, mats: [mSkin], kind: 'quad', hop: true };
+      break;
+    }
+    case 'alien': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mShell = lambert(0x22182e);
+      const torso = mesh(box(0.42, 0.35, 0.9), mShell, 0, 0.7, 0);
+      torso.rotation.x = -0.25;
+      body.add(torso);
+      const head = mesh(cached('ahead', () => new THREE.CapsuleGeometry(0.16, 0.6, 4, 8)), mShell, 0, 0.95, 0.55);
+      head.rotation.x = Math.PI / 2 - 0.3;
+      body.add(head);
+      body.add(mesh(box(0.2, 0.04, 0.04), glowMat(0xb36bff, 2.6), 0, 1.0, 0.75));
+      const tail = new THREE.Group();
+      tail.position.set(0, 0.75, -0.45);
+      tail.add(mesh(box(0.08, 0.08, 0.9), mShell, 0, 0, -0.45));
+      tail.add(mesh(cached('atip', () => new THREE.ConeGeometry(0.07, 0.25, 5).rotateX(-Math.PI / 2)), glowMat(0xb36bff, 2), 0, 0, -0.95));
+      body.add(tail);
+      const legs = [];
+      for (const [x, z] of [[0.24, 0.3], [-0.24, 0.3], [0.24, -0.25], [-0.24, -0.25]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.6, z);
+        const leg = mesh(box(0.07, 0.65, 0.07), mShell, x * 0.6, -0.3, 0);
+        leg.rotation.z = x > 0 ? -0.35 : 0.35;
+        lg.add(leg);
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, tail, mats: [mShell], kind: 'quad' };
+      break;
+    }
+    case 'scorpion': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mShell = lambert(0x7a5a2a);
+      const mDark = lambert(0x3a2a14);
+      const b = mesh(cached('sbody', () => new THREE.SphereGeometry(0.4, 10, 8)), mShell, 0, 0.35, 0);
+      b.scale.set(1, 0.5, 1.3);
+      body.add(b);
+      const tail = new THREE.Group();
+      tail.position.set(0, 0.45, -0.45);
+      let prev = tail;
+      for (let k = 0; k < 4; k++) {
+        const seg = new THREE.Group();
+        seg.position.set(0, 0.18, k === 0 ? 0 : -0.05);
+        seg.rotation.x = -0.45;
+        seg.add(mesh(box(0.16 - k * 0.02, 0.2, 0.16 - k * 0.02), mShell, 0, 0.1, 0));
+        prev.add(seg);
+        prev = seg;
+      }
+      prev.add(mesh(cached('sting', () => new THREE.ConeGeometry(0.07, 0.25, 5)), glowMat(0xc8ff3a, 2.4), 0, 0.3, 0.1));
+      body.add(tail);
+      for (const sx of [-1, 1]) {
+        const claw = new THREE.Group();
+        claw.position.set(sx * 0.3, 0.35, 0.45);
+        claw.add(mesh(box(0.1, 0.1, 0.35), mShell, 0, 0, 0.1));
+        claw.add(mesh(box(0.2, 0.12, 0.2), mDark, 0, 0, 0.35));
+        body.add(claw);
+      }
+      const legs = [];
+      for (let k = 0; k < 6; k++) {
+        const sx = k < 3 ? -1 : 1;
+        const lg = new THREE.Group();
+        lg.position.set(sx * 0.3, 0.3, 0.25 - (k % 3) * 0.25);
+        const leg = mesh(box(0.4, 0.05, 0.05), mDark, sx * 0.2, -0.1, 0);
+        leg.rotation.z = sx * -0.5;
+        lg.add(leg);
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, tail, mats: [mShell, mDark], kind: 'quad' };
+      break;
+    }
     case 'medic': {
       const root = new THREE.Group();
       const body = new THREE.Group();

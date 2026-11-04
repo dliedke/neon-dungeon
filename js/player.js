@@ -575,13 +575,23 @@ export function updatePlayer(dt) {
       speed *= 0.55;
       if (Math.random() < dt * 10) burst(p.x, 1, p.z, 0x8ad8ff, 1, 1, 0.05, 0.4, { grav: -1 });
     }
-    if (ge && ge.sludge) {
+    if (ge && ge.hurt) {
       p.sludgeT = (p.sludgeT || 0) - dt;
       if (p.sludgeT <= 0) {
         p.sludgeT = 0.5;
         damagePlayer(2 + G.floor * 0.8);
       }
-      if (Math.random() < dt * 8) burst(p.x, 0.2, p.z, 0x39ff14, 1, 1, 0.05, 0.4, { grav: -1 });
+      if (Math.random() < dt * 8) burst(p.x, 0.2, p.z, ge.hurt, 1, 1, 0.05, 0.4, { grav: -1 });
+    }
+    // veneno (escorpiões)
+    if (p.poisonT > 0) {
+      p.poisonT -= dt;
+      p.poisonTick = (p.poisonTick || 0) - dt;
+      if (p.poisonTick <= 0) {
+        p.poisonTick = 0.5;
+        damagePlayer(1.5 + G.floor * 0.6);
+      }
+      if (Math.random() < dt * 10) burst(p.x, 1.2, p.z, 0x9dff3a, 1, 1, 0.05, 0.4, { grav: -2 });
     }
     // no gelo o movimento escorrega (inércia)
     const k = ge && ge.ice ? Math.min(1, dt * 2.2) : 1;

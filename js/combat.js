@@ -3,7 +3,7 @@ import { formMods, timeFactor, shieldCatch } from './powers.js';
 import * as THREE from 'three';
 import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
-import { isWalkable, lineOfSight } from './dungeon.js';
+import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
 import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -363,7 +363,7 @@ export function updateProjectiles(dt) {
       pr.trail = 0;
       burst(pos.x, pos.y, pos.z, pr.color, 1, 0.3, (pr.size || 0.12) * 0.7, 0.18, { grav: 0 });
     }
-    if (!isWalkable(d, pos.x, pos.z)) {
+    if (blocksSight(d, pos.x, pos.z)) {
       pr.alive = false;
       burst(pos.x - pr.dx * 0.1, pos.y, pos.z - pr.dz * 0.1, pr.color, 5, 3, 0.05, 0.25);
       if (pr.explode) enemyExplosion(pos.x - pr.dx * 0.3, pos.z - pr.dz * 0.3, pr.explode.r, pr.explode.dmg, pr.color);

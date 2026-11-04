@@ -57,22 +57,26 @@ Attacks and skills **aim automatically** at the nearest enemy.
 
 ## Biomes
 
-Every floor changes biome, each with its own map layout and environmental hazards:
+Every floor changes biome (10 in total), each with its own map layout, lighting and hazards:
 
 | Biome | Layout | Environment |
 | --- | --- | --- |
 | **Neon District** | Rooms and corridors | Rain and electric puddles that shock anyone standing in them |
-| **Toxic Sewers** | Wide sewer corridors | Toxic sludge rivers that slow you down and hurt |
+| **Dark Forest** | Organic clearings | Dense fog, trees, glowing mushrooms, fireflies, thorn patches; **ghosts** that pass through walls and exploding **wisps** |
 | **Corporate Factory** | Rooms and corridors | Conveyor belts and hydraulic presses (they crush enemies too) |
+| **Mutant Meadow** | Open fields | Daylight, grass, flowers, lakes and boulders; charging **mutant boars** and acid-spitting **toads** |
+| **Toxic Sewers** | Wide sewer corridors | Toxic sludge rivers that slow you down and hurt |
+| **Orbital Station** | Rooms over open space | Holes into space, vacuum airlocks that pull everything in; pouncing **xeno stalkers** |
 | **Cryo Lab** | Organic caves | Slippery ice and cryo vents that freeze enemies and chill you |
+| **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Data Core** | Grid of rooms | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who sells gear |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades |
 
-Floors also have explosive barrels and golden loot caches.
+Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 ## Enemies
 
-**13 enemy types:**
+**19 enemy types** (13 roaming the tech biomes plus 6 biome creatures):
 
 - Street Punk, Watcher Drone, Corporate Agent, Bomb Spider and Brute Mech.
 - **Sentry Turret.**

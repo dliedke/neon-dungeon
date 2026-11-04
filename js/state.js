@@ -39,7 +39,8 @@ export const G = {
   camFocus: { x: 0, z: 0 },
 };
 
-export const TILE = { WALL: 0, FLOOR: 1, OBST: 2 };
+// PIT: lagos/vácuo — não dá para andar, mas a visão e os tiros passam por cima
+export const TILE = { WALL: 0, FLOOR: 1, OBST: 2, PIT: 3 };
 
 // Intensidade dos materiais "neon": valores acima de 1 geram bloom.
 // O fator suaviza todos os brilhos do jogo de uma vez.

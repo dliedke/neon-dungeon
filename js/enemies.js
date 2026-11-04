@@ -36,6 +36,13 @@ export const ETYPES = {
   gunship: { name: L('Nave de Ataque', 'Assault Gunship'), boss: true, fly: true, hp: 540, dmg: 10, speed: 4.5, r: 1.4, h: 3.4, xp: 600, minFloor: 99, weight: 0, ai: 'gunship', heavy: true, blood: 0x00f0ff },
   hacker: { name: L('Hacker Supremo', 'Grand Hacker'), boss: true, hp: 430, dmg: 12, speed: 3.2, r: 0.6, h: 2.2, xp: 600, minFloor: 99, weight: 0, ai: 'hackerboss', heavy: true, blood: 0x39ff14 },
   omega: { name: L('Núcleo OMEGA', 'OMEGA Core'), boss: true, hp: 650, dmg: 13, speed: 0, r: 1.5, h: 3.4, xp: 700, minFloor: 99, weight: 0, ai: 'omega', heavy: true, static: true, blood: 0xff2244 },
+  // fauna dos biomas naturais/espaço (só aparecem no bioma deles)
+  ghost: { name: L('Fantasma', 'Ghost'), fly: true, phase: true, hp: 28, dmg: 9, speed: 3.0, r: 0.38, h: 1.7, xp: 10, minFloor: 99, weight: 0, ai: 'ghost', atkCd: 1.0, blood: 0xbfffff },
+  wisp: { name: L('Fogo-Fátuo', 'Wisp'), fly: true, hp: 12, dmg: 12, speed: 4.8, r: 0.26, h: 1.2, xp: 6, minFloor: 99, weight: 0, ai: 'wisp', blood: 0x7affc8 },
+  boar: { name: L('Javali Mutante', 'Mutant Boar'), hp: 60, dmg: 14, speed: 3.2, r: 0.5, h: 1.0, xp: 14, minFloor: 99, weight: 0, ai: 'boar', atkCd: 3.2, heavy: true, blood: 0xff8a00 },
+  toad: { name: L('Sapo Ácido', 'Acid Toad'), hp: 34, dmg: 8, speed: 2.8, r: 0.38, h: 0.8, xp: 11, minFloor: 99, weight: 0, ai: 'toad', keep: [4, 8], range: 9, atkCd: 2.6, blood: 0x9dff3a },
+  alien: { name: L('Xenomorfo', 'Xeno Stalker'), hp: 42, dmg: 11, speed: 4.6, r: 0.4, h: 1.1, xp: 15, minFloor: 99, weight: 0, ai: 'alien', range: 0.9, atkCd: 2.4, blood: 0xb36bff },
+  scorpion: { name: L('Escorpião Radioativo', 'Rad Scorpion'), hp: 52, dmg: 9, speed: 3.0, r: 0.45, h: 0.8, xp: 14, minFloor: 99, weight: 0, ai: 'melee', poison: true, range: 1.1, atkCd: 1.2, blood: 0xc8ff3a },
   pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
   boss: { name: 'Executor ARC-9', boss: true, hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
   queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
@@ -61,9 +68,11 @@ export function floorScale(f) {
   return { hp: (1 + (f - 1) * 0.35 + Math.pow(f - 1, 2) * 0.025) * D.hp, dmg: (1 + (f - 1) * 0.18) * D.dmg };
 }
 
-export function pickEnemyType(floor) {
-  const list = Object.keys(ETYPES).filter((k) => ETYPES[k].minFloor <= floor && ETYPES[k].weight > 0);
-  return weightedPick(list, (k) => ETYPES[k].weight);
+// Cada bioma favorece sua fauna; nos naturais quase não aparecem robôs
+export function pickEnemyType(floor, theme = G.theme) {
+  const fauna = (theme && theme.fauna) || [];
+  const list = Object.keys(ETYPES).filter((k) => fauna.includes(k) || (ETYPES[k].minFloor <= floor && ETYPES[k].weight > 0));
+  return weightedPick(list, (k) => (fauna.includes(k) ? (theme.natural ? 12 : 30) : ETYPES[k].weight * (theme && theme.natural ? 0.2 : 1)));
 }
 
 export function spawnEnemy(type, x, z, o = {}) {
@@ -180,6 +189,7 @@ function enemyShoot(e, dx, dz, spread = 0) {
 
 function meleeHit(e, dmg) {
   damagePlayer(dmg);
+  if (e.T.poison && G.player.invuln <= 0) G.player.poisonT = 4;
   if (e.vamp) {
     e.hp = Math.min(e.maxHp, e.hp + dmg * 1.5);
     floatText(e.x, e.height + 0.4, e.z, `+${Math.round(dmg * 1.5)}`, 'heal');
@@ -220,7 +230,7 @@ export function updateEnemies(dt, cam) {
     if (e.losT <= 0) {
       e.losT = 0.25;
       e.los = dist < 16 && lineOfSight(d, e.x, e.z, tgt.x, tgt.z);
-      if (!e.aggro && e.los && dist < (e.boss ? 9 : 10)) {
+      if (!e.aggro && (e.los || e.T.phase) && dist < (e.boss ? 9 : 10)) {
         e.aggro = true;
         e.alerted = true;
       }
@@ -381,6 +391,161 @@ export function updateEnemies(dt, cam) {
           }
           e.faceX = (e.lockX ?? p.x) - e.x;
           e.faceZ = (e.lockZ ?? p.z) - e.z;
+          break;
+        }
+        case 'ghost': {
+          // flutua direto até o jogador, atravessando paredes, e drena vida
+          mvx = ux;
+          mvz = uz;
+          if (dist < e.r + p.r + 0.35) {
+            speed *= 0.3;
+            if (e.atkT <= 0 && tgt === p) {
+              e.atkT = e.T.atkCd;
+              meleeHit(e, e.dmg);
+              e.hp = Math.min(e.maxHp, e.hp + e.dmg);
+              beamFx(p.x, 1, p.z, e.x, 1.2, e.z, 0xbfffff, 0.25, 4);
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'wisp': {
+          // voo errático; explode perto do jogador e deixa ele lento
+          e.wob = (e.wob || rr(0, 6)) + edt * 5;
+          mvx = ux + Math.cos(e.wob) * 0.8;
+          mvz = uz + Math.sin(e.wob) * 0.8;
+          if (dist < 1.1) {
+            e.selfDestruct = true;
+            enemyExplosion(e.x, e.z, 1.8, e.dmg, 0x7affc8);
+            if (Math.hypot(p.x - e.x, p.z - e.z) < 2) p.chillT = 2;
+            e.hp = 0;
+            e.alive = false;
+            onEnemyKilled(e);
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'boar': {
+          if (e.cstate === 'wind') {
+            speed = 0;
+            e.ct -= edt;
+            if (Math.random() < 0.5) burst(e.x, 0.2, e.z, 0x8a6a44, 1, 2, 0.06, 0.3);
+            if (e.ct <= 0) {
+              e.cstate = 'charge';
+              e.ct = 0.75;
+              e.hitDone = false;
+              sfx.dash();
+            }
+          } else if (e.cstate === 'charge') {
+            mvx = e.cdx;
+            mvz = e.cdz;
+            speed = 13;
+            e.ct -= edt;
+            if (!e.hitDone && Math.hypot(p.x - e.x, p.z - e.z) < e.r + p.r + 0.2) {
+              e.hitDone = true;
+              meleeHit(e, e.dmg * 1.4);
+              p.kx = (p.kx || 0) + e.cdx * 9;
+              p.kz = (p.kz || 0) + e.cdz * 9;
+            }
+            if (e.ct <= 0 || !isWalkable(d, e.x + e.cdx * 0.7, e.z + e.cdz * 0.7)) {
+              const hitWall = e.ct > 0;
+              e.cstate = null;
+              e.atkT = e.T.atkCd;
+              e.stun = hitWall ? 0.9 : 0.2; // se bateu na parede fica tonto
+            }
+          } else {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+            if (e.los && dist < 8 && dist > 1.5 && e.atkT <= 0) {
+              e.cstate = 'wind';
+              e.ct = 0.6;
+              e.cdx = ux;
+              e.cdz = uz;
+              lineTelegraph(e.x, e.z, Math.atan2(uz, ux), Math.min(12, dist + 3), 1.1, 0.6, 0xff8a00);
+              sfx.telegraph();
+            }
+          }
+          e.faceX = e.cstate ? e.cdx : ux;
+          e.faceZ = e.cstate ? e.cdz : uz;
+          break;
+        }
+        case 'toad': {
+          // anda aos pulos e cospe ácido que deixa poças
+          const [kmin, kmax] = e.T.keep;
+          e.hopT = (e.hopT ?? rr(0, 0.8)) - edt;
+          if (e.hopT < -0.9) e.hopT = rr(0.4, 0.9);
+          const hopping = e.hopT < 0;
+          if (hopping) {
+            if (!e.los || dist > kmax) {
+              const c = chase();
+              if (c) { mvx = c.x; mvz = c.z; }
+            } else if (dist < kmin) {
+              mvx = -ux;
+              mvz = -uz;
+            }
+            speed *= 1.6;
+          }
+          if (e.los && dist < e.T.range && e.atkT <= 0) {
+            e.atkT = e.T.atkCd * rr(0.85, 1.15);
+            const tx = tgt.x;
+            const tz = tgt.z;
+            telegraphFx(tx, tz, 1.3, 0.8, 0x9dff3a);
+            lob({ x: e.x, z: e.z, tx, tz, time: 0.8, color: 0x9dff3a, onLand: (x, z) => spawnHazard(x, z, 1.3, 3.5, e.dmg * 0.7, { color: 0x9dff3a }) });
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'alien': {
+          if (e.pstate === 'wind') {
+            speed = 0;
+            e.pt -= edt;
+            if (e.pt <= 0) {
+              e.pstate = 'leap';
+              e.pt = 0.4;
+              e.sx = e.x;
+              e.sz = e.z;
+            }
+          } else if (e.pstate === 'leap') {
+            e.pt -= edt;
+            const k = 1 - Math.max(0, e.pt) / 0.4;
+            e.x = e.sx + (e.lx - e.sx) * k;
+            e.z = e.sz + (e.lz - e.sz) * k;
+            e.model.body.position.y = Math.sin(k * Math.PI) * 1.2;
+            speed = 0;
+            if (e.pt <= 0) {
+              e.model.body.position.y = 0;
+              e.pstate = null;
+              e.atkT = e.T.atkCd;
+              if (Math.hypot(p.x - e.x, p.z - e.z) < 1.3 + p.r) meleeHit(e, e.dmg * 1.5);
+              burst(e.x, 0.3, e.z, 0xb36bff, 12, 4, 0.06, 0.3);
+            }
+          } else if (dist < e.T.range + e.r + p.r) {
+            if (e.windup > 0) {
+              e.windup -= edt;
+              speed = 0;
+              if (e.windup <= 0) {
+                e.swing = 1;
+                if (tgt === p && dist < e.T.range + e.r + p.r + 0.3) meleeHit(e, e.dmg);
+                e.biteT = 0.9;
+              }
+            } else if ((e.biteT = (e.biteT || 0) - edt) <= 0) e.windup = 0.25;
+          } else {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+            if (e.los && dist > 2.5 && dist < 6.5 && e.atkT <= 0) {
+              e.pstate = 'wind';
+              e.pt = 0.35;
+              e.lx = tgt.x;
+              e.lz = tgt.z;
+              telegraphFx(e.lx, e.lz, 1.3, 0.75, 0xb36bff);
+              sfx.telegraph();
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
           break;
         }
         case 'kamikaze': {
@@ -625,14 +790,14 @@ export function updateEnemies(dt, cam) {
 
     // movimento
     const ge = !e.T.fly && !e.static ? groundEffect(d, e.x, e.z) : null;
-    if (ge && ge.sludge) speed *= 0.75;
+    if (ge && ge.hurt) speed *= 0.75;
     const push = ge && ge.push ? ge.push : { x: 0, z: 0 };
     e.x += (mvx * speed + e.kx + push.x) * edt;
     e.z += (mvz * speed + e.kz + push.z) * edt;
     const kd = Math.max(0, 1 - edt * 8);
     e.kx *= kd;
     e.kz *= kd;
-    resolveCircle(d, e);
+    if (!e.T.phase) resolveCircle(d, e);
     e.moving = Math.abs(mvx * speed) + Math.abs(mvz * speed) > 0.3;
   }
 
@@ -677,7 +842,7 @@ export function updateEnemies(dt, cam) {
   }
   // a separação pode empurrar corpos contra paredes: corrige
   for (const e of list) {
-    if (!e.alive) continue;
+    if (!e.alive || e.T.phase) continue;
     resolveCircle(d, e);
     if (isWalkable(d, e.x, e.z)) {
       e.safeX = e.x;
@@ -746,6 +911,18 @@ export function updateEnemies(dt, cam) {
       m.legs.forEach((l, i) => (l.rotation.x = Math.sin(e.phase * 1.4 + i * 1.3) * 0.35));
       m.abdomen.scale.setScalar(1 + Math.sin(G.t * 3) * 0.04);
       m.eyes.material.color.set(e.phase2 ? 0xff2244 : 0x39ff14).multiplyScalar(gk(2.6));
+    } else if (m.kind === 'ghost') {
+      m.body.position.y = 0.3 + Math.sin(G.t * 2 + e.phase) * 0.15;
+      m.sheet.rotation.y += dt * 1.5;
+      const near = Math.hypot(p.x - e.x, p.z - e.z) < 7;
+      m.mats[0].opacity = (near ? 0.6 : 0.35) + Math.sin(G.t * 4 + e.phase) * 0.1;
+    } else if (m.kind === 'wisp') {
+      m.body.position.y = 1.1 + Math.sin(G.t * 6 + e.phase) * 0.2;
+      if (Math.random() < 0.5) burst(e.x, m.body.position.y, e.z, 0x7affc8, 1, 0.5, 0.06, 0.4, { grav: -1 });
+    } else if (m.kind === 'quad') {
+      m.legs.forEach((l, k) => (l.rotation.x = e.moving ? Math.sin(e.phase * 2 + (k % 2) * Math.PI) * 0.6 : 0));
+      if (m.tail) m.tail.rotation.x = -0.6 + Math.sin(G.t * 3 + e.phase) * 0.15;
+      if (m.hop && !(e.pstate === 'leap')) m.body.position.y = e.moving ? Math.abs(Math.sin(e.phase * 1.4)) * 0.35 : 0;
     } else if (m.kind === 'drone') {
       m.body.position.y = 1.15 + Math.sin(G.t * 3 + e.phase) * 0.12;
       m.ring.rotation.z += dt * 4;
@@ -1029,7 +1206,7 @@ export function populateFloor(d, floor, boss) {
         spawnEnemy(type, x, z, { elite: elite && i === 0 });
       }
       // médico de campo acompanhando o grupo
-      if (floor >= 2 && !ETYPES[type].solo && chance(Math.min(0.3, 0.1 + floor * 0.03))) {
+      if (floor >= 2 && !(G.theme && G.theme.natural) && !ETYPES[type].solo && chance(Math.min(0.3, 0.1 + floor * 0.03))) {
         const x = cx + rr(-1, 1);
         const z = cz + rr(-1, 1);
         if (isWalkable(d, x, z)) spawnEnemy('medic', x, z);
@@ -1047,7 +1224,7 @@ export function populateFloor(d, floor, boss) {
   }
   // barris explosivos e cofres
   for (const r of d.rooms) {
-    if (r === d.rooms[0] || !chance(0.45)) continue;
+    if (r === d.rooms[0] || !chance(G.theme && G.theme.natural ? 0 : 0.45)) continue;
     const n = 1 + Math.floor(rr(0, 2.5));
     for (let k = 0; k < n; k++) {
       const pt = randomFloorInRoom(d, r, 1);
