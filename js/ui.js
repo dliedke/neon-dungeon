@@ -11,6 +11,7 @@ import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './m
 import { fmt } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
+import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade } from './items.js';
 
 const $ = (id) => document.getElementById(id);
@@ -1056,6 +1057,7 @@ export function anyOverlayOpen() {
 let shopStock = null;
 export function openShop(stock) {
   if (G.mode !== 'play' || !stock) return;
+  refreshShopStock(stock, G.floor);
   shopStock = stock;
   G.mode = 'shop';
   $('panel-shop').classList.remove('hidden');
