@@ -1,6 +1,6 @@
 // Itens no chão: créditos, stims, orbes de vida, equipamentos e cofres.
 import * as THREE from 'three';
-import { G } from './state.js';
+import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
 import { makeItem, rollRarity, RARITY, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
@@ -56,7 +56,7 @@ const upBeamGeo = new THREE.CylinderGeometry(0.09, 0.14, 4.2, 10, 1, true).trans
 const upRingGeo = new THREE.RingGeometry(0.42, 0.52, 28).rotateX(-Math.PI / 2);
 
 function beamMat(color, opacity) {
-  return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
+  return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.6)), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
 }
 
 export function spawnPickup(type, x, z, data) {
@@ -148,7 +148,7 @@ export function spawnChest(x, z) {
   lidMesh.position.set(0, 0.06, 0.285);
   lid.add(lidMesh);
   g.add(lid);
-  const seam = new THREE.Mesh(box(0.84, 0.04, 0.59), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(2.4) }));
+  const seam = new THREE.Mesh(box(0.84, 0.04, 0.59), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(gk(2.4)) }));
   seam.position.y = 0.45;
   g.add(seam);
   const beam = new THREE.Mesh(beamGeo, beamMat(0xffd23d, 0.4));

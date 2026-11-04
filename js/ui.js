@@ -54,6 +54,7 @@ export function initUI() {
     quitToMenu();
   };
   $('confirm-no').onclick = () => closeOverlay('panel-confirm');
+  $('shop-close').onclick = () => closeShop();
 
   // opções
   const s = G.settings;
@@ -76,6 +77,16 @@ export function initUI() {
   $('opt-quality').onclick = () => {
     s.quality = s.quality === 'auto' ? 'high' : s.quality === 'high' ? 'low' : 'auto';
     updQ();
+    applyQuality();
+    saveSettings();
+  };
+  const glowOrder = ['strong', 'medium', 'low', 'off'];
+  const glowNames = { strong: L('Forte', 'Strong'), medium: L('Médio', 'Medium'), low: L('Fraco', 'Low'), off: L('Desligado', 'Off') };
+  const updG = () => ($('opt-glow').textContent = glowNames[s.glow] || glowNames.medium);
+  updG();
+  $('opt-glow').onclick = () => {
+    s.glow = glowOrder[(glowOrder.indexOf(s.glow) + 1) % glowOrder.length];
+    updG();
     applyQuality();
     saveSettings();
   };
@@ -270,6 +281,8 @@ export function updateHUD(dt) {
   if (p.sureCrit > 0) buffs.push(`${L('Crítico', 'Crit')} x${p.sureCrit}`);
   if (p.shield > 1) buffs.push(`${L('Escudo', 'Shield')} ${Math.round(p.shield)}`);
   if (p.buffs.regen > 0) buffs.push(L('Regeneração', 'Regen'));
+  if (p.buffs.titan > 0) buffs.push(`${L('Titânio', 'Titanium')} ${p.buffs.titan.toFixed(0)}s`);
+  if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
   const bh = buffs.map((b) => `<span class="buff">${b}</span>`).join('');
   if (cache.buffs !== bh) {
     cache.buffs = bh;
@@ -752,7 +765,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-confirm', 'panel-opts', 'panel-help', 'panel-dead', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-confirm', 'panel-opts', 'panel-help', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -850,6 +863,9 @@ export function uiBack(root = activePanel()) {
     case 'panel-char':
       closeChar();
       break;
+    case 'panel-shop':
+      closeShop();
+      break;
     case 'panel-pause':
       closePause();
       break;
@@ -858,4 +874,70 @@ export function uiBack(root = activePanel()) {
 
 export function anyOverlayOpen() {
   return ['panel-confirm', 'panel-opts', 'panel-help'].some((id) => !$(id).classList.contains('hidden'));
+}
+
+// ------------------------------------------------------------------
+// Loja do mercador (Mercado Noturno)
+// ------------------------------------------------------------------
+let shopStock = null;
+export function openShop(stock) {
+  if (G.mode !== 'play' || !stock) return;
+  shopStock = stock;
+  G.mode = 'shop';
+  $('panel-shop').classList.remove('hidden');
+  focused = null;
+  sfx.rare();
+  renderShop();
+}
+
+export function closeShop() {
+  $('panel-shop').classList.add('hidden');
+  if (G.mode === 'shop') G.mode = 'play';
+  saveGame();
+  Input.reset();
+}
+
+function renderShop() {
+  const c = G.char;
+  $('shop-credits').textContent = fmt(c.credits);
+  const price = stimPrice();
+  let html = `<div class="shop-row stim-row"><div><b>Stim</b> · ${L('cura 60% da vida', 'heals 60% health')} · ${c.stims}/${MAX_STIMS}</div>
+    <button class="btn small" data-nav data-buy="stim" ${c.credits < price || c.stims >= MAX_STIMS ? 'disabled' : ''}>${price}¢</button></div>`;
+  html += '<div class="shop-grid">';
+  shopStock.forEach((it, k) => {
+    const better = !it.sold && isUpgrade(it, c.equip);
+    const tag = better ? `<div class="it-cmp" style="color:#39ff88">▲ ${L('Melhor que o equipado', 'Better than equipped')}</div>` : '';
+    const btn = it.sold
+      ? `<button class="btn small ghost" disabled>${L('Vendido', 'Sold')}</button>`
+      : `<button class="btn small" data-nav data-buy="${k}" ${c.credits < it.price || c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
+    html += `<div class="shop-item${better ? ' better-card' : ''}${it.sold ? ' sold' : ''}">${itemCardHtml(it, tag)}${btn}</div>`;
+  });
+  html += '</div>';
+  $('shop-items').innerHTML = html;
+  $('shop-items').querySelectorAll('[data-buy]').forEach((b) => (b.onclick = () => buy(b.dataset.buy)));
+}
+
+function buy(what) {
+  const c = G.char;
+  if (what === 'stim') {
+    const price = stimPrice();
+    if (c.credits < price || c.stims >= MAX_STIMS) return sfx.deny();
+    c.credits -= price;
+    c.stims++;
+    sfx.stim();
+  } else {
+    const it = shopStock[+what];
+    if (!it || it.sold || c.credits < it.price) return sfx.deny();
+    if (c.inv.length >= INV_SIZE) return invFull();
+    c.credits -= it.price;
+    it.sold = true;
+    const copy = { ...it };
+    delete copy.price;
+    delete copy.sold;
+    c.inv.push(copy);
+    sfx.coin();
+    toast(`${L('Comprado', 'Bought')}: ${itemName(copy)}`);
+  }
+  renderShop();
+  focused = null;
 }

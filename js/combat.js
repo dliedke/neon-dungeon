@@ -1,6 +1,6 @@
 // Dano, projéteis, explosões, torres e temporizadores.
 import * as THREE from 'three';
-import { G } from './state.js';
+import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
 import { isWalkable, lineOfSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
@@ -62,7 +62,7 @@ export function nearestEnemy(x, z, maxD, needLos = true, exclude = null) {
   let best = null;
   let bd = maxD;
   for (const e of G.enemies) {
-    if (!e.alive || e.inert || e === exclude || (exclude && exclude.has && exclude.has(e))) continue;
+    if (!e.alive || e.inert || e.invulnerable || e === exclude || (exclude && exclude.has && exclude.has(e))) continue;
     const d = Math.hypot(e.x - x, e.z - z);
     if (d < bd && (!needLos || lineOfSight(G.dungeon, x, z, e.x, e.z))) {
       bd = d;
@@ -93,14 +93,38 @@ export function hitEnemy(e, mult, o = {}) {
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0);
   if (ls > 0 && dealt > 0) healPlayer((dealt * ls) / 100, false);
   if (o.energy) p.en = Math.min(p.stats.maxEn, p.en + o.energy);
+  applyStatus(e, o);
   if (!o.noProc && p.stats.legs.has('arc') && chance(0.15)) {
     after(0.05, () => chainFrom(e, 3, 0.8, 5.5, 0x88ccff, true));
+  }
+}
+
+// Efeitos de status causados pelo jogador
+export function applyStatus(e, o) {
+  if (!e.alive || e.inert) return;
+  const s = G.player.stats;
+  const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100);
+  if (o.burn) {
+    const dps = avg * o.burn;
+    e.burnT = 3;
+    e.burnDps = Math.max(e.burnT > 0 ? e.burnDps || 0 : 0, dps);
+  }
+  if (o.slow) e.slowT = Math.max(e.slowT || 0, o.slow * (e.boss ? 0.5 : 1));
+  if (o.freeze && !e.boss) {
+    e.stun = Math.max(e.stun, o.freeze * (e.heavy ? 0.5 : 1));
+    e.frozenT = e.stun;
   }
 }
 
 let shieldHintShown = false;
 export function damageEnemy(e, amount, crit, o = {}) {
   if (!e.alive) return 0;
+  if (e.invulnerable) {
+    if (!o.dot && Math.random() < 0.35) floatText(e.x, e.height + 0.4, e.z, L('IMUNE', 'IMMUNE'), 'shield');
+    if (!o.dot) burst(e.x, e.height * 0.7, e.z, 0x00f0ff, 3, 2, 0.05, 0.25);
+    return 0;
+  }
+  if (e.vulnerable) amount *= 1.5;
   if (e.dr) amount *= 1 - e.dr;
   // Tropa de Choque: o escudo bloqueia quase tudo que vem pela frente
   if (e.T.shield && e.stun <= 0 && o.kx !== undefined) {
@@ -121,15 +145,23 @@ export function damageEnemy(e, amount, crit, o = {}) {
   if (e.armorUp) amount *= 0.5;
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
-  e.flash = 0.09;
+  if (!o.dot) e.flash = 0.09;
   e.hpShow = 4;
   if (!e.aggro) {
     e.aggro = true;
     e.alerted = true;
   }
-  floatText(e.x, e.height + 0.3, e.z, amount, crit ? 'crit' : 'dmg');
+  if (o.quiet || o.dot) {
+    // ataques contínuos: soma o dano e mostra um número a cada 0,4s
+    e.qAcc = (e.qAcc || 0) + amount;
+    if (G.t - (e.qT || 0) > 0.4 || crit) {
+      floatText(e.x, e.height + 0.3, e.z, e.qAcc, crit ? 'crit' : o.dot ? 'dot' : 'dmg');
+      e.qAcc = 0;
+      e.qT = G.t;
+    }
+  } else floatText(e.x, e.height + 0.3, e.z, amount, crit ? 'crit' : 'dmg');
   if (crit) sfx.crit();
-  else sfx.hit();
+  else if (!o.dot && !o.quiet) sfx.hit();
   if (o.knock && !e.boss) {
     let dx = e.x - (o.kx ?? G.player.x);
     let dz = e.z - (o.kz ?? G.player.z);
@@ -139,7 +171,7 @@ export function damageEnemy(e, amount, crit, o = {}) {
     e.kz += (dz / l) * k;
   }
   if (o.stun && !e.boss) e.stun = Math.max(e.stun, o.stun * (e.heavy ? 0.5 : 1));
-  burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 7 : 4, 3, 0.05, 0.3);
+  if (!o.dot) burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 7 : 4, 3, 0.05, 0.3);
   if (e.hp <= 0) killEnemy(e);
   return amount;
 }
@@ -196,7 +228,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
 }
 
 export function explosion(x, z, radius, mult, o = {}) {
-  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc });
+  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun });
   ringFx(x, z, radius, o.color ?? 0xff7a1a, 0.4, { from: 0.3 });
   burst(x, 0.5, z, o.color ?? 0xff7a1a, o.small ? 18 : 40, o.small ? 5 : 9, 0.09, 0.6, { up: 0.8 });
   burst(x, 0.5, z, 0xffffff, o.small ? 4 : 10, 4, 0.06, 0.3);
@@ -218,6 +250,7 @@ export function damagePlayer(amount) {
   const p = G.player;
   if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
   amount *= 100 / (100 + p.stats.armor);
+  if (p.buffs.titan > 0) amount *= 0.4;
   amount = Math.max(1, Math.round(amount));
   p.inCombat = 5;
   if (p.shield > 0) {
@@ -259,7 +292,7 @@ const projGeo = new THREE.SphereGeometry(1, 10, 8);
 export function spawnProjectile(o) {
   const m = new THREE.Mesh(projGeo, glowMat(o.color, 2.6));
   m.scale.setScalar(o.size || 0.12);
-  if (o.from === 'enemy') m.scale.multiplyScalar(1.1);
+  if (o.from === 'enemy') m.scale.multiplyScalar(gk(1.1));
   const y = o.y ?? 0.95;
   m.position.set(o.x, y, o.z);
   G.world.add(m);
@@ -323,6 +356,12 @@ export function updateProjectiles(dt) {
       pr.alive = false;
       burst(pos.x - pr.dx * 0.1, pos.y, pos.z - pr.dz * 0.1, pr.color, 5, 3, 0.05, 0.25);
       if (pr.explode) enemyExplosion(pos.x - pr.dx * 0.3, pos.z - pr.dz * 0.3, pr.explode.r, pr.explode.dmg, pr.color);
+      if (pr.blast) explosion(pos.x - pr.dx * 0.3, pos.z - pr.dz * 0.3, pr.blast.r, pr.blast.mult, { color: pr.color, burn: pr.blast.burn });
+      continue;
+    }
+    if (pr.from === 'enemy' && G.barriers.length && hitsBarrier(pos.x, pos.z)) {
+      pr.alive = false;
+      burst(pos.x, pos.y, pos.z, 0xffd23d, 8, 3, 0.05, 0.3);
       continue;
     }
     if (pr.from === 'player') {
@@ -341,12 +380,17 @@ export function updateProjectiles(dt) {
       }
       if (!pr.alive) continue;
       for (const e of G.enemies) {
-        if (!e.alive || pr.hit.has(e)) continue;
+        if (!e.alive || pr.hit.has(e) || e.invulnerable) continue;
         const r = pr.r + e.r;
         if ((e.x - pos.x) ** 2 + (e.z - pos.z) ** 2 < r * r) {
           pr.hit.add(e);
-          hitEnemy(e, pr.mult, { forceCrit: pr.forceCrit, knock: pr.knock ?? 0.8, kx: pos.x - pr.dx, kz: pos.z - pr.dz });
+          hitEnemy(e, pr.mult, { forceCrit: pr.forceCrit, knock: pr.knock ?? 0.8, kx: pos.x - pr.dx, kz: pos.z - pr.dz, slow: pr.slow, burn: pr.burn, freeze: pr.freeze, quiet: pr.quiet });
           if (pr.onHit) pr.onHit(e, pr);
+          if (pr.blast) {
+            pr.alive = false;
+            explosion(pos.x, pos.z, pr.blast.r, pr.blast.mult, { color: pr.color, burn: pr.blast.burn });
+            break;
+          }
           if (pr.pierce-- <= 0) {
             pr.alive = false;
             break;
@@ -371,9 +415,10 @@ export function updateProjectiles(dt) {
         }
       }
     }
-    if (pr.life <= 0) {
+    if (pr.life <= 0 && pr.alive) {
       pr.alive = false;
       if (pr.explode) enemyExplosion(pos.x, pos.z, pr.explode.r, pr.explode.dmg, pr.color);
+      if (pr.blast) explosion(pos.x, pos.z, pr.blast.r, pr.blast.mult, { color: pr.color, burn: pr.blast.burn });
     }
   }
   for (let i = G.projectiles.length - 1; i >= 0; i--) {
@@ -431,14 +476,15 @@ export function updateTurrets(dt) {
 
 // ---------------- Zonas de perigo (ácido da Matriarca) ----------------
 const hazardGeo = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
-export function spawnHazard(x, z, r, dur, dps) {
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x39ff14).multiplyScalar(0.9), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
+export function spawnHazard(x, z, r, dur, dps, o = {}) {
+  const color = o.color ?? 0x39ff14;
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.9), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
   const m = new THREE.Mesh(hazardGeo, mat);
   m.position.set(x, 0.03, z);
   m.scale.setScalar(r);
   G.world.add(m);
-  burst(x, 0.3, z, 0x39ff14, 14, 4, 0.07, 0.4);
-  G.hazards.push({ x, z, r, t: dur, dur, dps, tick: 0, mesh: m, mat });
+  burst(x, 0.3, z, color, 14, 4, 0.07, 0.4);
+  G.hazards.push({ x, z, r, t: dur, dur, dps, tick: 0, mesh: m, mat, color, faction: o.faction || 'enemy', mult: o.mult || 0, burn: o.burn, slow: o.slow, maxOp: o.opacity ?? 0.45 });
 }
 
 export function updateHazards(dt) {
@@ -447,11 +493,16 @@ export function updateHazards(dt) {
     const h = G.hazards[i];
     h.t -= dt;
     h.tick -= dt;
-    h.mat.opacity = Math.min(0.45, h.t * 0.6) * (0.8 + Math.sin(G.t * 6 + i) * 0.2);
-    if (Math.random() < dt * 8) burst(h.x + (Math.random() - 0.5) * h.r * 1.4, 0.1, h.z + (Math.random() - 0.5) * h.r * 1.4, 0x39ff14, 1, 0.5, 0.05, 0.6, { grav: -1.5 });
-    if (p.alive && h.tick <= 0 && Math.hypot(p.x - h.x, p.z - h.z) < h.r + p.r * 0.5) {
-      h.tick = 0.5;
-      damagePlayer(h.dps * 0.5);
+    h.mat.opacity = Math.min(h.maxOp, h.t * 0.6) * (0.8 + Math.sin(G.t * 6 + i) * 0.2);
+    if (Math.random() < dt * 8) burst(h.x + (Math.random() - 0.5) * h.r * 1.4, 0.1, h.z + (Math.random() - 0.5) * h.r * 1.4, h.color, 1, 0.5, 0.05, 0.6, { grav: -1.5 });
+    if (h.tick <= 0) {
+      if (h.faction === 'player') {
+        h.tick = 0.5;
+        for (const e of enemiesInRadius(h.x, h.z, h.r)) hitEnemy(e, h.mult, { noProc: true, burn: h.burn, slow: h.slow, kx: h.x, kz: h.z });
+      } else if (p.alive && Math.hypot(p.x - h.x, p.z - h.z) < h.r + p.r * 0.5) {
+        h.tick = 0.5;
+        damagePlayer(h.dps * 0.5);
+      }
     }
     if (h.t <= 0) {
       h.mesh.parent && h.mesh.parent.remove(h.mesh);
@@ -459,4 +510,75 @@ export function updateHazards(dt) {
       G.hazards.splice(i, 1);
     }
   }
+}
+
+// ---------------- Barreiras de energia (Colosso) ----------------
+const barrierGeo = new THREE.PlaneGeometry(1, 1.6).translate(0, 0.8, 0);
+export function spawnBarrier(x, z, dx, dz, half, dur) {
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(gk(1.4)), transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const m = new THREE.Mesh(barrierGeo, mat);
+  m.scale.x = half * 2;
+  m.position.set(x, 0, z);
+  m.rotation.y = -Math.atan2(dz, dx);
+  G.world.add(m);
+  ringFx(x, z, half, 0xffd23d, 0.35);
+  G.barriers.push({ x, z, dx, dz, half, t: dur, mesh: m, mat });
+}
+
+export function updateBarriers(dt) {
+  for (let i = G.barriers.length - 1; i >= 0; i--) {
+    const b = G.barriers[i];
+    b.t -= dt;
+    b.mat.opacity = (b.t < 1.5 ? (Math.floor(b.t * 8) % 2 ? 0.15 : 0.35) : 0.3) + Math.sin(G.t * 8) * 0.05;
+    if (b.t <= 0) {
+      b.mesh.parent && b.mesh.parent.remove(b.mesh);
+      b.mat.dispose();
+      G.barriers.splice(i, 1);
+    }
+  }
+}
+
+function hitsBarrier(x, z) {
+  for (const b of G.barriers) {
+    const rx = x - b.x;
+    const rz = z - b.z;
+    const along = rx * b.dx + rz * b.dz;
+    const across = Math.abs(-rx * b.dz + rz * b.dx);
+    if (Math.abs(along) <= b.half && across < 0.3) return b;
+  }
+  return null;
+}
+
+// ---------------- Isca holográfica (Geada) ----------------
+export function spawnDecoy(x, z, dur, onEnd) {
+  if (G.decoy) G.decoy.t = 0;
+  const model = makeDecoyModel();
+  model.position.set(x, 0, z);
+  G.world.add(model);
+  ringFx(x, z, 1.5, 0x8ab4ff, 0.4);
+  G.decoy = { x, z, t: dur, model, onEnd, r: 0.4 };
+}
+
+export function updateDecoy(dt) {
+  const dc = G.decoy;
+  if (!dc) return;
+  dc.t -= dt;
+  dc.model.rotation.y += dt * 2;
+  dc.model.children.forEach((c) => c.material && (c.material.opacity = 0.35 + Math.sin(G.t * 10) * 0.15));
+  if (dc.t <= 0) {
+    dc.model.parent && dc.model.parent.remove(dc.model);
+    G.decoy = null;
+    if (dc.onEnd) dc.onEnd(dc.x, dc.z);
+  }
+}
+
+function makeDecoyModel() {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x8ab4ff).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 1.2, 8), mat);
+  body.position.y = 0.6;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), mat);
+  head.position.y = 1.35;
+  g.add(body, head);
+  return g;
 }

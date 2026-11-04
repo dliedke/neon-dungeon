@@ -1,14 +1,15 @@
 // Tipos de inimigos, elites, IA e o chefe ARC-9.
 import * as THREE from 'three';
-import { G } from './state.js';
-import { rr, pick, chance, weightedPick } from './utils.js';
+import { G, gk } from './state.js';
+import { rr, pick, chance, weightedPick, shuffle } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
-import { resolveCircle, lineOfSight, flowDir, isWalkable } from './dungeon.js';
-import { spawnProjectile, damagePlayer, after, enemyExplosion } from './combat.js';
-import { burst, ringFx, telegraphFx, lineTelegraph, floatText } from './fx.js';
+import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile } from './dungeon.js';
+import { spawnProjectile, damagePlayer, after, enemyExplosion, damageEnemy } from './combat.js';
+import { burst, ringFx, telegraphFx, lineTelegraph, floatText, slashFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
+import { groundEffect } from './biomes.js';
 import { spawnChest } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx } from './fx.js';
@@ -16,7 +17,7 @@ import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
   punk: { name: L('Punk de Rua', 'Street Punk'), hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
-  drone: { name: L('Drone Vigia', 'Watcher Drone'), hp: 18, dmg: 5, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
+  drone: { name: L('Drone Vigia', 'Watcher Drone'), fly: true, hp: 18, dmg: 5, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
   soldier: { name: L('Agente Corporativo', 'Corporate Agent'), hp: 42, dmg: 5, speed: 3.0, r: 0.34, h: 1.4, xp: 12, minFloor: 2, weight: 7, ai: 'ranged', range: 9, keep: [5, 8], atkCd: 2.4, burst: 3, proj: { speed: 12, color: 0xffaa00, size: 0.12 }, blood: 0xff2244 },
   bomber: { name: L('Aranha-Bomba', 'Bomb Spider'), hp: 14, dmg: 16, speed: 5.3, r: 0.3, h: 0.7, xp: 6, minFloor: 2, weight: 5, ai: 'bomber', blood: 0xff3300 },
   sentry: { name: L('Torreta de Segurança', 'Sentry Turret'), hp: 50, dmg: 5, speed: 0, r: 0.42, h: 1.1, xp: 14, minFloor: 2, weight: 2, ai: 'sentry', range: 9, atkCd: 2.3, burst: 4, proj: { speed: 10, color: 0xff3355, size: 0.13 }, heavy: true, static: true, solo: true, blood: 0xff3355 },
@@ -24,13 +25,19 @@ export const ETYPES = {
   brute: { name: L('Mech Brutamontes', 'Brute Mech'), hp: 160, dmg: 18, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, solo: true, blood: 0xffc400 },
   sniper: { name: L('Franco-atirador', 'Sniper'), hp: 26, dmg: 18, speed: 2.8, r: 0.34, h: 1.4, xp: 14, minFloor: 4, weight: 3, ai: 'sniper', range: 14, keep: [8, 12], atkCd: 3.6, blood: 0xff2244 },
   ninja: { name: L('Assassino Holográfico', 'Holo Assassin'), hp: 34, dmg: 10, speed: 5.4, r: 0.32, h: 1.4, xp: 18, minFloor: 5, weight: 3, ai: 'melee', blink: true, range: 0.9, atkCd: 0.85, blood: 0xb36bff },
-  kamikaze: { name: L('Drone Kamikaze', 'Kamikaze Drone'), hp: 12, dmg: 18, speed: 3.8, r: 0.3, h: 1.3, xp: 6, minFloor: 3, weight: 4, ai: 'kamikaze', blood: 0xff8800 },
+  kamikaze: { name: L('Drone Kamikaze', 'Kamikaze Drone'), fly: true, hp: 12, dmg: 18, speed: 3.8, r: 0.3, h: 1.3, xp: 6, minFloor: 3, weight: 4, ai: 'kamikaze', blood: 0xff8800 },
   illusionist: { name: L('Ilusionista', 'Illusionist'), hp: 40, dmg: 9, speed: 3.0, r: 0.34, h: 1.5, xp: 22, minFloor: 4, weight: 3, ai: 'illusionist', range: 10, keep: [6, 9], atkCd: 2.1, solo: true, blood: 0xd04dff },
   tank: { name: L('Tanque Lança-mísseis', 'Missile Tank'), hp: 150, dmg: 14, speed: 1.6, r: 0.72, h: 1.4, xp: 45, minFloor: 4, weight: 2, ai: 'tank', range: 13, keep: [6, 11], atkCd: 4.2, heavy: true, solo: true, blood: 0xffaa00 },
-  medic: { name: L('Drone Médico', 'Medic Drone'), hp: 20, dmg: 0, speed: 3.8, r: 0.34, h: 1.5, xp: 12, minFloor: 2, weight: 0, ai: 'medic', blood: 0x39ff88 },
+  medic: { name: L('Drone Médico', 'Medic Drone'), fly: true, hp: 20, dmg: 0, speed: 3.8, r: 0.34, h: 1.5, xp: 12, minFloor: 2, weight: 0, ai: 'medic', blood: 0x39ff88 },
   barrel: { name: L('Barril Explosivo', 'Explosive Barrel'), hp: 1, dmg: 14, speed: 0, r: 0.35, h: 0.9, xp: 0, minFloor: 1, weight: 0, ai: 'inert', inert: true, static: true, blood: 0xff7a1a },
-  boss: { name: 'Executor ARC-9', hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
-  queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
+  scrap: { name: L('Rei do Ferro-Velho', 'Scrap King'), boss: true, hp: 620, dmg: 13, speed: 2.0, r: 1.3, h: 3.2, xp: 550, minFloor: 99, weight: 0, ai: 'scrap', heavy: true, blood: 0xffaa00 },
+  reaper: { name: L('Ceifadora Fantasma', 'Phantom Reaper'), boss: true, hp: 470, dmg: 12, speed: 4.0, r: 0.8, h: 2.8, xp: 550, minFloor: 99, weight: 0, ai: 'reaper', heavy: true, blood: 0xb36bff },
+  gunship: { name: L('Nave de Ataque', 'Assault Gunship'), boss: true, fly: true, hp: 540, dmg: 10, speed: 4.5, r: 1.4, h: 3.4, xp: 600, minFloor: 99, weight: 0, ai: 'gunship', heavy: true, blood: 0x00f0ff },
+  hacker: { name: L('Hacker Supremo', 'Grand Hacker'), boss: true, hp: 430, dmg: 12, speed: 3.2, r: 0.6, h: 2.2, xp: 600, minFloor: 99, weight: 0, ai: 'hackerboss', heavy: true, blood: 0x39ff14 },
+  omega: { name: L('Núcleo OMEGA', 'OMEGA Core'), boss: true, hp: 650, dmg: 13, speed: 0, r: 1.5, h: 3.4, xp: 700, minFloor: 99, weight: 0, ai: 'omega', heavy: true, static: true, blood: 0xff2244 },
+  pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
+  boss: { name: 'Executor ARC-9', boss: true, hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
+  queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
 };
 
 const ELITE = {
@@ -71,7 +78,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     speed: T.speed * rr(0.92, 1.08),
     alive: true, atkT: rr(0.6, 1.6), aggro: false, kx: 0, kz: 0, stun: 0, flash: 0,
     model, facing: rr(0, Math.PI * 2), phase: rr(0, 6), hpShow: 0,
-    elite: eliteKey, boss: type === 'boss' || type === 'queen', heavy: !!T.heavy, inert: !!T.inert, static: !!T.static,
+    elite: eliteKey, boss: !!T.boss && !o.decoy, heavy: !!T.heavy, inert: !!T.inert, static: !!T.static,
     height: T.h * (eliteKey ? 1.2 : 1), xp: Math.round(T.xp * (1 + 0.3 * (G.floor - 1))),
     losT: rr(0, 0.3), los: false, strafe: chance(0.5) ? 1 : -1, strafeT: rr(1, 3),
     state: 'idle', bloodColor: T.blood, atkCdMult: 1, name: T.name, spawnX: x, spawnZ: z,
@@ -96,7 +103,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.aggro = false;
   }
   if (T.ai === 'sniper') {
-    e.laser = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(2), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
+    e.laser = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(gk(2)), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
     e.laser.visible = false;
     G.world.add(e.laser);
   }
@@ -132,6 +139,10 @@ export function onEnemyKilled(e) {
     }
   }
   if (e.decoy) burst(e.x, 0.9, e.z, 0xd04dff, 20, 4, 0.07, 0.45);
+  if (e.pylons) for (const py of e.pylons) if (py.alive) killQuiet(py);
+  if (e.beams) for (const b of e.beams) b.parent && b.parent.remove(b);
+  if (e.zones) for (const z of e.zones) z.mesh.parent && z.mesh.parent.remove(z.mesh);
+  if (e.walls) for (const w of e.walls) w.group.parent && w.group.parent.remove(w.group);
   if (e.laser) {
     e.laser.parent && e.laser.parent.remove(e.laser);
     e.laser.material.dispose();
@@ -182,15 +193,31 @@ export function updateEnemies(dt, cam) {
   let anyAggro = false;
   for (const e of G.enemies) {
     if (!e.alive || e.inert) continue;
-    const dx = p.x - e.x;
-    const dz = p.z - e.z;
+    // a isca holográfica atrai os inimigos próximos
+    const tgt = G.decoy && Math.hypot(G.decoy.x - e.x, G.decoy.z - e.z) < 14 ? G.decoy : p;
+    const dx = tgt.x - e.x;
+    const dz = tgt.z - e.z;
     const dist = Math.hypot(dx, dz);
-    if (dist > 30 && !e.boss) continue;
+    if (Math.hypot(p.x - e.x, p.z - e.z) > 30 && !e.boss) continue;
+
+    // queimadura / lentidão / congelamento
+    if (e.burnT > 0) {
+      e.burnT -= dt;
+      e.burnTick = (e.burnTick || 0) - dt;
+      if (Math.random() < dt * 12) burst(e.x, e.height * rr(0.3, 1), e.z, 0xff6a00, 1, 1, 0.07, 0.4, { grav: -3 });
+      if (e.burnTick <= 0) {
+        e.burnTick = 0.5;
+        damageEnemy(e, e.burnDps * 0.5, false, { dot: true });
+        if (!e.alive) continue;
+      }
+    }
+    if (e.slowT > 0) e.slowT -= dt;
+    if (e.frozenT > 0) e.frozenT -= dt;
 
     e.losT -= dt;
     if (e.losT <= 0) {
       e.losT = 0.25;
-      e.los = dist < 16 && lineOfSight(d, e.x, e.z, p.x, p.z);
+      e.los = dist < 16 && lineOfSight(d, e.x, e.z, tgt.x, tgt.z);
       if (!e.aggro && e.los && dist < (e.boss ? 9 : 10)) {
         e.aggro = true;
         e.alerted = true;
@@ -209,7 +236,7 @@ export function updateEnemies(dt, cam) {
 
     let mvx = 0;
     let mvz = 0;
-    let speed = e.speed;
+    let speed = e.speed * (e.slowT > 0 ? 0.5 : 1);
     if (e.stun > 0) {
       e.stun -= dt;
       if (Math.random() < 0.3) burst(e.x, e.height, e.z, 0x39ff14, 1, 1.5, 0.04, 0.3, { grav: 0 });
@@ -243,7 +270,7 @@ export function updateEnemies(dt, cam) {
             speed = 0;
             if (e.windup <= 0) {
               e.swing = 1;
-              if (dist < e.T.range + e.r + p.r + 0.35) meleeHit(e, e.dmg);
+              if (tgt === p && dist < e.T.range + e.r + p.r + 0.35) meleeHit(e, e.dmg);
               e.atkT = e.T.atkCd * e.atkCdMult;
             }
           } else if (dist < e.T.range + e.r + p.r) {
@@ -281,9 +308,7 @@ export function updateEnemies(dt, cam) {
             for (let k = 0; k < n; k++) {
               after(k * 0.13, () => {
                 if (!e.alive) return;
-                const ddx = G.player.x - e.x;
-                const ddz = G.player.z - e.z;
-                enemyShoot(e, ddx, ddz, rr(-0.06, 0.06));
+                enemyShoot(e, tgt.x - e.x, tgt.z - e.z, rr(-0.06, 0.06));
               });
             }
             e.swing = 1;
@@ -322,8 +347,8 @@ export function updateEnemies(dt, cam) {
             e.aimT -= dt;
             speed = 0;
             if (e.aimT > 0.3) {
-              e.lockX = p.x;
-              e.lockZ = p.z;
+              e.lockX = tgt.x;
+              e.lockZ = tgt.z;
             }
             updateLaser(e, e.lockX, e.lockZ, 1 - e.aimT / 1.3);
             if (e.aimT <= 0) {
@@ -346,8 +371,8 @@ export function updateEnemies(dt, cam) {
             }
             if (e.los && dist < e.T.range && e.atkT <= 0) {
               e.aimT = 1.3;
-              e.lockX = p.x;
-              e.lockZ = p.z;
+              e.lockX = tgt.x;
+              e.lockZ = tgt.z;
               e.laser.visible = true;
               sfx.telegraph();
             }
@@ -471,7 +496,7 @@ export function updateEnemies(dt, cam) {
               after(0.35 + k * 0.35, () => {
                 if (!e.alive) return;
                 const side = k ? 0.35 : -0.35;
-                const a = Math.atan2(G.player.z - e.z, G.player.x - e.x) + (k ? 0.5 : -0.5);
+                const a = Math.atan2(tgt.z - e.z, tgt.x - e.x) + (k ? 0.5 : -0.5);
                 const px = e.x - Math.sin(a) * side;
                 const pz = e.z + Math.cos(a) * side;
                 spawnProjectile({ from: 'enemy', x: px, z: pz, y: 1.25, dx: Math.cos(a), dz: Math.sin(a), speed: 6.5, life: 4, dmg: e.dmg, color: 0xffaa00, size: 0.16, r: 0.24, homing: 1.7, shootable: true, explode: { r: 1.6, dmg: e.dmg } });
@@ -491,7 +516,7 @@ export function updateEnemies(dt, cam) {
             for (let k = 0; k < e.T.burst; k++) {
               after(k * 0.15, () => {
                 if (!e.alive) return;
-                enemyShoot(e, G.player.x - e.x, G.player.z - e.z, rr(-0.1, 0.1));
+                enemyShoot(e, tgt.x - e.x, tgt.z - e.z, rr(-0.1, 0.1));
               });
             }
           }
@@ -541,6 +566,19 @@ export function updateEnemies(dt, cam) {
           e.faceZ = hurt ? hurt.z - e.z : uz;
           break;
         }
+        case 'scrap':
+        case 'reaper':
+        case 'gunship':
+        case 'hackerboss':
+        case 'omega':
+        case 'pylon': {
+          const fn = { scrap: updateScrap, reaper: updateReaper, gunship: updateGunship, hackerboss: updateHackerBoss, omega: updateOmega, pylon: updatePylon }[e.T.ai];
+          const r = fn(e, dt, dist, ux, uz);
+          mvx = r.x;
+          mvz = r.z;
+          speed = r.speed;
+          break;
+        }
         case 'queen': {
           const r = updateQueen(e, dt, dist, ux, uz);
           mvx = r.x;
@@ -584,8 +622,11 @@ export function updateEnemies(dt, cam) {
     }
 
     // movimento
-    e.x += (mvx * speed + e.kx) * dt;
-    e.z += (mvz * speed + e.kz) * dt;
+    const ge = !e.T.fly && !e.static ? groundEffect(d, e.x, e.z) : null;
+    if (ge && ge.sludge) speed *= 0.75;
+    const push = ge && ge.push ? ge.push : { x: 0, z: 0 };
+    e.x += (mvx * speed + e.kx + push.x) * dt;
+    e.z += (mvz * speed + e.kz + push.z) * dt;
     const kd = Math.max(0, 1 - dt * 8);
     e.kx *= kd;
     e.kz *= kd;
@@ -675,6 +716,7 @@ export function updateEnemies(dt, cam) {
       if (e.T.ai === 'ranged' || e.T.ai === 'sniper') m.armR.rotation.x = -1.4;
       if (e.T.ai === 'sniper') m.armL.rotation.x = -1.3;
       if (m.orbs) m.orbs.rotation.y += dt * (e.decoy ? 2.6 : 2);
+      if (m.screens) m.screens.rotation.y += dt * 0.8;
       if (m.holo) {
         // assassino holográfico: tremula e fica quase invisível às vezes
         const op = 0.35 + Math.abs(Math.sin(G.t * 3 + e.phase)) * 0.45 + (Math.random() < 0.05 ? 0.3 : 0);
@@ -686,10 +728,22 @@ export function updateEnemies(dt, cam) {
     } else if (m.kind === 'sentry') {
       m.head.rotation.y = e.facing ? 0 : 0;
       m.head.position.y = 0.72 + (e.atkT > e.T.atkCd - 0.7 ? Math.sin(G.t * 50) * 0.02 : 0);
+    } else if (m.kind === 'bigboss') {
+      if (m.rotors) m.rotors.forEach((r) => (r.rotation.y += dt * 25));
+      if (m.float) m.body.position.y = 0.2 + Math.sin(G.t * 2.5) * 0.15;
+      if (m.rings) m.rings.forEach((r, k) => (r.rotation.y += dt * (0.6 + k * 0.4) * (k % 2 ? -1 : 1)));
+      if (m.shield) {
+        m.shield.visible = !!e.invulnerable;
+        m.shieldMat.opacity = 0.14 + Math.sin(G.t * 4) * 0.05;
+        m.coreMat.color.set(e.invulnerable ? 0x8a2244 : 0xff2244).multiplyScalar(gk(e.invulnerable ? 1.2 : 2.4));
+      }
+    } else if (m.kind === 'pylon') {
+      m.top.rotation.y += dt * 2;
+      m.top.position.y = 2.2 + Math.sin(G.t * 3 + e.phase) * 0.1;
     } else if (m.kind === 'queen') {
       m.legs.forEach((l, i) => (l.rotation.x = Math.sin(e.phase * 1.4 + i * 1.3) * 0.35));
       m.abdomen.scale.setScalar(1 + Math.sin(G.t * 3) * 0.04);
-      m.eyes.material.color.set(e.phase2 ? 0xff2244 : 0x39ff14).multiplyScalar(2.6);
+      m.eyes.material.color.set(e.phase2 ? 0xff2244 : 0x39ff14).multiplyScalar(gk(2.6));
     } else if (m.kind === 'drone') {
       m.body.position.y = 1.15 + Math.sin(G.t * 3 + e.phase) * 0.12;
       m.ring.rotation.z += dt * 4;
@@ -702,7 +756,13 @@ export function updateEnemies(dt, cam) {
     }
     // flash ao tomar dano
     const fl = e.flash > 0 ? 1 : 0;
-    for (const mt of m.mats) mt.emissive.setScalar(fl * 0.9);
+    for (const mt of m.mats) {
+      if (fl) mt.emissive.setScalar(0.9);
+      else if (e.frozenT > 0) mt.emissive.setRGB(0.15, 0.35, 0.7);
+      else if (e.slowT > 0) mt.emissive.setRGB(0.05, 0.12, 0.3);
+      else if (e.burnT > 0) mt.emissive.setRGB(0.35 + Math.sin(G.t * 20) * 0.1, 0.1, 0);
+      else mt.emissive.setScalar(0);
+    }
     // barra de vida
     if (e.bar) {
       const show = !e.boss && e.hpShow > 0 && e.hp < e.maxHp;
@@ -722,11 +782,22 @@ export function updateEnemies(dt, cam) {
 }
 
 // ---------------- Chefe ----------------
+const BOSS_SUB = {
+  boss: L('Unidade de execução corporativa', 'Corporate execution unit'),
+  queen: L('Mãe de todas as aranhas-bomba', 'Mother of all bomb spiders'),
+  scrap: L('Cuidado com o ímã e as ondas de choque — pule ou desvie delas', 'Beware the magnet and the shockwaves — dodge through them'),
+  reaper: L('Ela some e reaparece nas suas costas', 'She vanishes and reappears behind you'),
+  gunship: L('Fica vulnerável quando pousa para recarregar', 'Vulnerable when it lands to reload'),
+  hacker: L('Fique fora dos quadrados vermelhos', 'Stay off the red tiles'),
+  omega: L('Destrua os pilares para derrubar o escudo', 'Destroy the pylons to drop its shield'),
+};
+export const BOSS_ORDER = ['boss', 'queen', 'scrap', 'reaper', 'gunship', 'hacker', 'omega'];
+
 function startBoss(e) {
   G.boss = e;
   bossBar(e);
   sfx.boss();
-  banner(e.name.toUpperCase(), e.type === 'queen' ? L('Mãe de todas as aranhas-bomba', 'Mother of all bomb spiders') : L('Unidade de execução corporativa', 'Corporate execution unit'));
+  banner(e.name.toUpperCase(), BOSS_SUB[e.type] || '');
   G.shake = 0.4;
 }
 
@@ -915,15 +986,32 @@ export function populateFloor(d, floor, boss) {
   const eliteChance = floor <= 1 ? 0 : Math.min(0.3, 0.04 + floor * 0.025);
   const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
   const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
+  // orçamento de inimigos por andar: mapas abertos não ficam lotados
+  const budget = Math.min(95, Math.round((12 + floor * 7) * D.count));
+  const quotas = new Map();
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
     if (boss && r === d.exitRoom) continue;
+    if (r.safe) continue;
     if (chance(emptyChance)) continue;
-    const area = r.w * r.h;
-    const packs = Math.max(1, Math.round((area / perPack) * D.count));
-    for (let k = 0; k < packs; k++) {
-      const cx = r.x + rr(1.5, r.w - 1.5);
-      const cz = r.y + rr(1.5, r.h - 1.5);
+    quotas.set(r, Math.max(1, Math.round(((r.w * r.h) / perPack) * D.count)));
+  }
+  // distribui os grupos em rodadas para espalhar pelo mapa
+  const slots = [];
+  while (quotas.size) {
+    for (const [r, q] of shuffle([...quotas])) {
+      slots.push(r);
+      if (q <= 1) quotas.delete(r);
+      else quotas.set(r, q - 1);
+    }
+  }
+  const startCount = G.enemies.length;
+  for (const r of slots) {
+    if (G.enemies.length - startCount >= budget) break;
+    {
+      const c0 = randomFloorInRoom(d, r, 1);
+      const cx = c0.x;
+      const cz = c0.z;
       const type = pickEnemyType(floor);
       const base = ETYPES[type].solo ? 1 : type === 'bomber' || type === 'kamikaze' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 2.2 + floor / 2.5));
       const n = Math.max(1, Math.round(base * D.count));
@@ -971,9 +1059,12 @@ export function populateFloor(d, floor, boss) {
     spawnChest(pt.x, pt.z);
   }
   if (boss) {
-    const kind = Math.round(floor / 3) % 2 === 1 ? 'boss' : 'queen';
-    const e = spawnEnemy(kind, d.exit.x, d.exit.z - 2.5 < d.exitRoom.y + 1 ? d.exit.z : d.exit.z - 2.5);
-    if (kind === 'boss') e.name = floor >= 9 ? `Executor ARC-${9 + Math.floor(floor / 6)}` : 'Executor ARC-9';
+    const idx = Math.round(floor / 3) - 1;
+    const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
+    const cycle = Math.floor(idx / BOSS_ORDER.length);
+    const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
+    if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
+    else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;
     G.dungeon.meshes.exit.locked = true;
   }
 }
@@ -1135,4 +1226,727 @@ function updateQueen(e, dt, dist, ux, uz) {
       break;
   }
   return out;
+}
+
+// =====================================================================
+// Chefes novos
+// =====================================================================
+function killQuiet(o) {
+  o.alive = false;
+  o.selfDestruct = true;
+  burst(o.x, 1, o.z, o.bloodColor, 16, 4, 0.07, 0.4);
+  onEnemyKilled(o);
+}
+
+function arenaCenter() {
+  const d = G.dungeon;
+  return d.arena ? { x: d.arena.cx, z: d.arena.cz } : { x: d.exit.x, z: d.exit.z };
+}
+
+function enterPhase2(e, msg, color) {
+  e.phase2 = true;
+  e.speed *= 1.2;
+  toast(msg, 'warn');
+  sfx.boss();
+  ringFx(e.x, e.z, 5, color, 0.6);
+  G.shake = 0.4;
+  e.bstate = 'walk';
+  e.bt = 0.6;
+}
+
+function minions(type, n, x, z, cap = 8) {
+  const alive = G.enemies.filter((o) => o.alive && !o.boss && !o.inert && o.type !== 'pylon').length;
+  for (let k = 0; k < Math.max(0, Math.min(n, cap - alive)); k++) {
+    const a = rr(0, Math.PI * 2);
+    let mx = x + Math.cos(a) * 2.2;
+    let mz = z + Math.sin(a) * 2.2;
+    if (!isWalkable(G.dungeon, mx, mz)) {
+      mx = x;
+      mz = z;
+    }
+    const m = spawnEnemy(type, mx, mz);
+    m.aggro = true;
+    m.xp = Math.round(m.xp * 0.3);
+    burst(mx, 0.8, mz, m.bloodColor, 10, 3, 0.06, 0.4);
+  }
+}
+
+function chooseAttack(e, opts) {
+  let a = pick(opts);
+  if (a === e.lastAtk) a = pick(opts);
+  e.lastAtk = a;
+  e.wave = 0;
+  return a;
+}
+
+// ---------------- Rei do Ferro-Velho ----------------
+function updateScrap(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  e.faceX = ux;
+  e.faceZ = uz;
+  if (!e.phase2 && e.hp < e.maxHp * 0.5) enterPhase2(e, L('O REI DO FERRO-VELHO ESTÁ FURIOSO!', 'THE SCRAP KING IS ENRAGED!'), 0xffaa00);
+  e.bt -= dt;
+  // ondas de choque: atingem quem estiver na borda do anel (dá para atravessar com esquiva/salto)
+  if (e.waves) {
+    for (const w of e.waves) {
+      w.r += dt * 6.5;
+      if (!w.hit && p.alive && p.invuln <= 0 && !p.leap && Math.abs(Math.hypot(p.x - w.x, p.z - w.z) - w.r) < 0.45) {
+        w.hit = true;
+        damagePlayer(e.dmg * 1.3);
+      }
+    }
+    e.waves = e.waves.filter((w) => w.r < 11);
+  }
+  switch (e.bstate) {
+    case 'intro':
+      if (e.bt <= 0) {
+        e.bstate = 'walk';
+        e.bt = 1;
+      }
+      break;
+    case 'walk':
+      if (dist > 2.5) {
+        out.x = ux;
+        out.z = uz;
+        out.speed = e.speed;
+      }
+      if (e.bt <= 0) {
+        const a = chooseAttack(e, e.phase2 ? ['throw', 'magnet', 'stomp', 'junk'] : ['throw', 'magnet', 'stomp']);
+        if (a === 'throw') {
+          e.bstate = 'throw';
+          e.bt = 0.4;
+        } else if (a === 'magnet') {
+          e.bstate = 'magnet';
+          e.bt = 1.8;
+          toast(L('O ímã está puxando você!', 'The magnet is pulling you in!'), 'warn', 'mag');
+          sfx.telegraph();
+        } else if (a === 'stomp') {
+          e.bstate = 'stomp';
+          e.bt = 0.9;
+          telegraphFx(e.x, e.z, 2.4, 0.9, 0xffaa00);
+          sfx.telegraph();
+        } else {
+          e.bstate = 'junk';
+          e.bt = 0.5;
+        }
+      }
+      break;
+    case 'throw':
+      if (e.bt <= 0) {
+        const n = e.phase2 ? 5 : 3;
+        for (let k = 0; k < n; k++) {
+          const tx = p.x + (k ? rr(-2.8, 2.8) : 0);
+          const tz = p.z + (k ? rr(-2.8, 2.8) : 0);
+          if (!isWalkable(G.dungeon, tx, tz)) continue;
+          telegraphFx(tx, tz, 1.6, 0.9, 0xffaa00);
+          lob({ x: e.x, z: e.z, tx, tz, time: 0.9, color: 0xffaa00, onLand: (x, z) => enemyExplosion(x, z, 1.6, e.dmg, 0xffaa00) });
+        }
+        sfx.enemyShot();
+        e.wave++;
+        e.bt = 0.75;
+        if (e.wave >= 2) toWalk(e);
+      }
+      break;
+    case 'magnet':
+      if (p.alive && dist < 14 && p.invuln <= 0 && !p.dash && !p.leap) {
+        p.x -= ux * 3.6 * dt;
+        p.z -= uz * 3.6 * dt;
+        resolveCircle(G.dungeon, p);
+      }
+      if (Math.random() < 0.8) {
+        const k = Math.random();
+        burst(p.x + (e.x - p.x) * k, 1.2, p.z + (e.z - p.z) * k, Math.random() < 0.5 ? 0xff2244 : 0x2b8cff, 1, 0.5, 0.06, 0.3, { grav: 0 });
+      }
+      e.model.mag.scale.setScalar(1 + Math.sin(G.t * 30) * 0.12);
+      if (e.bt <= 0) {
+        e.model.mag.scale.setScalar(1);
+        e.bstate = 'stomp';
+        e.bt = 0.55;
+        telegraphFx(e.x, e.z, 2.4, 0.55, 0xffaa00);
+      }
+      break;
+    case 'stomp':
+      if (e.bt <= 0) {
+        if (dist < 2.4 + p.r) damagePlayer(e.dmg * 1.6);
+        const wave = () => {
+          if (!e.alive) return;
+          (e.waves = e.waves || []).push({ x: e.x, z: e.z, r: 1, hit: false });
+          ringFx(e.x, e.z, 11, 0xffaa00, (11 - 1) / 6.5, { from: 1, linear: true, opacity: 1 });
+        };
+        wave();
+        if (e.phase2) after(0.6, wave);
+        burst(e.x, 0.3, e.z, 0xffaa00, 40, 8, 0.09, 0.6, { up: 0.4 });
+        sfx.explode();
+        G.shake = 0.45;
+        toWalk(e);
+      }
+      break;
+    case 'junk':
+      if (e.bt <= 0) {
+        minions(pick(['punk', 'shield', 'bomber']), 3, e.x, e.z);
+        toWalk(e);
+      }
+      break;
+  }
+  return out;
+}
+
+// ---------------- Ceifadora Fantasma ----------------
+function updateReaper(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  e.faceX = ux;
+  e.faceZ = uz;
+  if (!e.decoy && !e.phase2 && e.hp < e.maxHp * 0.5) {
+    enterPhase2(e, L('A CEIFADORA SE DIVIDIU!', 'THE REAPER SPLIT APART!'), 0xb36bff);
+    e.decoys = [];
+    for (let k = 0; k < 2; k++) {
+      const a = rr(0, Math.PI * 2);
+      let x = e.x + Math.cos(a) * 3;
+      let z = e.z + Math.sin(a) * 3;
+      if (!isWalkable(G.dungeon, x, z)) {
+        x = e.x;
+        z = e.z;
+      }
+      const c = spawnEnemy('reaper', x, z, { decoy: true });
+      c.bstate = 'walk';
+      c.bt = rr(0.5, 1.5);
+      e.decoys.push(c);
+      burst(x, 1.2, z, 0xb36bff, 20, 4, 0.07, 0.4);
+    }
+  }
+  const hurt = (amt) => {
+    if (!e.decoy) damagePlayer(amt);
+  };
+  e.bt -= dt;
+  switch (e.bstate) {
+    case 'intro':
+      if (e.bt <= 0) {
+        e.bstate = 'walk';
+        e.bt = 1;
+      }
+      break;
+    case 'walk':
+      if (dist > 3) {
+        out.x = ux;
+        out.z = uz;
+        out.speed = e.speed * 0.7;
+      }
+      if (e.bt <= 0) {
+        const a = chooseAttack(e, ['dash', 'vanish', 'scythes']);
+        if (a === 'dash') {
+          e.dashes = e.phase2 ? 3 : 2;
+          startReaperDash(e);
+        } else if (a === 'vanish') {
+          e.bstate = 'vanish';
+          e.bt = 1.5;
+          burst(e.x, 1.2, e.z, 0xb36bff, 24, 4, 0.07, 0.5);
+          sfx.zap();
+        } else {
+          e.bstate = 'scythes';
+          e.bt = 0.35;
+        }
+      }
+      break;
+    case 'dashWind':
+      e.faceX = e.cdx;
+      e.faceZ = e.cdz;
+      if (e.bt <= 0) {
+        e.bstate = 'dash';
+        e.bt = 0.5;
+        e.dashHit = false;
+        sfx.dash();
+      }
+      break;
+    case 'dash':
+      e.faceX = e.cdx;
+      e.faceZ = e.cdz;
+      out.x = e.cdx;
+      out.z = e.cdz;
+      out.speed = 18;
+      if (Math.random() < 0.8) burst(e.x, 1, e.z, 0xb36bff, 2, 1.5, 0.08, 0.35, { grav: 0 });
+      if (!e.dashHit && dist < e.r + p.r + 0.3) {
+        e.dashHit = true;
+        hurt(e.dmg * 1.4);
+      }
+      if (e.bt <= 0 || !isWalkable(G.dungeon, e.x + e.cdx * 1.1, e.z + e.cdz * 1.1)) {
+        e.dashes--;
+        if (e.dashes > 0) startReaperDash(e);
+        else toWalk(e);
+      }
+      break;
+    case 'vanish':
+      e.model.root.visible = false;
+      if (e.bt <= 0) {
+        // reaparece nas costas do jogador
+        let bx = p.x - Math.sin(p.facing) * 1.8;
+        let bz = p.z - Math.cos(p.facing) * 1.8;
+        if (!isWalkable(G.dungeon, bx, bz)) {
+          bx = p.x + rr(-2, 2);
+          bz = p.z + rr(-2, 2);
+        }
+        if (isWalkable(G.dungeon, bx, bz)) {
+          e.x = bx;
+          e.z = bz;
+        }
+        e.model.root.visible = true;
+        burst(e.x, 1.2, e.z, 0xb36bff, 24, 4, 0.07, 0.5);
+        telegraphFx(e.x, e.z, 2.4, 0.5, 0xb36bff);
+        e.bstate = 'reap';
+        e.bt = 0.5;
+        sfx.telegraph();
+      }
+      break;
+    case 'reap':
+      if (e.bt <= 0) {
+        if (Math.hypot(p.x - e.x, p.z - e.z) < 2.4 + p.r) hurt(e.dmg * 1.6);
+        slashFx(e.x, e.z, 0, 2.4, Math.PI * 2, 0xb36bff, 0.9);
+        sfx.slash();
+        toWalk(e);
+      }
+      break;
+    case 'scythes':
+      if (e.bt <= 0) {
+        const n = e.phase2 ? 8 : 5;
+        const base = Math.atan2(uz, ux);
+        for (let k = 0; k < n; k++) {
+          const a = base + (k - (n - 1) / 2) * 0.22;
+          spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 0.9, z: e.z + Math.sin(a) * 0.9, y: 1.3, dx: Math.cos(a), dz: Math.sin(a), speed: 9, life: 2.4, dmg: e.dmg * 0.8, fake: !!e.decoy, color: 0xb36bff, size: 0.18, r: 0.2 });
+        }
+        sfx.enemyShot();
+        toWalk(e);
+      }
+      break;
+  }
+  return out;
+}
+
+function startReaperDash(e) {
+  const p = G.player;
+  const dx = p.x - e.x;
+  const dz = p.z - e.z;
+  const l = Math.hypot(dx, dz) || 1;
+  e.cdx = dx / l;
+  e.cdz = dz / l;
+  e.bstate = 'dashWind';
+  e.bt = e.phase2 ? 0.38 : 0.5;
+  lineTelegraph(e.x, e.z, Math.atan2(e.cdz, e.cdx), 9, 1.4, e.bt, 0xb36bff);
+}
+
+// ---------------- Nave de Ataque ----------------
+function updateGunship(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  const c = arenaCenter();
+  const body = e.model.body;
+  e.faceX = ux;
+  e.faceZ = uz;
+  if (!e.phase2 && e.hp < e.maxHp * 0.5) enterPhase2(e, L('A NAVE ATIVOU OS PROPULSORES DE COMBATE!', 'THE GUNSHIP ENGAGED COMBAT THRUSTERS!'), 0x00f0ff);
+  e.bt -= dt;
+  e.vulnerable = e.bstate === 'hover';
+  const targetY = e.bstate === 'hover' ? 0.9 : 2.4;
+  body.position.y += (targetY - body.position.y) * Math.min(1, dt * 3);
+  const orbit = () => {
+    e.orb = (e.orb ?? 0) + dt * (e.phase2 ? 0.8 : 0.6);
+    const tx = c.x + Math.cos(e.orb) * 6;
+    const tz = c.z + Math.sin(e.orb) * 6;
+    const dx = tx - e.x;
+    const dz = tz - e.z;
+    const l = Math.hypot(dx, dz);
+    if (l > 0.2) {
+      out.x = dx / l;
+      out.z = dz / l;
+      out.speed = Math.min(e.speed, l * 3);
+    }
+  };
+  switch (e.bstate) {
+    case 'intro':
+      if (e.bt <= 0) {
+        e.bstate = 'walk';
+        e.bt = 1;
+      }
+      break;
+    case 'walk':
+      orbit();
+      if (e.bt <= 0) {
+        const a = chooseAttack(e, ['strafe', 'bombRun', 'missiles', 'bombRun']);
+        e.bstate = a;
+        e.bt = a === 'bombRun' ? 2.6 : 0.3;
+        if (a === 'bombRun') {
+          const dx = p.x - e.x;
+          const dz = p.z - e.z;
+          const l = Math.hypot(dx, dz) || 1;
+          e.cdx = dx / l;
+          e.cdz = dz / l;
+          e.endX = p.x + e.cdx * 4;
+          e.endZ = p.z + e.cdz * 4;
+          e.dropT = 0;
+          sfx.telegraph();
+        }
+      }
+      break;
+    case 'strafe':
+      orbit();
+      if (e.bt <= 0) {
+        e.wave++;
+        e.bt = 0.11;
+        const a = Math.atan2(p.z - e.z, p.x - e.x) + rr(-0.12, 0.12);
+        spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 1.2, z: e.z + Math.sin(a) * 1.2, y: 1.6, dx: Math.cos(a), dz: Math.sin(a), speed: 13, life: 1.6, dmg: e.dmg * 0.55, color: 0x00f0ff, size: 0.1, r: 0.16 });
+        sfx.shoot();
+        if (e.wave >= (e.phase2 ? 16 : 10)) toWalk(e);
+      }
+      break;
+    case 'bombRun': {
+      const dx = e.endX - e.x;
+      const dz = e.endZ - e.z;
+      const l = Math.hypot(dx, dz);
+      e.faceX = dx;
+      e.faceZ = dz;
+      if (l > 0.6) {
+        out.x = dx / l;
+        out.z = dz / l;
+        out.speed = 10;
+      }
+      e.dropT -= dt;
+      if (e.dropT <= 0) {
+        e.dropT = e.phase2 ? 0.16 : 0.22;
+        const bx = e.x;
+        const bz = e.z;
+        telegraphFx(bx, bz, 1.5, 0.8, 0xff3355);
+        after(0.8, () => enemyExplosion(bx, bz, 1.5, e.dmg, 0xff3355));
+      }
+      if (l < 0.6 || e.bt <= 0) {
+        e.bstate = 'hover';
+        e.bt = 3.5;
+        toast(L('A nave pousou! Ataque agora!', 'The gunship landed! Attack now!'), 'heal', 'land');
+      }
+      break;
+    }
+    case 'hover':
+      if (Math.random() < 0.3) burst(e.x, 0.5, e.z, 0x00f0ff, 1, 2, 0.06, 0.4);
+      if (e.bt <= 0) toWalk(e);
+      break;
+    case 'missiles':
+      orbit();
+      if (e.bt <= 0) {
+        e.wave++;
+        e.bt = 0.35;
+        for (const side of [-1, 1]) {
+          const a = Math.atan2(p.z - e.z, p.x - e.x) + side * 0.8;
+          spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 1.2, z: e.z + Math.sin(a) * 1.2, y: 1.8, dx: Math.cos(a), dz: Math.sin(a), speed: 6.5, life: 4, dmg: e.dmg, color: 0xffaa00, size: 0.16, r: 0.24, homing: 1.6, shootable: true, explode: { r: 1.5, dmg: e.dmg } });
+        }
+        sfx.enemyShot();
+        if (e.wave >= (e.phase2 ? 3 : 2)) toWalk(e);
+      }
+      break;
+  }
+  return out;
+}
+
+// ---------------- Hacker Supremo ----------------
+const zoneGeo = new THREE.PlaneGeometry(0.96, 0.96).rotateX(-Math.PI / 2);
+function updateHackerBoss(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  const c = arenaCenter();
+  e.faceX = ux;
+  e.faceZ = uz;
+  if (!e.phase2 && e.hp < e.maxHp * 0.5) enterPhase2(e, L('SISTEMA COMPROMETIDO: MODO ROOT ATIVADO', 'SYSTEM COMPROMISED: ROOT MODE ENGAGED'), 0x39ff14);
+  e.bt -= dt;
+  updateZones(e, dt);
+  updateFirewalls(e, dt);
+  switch (e.bstate) {
+    case 'intro':
+      if (e.bt <= 0) {
+        e.bstate = 'walk';
+        e.bt = 1;
+      }
+      break;
+    case 'walk':
+      if (dist > 8) {
+        out.x = ux;
+        out.z = uz;
+        out.speed = e.speed;
+      }
+      if (e.atkT <= 0 && e.los) {
+        e.atkT = 1.4;
+        spawnProjectile({ from: 'enemy', x: e.x + ux * 0.6, z: e.z + uz * 0.6, y: 1.4, dx: ux, dz: uz, speed: 8, life: 2.5, dmg: e.dmg * 0.7, color: 0x39ff14, size: 0.16, r: 0.18, homing: 0.8 });
+      }
+      if (e.bt <= 0) {
+        const a = chooseAttack(e, ['grid', 'firewall', 'grid', 'virus', 'blink']);
+        if (a === 'grid') {
+          spawnZone(e, pick(['checker', 'rings', 'cross', 'stripes']));
+          if (e.phase2) after(0.9, () => e.alive && spawnZone(e, pick(['checker', 'cross'])));
+          e.bt = 2.2;
+        } else if (a === 'firewall') {
+          spawnFirewall(e, c);
+          if (e.phase2) after(1.4, () => e.alive && spawnFirewall(e, c));
+          e.bt = 2.6;
+        } else if (a === 'virus') {
+          minions(pick(['kamikaze', 'drone']), 3, e.x, e.z);
+          e.bt = 1.8;
+        } else {
+          for (let k = 0; k < 12; k++) {
+            const x = c.x + rr(-6, 6);
+            const z = c.z + rr(-6, 6);
+            if (isWalkable(G.dungeon, x, z) && Math.hypot(x - p.x, z - p.z) > 4) {
+              burst(e.x, 1.2, e.z, 0x39ff14, 20, 4, 0.06, 0.4);
+              e.x = x;
+              e.z = z;
+              burst(x, 1.2, z, 0x39ff14, 20, 4, 0.06, 0.4);
+              sfx.zap();
+              break;
+            }
+          }
+          e.bt = 1;
+        }
+      }
+      break;
+  }
+  return out;
+}
+
+function spawnZone(e, pattern) {
+  const d = G.dungeon;
+  const p = G.player;
+  const c = arenaCenter();
+  const tiles = [];
+  const pi = Math.floor(p.x);
+  const pj = Math.floor(p.z);
+  const off = Math.floor(rr(0, 2));
+  for (let j = Math.floor(c.z) - 9; j <= c.z + 9; j++)
+    for (let i = Math.floor(c.x) - 9; i <= c.x + 9; i++) {
+      if (!isWalkableTile(d, i, j)) continue;
+      let on = false;
+      if (pattern === 'checker') on = (Math.floor(i / 2) + Math.floor(j / 2) + off) % 2 === 0;
+      else if (pattern === 'rings') on = Math.floor(Math.hypot(i + 0.5 - c.x, j + 0.5 - c.z) / 1.6 + off) % 2 === 0;
+      else if (pattern === 'cross') on = Math.abs(i - pi) <= 1 || Math.abs(j - pj) <= 1;
+      else on = (Math.floor((i + j) / 2) + off) % 2 === 0;
+      if (on) tiles.push([i, j]);
+    }
+  if (!tiles.length) return;
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(gk(1.3)), transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mesh = new THREE.InstancedMesh(zoneGeo, mat, tiles.length);
+  const m4 = new THREE.Matrix4();
+  tiles.forEach(([i, j], k) => mesh.setMatrixAt(k, m4.makeTranslation(i + 0.5, 0.035, j + 0.5)));
+  G.world.add(mesh);
+  const set = new Set(tiles.map(([i, j]) => j * d.W + i));
+  (e.zones = e.zones || []).push({ mesh, mat, set, t: 0, warn: 1.3, hit: false });
+  sfx.telegraph();
+}
+
+function updateZones(e, dt) {
+  if (!e.zones) return;
+  const p = G.player;
+  const d = G.dungeon;
+  for (const z of e.zones) {
+    z.t += dt;
+    if (z.t < z.warn) {
+      z.mat.opacity = Math.floor(z.t * 8) % 2 ? 0.45 : 0.2;
+    } else {
+      z.mat.opacity = 0.85;
+      if (!z.flashed) {
+        z.flashed = true;
+        sfx.zap();
+      }
+      if (!z.hit && p.alive && z.set.has(Math.floor(p.z) * d.W + Math.floor(p.x))) {
+        z.hit = true;
+        damagePlayer(e.dmg * 1.5);
+      }
+    }
+  }
+  e.zones = e.zones.filter((z) => {
+    if (z.t > z.warn + 0.45) {
+      z.mesh.parent && z.mesh.parent.remove(z.mesh);
+      z.mat.dispose();
+      return false;
+    }
+    return true;
+  });
+}
+
+const fireSegGeo = new THREE.BoxGeometry(0.9, 1.1, 0.25).translate(0, 0.55, 0);
+function spawnFirewall(e, c) {
+  const dir = pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
+  const gap = rr(-5, 5);
+  const group = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x39ff14).multiplyScalar(gk(1.6)), transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending });
+  for (let k = -10; k <= 10; k++) {
+    if (Math.abs(k - gap) < 1.6) continue;
+    const seg = new THREE.Mesh(fireSegGeo, mat);
+    seg.position.x = k;
+    group.add(seg);
+  }
+  group.rotation.y = dir[0] ? Math.PI / 2 : 0;
+  G.world.add(group);
+  const w = { dir, gap, pos: -10, group, mat, cx: c.x, cz: c.z, hit: false };
+  (e.walls = e.walls || []).push(w);
+  toast(L('Firewall! Passe pela abertura.', 'Firewall! Go through the gap.'), 'warn', 'fw');
+  sfx.telegraph();
+}
+
+function updateFirewalls(e, dt) {
+  if (!e.walls) return;
+  const p = G.player;
+  for (const w of e.walls) {
+    w.pos += dt * 4.2;
+    const [dx, dz] = w.dir;
+    w.group.position.set(w.cx + dx * w.pos, 0, w.cz + dz * w.pos);
+    if (Math.random() < 0.7) burst(w.group.position.x + (dz ? rr(-10, 10) : 0), 0.5, w.group.position.z + (dx ? rr(-10, 10) : 0), 0x39ff14, 1, 1, 0.07, 0.4, { grav: -2 });
+    if (!w.hit && p.alive) {
+      const rx = p.x - w.cx;
+      const rz = p.z - w.cz;
+      const along = rx * dx + rz * dz;
+      const across = dx ? rz : rx;
+      const acrossLocal = dx ? -across : across; // compensa a rotação do grupo
+      if (Math.abs(along - w.pos) < 0.45 && Math.abs(acrossLocal - w.gap) > 1.5 && Math.abs(across) < 10.5) {
+        w.hit = true;
+        damagePlayer(e.dmg * 1.6);
+      }
+    }
+  }
+  e.walls = e.walls.filter((w) => {
+    if (w.pos > 10.5) {
+      w.group.parent && w.group.parent.remove(w.group);
+      w.mat.dispose();
+      return false;
+    }
+    return true;
+  });
+}
+
+// ---------------- Núcleo OMEGA ----------------
+const beamGeo = new THREE.BoxGeometry(0.22, 0.22, 1).translate(0, 0, 0.5);
+function updateOmega(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  if (!e.pylons) spawnPylons(e);
+  if (!e.phase2 && e.hp < e.maxHp * 0.5) {
+    e.phase2 = true;
+    toast(L('OMEGA: SOBRECARGA DO NÚCLEO', 'OMEGA: CORE OVERLOAD'), 'warn');
+    sfx.boss();
+  }
+  // escudo: imune enquanto houver pilares
+  const pylonsAlive = e.pylons.filter((o) => o.alive).length;
+  if (e.invulnerable && pylonsAlive === 0) {
+    e.invulnerable = false;
+    e.vulnerable = true;
+    e.vulnT = 12;
+    toast(L('ESCUDO DESATIVADO! Ataque o núcleo!', 'SHIELD DOWN! Attack the core!'), 'heal');
+    ringFx(e.x, e.z, 3, 0x00f0ff, 0.5);
+    sfx.levelup();
+  } else if (!e.invulnerable) {
+    e.vulnT -= dt;
+    if (e.vulnT <= 0) spawnPylons(e);
+  }
+  // feixes giratórios
+  if (e.beamT > 0) {
+    e.beamT -= dt;
+    e.beamCool = (e.beamCool || 0) - dt;
+    const warm = e.beamT > e.beamDur - 1.1;
+    e.beamAng += dt * (warm ? 0.1 : e.phase2 ? 0.8 : 0.55) * e.beamDir;
+    const n = e.beamsActive;
+    for (let k = 0; k < n; k++) {
+      const b = e.beams[k];
+      const a = e.beamAng + (k / n) * Math.PI * 2;
+      b.rotation.y = -a + Math.PI / 2;
+      b.material.opacity = warm ? (Math.floor(G.t * 12) % 2 ? 0.35 : 0.1) : 0.9;
+      b.scale.set(warm ? 0.4 : 1, warm ? 0.4 : 1, 12);
+      if (!warm && p.alive && e.beamCool <= 0) {
+        const rx = p.x - e.x;
+        const rz = p.z - e.z;
+        const along = rx * Math.cos(a) + rz * Math.sin(a);
+        const across = Math.abs(-rx * Math.sin(a) + rz * Math.cos(a));
+        if (along > 0 && along < 12 && across < 0.4 + p.r) {
+          e.beamCool = 0.5;
+          damagePlayer(e.dmg * 1.2);
+        }
+      }
+    }
+    if (e.beamT <= 0) for (const b of e.beams) b.visible = false;
+  }
+  e.bt -= dt;
+  if (e.spiralT > 0) {
+    e.spiralT -= dt;
+    e.spT = (e.spT || 0) - dt;
+    if (e.spT <= 0) {
+      e.spT = 0.1;
+      e.spA = (e.spA || 0) + 0.33;
+      for (const s of e.phase2 ? [0, Math.PI * 0.66, Math.PI * 1.33] : [0, Math.PI]) {
+        const a = e.spA + s;
+        spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 1.6, z: e.z + Math.sin(a) * 1.6, y: 1.6, dx: Math.cos(a), dz: Math.sin(a), speed: 6, life: 3, dmg: e.dmg * 0.6, color: 0xff2244, size: 0.15, r: 0.18 });
+      }
+    }
+  }
+  if (e.bstate === 'intro') {
+    if (e.bt <= 0) {
+      e.bstate = 'walk';
+      e.bt = 1.5;
+    }
+  } else if (e.bt <= 0 && !(e.beamT > 0) && !(e.spiralT > 0)) {
+    const a = chooseAttack(e, ['beams', 'spiral', 'beams', 'drones']);
+    if (a === 'beams') {
+      if (!e.beams) {
+        e.beams = [];
+        for (let k = 0; k < 3; k++) {
+          const b = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(gk(2)), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+          b.position.set(e.x, 1.1, e.z);
+          G.world.add(b);
+          e.beams.push(b);
+        }
+      }
+      e.beamsActive = e.phase2 ? 3 : 2;
+      e.beams.forEach((b, k) => (b.visible = k < e.beamsActive));
+      e.beamAng = Math.atan2(p.z - e.z, p.x - e.x) + 0.9;
+      e.beamDir = chance(0.5) ? 1 : -1;
+      e.beamDur = e.beamT = 5.5;
+      sfx.telegraph();
+      e.bt = 6.5;
+    } else if (a === 'spiral') {
+      e.spiralT = 3;
+      e.bt = 4;
+    } else {
+      minions('drone', 2, e.x, e.z, 6);
+      e.bt = 2;
+    }
+  }
+  e.faceX = ux;
+  e.faceZ = uz;
+  return out;
+}
+
+function spawnPylons(e) {
+  const d = G.dungeon;
+  e.pylons = (e.pylons || []).filter((o) => o.alive);
+  const n = e.phase2 ? 5 : 4;
+  for (let k = e.pylons.length; k < n; k++) {
+    let placed = false;
+    for (let rad = 6; rad >= 3 && !placed; rad -= 1) {
+      const a = (k / n) * Math.PI * 2 + 0.4;
+      const x = e.x + Math.cos(a) * rad;
+      const z = e.z + Math.sin(a) * rad;
+      if (!isWalkable(d, x, z)) continue;
+      const py = spawnEnemy('pylon', x, z);
+      py.aggro = true;
+      py.core = e;
+      e.pylons.push(py);
+      burst(x, 1, z, 0x00f0ff, 16, 4, 0.06, 0.4);
+      placed = true;
+    }
+  }
+  e.invulnerable = true;
+  e.vulnerable = false;
+  if (e.pylons.length === 0) e.invulnerable = false;
+}
+
+function updatePylon(e, dt) {
+  e.faceX = 0;
+  e.faceZ = 1;
+  e.beamT = (e.beamT || rr(0, 0.5)) - dt;
+  if (e.core && e.core.alive && e.beamT <= 0) {
+    e.beamT = 0.45;
+    beamFx(e.x, 2.2, e.z, e.core.x, 2.2, e.core.z, 0x00f0ff, 0.3, 6);
+  }
+  return { x: 0, z: 0, speed: 0 };
 }

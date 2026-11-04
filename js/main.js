@@ -4,16 +4,17 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { G } from './state.js';
+import { G, gk } from './state.js';
 import { Input, initInput, setTouchMode } from './input.js';
 import { initAudio, applyVolumes, sfx } from './audio.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy } from './enemies.js';
-import { updateProjectiles, updateTimers, updateTurrets, updateHazards } from './combat.js';
+import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
+import { placeFeatures, buildFeatures, updateBiome } from './biomes.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import {
@@ -94,7 +95,7 @@ function initRenderer() {
 
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.85, 0.45, 0.85);
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.5, 0.35, 0.92);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
   G.composer = composer;
@@ -107,7 +108,9 @@ export function applyQuality() {
   if (!renderer) return;
   const q = G.settings.quality;
   const low = q === 'low' || (q === 'auto' && G.isTouch && Math.min(screen.width, screen.height) < 500);
-  useBloom = !low;
+  const glow = { strong: 0.75, medium: 0.5, low: 0.28, off: 0 }[G.settings.glow] ?? 0.5;
+  bloomPass.strength = glow;
+  useBloom = !low && glow > 0;
   const pr = q === 'high' ? Math.min(devicePixelRatio, 2) : low ? Math.min(devicePixelRatio, 1) : Math.min(devicePixelRatio, 1.5);
   renderer.setPixelRatio(pr);
   onResize();
@@ -198,6 +201,8 @@ function clearWorld() {
   G.turrets = [];
   G.timers = [];
   G.hazards = [];
+  G.barriers = [];
+  G.decoy = null;
   G.boss = null;
   bossBar(null);
 }
@@ -209,7 +214,9 @@ function buildFloor(floor, withEnemies = true) {
   G.theme = theme;
   const d = generateDungeon(floor);
   G.dungeon = d;
+  placeFeatures(d, theme);
   const world = buildDungeonMeshes(d, theme);
+  buildFeatures(d, theme, world);
   G.world = world;
   scene.add(world);
   scene.fog = new THREE.Fog(theme.fog, 22, 44);
@@ -233,6 +240,7 @@ export function startFloor(floor) {
   const word = L('ANDAR', 'FLOOR');
   document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}`;
   banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
+  if (G.theme.hint) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   saveGame();
 }
 
@@ -308,8 +316,8 @@ function updateExit(dt) {
   ex.holo.position.y = 1.4 + Math.sin(G.t * 2) * 0.1;
   const locked = !!ex.locked;
   const col = locked ? 0xff2244 : ex.theme.a;
-  ex.ringMat.color.set(col).multiplyScalar(2.4);
-  ex.beamMat.color.set(col).multiplyScalar(1.2);
+  ex.ringMat.color.set(col).multiplyScalar(gk(2.4));
+  ex.beamMat.color.set(col).multiplyScalar(gk(1.2));
   ex.beamMat.opacity = 0.12 + Math.sin(G.t * 3) * 0.05;
   if (!p || !p.alive || G.mode !== 'play') return;
   const dist = Math.hypot(p.x - d.exit.x, p.z - d.exit.z);
@@ -356,6 +364,9 @@ function logic(dt) {
   updateTurrets(dt);
   updateTimers(dt);
   updateHazards(dt);
+  updateBarriers(dt);
+  updateBiome(dt, camera);
+  updateDecoy(dt);
   updatePickups(dt, camera);
   updateExit(dt);
   autosaveT += dt;

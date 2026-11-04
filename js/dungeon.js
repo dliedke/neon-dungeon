@@ -1,59 +1,69 @@
 // Geração procedural das masmorras, malhas, colisão, campo de fluxo e A*.
 import * as THREE from 'three';
-import { G, TILE } from './state.js';
+import { G, TILE, gk } from './state.js';
 import { ri, rr, pick, clamp, shuffle } from './utils.js';
 import { L } from './i18n.js';
 
 export const THEMES = [
-  { name: L('Distrito Neon', 'Neon District'), a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, line: '#00f0ff' },
-  { name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, line: '#39ff14' },
-  { name: L('Fábrica Corporativa', 'Corporate Factory'), a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, line: '#ff8a00' },
-  { name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, line: '#ff2244' },
+  { id: 'neon', name: L('Distrito Neon', 'Neon District'), a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, layout: 'rooms', features: ['puddles', 'rain'], hint: L('Cuidado com as poças elétricas!', 'Watch out for the electric puddles!') },
+  { id: 'sewer', name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, layout: 'sewer', features: ['sludge'], hint: L('O lodo tóxico deixa você lento e causa dano.', 'Toxic sludge slows you down and hurts.') },
+  { id: 'factory', name: L('Fábrica Corporativa', 'Corporate Factory'), a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, layout: 'rooms', features: ['conveyor', 'crusher'], hint: L('Esteiras empurram tudo e prensas esmagam inimigos também!', 'Conveyors push everything and presses crush enemies too!') },
+  { id: 'cryo', name: L('Laboratório Criogênico', 'Cryo Lab'), a: 0x8ad8ff, b: 0xd0f0ff, floor: 0x2c3c4e, wall: 0x1a2836, fog: 0x06101a, layout: 'cave', features: ['ice', 'vents'], hint: L('Gelo escorrega; as ventoinhas congelam inimigos (e deixam você lento).', 'Ice is slippery; vents freeze enemies (and slow you down).') },
+  { id: 'data', name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, layout: 'grid', features: ['lasers'], hint: L('Grades de laser ligam e desligam: espere o momento certo.', 'Laser grids switch on and off: time your crossing.') },
+  { id: 'market', name: L('Mercado Noturno', 'Night Market'), a: 0xffd23d, b: 0xff2bd6, floor: 0x3a2a30, wall: 0x2a1a22, fog: 0x100608, layout: 'market', features: ['stalls', 'merchant', 'lanterns'], hint: L('Há um mercador escondido em alguma praça.', 'A merchant is hiding in one of the plazas.') },
 ];
+THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
 
 export const BOSS_EVERY = 3;
 export const isBossFloor = (f) => f % BOSS_EVERY === 0;
 
+// Cada andar tem um bioma diferente
+// (a rotação muda a cada ciclo para que os chefes apareçam em biomas diferentes)
 export function themeFor(floor) {
-  return THEMES[Math.floor((floor - 1) / BOSS_EVERY) % THEMES.length];
+  const n = THEMES.length;
+  return THEMES[(floor - 1 + Math.floor((floor - 1) / n)) % n];
 }
 
 // ------------------------------------------------------------------
 // Geração
 // ------------------------------------------------------------------
 export function generateDungeon(floor) {
-  const W = Math.min(46 + floor * 3, 92);
+  const theme = themeFor(floor);
+  const W = Math.min(46 + floor * 3, 92) + (theme.layout === 'market' ? 6 : 0);
   const H = W;
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const d = tryGenerate(floor, W, H);
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const d = tryGenerate(floor, W, H, theme.layout);
     if (d) return d;
   }
-  return tryGenerate(floor, W, H, true);
+  return tryGenerate(floor, W, H, 'rooms', true);
 }
 
-function tryGenerate(floor, W, H, force) {
+function overlaps(rooms, x, y, w, h, gap) {
+  for (const r of rooms) if (x < r.x + r.w + gap && x + w + gap > r.x && y < r.y + r.h + gap && y + h + gap > r.y) return true;
+  return false;
+}
+
+// Salas ligadas por corredores (árvore mínima + alguns ciclos)
+function genRooms(W, H, floor, o = {}) {
   const grid = new Uint8Array(W * H);
   const rooms = [];
-  const target = Math.min(7 + Math.floor(floor / 2), 15);
-  for (let t = 0; t < 600 && rooms.length < target; t++) {
-    const w = ri(6, 12);
-    const h = ri(6, 12);
+  const target = o.target ?? Math.min(7 + Math.floor(floor / 2), 15);
+  const [mn, mx] = o.size ?? [6, 12];
+  for (let t = 0; t < 800 && rooms.length < target; t++) {
+    const w = ri(mn, mx);
+    const h = ri(mn, mx);
     const x = ri(2, W - w - 3);
     const y = ri(2, H - h - 3);
-    let ok = true;
-    for (const r of rooms) {
-      if (x < r.x + r.w + 3 && x + w + 3 > r.x && y < r.y + r.h + 3 && y + h + 3 > r.y) {
-        ok = false;
-        break;
-      }
-    }
-    if (ok) rooms.push({ x, y, w, h, cx: x + w / 2, cy: y + h / 2 });
+    if (overlaps(rooms, x, y, w, h, o.gap ?? 3)) continue;
+    rooms.push({ x, y, w, h, cx: x + w / 2, cy: y + h / 2 });
   }
-  if (rooms.length < 5 && !force) return null;
-
   for (const r of rooms) for (let j = r.y; j < r.y + r.h; j++) for (let i = r.x; i < r.x + r.w; i++) grid[j * W + i] = TILE.FLOOR;
+  connectRooms(grid, W, H, rooms, o.corridor ?? 2);
+  return { grid, rooms };
+}
 
-  // Conecta as salas com uma árvore geradora mínima + alguns ciclos extras
+function connectRooms(grid, W, H, rooms, width) {
+  if (!rooms.length) return;
   const connected = [rooms[0]];
   const remaining = rooms.slice(1);
   const edges = [];
@@ -80,9 +90,141 @@ function tryGenerate(floor, W, H, force) {
     const b = pick(rooms);
     if (a !== b) edges.push([a, b]);
   }
-  for (const [a, b] of edges) carveCorridor(grid, W, H, Math.floor(a.cx), Math.floor(a.cy), Math.floor(b.cx), Math.floor(b.cy));
+  for (const [a, b] of edges) carveCorridor(grid, W, H, Math.floor(a.cx), Math.floor(a.cy), Math.floor(b.cx), Math.floor(b.cy), width);
+}
 
-  const d = { W, H, grid, rooms, floor };
+// Cavernas orgânicas (autômato celular)
+function genCave(W, H) {
+  let grid = new Uint8Array(W * H);
+  for (let j = 2; j < H - 2; j++) for (let i = 2; i < W - 2; i++) grid[j * W + i] = Math.random() < 0.55 ? TILE.FLOOR : TILE.WALL;
+  for (let it = 0; it < 5; it++) {
+    const ng = new Uint8Array(W * H);
+    for (let j = 2; j < H - 2; j++)
+      for (let i = 2; i < W - 2; i++) {
+        let walls = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && grid[(j + dy) * W + i + dx] !== TILE.FLOOR) walls++;
+        ng[j * W + i] = walls >= 5 ? TILE.WALL : TILE.FLOOR;
+      }
+    grid = ng;
+  }
+  // mantém só a maior região conectada
+  const seen = new Int32Array(W * H).fill(-1);
+  let best = -1;
+  let bestSize = 0;
+  let id = 0;
+  for (let k = 0; k < W * H; k++) {
+    if (grid[k] !== TILE.FLOOR || seen[k] !== -1) continue;
+    const q = [k];
+    seen[k] = id;
+    let size = 0;
+    while (q.length) {
+      const c = q.pop();
+      size++;
+      const ci = c % W;
+      const cj = (c / W) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const n = (cj + dy) * W + ci + dx;
+        if (grid[n] === TILE.FLOOR && seen[n] === -1) {
+          seen[n] = id;
+          q.push(n);
+        }
+      }
+    }
+    if (size > bestSize) {
+      bestSize = size;
+      best = id;
+    }
+    id++;
+  }
+  if (bestSize < W * H * 0.28) return null;
+  for (let k = 0; k < W * H; k++) if (grid[k] === TILE.FLOOR && seen[k] !== best) grid[k] = TILE.WALL;
+  // "salas" virtuais: blocos com bastante chão (usadas para posicionar inimigos)
+  const rooms = [];
+  const B = 11;
+  for (let by = 2; by < H - B; by += B)
+    for (let bx = 2; bx < W - B; bx += B) {
+      let n = 0;
+      let sx = 0;
+      let sy = 0;
+      for (let j = by; j < by + B; j++)
+        for (let i = bx; i < bx + B; i++)
+          if (grid[j * W + i] === TILE.FLOOR) {
+            n++;
+            sx += i;
+            sy += j;
+          }
+      if (n < 45) continue;
+      // centro: o tile de chão mais próximo do centróide
+      let cx = Math.round(sx / n);
+      let cy = Math.round(sy / n);
+      let bd = Infinity;
+      let fx = cx;
+      let fy = cy;
+      for (let j = by; j < by + B; j++)
+        for (let i = bx; i < bx + B; i++)
+          if (grid[j * W + i] === TILE.FLOOR) {
+            const dd = (i - cx) ** 2 + (j - cy) ** 2;
+            if (dd < bd) {
+              bd = dd;
+              fx = i;
+              fy = j;
+            }
+          }
+      rooms.push({ x: bx, y: by, w: B, h: B, cx: fx + 0.5, cy: fy + 0.5, cave: true });
+    }
+  rooms.sort((a, b) => a.cx + a.cy - (b.cx + b.cy));
+  // mantém o início e uma seleção espalhada das outras áreas
+  const keep = Math.min(rooms.length, 6 + Math.floor(W / 12));
+  const rest = shuffle(rooms.slice(1)).slice(0, keep - 1);
+  return { grid, rooms: [rooms[0], ...rest] };
+}
+
+// Grade de salas alinhadas (Núcleo de Dados)
+function genGrid(W, H) {
+  const grid = new Uint8Array(W * H);
+  const n = W > 64 ? 5 : 4;
+  const S = Math.floor((W - 4) / n);
+  const cells = [];
+  for (let gy = 0; gy < n; gy++)
+    for (let gx = 0; gx < n; gx++) {
+      if (Math.random() < 0.12) {
+        cells.push(null);
+        continue;
+      }
+      const w = ri(5, S - 3);
+      const h = ri(5, S - 3);
+      const x = 2 + gx * S + ri(1, S - w - 1);
+      const y = 2 + gy * S + ri(1, S - h - 1);
+      const r = { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
+      cells.push(r);
+      for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) grid[j * W + i] = TILE.FLOOR;
+    }
+  const rooms = cells.filter(Boolean);
+  for (let gy = 0; gy < n; gy++)
+    for (let gx = 0; gx < n; gx++) {
+      const a = cells[gy * n + gx];
+      if (!a) continue;
+      const right = gx + 1 < n ? cells[gy * n + gx + 1] : null;
+      const down = gy + 1 < n ? cells[(gy + 1) * n + gx] : null;
+      if (right) carveCorridor(grid, W, H, Math.floor(a.cx), Math.floor(a.cy), Math.floor(right.cx), Math.floor(right.cy), 2);
+      if (down) carveCorridor(grid, W, H, Math.floor(a.cx), Math.floor(a.cy), Math.floor(down.cx), Math.floor(down.cy), 2);
+    }
+  // garante conexão total (células vazias podem isolar partes)
+  connectRooms(grid, W, H, rooms, 2);
+  return { grid, rooms };
+}
+
+function tryGenerate(floor, W, H, layout, force) {
+  let base;
+  if (layout === 'cave') base = genCave(W, H);
+  else if (layout === 'grid') base = genGrid(W, H);
+  else if (layout === 'market') base = genRooms(W, H, floor, { target: 5, size: [13, 19], gap: 4, corridor: 3 });
+  else if (layout === 'sewer') base = genRooms(W, H, floor, { corridor: 3, size: [6, 10] });
+  else base = genRooms(W, H, floor);
+  if (!base) return null;
+  const { grid, rooms } = base;
+  if (rooms.length < (layout === 'market' ? 3 : 5) && !force) return null;
+  const d = { W, H, grid, rooms, floor, layout };
   const start = rooms[0];
   d.start = { x: Math.floor(start.cx) + 0.5, z: Math.floor(start.cy) + 0.5 };
 
@@ -104,7 +246,7 @@ function tryGenerate(floor, W, H, force) {
 
   // Pilares (obstáculos) em salas grandes
   for (const r of rooms) {
-    if (r === start || r.w < 8 || r.h < 8) continue;
+    if (r === start || r.w < 8 || r.h < 8 || r.cave || layout === 'market') continue;
     const n = ri(1, 4);
     for (let k = 0; k < n * 4 && r.pillars !== n; k++) {
       const i = ri(r.x + 2, r.x + r.w - 3);
@@ -119,15 +261,29 @@ function tryGenerate(floor, W, H, force) {
     }
   }
 
+  // andar de chefe: abre uma arena grande em volta da saída
+  if (isBossFloor(floor)) {
+    const R = 7;
+    const x0 = clamp(Math.floor(d.exit.x) - R, 2, W - 3 - 2 * R);
+    const y0 = clamp(Math.floor(d.exit.z) - R, 2, H - 3 - 2 * R);
+    for (let j = y0; j <= y0 + 2 * R; j++) for (let i = x0; i <= x0 + 2 * R; i++) grid[j * W + i] = TILE.FLOOR;
+    d.exit = { x: x0 + R + 0.5, z: y0 + R + 0.5 };
+    const arena = { x: x0, y: y0, w: 2 * R + 1, h: 2 * R + 1, cx: d.exit.x, cy: d.exit.z, arena: true };
+    d.rooms[d.rooms.indexOf(d.exitRoom)] = arena;
+    d.exitRoom = arena;
+    d.arena = { ...arena, cz: d.exit.z };
+  }
   d.explored = new Uint8Array(W * H);
   d.flow = new Int16Array(W * H).fill(-1);
+  d.feat = new Uint8Array(W * H);
+  d.props = [];
   return d;
 }
 
-function carveCorridor(grid, W, H, x1, y1, x2, y2) {
+function carveCorridor(grid, W, H, x1, y1, x2, y2, width = 2) {
   const carve = (x, y) => {
-    for (let dy = 0; dy < 2; dy++)
-      for (let dx = 0; dx < 2; dx++) {
+    for (let dy = 0; dy < width; dy++)
+      for (let dx = 0; dx < width; dx++) {
         const xx = x + dx;
         const yy = y + dy;
         if (xx > 1 && yy > 1 && xx < W - 2 && yy < H - 2) grid[yy * W + xx] = TILE.FLOOR;
@@ -482,6 +638,7 @@ export function buildDungeonMeshes(d, theme) {
   lineGeo.rotateX(-Math.PI / 2);
   const roomLines = [];
   for (const r of d.rooms) {
+    if (r.cave) continue;
     const inset = 0.6;
     roomLines.push([r.x + inset, r.y + inset, r.x + r.w - inset, r.y + inset]);
     roomLines.push([r.x + inset, r.y + r.h - inset, r.x + r.w - inset, r.y + r.h - inset]);
@@ -565,7 +722,7 @@ export function buildDungeonMeshes(d, theme) {
     q.setFromAxisAngle(up, s.rot);
     m4.compose(new THREE.Vector3(s.x, WALL_H - 0.18, s.z), q, new THREE.Vector3(1, 1, 1));
     stripMesh.setMatrixAt(k, m4);
-    col.set(s.color).multiplyScalar(2.2);
+    col.set(s.color).multiplyScalar(gk(2.2));
     stripMesh.setColorAt(k, col);
   });
   group.add(stripMesh);
@@ -586,7 +743,7 @@ export function buildDungeonMeshes(d, theme) {
     usedSign.add(key);
     const color = Math.random() < 0.5 ? theme.a : theme.b;
     const css = '#' + new THREE.Color(color).getHexString();
-    const mat = new THREE.MeshBasicMaterial({ map: signTexture(pick(SIGN_WORDS), css), transparent: true, depthWrite: false, color: new THREE.Color(2.2, 2.2, 2.2) });
+    const mat = new THREE.MeshBasicMaterial({ map: signTexture(pick(SIGN_WORDS), css), transparent: true, depthWrite: false, color: new THREE.Color(gk(2.2), gk(2.2), gk(2.2)) });
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.36), mat);
     const faceX = isFloorish(w.i + 1, w.j) && grid[w.j * W + w.i + 1] === TILE.FLOOR;
     if (faceX) {
@@ -606,10 +763,10 @@ export function buildDungeonMeshes(d, theme) {
   const pillarMat = new THREE.MeshLambertMaterial({ color: theme.wall });
   const ringGeo = new THREE.TorusGeometry(0.42, 0.035, 6, 16);
   ringGeo.rotateX(Math.PI / 2);
-  const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.b).multiplyScalar(2.2) });
+  const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.b).multiplyScalar(gk(2.2)) });
   for (let j = 0; j < H; j++)
     for (let i = 0; i < W; i++)
-      if (grid[j * W + i] === TILE.OBST) {
+      if (grid[j * W + i] === TILE.OBST && d.feat[j * W + i] !== 9) {
         const p = new THREE.Mesh(pillarGeo, pillarMat);
         p.position.set(i + 0.5, 0, j + 0.5);
         group.add(p);
@@ -626,7 +783,7 @@ export function buildDungeonMeshes(d, theme) {
   group.add(exit.group);
 
   // plataforma de início
-  const startRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(1.5), transparent: true, opacity: 0.6, depthWrite: false }));
+  const startRing = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.6, depthWrite: false }));
   startRing.rotation.x = -Math.PI / 2;
   startRing.position.set(d.start.x, 0.015, d.start.z);
   group.add(startRing);
@@ -640,16 +797,16 @@ function makeExitPad(theme) {
   const base = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.35, 0.12, 32), new THREE.MeshLambertMaterial({ color: 0x20243a }));
   base.position.y = 0.06;
   group.add(base);
-  const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(2.4) });
+  const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(gk(2.4)) });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.05, 8, 40), ringMat);
   ring.rotation.x = Math.PI / 2;
   ring.position.y = 0.13;
   group.add(ring);
-  const beamMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(1.2), transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+  const beamMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(gk(1.2)), transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.1, 4, 24, 1, true), beamMat);
   beam.position.y = 2;
   group.add(beam);
-  const holo = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(2.4), wireframe: true }));
+  const holo = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), new THREE.MeshBasicMaterial({ color: new THREE.Color(theme.a).multiplyScalar(gk(2.4)), wireframe: true }));
   holo.position.y = 1.4;
   group.add(holo);
   return { group, ring, ringMat, beam, beamMat, holo, theme };

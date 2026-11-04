@@ -119,6 +119,19 @@
     </div>
   </div>
 
+  <!-- LOJA DO MERCADOR -->
+  <div id="panel-shop" class="screen hidden">
+    <div class="panel wide shop">
+      <div class="panel-head">
+        <h2 data-i18n="shopTitle">MERCADOR</h2>
+        <span class="cr-line">¢ <b id="shop-credits">0</b></span>
+        <button class="close" id="shop-close" data-nav>✕</button>
+      </div>
+      <p class="shop-sub" data-i18n="shopSub"></p>
+      <div id="shop-items"></div>
+    </div>
+  </div>
+
   <!-- PAUSA -->
   <div id="panel-pause" class="screen hidden">
     <div class="panel narrow">
@@ -140,6 +153,7 @@
       <label class="opt"><span data-i18n="music">Música</span> <input type="range" min="0" max="1" step="0.05" id="opt-music" data-nav /></label>
       <label class="opt"><span data-i18n="sfx">Efeitos</span> <input type="range" min="0" max="1" step="0.05" id="opt-sfx" data-nav /></label>
       <div class="opt"><span data-i18n="difficulty">Dificuldade</span> <button class="btn small" id="opt-diff" data-nav></button></div>
+      <div class="opt"><span data-i18n="glow">Brilho neon</span> <button class="btn small" id="opt-glow" data-nav></button></div>
       <div class="opt"><span data-i18n="graphics">Gráficos</span> <button class="btn small" id="opt-quality" data-nav></button></div>
       <div class="opt"><span data-i18n="shake">Tremor de tela</span> <button class="btn small" id="opt-shake" data-nav></button></div>
       <div class="opt"><span data-i18n="fullscreen">Tela cheia</span> <button class="btn small" id="opt-full" data-nav data-i18n="toggle">Alternar</button></div>

@@ -1,6 +1,6 @@
 // Partículas, cortes, anéis, raios e números flutuantes.
 import * as THREE from 'three';
-import { G } from './state.js';
+import { G, gk } from './state.js';
 import { rr } from './utils.js';
 
 const MAX = 900;
@@ -41,7 +41,7 @@ export function particle(x, y, z, vx, vy, vz, color, size, life, grav = 0, drag 
   p.grav = grav;
   p.drag = drag;
   p.idx = idx;
-  col.set(color).multiplyScalar(2.2);
+  col.set(color).multiplyScalar(gk(2.2));
   inst.setColorAt(p.idx, col);
   inst.instanceColor.needsUpdate = true;
 }
@@ -139,7 +139,7 @@ function arcGeo(r, arc) {
 
 // Corte em arco (ângulo = direção para onde o golpe aponta)
 export function slashFx(x, z, angle, r, arc, color, y = 0.7) {
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(2.4), transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(2.4)), transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
   const m = new THREE.Mesh(arcGeo(r, arc), mat);
   m.position.set(x, y, z);
   // RingGeometry rotacionada: theta=0 aponta para +x. Queremos apontar para (dx,dz).
@@ -161,7 +161,7 @@ export function ringFx(x, z, radius, color, dur = 0.35, o = {}) {
   const from = o.from ?? radius * 0.2;
   m.scale.setScalar(from);
   addEffect(m, dur, (e, k) => {
-    const ease = 1 - Math.pow(1 - k, 3);
+    const ease = o.linear ? k : 1 - Math.pow(1 - k, 3);
     m.scale.setScalar(from + (radius - from) * ease);
     mat.opacity = (o.opacity ?? 0.9) * (1 - k);
   });
@@ -177,7 +177,7 @@ export function telegraphFx(x, z, radius, dur, color = 0xff3322, follow = null) 
   const inner = new THREE.Mesh(discGeo, imat);
   inner.position.y = 0.01;
   disc.add(inner);
-  const rmat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.3), transparent: true, opacity: 0.85, depthWrite: false });
+  const rmat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.3)), transparent: true, opacity: 0.85, depthWrite: false });
   const edge = new THREE.Mesh(ringGeo, rmat);
   disc.add(edge);
   return addEffect(disc, dur, (e, k) => {
@@ -208,7 +208,7 @@ export function beamFx(x1, y1, z1, x2, y2, z2, color, dur = 0.16, segs = 5) {
     pts.push(new THREE.Vector3(x1 + (x2 - x1) * t + rr(-j, j), y1 + (y2 - y1) * t + rr(-j, j), z1 + (z2 - z1) * t + rr(-j, j)));
   }
   const group = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(2.6), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(2.6)), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
   for (let i = 0; i < segs; i++) {
     const a = pts[i];
     const b = pts[i + 1];
@@ -228,7 +228,7 @@ const boxGeoUnit = new THREE.BoxGeometry(1, 1, 1);
 // Rastro de avanço (fantasmas)
 export function ghostFx(model, color) {
   const g = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.5), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
   model.root.updateMatrixWorld(true);
   model.root.traverse((o) => {
     if (o.isMesh && o.geometry.type === 'BoxGeometry') {

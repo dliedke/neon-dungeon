@@ -6,7 +6,8 @@ import { CLASSES, SKILL_FN } from './classes.js';
 import { starterWeapon, SLOTS } from './items.js';
 import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
-import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy } from './combat.js';
+import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
+import { groundEffect } from './biomes.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
@@ -119,7 +120,9 @@ export function placePlayer(x, z) {
   p.target = null;
   p.dash = null;
   p.whirl = null;
+  p.leap = null;
   p.kx = p.kz = 0;
+  if (p.model) p.model.body.position.y = 0;
   p.model.root.position.set(x, 0, z);
   p.model.root.rotation.set(0, Math.PI * 1.25, 0);
   p.facing = Math.PI * 1.25;
@@ -281,7 +284,7 @@ function assistTarget(p, dx, dz, minDot) {
   let best = null;
   let bs = -Infinity;
   for (const e of G.enemies) {
-    if (!e.alive || e.inert) continue;
+    if (!e.alive || e.inert || e.invulnerable) continue;
     const ex = e.x - p.x;
     const ez = e.z - p.z;
     const d = Math.hypot(ex, ez);
@@ -470,10 +473,10 @@ export function updatePlayer(dt) {
 
   // ---------- ataque básico ----------
   // Lâmina: se o inimigo mirado estiver fora do alcance da espada, avança até ele
-  if (wantAttack && C.melee && p.aimEnemy && !vx && !vz && !p.dash) {
+  if (wantAttack && (C.melee || C.range < 6) && p.aimEnemy && !vx && !vz && !p.dash && !p.leap) {
     const e = p.aimEnemy;
     const d = Math.hypot(e.x - p.x, e.z - p.z);
-    if (d > C.range + e.r * 0.8) {
+    if (d > C.range + e.r * 0.8 && d < 12) {
       vx = (e.x - p.x) / d;
       vz = (e.z - p.z) / d;
       p.moveDir.x = vx;
@@ -481,8 +484,13 @@ export function updatePlayer(dt) {
       wantAttack = false;
     }
   }
-  if (wantAttack && p.atkT <= 0 && !p.dash) {
-    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1));
+  // Colosso: a metralhadora acelera enquanto você segura o ataque
+  if (C.spinUp) {
+    if (wantAttack && !p.dash && !p.leap) p.spin = Math.min(1, (p.spin || 0) + dt / 1.5);
+    else p.spin = Math.max(0, (p.spin || 0) - dt * 1.5);
+  }
+  if (wantAttack && p.atkT <= 0 && !p.dash && !p.leap) {
+    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1));
     SKILL_FN[C.skills[0].id](p, c.skills[0]);
     p.facing = Math.atan2(p.aim.dx, p.aim.dz);
     p.lockFace = 0.22;
@@ -497,8 +505,26 @@ export function updatePlayer(dt) {
   if (Input.pressed('stim')) useStim();
 
   let speed = s.speed * (oc ? 1.3 : 1);
-  if (p.attackHold > 0) speed *= C.melee ? 0.45 : 0.8;
+  if (p.attackHold > 0) speed *= C.melee ? 0.45 : C.spinUp ? 0.55 : 0.8;
   if (p.whirl) speed *= 0.75;
+
+  // ---------- salto (Jato Propulsor) ----------
+  if (p.leap) {
+    const lp = p.leap;
+    lp.t += dt;
+    const k = Math.min(1, lp.t / lp.dur);
+    p.x = lp.sx + (lp.tx - lp.sx) * k;
+    p.z = lp.sz + (lp.tz - lp.sz) * k;
+    p.model.body.position.y = Math.sin(k * Math.PI) * 2.2;
+    burst(p.x, 0.6 + Math.sin(k * Math.PI) * 2, p.z, lp.color, 2, 1.5, 0.08, 0.3, { grav: 2 });
+    vx = vz = 0;
+    p.path = null;
+    if (k >= 1) {
+      p.leap = null;
+      p.model.body.position.y = 0;
+      explosion(p.x, p.z, 2.3, lp.mult, { color: lp.color, burn: 0.5, knock: 5 });
+    }
+  }
 
   // ---------- avanço / rolamento ----------
   if (p.dash) {
@@ -524,9 +550,30 @@ export function updatePlayer(dt) {
     if (ds.t <= 0 || moved < step * 0.3) p.dash = null;
     vx = vz = 0;
     p.path = null;
-  } else {
-    p.x += (vx * speed + p.kx) * dt;
-    p.z += (vz * speed + p.kz) * dt;
+  } else if (!p.leap) {
+    // efeitos do piso do bioma
+    const ge = groundEffect(G.dungeon, p.x, p.z);
+    if (ge) speed *= ge.speed;
+    if (p.chillT > 0) {
+      p.chillT -= dt;
+      speed *= 0.55;
+      if (Math.random() < dt * 10) burst(p.x, 1, p.z, 0x8ad8ff, 1, 1, 0.05, 0.4, { grav: -1 });
+    }
+    if (ge && ge.sludge) {
+      p.sludgeT = (p.sludgeT || 0) - dt;
+      if (p.sludgeT <= 0) {
+        p.sludgeT = 0.5;
+        damagePlayer(2 + G.floor * 0.8);
+      }
+      if (Math.random() < dt * 8) burst(p.x, 0.2, p.z, 0x39ff14, 1, 1, 0.05, 0.4, { grav: -1 });
+    }
+    // no gelo o movimento escorrega (inércia)
+    const k = ge && ge.ice ? Math.min(1, dt * 2.2) : 1;
+    p.ivx = (p.ivx || 0) + (vx * speed - (p.ivx || 0)) * k;
+    p.ivz = (p.ivz || 0) + (vz * speed - (p.ivz || 0)) * k;
+    const push = ge && ge.push ? ge.push : null;
+    p.x += (p.ivx + p.kx + (push ? push.x : 0)) * dt;
+    p.z += (p.ivz + p.kz + (push ? push.z : 0)) * dt;
   }
   const kd = Math.max(0, 1 - dt * 8);
   p.kx *= kd;
@@ -588,6 +635,19 @@ export function updatePlayer(dt) {
     }
     if (p.dash && p.dash.roll) m.body.rotation.x += dt * 25;
     else m.body.rotation.x = 0;
+  } else if (c.cls === 'brawler') {
+    if (p.swing > 0) {
+      const arm = p.hand ? m.armR : m.armL;
+      arm.rotation.x = -1.6 * p.swing;
+      m.torso.rotation.y = (p.hand ? -0.4 : 0.4) * p.swing;
+    } else m.torso.rotation.y *= 0.8;
+  } else if (c.cls === 'pyro' || c.cls === 'frost' || c.cls === 'heavy') {
+    if (p.attackHold > 0 || p.swing > 0) {
+      m.armR.rotation.x = -1.45;
+      m.armL.rotation.x = -1.3;
+    }
+    if (m.barrels) m.barrels.rotation.z += dt * (4 + (p.spin || 0) * 40);
+    if (m.flameTip) m.flameTip.visible = p.attackHold > 0;
   } else {
     m.deck.position.set(Math.cos(G.t * 2) * 0.55, 1.45 + Math.sin(G.t * 3) * 0.08, Math.sin(G.t * 2) * 0.55);
     m.deck.rotation.y += dt * 2;
@@ -595,7 +655,11 @@ export function updatePlayer(dt) {
   }
   // piscar quando invulnerável/ferido
   const flash = p.hurtT > 0 ? 0.8 : 0;
-  for (const mt of m.mats) mt.emissive.setScalar(flash);
+  for (const mt of m.mats) {
+    if (flash) mt.emissive.setScalar(flash);
+    else if (p.buffs.titan > 0) mt.emissive.setRGB(0.25, 0.27, 0.32);
+    else mt.emissive.setScalar(0);
+  }
   m.root.visible = !(p.invuln > 0.5 && Math.floor(G.t * 20) % 2 === 0) || !!p.dash;
   p.light.intensity = 22 + (oc ? 12 : 0);
 

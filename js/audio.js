@@ -144,6 +144,24 @@ export const sfx = {
   rare() {
     [660, 880, 1320].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.18, vol: 0.09, delay: i * 0.06 }));
   },
+  punch() {
+    if (throttle('punch', 40)) return;
+    noise({ dur: 0.07, vol: 0.22, type: 'lowpass', f: 900 });
+    tone({ type: 'sine', f: 140, f2: 60, dur: 0.08, vol: 0.18 });
+  },
+  punchHeavy() {
+    noise({ dur: 0.18, vol: 0.32, type: 'lowpass', f: 700, f2: 120 });
+    tone({ type: 'sine', f: 110, f2: 35, dur: 0.22, vol: 0.32 });
+  },
+  flame() {
+    if (throttle('flame', 90)) return;
+    noise({ dur: 0.14, vol: 0.09, type: 'bandpass', f: 900, f2: 500, q: 0.7 });
+  },
+  cryo() {
+    if (throttle('cryo', 60)) return;
+    tone({ type: 'triangle', f: 2400, f2: 900, dur: 0.12, vol: 0.06 });
+    noise({ dur: 0.1, vol: 0.08, type: 'highpass', f: 6000 });
+  },
   upgrade() {
     if (throttle('upgrade', 200)) return;
     [523, 784, 1047, 1568].forEach((f, i) => tone({ type: 'square', f, dur: 0.16, vol: 0.07, delay: i * 0.06, lp: 4000 }));
