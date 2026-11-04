@@ -33,7 +33,7 @@ Each class has its own save slot, stored in the browser.
 - **Gamepad:**
   - Left stick to move; A, RB or RT to attack.
   - X / Y / B for skills, LB for a stim, Select for the inventory and Start to pause.
-  - Menus can be navigated with the D-pad.
+  - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y switches tabs and B goes back.
 - **Mobile:**
   - Drag on the left side of the screen to move.
   - Use the buttons on the right to attack and use skills.

@@ -26,7 +26,7 @@ export function initUI() {
   $('char-close').onclick = () => closeChar();
   document.querySelectorAll('.tab-btn').forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
   $('btn-buy-stim').onclick = buyStim;
-  $('btn-recycle-commons').onclick = recycleCommons;
+  $('btn-recycle-all').onclick = recycleAll;
 
   $('pause-resume').onclick = () => closePause();
   $('pause-char').onclick = () => {
@@ -145,7 +145,7 @@ export function showMenu() {
   $('hud').classList.add('hidden');
   $('menu').classList.remove('hidden');
   renderClassCards();
-  focused = null;
+  clearFocus();
 }
 
 function renderClassCards() {
@@ -197,11 +197,11 @@ export function confirmDialog(title, text, onYes) {
 
 function openOverlay(id) {
   $(id).classList.remove('hidden');
-  focused = null;
+  clearFocus();
 }
 function closeOverlay(id) {
   $(id).classList.add('hidden');
-  focused = null;
+  clearFocus();
 }
 
 // ------------------------------------------------------------------
@@ -492,7 +492,7 @@ export function openPause() {
   if (G.mode !== 'play') return;
   G.mode = 'pause';
   $('panel-pause').classList.remove('hidden');
-  focused = null;
+  clearFocus();
 }
 export function closePause() {
   $('panel-pause').classList.add('hidden');
@@ -504,7 +504,7 @@ export function showDead() {
   const c = G.char;
   $('dead-info').innerHTML = L(`Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar e perderá 10% dos créditos.`, `Floor ${G.floor} · Level ${c.level}<br>You will be rebuilt at the start of the floor and lose 10% of your credits.`);
   $('panel-dead').classList.remove('hidden');
-  focused = null;
+  clearFocus();
 }
 
 // ------------------------------------------------------------------
@@ -520,7 +520,7 @@ export function openChar(tab) {
   G.mode = 'char';
   $('panel-char').classList.remove('hidden');
   setTab(tab || (G.char.skillPoints > 0 && currentTab === 'skills' ? 'skills' : currentTab));
-  focused = null;
+  clearFocus();
 }
 export function closeChar() {
   $('panel-char').classList.add('hidden');
@@ -559,7 +559,7 @@ export function renderChar() {
     for (let i = 0; i < INV_SIZE; i++) {
       const it = c.inv[i];
       if (!it) {
-        html += '<div class="cell empty"></div>';
+        html += '<div class="cell empty" data-nav></div>'; // navegável: o controle consegue descer até os botões
         continue;
       }
       const better = isUpgrade(it, c.equip);
@@ -573,7 +573,7 @@ export function renderChar() {
     const price = stimPrice();
     $('btn-buy-stim').textContent = `${L('Comprar Stim', 'Buy Stim')} (${price}¢) · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
-    $('btn-recycle-commons').disabled = !c.inv.some((i) => i.rarity === 0);
+    $('btn-recycle-all').disabled = !c.inv.length;
     // atributos
     const s = p.stats;
     const rows = [
@@ -625,7 +625,7 @@ export function renderChar() {
 function restoreFocus(sel) {
   const el = document.querySelector(sel);
   if (el && !el.disabled) setFocus(el);
-  else focused = null;
+  else clearFocus();
 }
 
 function findItem(sel) {
@@ -731,23 +731,23 @@ function recycleItem(uid) {
   if (next) restoreFocus(`.cell[data-uid="${next.uid}"]`);
 }
 
-function recycleCommons() {
+// Recicla todo o inventário (o que está equipado não é tocado)
+function recycleAll() {
   const c = G.char;
-  let total = 0;
-  c.inv = c.inv.filter((it) => {
-    if (it.rarity === 0) {
-      total += recycleValue(it);
-      return false;
-    }
-    return true;
-  });
-  if (total) {
+  if (!c.inv.length) return;
+  const n = c.inv.length;
+  const total = c.inv.reduce((s, it) => s + recycleValue(it), 0);
+  const ups = c.inv.filter((it) => isUpgrade(it, c.equip)).length;
+  const warn = ups ? L(` Atenção: ${ups} ${ups > 1 ? 'são melhores' : 'é melhor'} que o equipado (▲).`, ` Warning: ${ups} ${ups > 1 ? 'are' : 'is'} better than what you have equipped (▲).`) : '';
+  confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + warn, () => {
+    c.inv = [];
     c.credits += total;
     sfx.coin();
-    toast(L(`Comuns reciclados: +${total}¢`, `Commons recycled: +${total}¢`));
-  }
-  selected = null;
-  renderChar();
+    toast(L(`Inventário reciclado: +${fmt(total)}¢`, `Inventory recycled: +${fmt(total)}¢`));
+    selected = null;
+    renderChar();
+    saveGame();
+  });
 }
 
 function buyStim() {
@@ -774,6 +774,11 @@ function activePanel() {
     if (!el.classList.contains('hidden')) return el;
   }
   return null;
+}
+
+function clearFocus() {
+  if (focused) focused.classList.remove('gp-focus');
+  focused = null;
 }
 
 function setFocus(el) {
@@ -827,7 +832,7 @@ export function uiPadUpdate() {
   if (root !== lastPanel) {
     lastPanel = root;
     if (focused) focused.classList.remove('gp-focus');
-    focused = null;
+    clearFocus();
   }
   if (!root || G.lastInput !== 'pad') return;
   const list = navigables(root);
@@ -887,7 +892,7 @@ export function openShop(stock) {
   shopStock = stock;
   G.mode = 'shop';
   $('panel-shop').classList.remove('hidden');
-  focused = null;
+  clearFocus();
   sfx.rare();
   renderShop();
 }
@@ -941,7 +946,7 @@ function buy(what) {
     toast(`${L('Comprado', 'Bought')}: ${itemName(copy)}`);
   }
   renderShop();
-  focused = null;
+  clearFocus();
 }
 
 // ------------------------------------------------------------------

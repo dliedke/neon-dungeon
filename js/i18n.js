@@ -15,7 +15,7 @@ const DICT = {
   equipment: ['Equipamento', 'Equipment'],
   skills: ['Habilidades', 'Skills'],
   buyStim: ['Comprar Stim', 'Buy Stim'],
-  recycleCommons: ['Reciclar comuns', 'Recycle commons'],
+  recycleAll: ['Reciclar tudo', 'Recycle all'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
   padHints: ['Ⓐ Selecionar/Equipar · Ⓧ Reciclar · Ⓨ Trocar aba · Ⓑ Fechar', 'Ⓐ Select/Equip · Ⓧ Recycle · Ⓨ Switch tab · Ⓑ Close'],
   pause: ['PAUSA', 'PAUSED'],

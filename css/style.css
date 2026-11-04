@@ -293,6 +293,14 @@ body.touch #skillbar { display: none; }
 .close:hover { border-color: var(--accent); color: var(--accent); }
 .gp-focus { outline: none; }
 body.pad .gp-focus { outline: 2px solid #fff !important; outline-offset: 2px; box-shadow: 0 0 16px var(--accent) !important; }
+/* botões com cantos recortados (clip-path) cortam o contorno: o foco acende o botão inteiro */
+body.pad .btn.gp-focus, body.pad .tab-btn.gp-focus, body.pad .close.gp-focus {
+  background: #ffffff !important; color: #05030c !important; border-color: #ffffff !important;
+  filter: drop-shadow(0 0 10px var(--accent)); transform: scale(1.04); outline: none !important;
+}
+body.pad .btn.gp-focus::before { content: '▶ '; }
+body.pad input[type=range].gp-focus { outline: 2px solid #fff !important; outline-offset: 4px; }
+body.pad .cell.gp-focus { outline: 3px solid #fff !important; outline-offset: 1px; z-index: 2; }
 
 /* Menu principal */
 .menu-inner { width: 100%; max-width: 1080px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
@@ -340,7 +348,8 @@ body.pad .gp-focus { outline: 2px solid #fff !important; outline-offset: 2px; bo
   display: grid; place-items: center; cursor: pointer; padding: 18%; pointer-events: auto;
 }
 .cell svg { width: 100%; height: 100%; }
-.cell.empty { color: rgba(255, 255, 255, 0.12); cursor: default; }
+.cell.empty { color: rgba(255, 255, 255, 0.12); cursor: default; pointer-events: none; }
+body.pad .cell.empty { pointer-events: auto; }
 .cell.r0 { color: var(--r0); }
 .cell.r1 { color: var(--r1); border-color: rgba(77, 155, 255, 0.55); background: rgba(77, 155, 255, 0.07); }
 .cell.r2 { color: var(--r2); border-color: rgba(255, 210, 61, 0.6); background: rgba(255, 210, 61, 0.07); }
