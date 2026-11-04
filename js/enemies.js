@@ -761,8 +761,8 @@ function chooseBossAttack(e, dist) {
 export function populateFloor(d, floor, boss) {
   const D = diff();
   const eliteChance = floor <= 1 ? 0 : Math.min(0.3, 0.04 + floor * 0.025);
-  const emptyChance = Math.max(0, 0.4 - floor * 0.08); // algumas salas vazias nos primeiros andares
-  const perPack = Math.max(36, 80 - floor * 8); // área por grupo (menor = mais grupos)
+  const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
+  const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
     if (boss && r === d.exitRoom) continue;
@@ -773,7 +773,7 @@ export function populateFloor(d, floor, boss) {
       const cx = r.x + rr(1.5, r.w - 1.5);
       const cz = r.y + rr(1.5, r.h - 1.5);
       const type = pickEnemyType(floor);
-      const base = ETYPES[type].solo ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 1.5 + floor / 2.5));
+      const base = ETYPES[type].solo ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 2.2 + floor / 2.5));
       const n = Math.max(1, Math.round(base * D.count));
       const elite = chance(eliteChance);
       for (let i = 0; i < n; i++) {
