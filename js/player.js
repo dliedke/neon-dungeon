@@ -8,6 +8,7 @@ import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
 import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
 import { groundEffect } from './biomes.js';
+import { formMods } from './powers.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
@@ -22,7 +23,7 @@ export const MAX_STIMS = 9;
 export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
-    skills: [1, 1, 1, 1], skillPoints: 0,
+    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null], skillPoints: 0,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
 }
@@ -88,7 +89,7 @@ export function createPlayer() {
   model.root.add(light);
   const p = {
     x: 0, z: 0, r: 0.35, model, light, alive: true, facing: 0, phase: 0,
-    atkT: 0, swing: 0, swingDir: 1, cds: [0, 0, 0, 0], buffs: {}, invuln: 0,
+    atkT: 0, swing: 0, swingDir: 1, cds: C.skills.map(() => 0), buffs: {}, invuln: 0,
     dash: null, whirl: null, path: null, pathT: 0, target: null, combo: 0, hand: 0, sureCrit: 0,
     shield: 0, shieldCd: 0, stimCd: 0, hurtT: 0, inCombat: 0, kx: 0, kz: 0,
     aim: { dx: 0, dz: 1 }, aimPoint: { x: 0, z: 0 }, moveDir: { x: 0, z: 0 }, moving: false, revealT: 0,
@@ -155,6 +156,9 @@ export function gainXp(n) {
     p.hp = p.stats.maxHp;
     p.en = p.stats.maxEn;
     levelUpFx(c.level);
+    // avisa quando um poder novo da árvore fica disponível
+    const fresh = CLASSES[c.cls].skills.filter((sk) => sk.req === c.level);
+    if (fresh.length) setTimeout(() => toast(`✨ ${L('Novo poder disponível', 'New power available')}: <b>${fresh.map((sk) => sk.name).join(', ')}</b> — ${L('abra a árvore (I)', 'open the tree (I)')}`, 'up'), 900);
     ringFx(p.x, p.z, 3, 0xffd23d, 0.6);
     burst(p.x, 1, p.z, 0xffd23d, 40, 6, 0.08, 0.8, { up: 1.2 });
     sfx.levelup();
@@ -308,6 +312,7 @@ function setMoveTarget(p, x, z) {
 function tryUseSkill(p, i) {
   const C = CLASSES[G.char.cls];
   const sk = C.skills[i];
+  if (!sk || !(G.char.skills[i] > 0)) return;
   if (p.cds[i] > 0) {
     sfx.deny();
     return;
@@ -372,7 +377,7 @@ export function updatePlayer(dt) {
   const s = p.stats;
 
   // temporizadores
-  for (let i = 0; i < 4; i++) p.cds[i] = Math.max(0, p.cds[i] - dt);
+  for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - dt);
   p.invuln = Math.max(0, p.invuln - dt);
   p.stimCd = Math.max(0, p.stimCd - dt);
   p.shieldCd = Math.max(0, p.shieldCd - dt);
@@ -490,7 +495,8 @@ export function updatePlayer(dt) {
     else p.spin = Math.max(0, (p.spin || 0) - dt * 1.5);
   }
   if (wantAttack && p.atkT <= 0 && !p.dash && !p.leap) {
-    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1));
+    const fm = formMods(p);
+    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1) * (fm && fm.rate ? fm.rate : 1));
     SKILL_FN[C.skills[0].id](p, c.skills[0]);
     p.facing = Math.atan2(p.aim.dx, p.aim.dz);
     p.lockFace = 0.22;
@@ -499,12 +505,21 @@ export function updatePlayer(dt) {
   p.attackHold = Math.max(0, (p.attackHold || 0) - dt);
 
   // ---------- habilidades ----------
-  if (Input.pressed('s1')) tryUseSkill(p, 1);
-  if (Input.pressed('s2')) tryUseSkill(p, 2);
-  if (Input.pressed('s3')) tryUseSkill(p, 3);
+  // Q/E/R (X/Y/B) usam as habilidades colocadas nos 3 espaços
+  ['s1', 's2', 's3'].forEach((a, k) => {
+    if (!Input.pressed(a)) return;
+    const i = c.slots[k];
+    if (i == null) {
+      sfx.deny();
+      toast(L('Espaço vazio: escolha um poder na árvore de habilidades (I).', 'Empty slot: pick a power in the skill tree (I).'), 'warn', 'slot');
+      return;
+    }
+    tryUseSkill(p, i);
+  });
   if (Input.pressed('stim')) useStim();
 
-  let speed = s.speed * (oc ? 1.3 : 1);
+  const fmv = formMods(p);
+  let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1);
   if (p.attackHold > 0) speed *= C.melee ? 0.45 : C.spinUp ? 0.55 : 0.8;
   if (p.whirl) speed *= 0.75;
 
@@ -522,7 +537,8 @@ export function updatePlayer(dt) {
     if (k >= 1) {
       p.leap = null;
       p.model.body.position.y = 0;
-      explosion(p.x, p.z, 2.3, lp.mult, { color: lp.color, burn: 0.5, knock: 5 });
+      explosion(p.x, p.z, lp.radius || 2.3, lp.mult, { color: lp.color, burn: 0.5, knock: 5 });
+      if (lp.radius) G.shake = Math.max(G.shake, 0.45);
     }
   }
 
@@ -540,7 +556,7 @@ export function updatePlayer(dt) {
       for (const e of enemiesInRadius(p.x, p.z, ds.radius)) {
         if (ds.hit.has(e)) continue;
         ds.hit.add(e);
-        hitEnemy(e, ds.mult, { knock: 4 });
+        hitEnemy(e, ds.mult, { knock: 4, burn: ds.burn });
       }
     }
     if (Math.random() < 0.6) ghostFx(p.model, ds.color);
@@ -673,3 +689,33 @@ export function updatePlayer(dt) {
 }
 
 export { clamp };
+
+// ------------------------------------------------------------------
+// Árvore de habilidades
+// ------------------------------------------------------------------
+export function skillReq(i) {
+  return CLASSES[G.char.cls].skills[i].req || 1;
+}
+
+// Gasta 1 ponto: desbloqueia (nível 1) ou evolui a habilidade
+export function spendPoint(i) {
+  const c = G.char;
+  if (c.skillPoints <= 0 || c.skills[i] >= 10 || c.level < skillReq(i)) return false;
+  const wasLocked = !(c.skills[i] > 0);
+  c.skills[i] = (c.skills[i] || 0) + 1;
+  c.skillPoints--;
+  // ao desbloquear, coloca no primeiro espaço livre
+  if (wasLocked && i > 0) {
+    const free = c.slots.indexOf(null);
+    if (free >= 0) c.slots[free] = i;
+  }
+  return true;
+}
+
+export function assignSlot(slot, i) {
+  const c = G.char;
+  if (i > 0 && !(c.skills[i] > 0)) return;
+  const prev = c.slots.indexOf(i);
+  if (prev >= 0) c.slots[prev] = c.slots[slot];
+  c.slots[slot] = i;
+}

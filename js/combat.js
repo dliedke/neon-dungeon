@@ -1,3 +1,4 @@
+import { formMods, timeFactor, shieldCatch } from './powers.js';
 // Dano, projéteis, explosões, torres e temporizadores.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
@@ -76,7 +77,8 @@ export function nearestEnemy(x, z, maxD, needLos = true, exclude = null) {
 export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100);
+  const fm = formMods(p);
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1);
   let crit = false;
   if (forceCrit || Math.random() < s.crit / 100) {
     crit = true;
@@ -90,7 +92,8 @@ export function hitEnemy(e, mult, o = {}) {
   const p = G.player;
   const r = playerDamageRoll(mult, o.forceCrit);
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
-  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0);
+  const fm = formMods(p);
+  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
   if (ls > 0 && dealt > 0) healPlayer((dealt * ls) / 100, false);
   if (o.energy) p.en = Math.min(p.stats.maxEn, p.en + o.energy);
   applyStatus(e, o);
@@ -251,6 +254,8 @@ export function damagePlayer(amount) {
   if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
   amount *= 100 / (100 + p.stats.armor);
   if (p.buffs.titan > 0) amount *= 0.4;
+  const fmd = formMods(p);
+  if (fmd) amount *= fmd.taken;
   amount = Math.max(1, Math.round(amount));
   p.inCombat = 5;
   if (p.shield > 0) {
@@ -344,8 +349,14 @@ export function updateProjectiles(dt) {
       }
     }
     const pos = pr.mesh.position;
-    pos.x += pr.dx * pr.speed * dt;
-    pos.z += pr.dz * pr.speed * dt;
+    // tiros inimigos ficam lentos dentro de uma dobra temporal
+    const tf = pr.from === 'enemy' && G.warps.length ? timeFactor(pos.x, pos.z) : 1;
+    pos.x += pr.dx * pr.speed * dt * tf;
+    pos.z += pr.dz * pr.speed * dt * tf;
+    if (pr.from === 'enemy' && shieldCatch(pr)) {
+      pr.alive = false;
+      continue;
+    }
     pr.life -= dt;
     pr.trail += dt;
     if (pr.trail > 0.03) {

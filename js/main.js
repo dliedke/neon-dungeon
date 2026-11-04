@@ -15,6 +15,7 @@ import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } f
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
 import { placeFeatures, buildFeatures, updateBiome } from './biomes.js';
+import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import {
@@ -203,6 +204,7 @@ function clearWorld() {
   G.hazards = [];
   G.barriers = [];
   G.decoy = null;
+  clearPowers();
   G.boss = null;
   bossBar(null);
 }
@@ -263,7 +265,11 @@ export function startGame(cls, fresh) {
 }
 
 function sanitizeChar(c) {
+  // saves antigos: tinham 4 habilidades, todas liberadas
+  const n = CLASSES[c.cls].skills.length;
   c.skills = c.skills || [1, 1, 1, 1];
+  while (c.skills.length < n) c.skills.push(0);
+  if (!c.slots) c.slots = [1, 2, 3].map((i) => (c.skills[i] > 0 ? i : null));
   c.inv = c.inv || [];
   c.equip = c.equip || {};
   c.stims = c.stims ?? 3;
@@ -366,6 +372,7 @@ function logic(dt) {
   updateHazards(dt);
   updateBarriers(dt);
   updateBiome(dt, camera);
+  updatePowers(dt);
   updateDecoy(dt);
   updatePickups(dt, camera);
   updateExit(dt);
@@ -441,6 +448,7 @@ function boot() {
   });
   addEventListener('beforeunload', () => G.char && saveGame());
   window.__G = G; // útil para depuração no console
+  window.__classes = CLASSES;
   window.__dbg = {
     spawnEnemy, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
     // roda a lógica sem renderizar (usado em testes automatizados)

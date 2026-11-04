@@ -490,3 +490,54 @@ body.touch.portrait.ingame #rotate { display: flex; }
 #rotate .rot-sub { color: var(--muted); max-width: 320px; }
 #rotate .rot-ios { display: none; color: var(--yellow); font-size: 14px; max-width: 320px; }
 body.ios #rotate .rot-ios { display: block; }
+
+/* Árvore de habilidades */
+#tab-skills.tab-body { display: block; }
+.tree-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.tree { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 0; }
+.tree .sp-info { align-self: flex-start; margin-bottom: 10px; }
+.tier { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.tier-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+.tier-nodes { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; }
+.tree-link { width: 2px; height: 22px; background: linear-gradient(var(--line), var(--accent), var(--line)); opacity: 0.7; margin: 4px 0; }
+.tnode {
+  position: relative; width: 68px; height: 68px; border-radius: 50%; border: 2px solid var(--line); background: rgba(10, 10, 26, 0.9);
+  color: var(--muted); cursor: pointer; padding: 0; display: grid; place-items: center; pointer-events: auto; transition: transform 0.12s;
+}
+.tnode .ticon { width: 34px; height: 34px; display: block; }
+.tnode .ticon svg { width: 100%; height: 100%; }
+.tnode.learned { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent) 25%, transparent); }
+.tnode.available { border-color: var(--yellow); color: #fff; border-style: dashed; }
+.tnode.locked { opacity: 0.45; filter: grayscale(1); }
+.tnode.can { animation: nodePulse 1.4s ease-in-out infinite; }
+@keyframes nodePulse { 50% { box-shadow: 0 0 22px rgba(255, 210, 61, 0.8); } }
+.tnode.sel { transform: scale(1.12); outline: 2px solid #fff; outline-offset: 3px; }
+.tnode:hover { transform: scale(1.08); }
+.tbadge {
+  position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 11px; padding: 1px 6px; white-space: nowrap;
+  background: #05030c; border: 1px solid var(--line); color: var(--text); border-radius: 8px;
+}
+.tnode.available .tbadge { color: var(--yellow); border-color: var(--yellow); }
+.tslot {
+  position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--accent); color: #05030c;
+  font-size: 12px; font-weight: 700; display: grid; place-items: center; padding: 0 4px;
+}
+.tree-detail { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); padding: 16px; position: sticky; top: 0; }
+.td-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.td-head .sicon { width: 54px; height: 54px; padding: 10px; border: 1px solid var(--accent); color: var(--accent); flex: 0 0 auto; }
+.tree-detail .sname { font-size: 19px; font-weight: 700; }
+.tree-detail .sdesc { font-size: 15px; color: #c3c8ea; line-height: 1.35; margin-bottom: 10px; }
+.tstatus { font-size: 13px; margin-bottom: 12px; color: var(--yellow); }
+.tstatus.ok { color: #39ff88; }
+.tstatus.lock { color: var(--muted); }
+.td-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.slot-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.slot-pick .btn { min-width: 44px; }
+body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3px; transform: scale(1.14); }
+.skill.empty-slot .icon, .tbtn.empty-slot .icon { color: var(--muted); filter: none; }
+@media (max-width: 760px), (max-height: 520px) {
+  .tree-wrap { grid-template-columns: 1fr; }
+  .tnode { width: 54px; height: 54px; }
+  .tnode .ticon { width: 26px; height: 26px; }
+  .tier-nodes { gap: 14px; }
+}

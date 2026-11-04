@@ -10,6 +10,7 @@ import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
 import { groundEffect } from './biomes.js';
+import { timeFactor } from './powers.js';
 import { spawnChest } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx } from './fx.js';
@@ -193,6 +194,7 @@ export function updateEnemies(dt, cam) {
   let anyAggro = false;
   for (const e of G.enemies) {
     if (!e.alive || e.inert) continue;
+    const edt = G.warps.length ? dt * timeFactor(e.x, e.z) : dt;
     // a isca holográfica atrai os inimigos próximos
     const tgt = G.decoy && Math.hypot(G.decoy.x - e.x, G.decoy.z - e.z) < 14 ? G.decoy : p;
     const dx = tgt.x - e.x;
@@ -202,19 +204,19 @@ export function updateEnemies(dt, cam) {
 
     // queimadura / lentidão / congelamento
     if (e.burnT > 0) {
-      e.burnT -= dt;
-      e.burnTick = (e.burnTick || 0) - dt;
-      if (Math.random() < dt * 12) burst(e.x, e.height * rr(0.3, 1), e.z, 0xff6a00, 1, 1, 0.07, 0.4, { grav: -3 });
+      e.burnT -= edt;
+      e.burnTick = (e.burnTick || 0) - edt;
+      if (Math.random() < edt * 12) burst(e.x, e.height * rr(0.3, 1), e.z, 0xff6a00, 1, 1, 0.07, 0.4, { grav: -3 });
       if (e.burnTick <= 0) {
         e.burnTick = 0.5;
         damageEnemy(e, e.burnDps * 0.5, false, { dot: true });
         if (!e.alive) continue;
       }
     }
-    if (e.slowT > 0) e.slowT -= dt;
-    if (e.frozenT > 0) e.frozenT -= dt;
+    if (e.slowT > 0) e.slowT -= edt;
+    if (e.frozenT > 0) e.frozenT -= edt;
 
-    e.losT -= dt;
+    e.losT -= edt;
     if (e.losT <= 0) {
       e.losT = 0.25;
       e.los = dist < 16 && lineOfSight(d, e.x, e.z, tgt.x, tgt.z);
@@ -230,15 +232,15 @@ export function updateEnemies(dt, cam) {
     }
     if (e.aggro && p.alive) anyAggro = true;
 
-    e.atkT -= dt;
-    e.flash -= dt;
-    if (e.hpShow > 0) e.hpShow -= dt;
+    e.atkT -= edt;
+    e.flash -= edt;
+    if (e.hpShow > 0) e.hpShow -= edt;
 
     let mvx = 0;
     let mvz = 0;
     let speed = e.speed * (e.slowT > 0 ? 0.5 : 1);
     if (e.stun > 0) {
-      e.stun -= dt;
+      e.stun -= edt;
       if (Math.random() < 0.3) burst(e.x, e.height, e.z, 0x39ff14, 1, 1.5, 0.04, 0.3, { grav: 0 });
     } else if (e.aggro && p.alive) {
       const ux = dx / (dist || 1);
@@ -250,7 +252,7 @@ export function updateEnemies(dt, cam) {
       switch (e.T.ai) {
         case 'melee': {
           if (e.T.blink) {
-            e.blinkT = (e.blinkT ?? rr(1, 3)) - dt;
+            e.blinkT = (e.blinkT ?? rr(1, 3)) - edt;
             if (e.blinkT <= 0 && dist > 2.6 && dist < 11 && e.los && !(e.windup > 0)) {
               e.blinkT = rr(3.5, 5);
               const bx = p.x - Math.sin(p.facing) * 1.3;
@@ -266,7 +268,7 @@ export function updateEnemies(dt, cam) {
             }
           }
           if (e.windup > 0) {
-            e.windup -= dt;
+            e.windup -= edt;
             speed = 0;
             if (e.windup <= 0) {
               e.swing = 1;
@@ -285,7 +287,7 @@ export function updateEnemies(dt, cam) {
         }
         case 'ranged': {
           const [kmin, kmax] = e.T.keep;
-          e.strafeT -= dt;
+          e.strafeT -= edt;
           if (e.strafeT <= 0) {
             e.strafeT = rr(1.2, 2.8);
             e.strafe *= -1;
@@ -319,7 +321,7 @@ export function updateEnemies(dt, cam) {
         }
         case 'bomber': {
           if (e.fuse !== undefined) {
-            e.fuse -= dt;
+            e.fuse -= edt;
             speed = 0;
             e.model.coreMat.color.setScalar(Math.floor(e.fuse * 16) % 2 ? 3 : 0.5);
             if (e.fuse <= 0) {
@@ -344,7 +346,7 @@ export function updateEnemies(dt, cam) {
         case 'sniper': {
           const [kmin, kmax] = e.T.keep;
           if (e.aimT > 0) {
-            e.aimT -= dt;
+            e.aimT -= edt;
             speed = 0;
             if (e.aimT > 0.3) {
               e.lockX = tgt.x;
@@ -384,7 +386,7 @@ export function updateEnemies(dt, cam) {
         case 'kamikaze': {
           if (e.kstate === 'lock') {
             speed = 0;
-            e.kt -= dt;
+            e.kt -= edt;
             e.model.ring.material = glowMat(Math.floor(e.kt * 14) % 2 ? 0xffffff : 0xff3300, 3);
             if (e.kt <= 0) {
               e.kstate = 'dive';
@@ -395,7 +397,7 @@ export function updateEnemies(dt, cam) {
             mvx = e.kdx;
             mvz = e.kdz;
             speed = 15;
-            e.kt -= dt;
+            e.kt -= edt;
             if (Math.random() < 0.8) burst(e.x, 1.2, e.z, 0xff8800, 1, 1, 0.07, 0.3, { grav: 0 });
             const hitWall = !isWalkable(d, e.x + e.kdx * 0.5, e.z + e.kdz * 0.5);
             if (dist < e.r + p.r + 0.3 || hitWall || e.kt <= 0) {
@@ -423,7 +425,7 @@ export function updateEnemies(dt, cam) {
         }
         case 'illusionist': {
           const [kmin, kmax] = e.T.keep;
-          e.strafeT -= dt;
+          e.strafeT -= edt;
           if (e.strafeT <= 0) {
             e.strafeT = rr(1, 2.2);
             e.strafe *= -1;
@@ -447,7 +449,7 @@ export function updateEnemies(dt, cam) {
           }
           // a verdadeira cria cópias e troca de lugar com uma delas
           if (!e.decoy) {
-            e.summonT = (e.summonT ?? 1.5) - dt;
+            e.summonT = (e.summonT ?? 1.5) - edt;
             e.decoys = (e.decoys || []).filter((c) => c.alive);
             if (e.summonT <= 0 && e.los && dist < 12) {
               e.summonT = rr(6, 8);
@@ -573,14 +575,14 @@ export function updateEnemies(dt, cam) {
         case 'omega':
         case 'pylon': {
           const fn = { scrap: updateScrap, reaper: updateReaper, gunship: updateGunship, hackerboss: updateHackerBoss, omega: updateOmega, pylon: updatePylon }[e.T.ai];
-          const r = fn(e, dt, dist, ux, uz);
+          const r = fn(e, edt, dist, ux, uz);
           mvx = r.x;
           mvz = r.z;
           speed = r.speed;
           break;
         }
         case 'queen': {
-          const r = updateQueen(e, dt, dist, ux, uz);
+          const r = updateQueen(e, edt, dist, ux, uz);
           mvx = r.x;
           mvz = r.z;
           speed = r.speed;
@@ -588,7 +590,7 @@ export function updateEnemies(dt, cam) {
         }
         case 'brute': {
           if (e.slamT > 0) {
-            e.slamT -= dt;
+            e.slamT -= edt;
             speed = 0;
             if (e.slamT <= 0) {
               e.swing = 1;
@@ -612,7 +614,7 @@ export function updateEnemies(dt, cam) {
           break;
         }
         case 'boss': {
-          const r = updateBoss(e, dt, dist, ux, uz);
+          const r = updateBoss(e, edt, dist, ux, uz);
           mvx = r.x;
           mvz = r.z;
           speed = r.speed;
@@ -625,9 +627,9 @@ export function updateEnemies(dt, cam) {
     const ge = !e.T.fly && !e.static ? groundEffect(d, e.x, e.z) : null;
     if (ge && ge.sludge) speed *= 0.75;
     const push = ge && ge.push ? ge.push : { x: 0, z: 0 };
-    e.x += (mvx * speed + e.kx + push.x) * dt;
-    e.z += (mvz * speed + e.kz + push.z) * dt;
-    const kd = Math.max(0, 1 - dt * 8);
+    e.x += (mvx * speed + e.kx + push.x) * edt;
+    e.z += (mvz * speed + e.kz + push.z) * edt;
+    const kd = Math.max(0, 1 - edt * 8);
     e.kx *= kd;
     e.kz *= kd;
     resolveCircle(d, e);

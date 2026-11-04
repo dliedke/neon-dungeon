@@ -25,6 +25,18 @@ Items marked with **▲** and a green glow are better than what you have equippe
 
 Each class has its own save slot, stored in the browser.
 
+### Skill tree
+
+Every class has a **skill tree with 9 powers**. You start with only the basic attack and one skill;
+new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn.
+Points also upgrade each power up to rank 10. Pick which **3 powers** go on your Q / E / R buttons
+(X / Y / B on a gamepad).
+
+Some of the wilder powers: summoned demons (Oni, Digital Daemon, Ifrit), a steel golem and an ice wolf pack,
+orbiting blades, black holes, orbital lasers, lightning storms, time warps that slow enemies and their bullets,
+plasma shields that reflect shots, Mind Hack (enemies fight for you), Omnislash, Demon Form, Mech Suit,
+meteor showers and a nuclear strike.
+
 ## Controls
 
 - **Keyboard + mouse:**

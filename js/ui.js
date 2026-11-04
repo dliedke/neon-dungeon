@@ -3,7 +3,7 @@ import { G } from './state.js';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemScore, recycleValue, slotIconSvg } from './items.js';
-import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL } from './player.js';
+import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
@@ -211,13 +211,25 @@ export function showHUD() {
   $('hud').classList.remove('hidden');
   const C = CLASSES[G.char.cls];
   document.documentElement.style.setProperty('--accent', C.css);
-  for (let i = 0; i < 4; i++) {
-    $('sk' + i).querySelector('.icon').innerHTML = iconSvg(C.skills[i].icon);
-    const tb = i === 0 ? $('tb-primary') : $('tb-s' + i);
-    tb.querySelector('.icon').innerHTML = iconSvg(C.skills[i].icon);
-  }
+  refreshSkillBar();
+}
+
+// Índices das habilidades em cada botão: [ataque básico, Q, E, R]
+const barSkills = () => [0, ...G.char.slots];
+
+export function refreshSkillBar() {
+  const C = CLASSES[G.char.cls];
+  barSkills().forEach((i, k) => {
+    const sk = i == null ? null : C.skills[i];
+    const icon = sk ? iconSvg(sk.icon) : '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"><rect x="9" y="14" width="14" height="11" rx="2"/><path d="M12 14v-3a4 4 0 0 1 8 0v3"/></svg>';
+    $('sk' + k).querySelector('.icon').innerHTML = icon;
+    $('sk' + k).classList.toggle('empty-slot', !sk);
+    const tb = k === 0 ? $('tb-primary') : $('tb-s' + k);
+    tb.querySelector('.icon').innerHTML = icon;
+    tb.classList.toggle('empty-slot', !sk);
+    if (k > 0) $('sk' + k).querySelector('.cost').textContent = sk ? skillCost(i) || '' : '';
+  });
   $('sk0').querySelector('.key').textContent = 'LMB';
-  for (let i = 1; i < 4; i++) $('sk' + i).querySelector('.cost').textContent = skillCost(i) || '';
 }
 
 const cache = {};
@@ -257,11 +269,13 @@ export function updateHUD(dt) {
   $('hurt').classList.toggle('low', lowHp);
 
   // habilidades
-  for (let i = 0; i < 4; i++) {
-    const cdMax = i === 0 ? 0 : skillCd(i);
+  const bar = barSkills();
+  for (let b = 0; b < 4; b++) {
+    const i = bar[b];
+    const cdMax = i ? skillCd(i) : 0;
     const k = cdMax > 0 ? p.cds[i] / cdMax : 0;
-    const noen = i > 0 && p.en < skillCost(i);
-    for (const el of [$('sk' + i), i === 0 ? $('tb-primary') : $('tb-s' + i)]) {
+    const noen = !!i && p.en < skillCost(i);
+    for (const el of [$('sk' + b), b === 0 ? $('tb-primary') : $('tb-s' + b)]) {
       const cd = el.querySelector('.cd');
       if (cd) {
         const v = k.toFixed(3);
@@ -596,30 +610,99 @@ export function renderChar() {
     $('stat-list').innerHTML = sh;
     renderDetail();
   } else {
-    const rows = C.skills.map((sk, i) => {
-      const r = c.skills[i];
-      const can = c.skillPoints > 0 && r < 10;
-      const meta = i === 0 ? L('Ataque básico', 'Basic attack') : L(`Custo ${skillCost(i)} · Recarga ${skillCd(i).toFixed(1)}s`, `Cost ${skillCost(i)} · Cooldown ${skillCd(i).toFixed(1)}s`);
-      return `<div class="srow">
-        <div class="sicon">${iconSvg(sk.icon)}</div>
-        <div><div class="sname">${sk.name}<small>${L('Nível', 'Level')} ${r}/10</small></div>
-          <div class="sdesc">${sk.desc(r)}</div>
-          <div class="smeta">${meta}${r < 10 ? L(` · Próximo nível: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · Next level: ${Math.round(rankMult(r + 1) * 100)}% power`) : ''}</div></div>
-        <button class="btn plus" data-nav data-rank="${i}" ${can ? '' : 'disabled'}>+</button>
-      </div>`;
-    });
-    $('skill-list').innerHTML = `<div class="sp-info">${L('Pontos disponíveis', 'Points available')}: ${c.skillPoints}</div>` + rows.join('');
-    $('skill-list').querySelectorAll('[data-rank]').forEach((b) => (b.onclick = () => {
-      const i = +b.dataset.rank;
-      if (c.skillPoints > 0 && c.skills[i] < 10) {
-        c.skills[i]++;
-        c.skillPoints--;
-        sfx.levelup();
-        renderChar();
-        restoreFocus(`[data-rank="${i}"]`);
-      }
-    }));
+    renderTree();
   }
+}
+
+// ------------------------------------------------------------------
+// Árvore de habilidades
+// ------------------------------------------------------------------
+let treeSel = 1;
+const TIERS = [
+  { label: [1, 1], idx: [0, 1] },
+  { label: [2, 4], idx: [2, 3] },
+  { label: [5, 9], idx: [4, 5, 6] },
+  { label: [12, 15], idx: [7, 8] },
+];
+function slotKey(k) {
+  if (G.lastInput === 'pad') return ['X', 'Y', 'B'][k];
+  if (G.isTouch) return String(k + 1);
+  return ['Q', 'E', 'R'][k];
+}
+
+function renderTree() {
+  const c = G.char;
+  const C = CLASSES[c.cls];
+  if (!C.skills[treeSel]) treeSel = 1;
+  let html = `<div class="tree-wrap"><div class="tree">
+    <div class="sp-info">${L('Pontos disponíveis', 'Points available')}: <b>${c.skillPoints}</b></div>`;
+  TIERS.forEach((t, ti) => {
+    const lbl = t.label[0] === t.label[1] ? `${L('Nível', 'Level')} ${t.label[0]}` : `${L('Níveis', 'Levels')} ${t.label[0]}–${t.label[1]}`;
+    if (ti) html += '<div class="tree-link"></div>';
+    html += `<div class="tier"><div class="tier-label">${lbl}</div><div class="tier-nodes">`;
+    for (const i of t.idx) {
+      const sk = C.skills[i];
+      if (!sk) continue;
+      const r = c.skills[i] || 0;
+      const req = sk.req || 1;
+      const locked = r === 0;
+      const canLearn = locked && c.level >= req && c.skillPoints > 0;
+      const canUp = !locked && r < 10 && c.skillPoints > 0;
+      const slot = c.slots.indexOf(i);
+      const state = locked ? (c.level >= req ? 'available' : 'locked') : 'learned';
+      html += `<button class="tnode ${state}${treeSel === i ? ' sel' : ''}${canLearn || canUp ? ' can' : ''}" data-nav data-node="${i}" title="${sk.name}">
+        <span class="ticon">${iconSvg(sk.icon)}</span>
+        <span class="tbadge">${locked ? (c.level >= req ? '+' : `🔒${req}`) : `${r}/10`}</span>
+        ${slot >= 0 ? `<span class="tslot">${slotKey(slot)}</span>` : i === 0 ? `<span class="tslot">⚔</span>` : ''}
+      </button>`;
+    }
+    html += '</div></div>';
+  });
+  html += '</div>';
+  // detalhes do nó selecionado
+  const i = treeSel;
+  const sk = C.skills[i];
+  const r = c.skills[i] || 0;
+  const req = sk.req || 1;
+  const locked = r === 0;
+  const meta = i === 0 ? L('Ataque básico', 'Basic attack') : L(`Custo ${skillCost(i)} de energia · Recarga ${skillCd(i).toFixed(1)}s`, `Cost ${skillCost(i)} energy · Cooldown ${skillCd(i).toFixed(1)}s`);
+  let status = '';
+  if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
+  else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`) : ''}</div>`;
+  const canSpend = c.skillPoints > 0 && r < 10 && c.level >= req;
+  let actions = `<button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>`;
+  if (i > 0 && !locked) {
+    actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${[0, 1, 2].map((k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
+  }
+  html += `<div class="tree-detail">
+    <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
+    <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
+    ${status}
+    <div class="td-actions">${actions}</div>
+  </div></div>`;
+  $('skill-list').innerHTML = html;
+  $('skill-list').querySelectorAll('[data-node]').forEach((b) => (b.onclick = () => {
+    treeSel = +b.dataset.node;
+    renderTree();
+    restoreFocus(`[data-node="${treeSel}"]`);
+  }));
+  const sp = $('skill-list').querySelector('[data-spend]');
+  if (sp) sp.onclick = () => {
+    if (spendPoint(i)) {
+      sfx.levelup();
+      refreshSkillBar();
+      renderChar();
+      restoreFocus('[data-spend]');
+    } else sfx.deny();
+  };
+  $('skill-list').querySelectorAll('[data-slot]').forEach((b) => (b.onclick = () => {
+    assignSlot(+b.dataset.slot, i);
+    sfx.click();
+    refreshSkillBar();
+    renderTree();
+    restoreFocus(`[data-slot="${b.dataset.slot}"]`);
+  }));
 }
 
 function restoreFocus(sel) {
@@ -788,6 +871,11 @@ function setFocus(el) {
   el.classList.add('gp-focus');
   el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (el.matches('.cell[data-uid]') && G.lastInput === 'pad') selectCell(el);
+  if (el.matches('[data-node]') && G.lastInput === 'pad' && +el.dataset.node !== treeSel) {
+    treeSel = +el.dataset.node;
+    renderTree();
+    restoreFocus(`[data-node="${treeSel}"]`);
+  }
 }
 
 function navigables(root) {
