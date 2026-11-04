@@ -33,6 +33,7 @@ export const G = {
   shake: 0,
   isTouch: false,
   lastInput: 'kb', // kb | pad | touch
+  padType: null, // xbox | ps4 | ps5 | nintendo (null = nenhum controle detectado)
   mouseWorld: { x: 0, z: 0, ok: false },
   hoverEnemy: null,
   camFocus: { x: 0, z: 0 },

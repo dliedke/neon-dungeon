@@ -17,7 +17,7 @@ const DICT = {
   buyStim: ['Comprar Stim', 'Buy Stim'],
   recycleAll: ['Reciclar tudo', 'Recycle all'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
-  padHints: ['Ⓐ Selecionar/Equipar · Ⓧ Reciclar · Ⓨ Trocar aba · Ⓑ Fechar', 'Ⓐ Select/Equip · Ⓧ Recycle · Ⓨ Switch tab · Ⓑ Close'],
+  padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
   resume: ['Continuar', 'Resume'],
   character: ['Personagem', 'Character'],
@@ -46,8 +46,8 @@ const DICT = {
     '<p><b>Left click</b> on the ground: move · on an enemy: attack</p><p><b>WASD</b>: move · <b>Space</b> or <b>Shift + click</b>: attack</p><p><b>Q / E / R</b> (or 1/2/3): skills · <b>Right click</b>: skill 1</p><p><b>F</b>: stim · <b>I</b> / <b>Tab</b>: character · <b>Esc</b>: pause</p>',
   ],
   'help.pad': [
-    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p><b>A / RB / RT</b>: atacar · <b>X / Y / B</b>: habilidades</p><p><b>LB / LT</b>: stim · <b>Select</b>: personagem · <b>Start</b>: pausa</p>',
-    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p><b>A / RB / RT</b>: attack · <b>X / Y / B</b>: skills</p><p><b>LB / LT</b>: stim · <b>Select</b>: character · <b>Start</b>: pause</p>',
+    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p>{A} {RB} {RT}: atacar · {X} {Y} {B}: habilidades</p><p>{LB} {LT}: stim · {SELECT}: personagem · {START}: pausa</p>',
+    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p>{A} {RB} {RT}: attack · {X} {Y} {B}: skills</p><p>{LB} {LT}: stim · {SELECT}: character · {START}: pause</p>',
   ],
   'help.touch': [
     '<p>Toque e arraste do <b>lado esquerdo</b> da tela para mover.</p><p>Botões à direita: ataque (segure), habilidades e stim.</p>',

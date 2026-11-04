@@ -18,6 +18,7 @@ import { placeFeatures, buildFeatures, updateBiome } from './biomes.js';
 import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
+import { padText } from './padglyphs.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
   toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation,
@@ -260,7 +261,7 @@ export function startGame(cls, fresh) {
   G.mode = 'play';
   startFloor(G.char.floor || 1);
   if (G.char.level === 1 && G.char.kills === 0) {
-    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? L('Analógico para mover · A para atacar · X/Y/B habilidades', 'Left stick to move · A to attack · X/Y/B skills') : L('Clique para mover/atacar · Q/E/R habilidades · I inventário', 'Click to move/attack · Q/E/R skills · I inventory')), 2800);
+    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} habilidades', 'Left stick to move · {A} to attack · {X} {Y} {B} skills')) : L('Clique para mover/atacar · Q/E/R habilidades · I inventário', 'Click to move/attack · Q/E/R skills · I inventory')), 2800);
   }
 }
 

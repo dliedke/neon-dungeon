@@ -1,6 +1,7 @@
 // Entrada unificada: teclado + mouse, controle (Gamepad API) e toque.
 import { G } from './state.js';
 import { initAudio } from './audio.js';
+import { detectPadType } from './padglyphs.js';
 
 const KB = {
   KeyQ: 's1', KeyE: 's2', KeyR: 's3',
@@ -215,6 +216,12 @@ function update(dt) {
   for (const p of pads) if (p && p.connected && (!gp || (p.timestamp || 0) > (gp.timestamp || 0))) gp = p;
   if (gp) {
     Input.padConnected = true;
+    const pt = detectPadType(gp.id);
+    if (pt !== G.padType) {
+      G.padType = pt;
+      document.body.dataset.pad = pt;
+      window.dispatchEvent(new Event('padtypechange'));
+    }
     const dz = (v) => (Math.abs(v) < 0.22 ? 0 : v);
     padMove.x = dz(gp.axes[0] || 0);
     padMove.y = -dz(gp.axes[1] || 0);

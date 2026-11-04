@@ -46,6 +46,7 @@ meteor showers and a nuclear strike.
   - Left stick to move; A, RB or RT to attack.
   - X / Y / B for skills, LB for a stim, Select for the inventory and Start to pause.
   - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y switches tabs and B goes back.
+  - The game detects Xbox, PlayStation 4/5 and Nintendo Switch Pro controllers and shows the matching button icons.
 - **Mobile:**
   - Drag on the left side of the screen to move.
   - Use the buttons on the right to attack and use skills.

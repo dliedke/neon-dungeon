@@ -9,7 +9,8 @@ import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './main.js';
 import { fmt } from './utils.js';
-import { L } from './i18n.js';
+import { L, t } from './i18n.js';
+import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { itemName, isUpgrade } from './items.js';
 
 const $ = (id) => document.getElementById(id);
@@ -128,6 +129,12 @@ export function initUI() {
     if (c && G.lastInput === 'kb') selectCell(c, false);
   });
 
+  refreshPadLabels();
+  window.addEventListener('padtypechange', () => {
+    refreshPadLabels();
+    if (G.mode === 'char') renderChar();
+  });
+
   // qualquer clique em botão toca um som
   document.addEventListener('click', (e) => {
     if (e.target.closest('button')) {
@@ -229,7 +236,21 @@ export function refreshSkillBar() {
     tb.classList.toggle('empty-slot', !sk);
     if (k > 0) $('sk' + k).querySelector('.cost').textContent = sk ? skillCost(i) || '' : '';
   });
-  $('sk0').querySelector('.key').textContent = 'LMB';
+  refreshKeyLabels();
+}
+
+// Rótulos dos botões na barra de habilidades (teclado ou ícones do controle)
+export function refreshKeyLabels() {
+  const pad = G.lastInput === 'pad';
+  const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb')] : ['LMB', 'Q', 'E', 'R', 'F'];
+  labels.forEach((l, k) => ($('sk' + k).querySelector('.key').innerHTML = l));
+}
+
+// Textos com ícones de controle (dicas do inventário e tela de controles)
+export function refreshPadLabels() {
+  document.querySelectorAll('[data-pad-text]').forEach((el) => (el.innerHTML = padText(t(el.dataset.padText))));
+  document.querySelectorAll('.pad-name').forEach((el) => (el.textContent = G.padType ? `(${padName()})` : ''));
+  if (G.char) refreshKeyLabels();
 }
 
 const cache = {};
@@ -253,6 +274,11 @@ export function updateHUD(dt) {
   const c = G.char;
   if (!p) return;
   const s = p.stats;
+  const im = G.lastInput + G.padType;
+  if (cache.inputMode !== im) {
+    cache.inputMode = im;
+    refreshKeyLabels();
+  }
   setScale($('hp-fill'), p.hp / s.maxHp);
   setScale($('hp-lag'), p.hp / s.maxHp);
   setScale($('hp-shield'), p.shield / s.maxHp);
@@ -625,7 +651,7 @@ const TIERS = [
   { label: [12, 15], idx: [7, 8] },
 ];
 function slotKey(k) {
-  if (G.lastInput === 'pad') return ['X', 'Y', 'B'][k];
+  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b'][k]);
   if (G.isTouch) return String(k + 1);
   return ['Q', 'E', 'R'][k];
 }
@@ -722,7 +748,7 @@ function renderDetail() {
   const el = $('item-detail');
   const it = findItem(selected);
   if (!it) {
-    el.innerHTML = `<div class="empty-detail">${L('Selecione um item para ver os detalhes.<br><br>Clique duas vezes (ou Ⓐ no controle) para equipar.', 'Select an item to see its details.<br><br>Double-click (or Ⓐ on a gamepad) to equip.')}</div>`;
+    el.innerHTML = `<div class="empty-detail">${L('Selecione um item para ver os detalhes.<br><br>Clique duas vezes (ou {A} no controle) para equipar.', 'Select an item to see its details.<br><br>Double-click (or {A} on a gamepad) to equip.').replace(/\{A\}/g, glyph('a'))}</div>`;
     return;
   }
   const c = G.char;

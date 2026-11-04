@@ -140,12 +140,6 @@ button { font-family: inherit; }
 .skill.ready-flash { animation: ready 0.3s; }
 @keyframes ready { 0% { box-shadow: inset 0 0 20px var(--accent); } }
 .skill.stim .icon { color: #39ff88; filter: drop-shadow(0 0 4px #39ff88); }
-body.pad #skillbar .key { font-size: 0; }
-body.pad #sk0 .key::after { content: 'A'; font-size: 11px; }
-body.pad #sk1 .key::after { content: 'X'; font-size: 11px; }
-body.pad #sk2 .key::after { content: 'Y'; font-size: 11px; }
-body.pad #sk3 .key::after { content: 'B'; font-size: 11px; }
-body.pad #sk4 .key::after { content: 'LB'; font-size: 11px; }
 
 /* ---------------- Toque ---------------- */
 #touch { display: none; }
@@ -541,3 +535,28 @@ body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3
   .tnode .ticon { width: 26px; height: 26px; }
   .tier-nodes { gap: 14px; }
 }
+
+/* Ícones dos botões do controle */
+.pg {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; font-weight: 700; line-height: 1;
+  font-family: 'Rajdhani', system-ui, sans-serif; color: #fff; text-shadow: none; margin: 0 1px;
+}
+.pg-face { width: 1.45em; height: 1.45em; border-radius: 50%; font-size: 0.85em; background: #3a3d4a; border: 1px solid rgba(255, 255, 255, 0.25); }
+.pg-pill { padding: 0.1em 0.45em; border-radius: 0.6em; font-size: 0.7em; letter-spacing: 0.5px; background: #3a3d4a; border: 1px solid rgba(255, 255, 255, 0.25); }
+/* Xbox */
+.pg.xa { background: #2e9e44; }
+.pg.xb { background: #d93a33; }
+.pg.xx { background: #2a6fd6; }
+.pg.xy { background: #e0b100; color: #1a1400; }
+/* PlayStation: símbolos coloridos sobre fundo escuro */
+.pg.pa { background: #1b1d26; color: #7aa7ff; font-size: 0.95em; }
+.pg.pb { background: #1b1d26; color: #ff5f6d; font-size: 0.95em; }
+.pg.px { background: #1b1d26; color: #f08ad8; font-size: 0.95em; }
+.pg.py { background: #1b1d26; color: #3fe0b0; font-size: 0.95em; }
+/* Nintendo */
+.pg.nf { background: #2a2a2e; }
+.skill .key .pg { font-size: 12px; }
+.skill .key .pg-pill { font-size: 9px; }
+.pad-hints .pg, .help .pg { font-size: 15px; }
+.pad-name { color: var(--muted); font-size: 12px; margin: -4px 0 6px; }
+.tslot { font-family: 'Rajdhani', system-ui, sans-serif; }
