@@ -171,11 +171,13 @@ function renderClassCards() {
   }
   root.querySelectorAll('[data-play]').forEach((b) => (b.onclick = () => {
     initAudio();
+    enterMobileFullscreen();
     $('menu').classList.add('hidden');
     startGame(b.dataset.play, false);
   }));
   root.querySelectorAll('[data-new]').forEach((b) => (b.onclick = () => {
     const id = b.dataset.new;
+    enterMobileFullscreen();
     confirmDialog(L('Recomeçar?', 'Start over?'), L(`O progresso de ${CLASSES[id].name} será apagado.`, `${CLASSES[id].name}'s progress will be erased.`), () => {
       $('menu').classList.add('hidden');
       startGame(id, true);
@@ -940,4 +942,38 @@ function buy(what) {
   }
   renderShop();
   focused = null;
+}
+
+// ------------------------------------------------------------------
+// Celular: tela cheia e orientação horizontal
+// ------------------------------------------------------------------
+// Precisa ser chamado dentro de um toque/clique (exigência dos navegadores)
+export function enterMobileFullscreen() {
+  if (!G.isTouch) return;
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  const lock = () => {
+    try {
+      const p = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape');
+      if (p && p.catch) p.catch(() => {});
+    } catch (_) {}
+  };
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && req) {
+    try {
+      const p = req.call(el, { navigationUI: 'hide' });
+      if (p && p.then) p.then(lock).catch(() => {});
+      else lock();
+    } catch (_) {}
+  } else lock();
+}
+
+// Mostra o aviso de "gire o celular" e pausa o jogo quando estiver em pé
+let wasPortrait = false;
+export function updateOrientation() {
+  const portrait = G.isTouch && innerHeight > innerWidth * 1.05;
+  document.body.classList.toggle('portrait', portrait);
+  document.body.classList.toggle('ingame', G.mode !== 'menu' && G.mode !== 'boot');
+  document.body.classList.toggle('ios', /iPhone|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+  if (portrait && G.mode === 'play') openPause();
+  wasPortrait = portrait;
 }

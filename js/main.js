@@ -19,7 +19,7 @@ import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen,
+  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
 
@@ -383,6 +383,7 @@ function frame() {
   Input.update(dt);
   handleGlobalInput();
   uiPadUpdate();
+  updateOrientation();
   updateMouseWorld();
 
   const playing = G.mode === 'play' || G.mode === 'dying';

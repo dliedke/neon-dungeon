@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#05030c"/>
+  <rect x="40" y="40" width="432" height="432" rx="72" fill="none" stroke="#00f0ff" stroke-width="14"/>
+  <text x="256" y="230" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="150" fill="#ffffff">NEON</text>
+  <text x="256" y="360" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="96" fill="#ff2bd6">DUNGEON</text>
+</svg>

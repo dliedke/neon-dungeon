@@ -464,3 +464,20 @@ body.pad .pad-hints { display: block; }
 .shop-item.sold { opacity: 0.4; }
 .shop-item.better-card .item-card { box-shadow: 0 0 18px rgba(57, 255, 136, 0.45); border-color: #39ff88; }
 #panel-shop { z-index: 22; }
+
+/* Aviso para girar o celular */
+#rotate {
+  display: none; position: fixed; inset: 0; z-index: 60; background: #05030c;
+  flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center;
+}
+body.touch.portrait.ingame #rotate { display: flex; }
+#rotate .phone {
+  width: 56px; height: 96px; border: 4px solid var(--cyan); border-radius: 12px; position: relative;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); animation: rotatePhone 2s ease-in-out infinite;
+}
+#rotate .screen-dot { position: absolute; bottom: 6px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--cyan); }
+@keyframes rotatePhone { 0%, 20% { transform: rotate(0deg); } 50%, 80% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
+#rotate .rot-title { font-family: Orbitron, sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 3px; color: #fff; text-shadow: 0 0 12px var(--cyan); }
+#rotate .rot-sub { color: var(--muted); max-width: 320px; }
+#rotate .rot-ios { display: none; color: var(--yellow); font-size: 14px; max-width: 320px; }
+body.ios #rotate .rot-ios { display: block; }

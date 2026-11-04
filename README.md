@@ -37,6 +37,8 @@ Each class has its own save slot, stored in the browser.
 - **Mobile:**
   - Drag on the left side of the screen to move.
   - Use the buttons on the right to attack and use skills.
+  - The game switches to fullscreen landscape when you tap Play (on Android), and pauses with a hint if the phone is held upright.
+  - It can be installed to the home screen as an app (Share → Add to Home Screen on iPhone) to play in fullscreen.
 
 Attacks and skills **aim automatically** at the nearest enemy.
 

@@ -12,6 +12,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
@@ -197,6 +201,14 @@
         <button class="btn ghost" data-nav id="confirm-no" data-i18n="cancel">Cancelar</button>
       </div>
     </div>
+  </div>
+
+  <!-- AVISO PARA GIRAR O CELULAR -->
+  <div id="rotate">
+    <div class="phone"><div class="screen-dot"></div></div>
+    <div class="rot-title" data-i18n="rotateTitle"></div>
+    <div class="rot-sub" data-i18n="rotateSub"></div>
+    <div class="rot-ios" data-i18n="rotateIos"></div>
   </div>
 
   <div id="fade"></div>
