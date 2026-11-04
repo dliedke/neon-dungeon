@@ -225,55 +225,33 @@ export function respawn() {
 // ------------------------------------------------------------------
 // Atualização por quadro
 // ------------------------------------------------------------------
+// Mira: tiros e poderes sempre vão direto para um inimigo visível.
+// O cursor (ou o analógico direito / a direção do personagem) só serve para
+// desempatar qual inimigo escolher quando há vários.
+export const AIM_RANGE = 12;
 function computeAim(p) {
-  const dz = 0.0001;
-  const cursorOnPlayer = G.mouseWorld.ok && Math.hypot(G.mouseWorld.x - p.x, G.mouseWorld.z - p.z) < 1.0 && !(p.target && p.target.alive);
-  if (G.lastInput === 'kb' && G.mouseWorld.ok && !cursorOnPlayer) {
-    let ax = G.mouseWorld.x - p.x;
-    let az = G.mouseWorld.z - p.z;
-    if (p.target && p.target.alive) {
-      ax = p.target.x - p.x;
-      az = p.target.z - p.z;
-      p.aimPoint.x = p.target.x;
-      p.aimPoint.z = p.target.z;
-    } else {
-      p.aimPoint.x = G.mouseWorld.x;
-      p.aimPoint.z = G.mouseWorld.z;
-    }
-    const l = Math.hypot(ax, az);
-    if (l > dz) {
-      p.aim.dx = ax / l;
-      p.aim.dz = az / l;
-    }
-    return;
-  }
-  // controle: analógico direito tem prioridade
+  // direção de preferência
+  let pdx = Math.sin(p.facing);
+  let pdz = Math.cos(p.facing);
   const st = Input.aimStick;
-  if (G.lastInput === 'pad' && Math.hypot(st.x, st.y) > 0.3) {
+  if (G.lastInput === 'kb' && G.mouseWorld.ok) {
+    const ax = G.mouseWorld.x - p.x;
+    const az = G.mouseWorld.z - p.z;
+    const l = Math.hypot(ax, az);
+    if (l > 0.8) {
+      pdx = ax / l;
+      pdz = az / l;
+    }
+  } else if (G.lastInput === 'pad' && Math.hypot(st.x, st.y) > 0.3) {
     const w = screenToWorld(st.x, st.y);
     const l = Math.hypot(w.x, w.z);
-    p.aim.dx = w.x / l;
-    p.aim.dz = w.z / l;
-    // mira assistida suave na direção do analógico
-    const t = assistTarget(p, p.aim.dx, p.aim.dz, 0.45);
-    if (t) {
-      const ax = t.x - p.x;
-      const az = t.z - p.z;
-      const tl = Math.hypot(ax, az);
-      p.aim.dx = ax / tl;
-      p.aim.dz = az / tl;
-      p.aimPoint.x = t.x;
-      p.aimPoint.z = t.z;
-    } else {
-      p.aimPoint.x = p.x + p.aim.dx * 6;
-      p.aimPoint.z = p.z + p.aim.dz * 6;
-    }
-    return;
+    pdx = w.x / l;
+    pdz = w.z / l;
   }
-  // mira automática: inimigo mais próximo, com preferência para a frente
-  const fx = Math.sin(p.facing);
-  const fz = Math.cos(p.facing);
-  const t = assistTarget(p, fx, fz, -0.2) || nearestEnemy(p.x, p.z, 11, true);
+  // alvo: o clicado, o que está sob o cursor, ou o melhor inimigo visível
+  let t = (p.target && p.target.alive && p.target) || (G.lastInput === 'kb' && G.hoverEnemy && G.hoverEnemy.alive && G.hoverEnemy) || null;
+  if (!t) t = assistTarget(p, pdx, pdz, -1);
+  p.aimEnemy = t;
   if (t) {
     const ax = t.x - p.x;
     const az = t.z - p.z;
@@ -283,10 +261,15 @@ function computeAim(p) {
     p.aimPoint.x = t.x;
     p.aimPoint.z = t.z;
   } else {
-    p.aim.dx = fx;
-    p.aim.dz = fz;
-    p.aimPoint.x = p.x + fx * 5;
-    p.aimPoint.z = p.z + fz * 5;
+    p.aim.dx = pdx;
+    p.aim.dz = pdz;
+    if (G.lastInput === 'kb' && G.mouseWorld.ok) {
+      p.aimPoint.x = G.mouseWorld.x;
+      p.aimPoint.z = G.mouseWorld.z;
+    } else {
+      p.aimPoint.x = p.x + pdx * 6;
+      p.aimPoint.z = p.z + pdz * 6;
+    }
   }
 }
 
@@ -298,10 +281,10 @@ function assistTarget(p, dx, dz, minDot) {
     const ex = e.x - p.x;
     const ez = e.z - p.z;
     const d = Math.hypot(ex, ez);
-    if (d > 11 || d < 0.01) continue;
+    if (d > AIM_RANGE || d < 0.01) continue;
     const dot = (ex * dx + ez * dz) / d;
     if (dot < minDot) continue;
-    const score = dot * 2 - d / 6;
+    const score = dot * 0.8 - d / 3;
     if (score > bs && lineOfSight(G.dungeon, p.x, p.z, e.x, e.z)) {
       bs = score;
       best = e;
@@ -482,6 +465,18 @@ export function updatePlayer(dt) {
   p.moveDir.z = vz;
 
   // ---------- ataque básico ----------
+  // Lâmina: se o inimigo mirado estiver fora do alcance da espada, avança até ele
+  if (wantAttack && C.melee && p.aimEnemy && !vx && !vz && !p.dash) {
+    const e = p.aimEnemy;
+    const d = Math.hypot(e.x - p.x, e.z - p.z);
+    if (d > C.range + e.r * 0.8) {
+      vx = (e.x - p.x) / d;
+      vz = (e.z - p.z) / d;
+      p.moveDir.x = vx;
+      p.moveDir.z = vz;
+      wantAttack = false;
+    }
+  }
   if (wantAttack && p.atkT <= 0 && !p.dash) {
     p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1));
     SKILL_FN[C.skills[0].id](p, c.skills[0]);

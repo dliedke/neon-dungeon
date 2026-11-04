@@ -119,7 +119,8 @@ export const SKILL_FN = {
     return true;
   },
   lunge(p, r) {
-    p.dash = { dx: p.aim.dx, dz: p.aim.dz, speed: 30, t: 0.2, hit: new Set(), mult: 1.8 * rankMult(r), radius: 1.0, color: CLASSES.blade.accent };
+    const reach = p.aimEnemy ? Math.min(6, Math.hypot(p.aimEnemy.x - p.x, p.aimEnemy.z - p.z) + 1.2) : 6;
+    p.dash = { dx: p.aim.dx, dz: p.aim.dz, speed: 30, t: reach / 30, hit: new Set(), mult: 1.8 * rankMult(r), radius: 1.0, color: CLASSES.blade.accent };
     p.invuln = Math.max(p.invuln, 0.25);
     sfx.dash();
     return true;
@@ -144,7 +145,7 @@ export const SKILL_FN = {
     const pz = p.z + p.aim.dx * side + p.aim.dz * 0.4;
     const forceCrit = p.sureCrit > 0;
     if (forceCrit) p.sureCrit--;
-    spawnProjectile({ from: 'player', x: px, z: pz, dx: p.aim.dx, dz: p.aim.dz, speed: 26, life: 0.55, mult: 0.85 * rankMult(r), color: forceCrit ? 0xffee55 : CLASSES.gunner.accent, size: forceCrit ? 0.14 : 0.1, r: 0.22, forceCrit });
+    spawnProjectile({ from: 'player', x: px, z: pz, dx: p.aim.dx, dz: p.aim.dz, speed: 26, life: 0.55, homing: 6, mult: 0.85 * rankMult(r), color: forceCrit ? 0xffee55 : CLASSES.gunner.accent, size: forceCrit ? 0.14 : 0.1, r: 0.22, forceCrit });
     burst(px, 0.9, pz, CLASSES.gunner.accent, 2, 2, 0.05, 0.12, { grav: 0 });
     sfx.shoot();
     p.swing = 1;
@@ -154,7 +155,7 @@ export const SKILL_FN = {
     const base = angleOf(p.aim.dx, p.aim.dz);
     for (let k = -3; k <= 3; k++) {
       const a = base + k * 0.14;
-      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.4, z: p.z + Math.sin(a) * 0.4, dx: Math.cos(a), dz: Math.sin(a), speed: 22, life: 0.45, mult: 0.75 * rankMult(r), color: CLASSES.gunner.accent, size: 0.1, r: 0.22, pierce: 1 });
+      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.4, z: p.z + Math.sin(a) * 0.4, dx: Math.cos(a), dz: Math.sin(a), speed: 22, life: 0.5, mult: 0.75 * rankMult(r), color: CLASSES.gunner.accent, size: 0.1, r: 0.22, pierce: 1, homing: 2.5 });
     }
     sfx.shoot();
     setTimeout(() => sfx.shoot(), 40);
@@ -185,7 +186,7 @@ export const SKILL_FN = {
   // ---------------- Netrunner ----------------
   orb(p, r) {
     spawnProjectile({
-      from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, y: 1.1, dx: p.aim.dx, dz: p.aim.dz, speed: 14, life: 0.95, mult: 1.05 * rankMult(r), color: CLASSES.netrunner.accent, size: 0.17, r: 0.28, homing: 5,
+      from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, y: 1.1, dx: p.aim.dx, dz: p.aim.dz, speed: 14, life: 0.95, mult: 1.05 * rankMult(r), color: CLASSES.netrunner.accent, size: 0.17, r: 0.28, homing: 8,
       onHit: (e) => chainFrom(e, 1, 0.5 * rankMult(r), 4.5, CLASSES.netrunner.accent),
     });
     sfx.orb();
@@ -212,7 +213,13 @@ export const SKILL_FN = {
   },
   blink(p, r) {
     const d = G.dungeon;
-    const t = targetPoint(p, 7);
+    let t = targetPoint(p, 7);
+    if (p.aimEnemy) {
+      const e = p.aimEnemy;
+      const l = Math.hypot(e.x - p.x, e.z - p.z);
+      const stop = Math.max(0, Math.min(7, l - 1.6));
+      t = { x: p.x + p.aim.dx * stop, z: p.z + p.aim.dz * stop };
+    }
     let tx = t.x;
     let tz = t.z;
     const dx = tx - p.x;
