@@ -160,7 +160,7 @@ export function killEnemy(e) {
       const p = G.player;
       if (Math.hypot(p.x - x, p.z - z) < 2.8 + p.r) damagePlayer(e.dmg);
     });
-  } else if (!e.selfDestruct) {
+  } else if (!e.selfDestruct && !e.decoy) {
     gainXp(e.xp);
     dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss });
     G.char.kills = (G.char.kills || 0) + 1;
@@ -298,7 +298,7 @@ export function updateProjectiles(dt) {
       continue;
     }
     if (pr.homing) {
-      const t = nearestEnemy(pr.mesh.position.x, pr.mesh.position.z, 5, false, pr.hit);
+      const t = pr.from === 'player' ? nearestEnemy(pr.mesh.position.x, pr.mesh.position.z, 5, false, pr.hit) : p.alive ? p : null;
       if (t) {
         const ang = Math.atan2(pr.dz, pr.dx);
         const want = Math.atan2(t.z - pr.mesh.position.z, t.x - pr.mesh.position.x);
@@ -322,9 +322,24 @@ export function updateProjectiles(dt) {
     if (!isWalkable(d, pos.x, pos.z)) {
       pr.alive = false;
       burst(pos.x - pr.dx * 0.1, pos.y, pos.z - pr.dz * 0.1, pr.color, 5, 3, 0.05, 0.25);
+      if (pr.explode) enemyExplosion(pos.x - pr.dx * 0.3, pos.z - pr.dz * 0.3, pr.explode.r, pr.explode.dmg, pr.color);
       continue;
     }
     if (pr.from === 'player') {
+      // tiros do jogador podem derrubar mísseis inimigos
+      for (const q of G.projectiles) {
+        if (!q.alive || !q.shootable) continue;
+        const r = pr.r + 0.3;
+        if ((q.mesh.position.x - pos.x) ** 2 + (q.mesh.position.z - pos.z) ** 2 < r * r) {
+          q.alive = false;
+          pr.alive = false;
+          burst(q.mesh.position.x, q.mesh.position.y, q.mesh.position.z, q.color, 16, 4, 0.07, 0.35);
+          ringFx(q.mesh.position.x, q.mesh.position.z, 0.9, q.color, 0.25);
+          sfx.hit();
+          break;
+        }
+      }
+      if (!pr.alive) continue;
       for (const e of G.enemies) {
         if (!e.alive || pr.hit.has(e)) continue;
         const r = pr.r + e.r;
@@ -342,7 +357,13 @@ export function updateProjectiles(dt) {
       const r = pr.r + p.r;
       if ((p.x - pos.x) ** 2 + (p.z - pos.z) ** 2 < r * r) {
         pr.alive = false;
-        if (p.invuln > 0) {
+        if (pr.explode) {
+          enemyExplosion(pos.x, pos.z, pr.explode.r, pr.explode.dmg, pr.color);
+        } else if (pr.fake) {
+          // projétil de uma cópia ilusória: só um brilho, sem dano
+          burst(pos.x, pos.y, pos.z, pr.color, 8, 2, 0.05, 0.3);
+          floatText(p.x, 1.8, p.z, L('ilusão', 'illusion'), 'info');
+        } else if (p.invuln > 0) {
           burst(pos.x, pos.y, pos.z, 0xffffff, 3, 2, 0.04, 0.2);
         } else {
           damagePlayer(pr.dmg);
@@ -350,7 +371,10 @@ export function updateProjectiles(dt) {
         }
       }
     }
-    if (pr.life <= 0) pr.alive = false;
+    if (pr.life <= 0) {
+      pr.alive = false;
+      if (pr.explode) enemyExplosion(pos.x, pos.z, pr.explode.r, pr.explode.dmg, pr.color);
+    }
   }
   for (let i = G.projectiles.length - 1; i >= 0; i--) {
     const pr = G.projectiles[i];

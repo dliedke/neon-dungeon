@@ -274,6 +274,69 @@ export function makeEnemyModel(type, eliteColor) {
       m.kind = 'humanoid';
       break;
     }
+    case 'kamikaze': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0x6a4a3a);
+      const core = mesh(cached('kcore', () => new THREE.OctahedronGeometry(0.24, 0)), mBody);
+      core.scale.set(1, 0.7, 1.5);
+      body.add(core);
+      body.add(mesh(cached('knose', () => new THREE.ConeGeometry(0.1, 0.35, 6).rotateX(Math.PI / 2)), glowMat(0xff3300, 2.6), 0, 0, 0.42));
+      for (const sx of [-1, 1]) body.add(mesh(box(0.42, 0.03, 0.18), mBody, sx * 0.3, 0, -0.1));
+      const ring = mesh(cached('kring', () => new THREE.TorusGeometry(0.3, 0.035, 6, 18)), glowMat(0xff8800));
+      body.add(ring);
+      body.position.y = 1.1;
+      m = { root, body, ring, mats: [mBody], kind: 'drone' };
+      break;
+    }
+    case 'illusionist': {
+      m = humanoid({ body: 0x5a3a7a, dark: 0x22163a, accent: 0xd04dff, scale: 0.95 });
+      m.head.add(mesh(cached('icrown', () => new THREE.TorusGeometry(0.2, 0.025, 6, 16).rotateX(Math.PI / 2)), glowMat(0x00f0ff, 2.6), 0, 0.22, 0));
+      m.torso.add(mesh(box(0.5, 0.65, 0.05), m.mats[0], 0, -0.05, -0.16)); // manto
+      const orbs = new THREE.Group();
+      orbs.position.y = 1.0;
+      for (let k = 0; k < 3; k++) {
+        const o = mesh(cached('iorb', () => new THREE.OctahedronGeometry(0.08, 0)), glowMat(0xd04dff, 2.8));
+        const a = (k / 3) * Math.PI * 2;
+        o.position.set(Math.cos(a) * 0.55, 0, Math.sin(a) * 0.55);
+        orbs.add(o);
+      }
+      m.root.add(orbs);
+      m.orbs = orbs;
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'tank': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0x6a6450);
+      const mDark = lambert(0x26241c);
+      body.add(mesh(box(1.1, 0.4, 1.3), mBody, 0, 0.42, 0));
+      const treads = [];
+      for (const sx of [-1, 1]) {
+        const t = mesh(box(0.28, 0.36, 1.45), mDark, sx * 0.62, 0.2, 0);
+        body.add(t);
+        treads.push(t);
+        body.add(mesh(box(0.04, 0.04, 1.3), glowMat(0xffaa00, 1.8), sx * 0.77, 0.3, 0));
+      }
+      const turret = new THREE.Group();
+      turret.position.y = 0.7;
+      turret.add(mesh(box(0.7, 0.32, 0.7), mBody));
+      // lançadores de mísseis
+      for (const sx of [-1, 1]) {
+        const pod = new THREE.Group();
+        pod.position.set(sx * 0.48, 0.15, 0.05);
+        pod.add(mesh(box(0.26, 0.26, 0.55), mDark));
+        for (const [x, y] of [[-0.06, 0.06], [0.06, 0.06], [-0.06, -0.06], [0.06, -0.06]]) pod.add(mesh(box(0.07, 0.07, 0.04), glowMat(0xffaa00, 2.4), x, y, 0.28));
+        turret.add(pod);
+      }
+      turret.add(mesh(box(0.4, 0.06, 0.03), glowMat(0xff3355, 2.6), 0, 0.08, 0.36));
+      body.add(turret);
+      m = { root, body, turret, treads, mats: [mBody, mDark], kind: 'tank' };
+      break;
+    }
     case 'medic': {
       const root = new THREE.Group();
       const body = new THREE.Group();

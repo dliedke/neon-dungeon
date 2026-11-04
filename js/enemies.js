@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { rr, pick, chance, weightedPick } from './utils.js';
-import { makeEnemyModel, makeHpBar, addShadow, animWalk } from './models.js';
+import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
 import { resolveCircle, lineOfSight, flowDir, isWalkable } from './dungeon.js';
 import { spawnProjectile, damagePlayer, after, enemyExplosion } from './combat.js';
 import { burst, ringFx, telegraphFx, lineTelegraph, floatText } from './fx.js';
@@ -24,6 +24,9 @@ export const ETYPES = {
   brute: { name: L('Mech Brutamontes', 'Brute Mech'), hp: 160, dmg: 18, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, solo: true, blood: 0xffc400 },
   sniper: { name: L('Franco-atirador', 'Sniper'), hp: 26, dmg: 18, speed: 2.8, r: 0.34, h: 1.4, xp: 14, minFloor: 4, weight: 3, ai: 'sniper', range: 14, keep: [8, 12], atkCd: 3.6, blood: 0xff2244 },
   ninja: { name: L('Assassino Holográfico', 'Holo Assassin'), hp: 34, dmg: 10, speed: 5.4, r: 0.32, h: 1.4, xp: 18, minFloor: 5, weight: 3, ai: 'melee', blink: true, range: 0.9, atkCd: 0.85, blood: 0xb36bff },
+  kamikaze: { name: L('Drone Kamikaze', 'Kamikaze Drone'), hp: 12, dmg: 18, speed: 3.8, r: 0.3, h: 1.3, xp: 6, minFloor: 3, weight: 4, ai: 'kamikaze', blood: 0xff8800 },
+  illusionist: { name: L('Ilusionista', 'Illusionist'), hp: 40, dmg: 9, speed: 3.0, r: 0.34, h: 1.5, xp: 22, minFloor: 4, weight: 3, ai: 'illusionist', range: 10, keep: [6, 9], atkCd: 2.1, solo: true, blood: 0xd04dff },
+  tank: { name: L('Tanque Lança-mísseis', 'Missile Tank'), hp: 150, dmg: 14, speed: 1.6, r: 0.72, h: 1.4, xp: 45, minFloor: 4, weight: 2, ai: 'tank', range: 13, keep: [6, 11], atkCd: 4.2, heavy: true, solo: true, blood: 0xffaa00 },
   medic: { name: L('Drone Médico', 'Medic Drone'), hp: 20, dmg: 0, speed: 3.8, r: 0.34, h: 1.5, xp: 12, minFloor: 2, weight: 0, ai: 'medic', blood: 0x39ff88 },
   barrel: { name: L('Barril Explosivo', 'Explosive Barrel'), hp: 1, dmg: 14, speed: 0, r: 0.35, h: 0.9, xp: 0, minFloor: 1, weight: 0, ai: 'inert', inert: true, static: true, blood: 0xff7a1a },
   boss: { name: 'Executor ARC-9', hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
@@ -82,6 +85,12 @@ export function spawnEnemy(type, x, z, o = {}) {
     ELITE[eliteKey].apply(e);
     model.root.scale.setScalar(1.2);
   }
+  if (o.decoy) {
+    e.decoy = true;
+    e.hp = e.maxHp = 1;
+    e.xp = 0;
+    e.aggro = true;
+  }
   if (T.inert) {
     e.hp = e.maxHp = 1;
     e.aggro = false;
@@ -112,6 +121,17 @@ export function spawnEnemy(type, x, z, o = {}) {
 const laserGeo = new THREE.BoxGeometry(0.05, 0.05, 1).translate(0, 0, 0.5);
 
 export function onEnemyKilled(e) {
+  // se a Ilusionista verdadeira morre, as cópias somem
+  if (e.decoys) {
+    for (const c of e.decoys) {
+      if (!c.alive) continue;
+      c.alive = false;
+      c.selfDestruct = true;
+      burst(c.x, 0.9, c.z, 0xd04dff, 14, 3, 0.07, 0.4);
+      onEnemyKilled(c);
+    }
+  }
+  if (e.decoy) burst(e.x, 0.9, e.z, 0xd04dff, 20, 4, 0.07, 0.45);
   if (e.laser) {
     e.laser.parent && e.laser.parent.remove(e.laser);
     e.laser.material.dispose();
@@ -336,6 +356,134 @@ export function updateEnemies(dt, cam) {
           e.faceZ = (e.lockZ ?? p.z) - e.z;
           break;
         }
+        case 'kamikaze': {
+          if (e.kstate === 'lock') {
+            speed = 0;
+            e.kt -= dt;
+            e.model.ring.material = glowMat(Math.floor(e.kt * 14) % 2 ? 0xffffff : 0xff3300, 3);
+            if (e.kt <= 0) {
+              e.kstate = 'dive';
+              e.kt = 1.2;
+              sfx.dash();
+            }
+          } else if (e.kstate === 'dive') {
+            mvx = e.kdx;
+            mvz = e.kdz;
+            speed = 15;
+            e.kt -= dt;
+            if (Math.random() < 0.8) burst(e.x, 1.2, e.z, 0xff8800, 1, 1, 0.07, 0.3, { grav: 0 });
+            const hitWall = !isWalkable(d, e.x + e.kdx * 0.5, e.z + e.kdz * 0.5);
+            if (dist < e.r + p.r + 0.3 || hitWall || e.kt <= 0) {
+              e.selfDestruct = true;
+              enemyExplosion(e.x, e.z, 1.9, e.dmg, 0xff8800);
+              e.hp = 0;
+              e.alive = false;
+              onEnemyKilled(e);
+            }
+          } else {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+            if (e.los && dist < 7.5 && e.atkT <= 0) {
+              e.kstate = 'lock';
+              e.kt = 0.65;
+              e.kdx = ux;
+              e.kdz = uz;
+              lineTelegraph(e.x, e.z, Math.atan2(uz, ux), Math.min(16, dist + 4), 0.7, 0.65, 0xff8800);
+              sfx.telegraph();
+            }
+          }
+          e.faceX = e.kstate === 'dive' ? e.kdx : ux;
+          e.faceZ = e.kstate === 'dive' ? e.kdz : uz;
+          break;
+        }
+        case 'illusionist': {
+          const [kmin, kmax] = e.T.keep;
+          e.strafeT -= dt;
+          if (e.strafeT <= 0) {
+            e.strafeT = rr(1, 2.2);
+            e.strafe *= -1;
+          }
+          if (!e.los || dist > kmax) {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+          } else if (dist < kmin) {
+            mvx = -ux;
+            mvz = -uz;
+          } else {
+            mvx = -uz * e.strafe;
+            mvz = ux * e.strafe;
+            speed *= 0.6;
+          }
+          if (e.los && dist < e.T.range && e.atkT <= 0) {
+            e.atkT = e.T.atkCd * rr(0.8, 1.2);
+            spawnProjectile({ from: 'enemy', x: e.x + ux * 0.5, z: e.z + uz * 0.5, y: 1.2, dx: ux, dz: uz, speed: 7, life: 2.5, dmg: e.decoy ? 0 : e.dmg, fake: !!e.decoy, color: 0xd04dff, size: 0.2, r: 0.2 });
+            sfx.orb();
+            e.swing = 1;
+          }
+          // a verdadeira cria cópias e troca de lugar com uma delas
+          if (!e.decoy) {
+            e.summonT = (e.summonT ?? 1.5) - dt;
+            e.decoys = (e.decoys || []).filter((c) => c.alive);
+            if (e.summonT <= 0 && e.los && dist < 12) {
+              e.summonT = rr(6, 8);
+              const n = Math.min(2, 3 - e.decoys.length);
+              const spots = [];
+              for (let k = 0; k < 12 && spots.length < n; k++) {
+                const a = rr(0, Math.PI * 2);
+                const x = e.x + Math.cos(a) * rr(1.5, 3);
+                const z = e.z + Math.sin(a) * rr(1.5, 3);
+                if (isWalkable(d, x, z)) spots.push({ x, z });
+              }
+              for (const sp of spots) {
+                const c = spawnEnemy('illusionist', sp.x, sp.z, { decoy: true });
+                c.summonT = 99;
+                c.atkT = rr(0.3, 1.5);
+                e.decoys.push(c);
+                burst(sp.x, 0.9, sp.z, 0xd04dff, 12, 3, 0.06, 0.4);
+              }
+              // troca de lugar com uma cópia para confundir
+              if (e.decoys.length) {
+                const c = pick(e.decoys);
+                [e.x, c.x] = [c.x, e.x];
+                [e.z, c.z] = [c.z, e.z];
+              }
+              ringFx(e.x, e.z, 2, 0xd04dff, 0.4);
+              sfx.zap();
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'tank': {
+          const [kmin, kmax] = e.T.keep;
+          if (!e.los || dist > kmax) {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+          } else if (dist < kmin) {
+            mvx = -ux;
+            mvz = -uz;
+          }
+          if (e.los && dist < e.T.range && e.atkT <= 0) {
+            e.atkT = e.T.atkCd * e.atkCdMult;
+            sfx.telegraph();
+            for (let k = 0; k < 2; k++) {
+              after(0.35 + k * 0.35, () => {
+                if (!e.alive) return;
+                const side = k ? 0.35 : -0.35;
+                const a = Math.atan2(G.player.z - e.z, G.player.x - e.x) + (k ? 0.5 : -0.5);
+                const px = e.x - Math.sin(a) * side;
+                const pz = e.z + Math.cos(a) * side;
+                spawnProjectile({ from: 'enemy', x: px, z: pz, y: 1.25, dx: Math.cos(a), dz: Math.sin(a), speed: 6.5, life: 4, dmg: e.dmg, color: 0xffaa00, size: 0.16, r: 0.24, homing: 1.7, shootable: true, explode: { r: 1.6, dmg: e.dmg } });
+                burst(px, 1.3, pz, 0xffaa00, 8, 2, 0.06, 0.3);
+                sfx.enemyShot();
+              });
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
         case 'sentry': {
           speed = 0;
           if (e.los && dist < e.T.range && e.atkT <= 0) {
@@ -526,11 +674,15 @@ export function updateEnemies(dt, cam) {
       }
       if (e.T.ai === 'ranged' || e.T.ai === 'sniper') m.armR.rotation.x = -1.4;
       if (e.T.ai === 'sniper') m.armL.rotation.x = -1.3;
+      if (m.orbs) m.orbs.rotation.y += dt * (e.decoy ? 2.6 : 2);
       if (m.holo) {
         // assassino holográfico: tremula e fica quase invisível às vezes
         const op = 0.35 + Math.abs(Math.sin(G.t * 3 + e.phase)) * 0.45 + (Math.random() < 0.05 ? 0.3 : 0);
         for (const mt of m.mats) mt.opacity = op;
       }
+    } else if (m.kind === 'tank') {
+      m.turret.rotation.y = 0;
+      m.treads.forEach((t) => (t.position.z = Math.sin(e.phase * 3) * 0.02));
     } else if (m.kind === 'sentry') {
       m.head.rotation.y = e.facing ? 0 : 0;
       m.head.position.y = 0.72 + (e.atkT > e.T.atkCd - 0.7 ? Math.sin(G.t * 50) * 0.02 : 0);
@@ -773,7 +925,7 @@ export function populateFloor(d, floor, boss) {
       const cx = r.x + rr(1.5, r.w - 1.5);
       const cz = r.y + rr(1.5, r.h - 1.5);
       const type = pickEnemyType(floor);
-      const base = ETYPES[type].solo ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 2.2 + floor / 2.5));
+      const base = ETYPES[type].solo ? 1 : type === 'bomber' || type === 'kamikaze' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 2.2 + floor / 2.5));
       const n = Math.max(1, Math.round(base * D.count));
       const elite = chance(eliteChance);
       for (let i = 0; i < n; i++) {

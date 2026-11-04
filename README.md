@@ -43,13 +43,16 @@ Os ataques e as habilidades **miram sozinhos** no inimigo mais próximo.
 ### Conteúdo
 
 - **Masmorras procedurais e infinitas**, com 4 temas visuais, barris explosivos e cofres de loot.
-- **10 tipos de inimigos:**
+- **13 tipos de inimigos:**
   - Punk de Rua, Drone Vigia, Agente Corporativo, Aranha-Bomba e Mech Brutamontes.
   - **Torreta de Segurança.**
   - **Tropa de Choque**, cujo escudo bloqueia ataques vindos da frente.
   - **Drone Médico**, que cura os outros inimigos.
   - **Franco-atirador**, que mira com um laser antes de atirar.
   - **Assassino Holográfico**, que se teleporta para as suas costas.
+  - **Drone Kamikaze**, que trava a mira e mergulha em linha reta, explodindo.
+  - **Ilusionista**, que cria cópias falsas de si mesma e troca de lugar com elas.
+  - **Tanque Lança-mísseis**, cujos mísseis teleguiados podem ser derrubados a tiros.
 - **Elites** com afixos: Veloz, Blindado, Vampírico e Instável.
 - **2 chefes:**
   - **Executor ARC-9:** rajadas em anel, investida e pisão.
@@ -96,13 +99,16 @@ Attacks and skills **aim automatically** at the nearest enemy.
 ### Content
 
 - **Endless procedural dungeons** with 4 visual themes, explosive barrels and loot caches.
-- **10 enemy types:**
+- **13 enemy types:**
   - Street Punk, Watcher Drone, Corporate Agent, Bomb Spider and Brute Mech.
   - **Sentry Turret.**
   - **Riot Trooper**, whose shield blocks attacks from the front.
   - **Medic Drone**, which heals the other enemies.
   - **Sniper**, which aims with a laser before firing.
   - **Holo Assassin**, which teleports behind you.
+  - **Kamikaze Drone**, which locks on and dives in a straight line, exploding.
+  - **Illusionist**, which creates fake copies of itself and swaps places with them.
+  - **Missile Tank**, whose homing missiles can be shot down.
 - **Elites** with affixes: Swift, Armored, Vampiric and Unstable.
 - **2 bosses:**
   - **Executor ARC-9:** ring barrages, a charge and a ground slam.
