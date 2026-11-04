@@ -951,7 +951,8 @@ function setFocus(el) {
 }
 
 function navigables(root) {
-  return [...root.querySelectorAll('[data-nav]')].filter((el) => el.offsetParent !== null && !el.disabled);
+  // botões desativados também recebem foco (só não fazem nada), para a navegação não "pular"
+  return [...root.querySelectorAll('[data-nav]')].filter((el) => el.offsetParent !== null);
 }
 
 function moveFocus(dir, list) {
@@ -961,9 +962,12 @@ function moveFocus(dir, list) {
   const ay = a.top + a.height / 2;
   let best = null;
   let bs = Infinity;
+  const horiz = dir === 'left' || dir === 'right';
   for (const el of list) {
     if (el === focused) continue;
     const b = el.getBoundingClientRect();
+    // prefere elementos na mesma linha (esquerda/direita) ou coluna (cima/baixo)
+    const aligned = horiz ? b.bottom > a.top + 4 && b.top < a.bottom - 4 : b.right > a.left + 4 && b.left < a.right - 4;
     const bx = b.left + b.width / 2;
     const by = b.top + b.height / 2;
     const dx = bx - ax;
@@ -975,7 +979,7 @@ function moveFocus(dir, list) {
     else if (dir === 'down') { main = dy; cross = dx; }
     else { main = -dy; cross = dx; }
     if (main <= 4) continue;
-    const score = main + Math.abs(cross) * 2.2;
+    const score = main + Math.abs(cross) * 2.2 + (aligned ? 0 : 5000);
     if (score < bs) {
       bs = score;
       best = el;
@@ -1018,7 +1022,7 @@ export function uiPadUpdate() {
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
-  if (Input.nav('y') && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
+  if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
   if (Input.nav('b')) uiBack(root);
 }
 

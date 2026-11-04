@@ -11,7 +11,7 @@ const KB = {
   Escape: 'pause', KeyP: 'pause',
 };
 const ACTIONS = ['primary', 's1', 's2', 's3', 'stim', 'inv', 'skills', 'pause'];
-const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y'];
+const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb'];
 
 const src = { kb: {}, mouse: {}, touch: {}, pad: {} };
 const latch = {}; // garante que toques rápidos (apertar e soltar no mesmo quadro) sejam vistos
@@ -257,6 +257,8 @@ function update(dt) {
     padNav.b = b(1);
     padNav.x = b(2);
     padNav.y = b(3);
+    padNav.lb = b(4);
+    padNav.rb = b(5);
     const any = gp.buttons.some((x) => x.pressed) || Math.hypot(padMove.x, padMove.y) > 0 || Math.hypot(aim.x, aim.y) > 0;
     if (any) setPadMode();
   }
