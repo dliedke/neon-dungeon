@@ -11,6 +11,7 @@ import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
 import { screenToWorld, clamp } from './utils.js';
+import { L } from './i18n.js';
 
 export const MAX_LEVEL = 50;
 export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
@@ -162,7 +163,7 @@ export function useStim() {
   const c = G.char;
   if (!p.alive || p.stimCd > 0) return;
   if (c.stims <= 0) {
-    toast('Sem stims! Compre no inventário.', 'warn');
+    toast(L('Sem stims! Compre no inventário.', 'No stims! Buy more in the inventory.'), 'warn');
     sfx.deny();
     return;
   }
@@ -210,6 +211,8 @@ export function respawn() {
     e.aggro = false;
     if (e.boss) {
       e.hp = e.maxHp;
+      e.model.body.position.y = 0;
+      e.phase2 = false;
       e.bstate = 'intro';
       e.bt = 1;
       e.x = e.spawnX ?? e.x;
@@ -218,7 +221,8 @@ export function respawn() {
   }
   G.boss = null;
   for (const pr of G.projectiles) pr.alive = false;
-  if (lost > 0) toast(`Você perdeu ${lost}¢ no resgate.`, 'warn');
+  for (const h of G.hazards) h.t = 0;
+  if (lost > 0) toast(L(`Você perdeu ${lost}¢ no resgate.`, `You lost ${lost}¢ in the rescue.`), 'warn');
   return lost;
 }
 
@@ -277,7 +281,7 @@ function assistTarget(p, dx, dz, minDot) {
   let best = null;
   let bs = -Infinity;
   for (const e of G.enemies) {
-    if (!e.alive) continue;
+    if (!e.alive || e.inert) continue;
     const ex = e.x - p.x;
     const ez = e.z - p.z;
     const d = Math.hypot(ex, ez);
@@ -308,7 +312,7 @@ function tryUseSkill(p, i) {
   const cost = skillCost(i);
   if (p.en < cost) {
     sfx.deny();
-    toast('Energia insuficiente', 'warn', 'en');
+    toast(L('Energia insuficiente', 'Not enough energy'), 'warn', 'en');
     return;
   }
   computeAim(p);

@@ -2,12 +2,13 @@
 import * as THREE from 'three';
 import { G, TILE } from './state.js';
 import { ri, rr, pick, clamp, shuffle } from './utils.js';
+import { L } from './i18n.js';
 
 export const THEMES = [
-  { name: 'Distrito Neon', a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, line: '#00f0ff' },
-  { name: 'Esgotos Tóxicos', a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, line: '#39ff14' },
-  { name: 'Fábrica Corporativa', a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, line: '#ff8a00' },
-  { name: 'Núcleo de Dados', a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, line: '#ff2244' },
+  { name: L('Distrito Neon', 'Neon District'), a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, line: '#00f0ff' },
+  { name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, line: '#39ff14' },
+  { name: L('Fábrica Corporativa', 'Corporate Factory'), a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, line: '#ff8a00' },
+  { name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, line: '#ff2244' },
 ];
 
 export const BOSS_EVERY = 3;

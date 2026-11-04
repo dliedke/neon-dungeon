@@ -9,7 +9,8 @@ import { sfx } from './audio.js';
 import { dropLoot } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
-import { hurtFlash } from './ui.js';
+import { hurtFlash, toast } from './ui.js';
+import { L } from './i18n.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -61,7 +62,7 @@ export function nearestEnemy(x, z, maxD, needLos = true, exclude = null) {
   let best = null;
   let bd = maxD;
   for (const e of G.enemies) {
-    if (!e.alive || e === exclude || (exclude && exclude.has && exclude.has(e))) continue;
+    if (!e.alive || e.inert || e === exclude || (exclude && exclude.has && exclude.has(e))) continue;
     const d = Math.hypot(e.x - x, e.z - z);
     if (d < bd && (!needLos || lineOfSight(G.dungeon, x, z, e.x, e.z))) {
       bd = d;
@@ -97,9 +98,26 @@ export function hitEnemy(e, mult, o = {}) {
   }
 }
 
+let shieldHintShown = false;
 export function damageEnemy(e, amount, crit, o = {}) {
   if (!e.alive) return 0;
   if (e.dr) amount *= 1 - e.dr;
+  // Tropa de Choque: o escudo bloqueia quase tudo que vem pela frente
+  if (e.T.shield && e.stun <= 0 && o.kx !== undefined) {
+    const ax = o.kx - e.x;
+    const az = o.kz - e.z;
+    const l = Math.hypot(ax, az) || 1;
+    if ((ax * Math.sin(e.facing) + az * Math.cos(e.facing)) / l > 0.3) {
+      amount *= 0.15;
+      sfx.shieldBlock();
+      burst(e.x + Math.sin(e.facing) * 0.45, 1, e.z + Math.cos(e.facing) * 0.45, 0x4d9bff, 5, 3, 0.05, 0.25);
+      if (Math.random() < 0.3) floatText(e.x, e.height + 0.6, e.z, L('BLOQUEADO', 'BLOCKED'), 'shield');
+      if (!shieldHintShown) {
+        shieldHintShown = true;
+        toast(L('O escudo bloqueia ataques pela frente: ataque pelos lados ou atordoe!', 'Shields block attacks from the front: hit them from the side or stun them!'), 'warn');
+      }
+    }
+  }
   if (e.armorUp) amount *= 0.5;
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
@@ -133,7 +151,16 @@ export function killEnemy(e) {
   const p = G.player;
   sfx.die();
   burst(e.x, e.height * 0.5, e.z, e.bloodColor, e.boss ? 80 : e.elite ? 30 : 16, e.boss ? 9 : 5, 0.08, 0.7);
-  if (!e.selfDestruct) {
+  if (e.type === 'barrel') {
+    // barril: explode ferindo inimigos (e o jogador, se estiver perto)
+    const x = e.x;
+    const z = e.z;
+    after(0.06, () => {
+      explosion(x, z, 2.8, 2.5, { color: 0xff7a1a, noProc: true, knock: 6 });
+      const p = G.player;
+      if (Math.hypot(p.x - x, p.z - z) < 2.8 + p.r) damagePlayer(e.dmg);
+    });
+  } else if (!e.selfDestruct) {
     gainXp(e.xp);
     dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss });
     G.char.kills = (G.char.kills || 0) + 1;
@@ -375,5 +402,37 @@ export function updateTurrets(dt) {
       t.model.head.rotation.y += dt * 1.5;
     }
     if (t.t < 2) t.model.root.visible = Math.floor(t.t * 8) % 2 === 0;
+  }
+}
+
+// ---------------- Zonas de perigo (ácido da Matriarca) ----------------
+const hazardGeo = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
+export function spawnHazard(x, z, r, dur, dps) {
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x39ff14).multiplyScalar(0.9), transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending });
+  const m = new THREE.Mesh(hazardGeo, mat);
+  m.position.set(x, 0.03, z);
+  m.scale.setScalar(r);
+  G.world.add(m);
+  burst(x, 0.3, z, 0x39ff14, 14, 4, 0.07, 0.4);
+  G.hazards.push({ x, z, r, t: dur, dur, dps, tick: 0, mesh: m, mat });
+}
+
+export function updateHazards(dt) {
+  const p = G.player;
+  for (let i = G.hazards.length - 1; i >= 0; i--) {
+    const h = G.hazards[i];
+    h.t -= dt;
+    h.tick -= dt;
+    h.mat.opacity = Math.min(0.45, h.t * 0.6) * (0.8 + Math.sin(G.t * 6 + i) * 0.2);
+    if (Math.random() < dt * 8) burst(h.x + (Math.random() - 0.5) * h.r * 1.4, 0.1, h.z + (Math.random() - 0.5) * h.r * 1.4, 0x39ff14, 1, 0.5, 0.05, 0.6, { grav: -1.5 });
+    if (p.alive && h.tick <= 0 && Math.hypot(p.x - h.x, p.z - h.z) < h.r + p.r * 0.5) {
+      h.tick = 0.5;
+      damagePlayer(h.dps * 0.5);
+    }
+    if (h.t <= 0) {
+      h.mesh.parent && h.mesh.parent.remove(h.mesh);
+      h.mat.dispose();
+      G.hazards.splice(i, 1);
+    }
   }
 }

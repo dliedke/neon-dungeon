@@ -33,8 +33,8 @@
 
     <div id="hud-tr">
       <div id="top-buttons">
-        <button id="btn-char" title="Personagem (I)"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="8" width="20" height="18" rx="2"/><path d="M12 8V5h8v3M6 15h20"/></svg><span id="char-badge" class="badge hidden">!</span></button>
-        <button id="btn-pause" title="Pausa (Esc)"><svg viewBox="0 0 32 32" fill="currentColor"><rect x="9" y="7" width="5" height="18" rx="1"/><rect x="18" y="7" width="5" height="18" rx="1"/></svg></button>
+        <button id="btn-char" data-i18n-title="charTitle"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="8" width="20" height="18" rx="2"/><path d="M12 8V5h8v3M6 15h20"/></svg><span id="char-badge" class="badge hidden">!</span></button>
+        <button id="btn-pause" data-i18n-title="pauseTitle"><svg viewBox="0 0 32 32" fill="currentColor"><rect x="9" y="7" width="5" height="18" rx="1"/><rect x="18" y="7" width="5" height="18" rx="1"/></svg></button>
       </div>
       <div id="minimap-wrap"><canvas id="minimap" width="168" height="168"></canvas></div>
       <div id="floor-label"></div>
@@ -78,12 +78,12 @@
       <div class="logo">
         <div class="logo-top">NEON</div>
         <div class="logo-bot">DUNGEON</div>
-        <div class="logo-sub">action rpg cyberpunk</div>
+        <div class="logo-sub" data-i18n="logo.sub">action rpg cyberpunk</div>
       </div>
       <div id="class-cards"></div>
       <div class="menu-foot">
-        <button class="btn ghost" data-nav id="menu-opts">Opções</button>
-        <button class="btn ghost" data-nav id="menu-help">Controles</button>
+        <button class="btn ghost" data-nav id="menu-opts" data-i18n="options">Opções</button>
+        <button class="btn ghost" data-nav id="menu-help" data-i18n="controls">Controles</button>
       </div>
     </div>
   </div>
@@ -93,8 +93,8 @@
     <div class="panel wide">
       <div class="panel-head">
         <div class="tabs">
-          <button class="tab-btn active" data-tab="equip" data-nav>Equipamento</button>
-          <button class="tab-btn" data-tab="skills" data-nav>Habilidades <span id="sp-badge" class="badge hidden"></span></button>
+          <button class="tab-btn active" data-tab="equip" data-nav><span data-i18n="equipment">Equipamento</span></button>
+          <button class="tab-btn" data-tab="skills" data-nav><span data-i18n="skills">Habilidades</span> <span id="sp-badge" class="badge hidden"></span></button>
         </div>
         <button class="close" id="char-close" data-nav>✕</button>
       </div>
@@ -108,27 +108,27 @@
           <div class="inv-head"><span id="inv-count"></span><span class="cr-line">¢ <b id="inv-credits">0</b></span></div>
           <div id="inv-grid"></div>
           <div class="inv-actions">
-            <button class="btn small" id="btn-buy-stim" data-nav>Comprar Stim</button>
-            <button class="btn small ghost" id="btn-recycle-commons" data-nav>Reciclar comuns</button>
+            <button class="btn small" id="btn-buy-stim" data-nav data-i18n="buyStim">Comprar Stim</button>
+            <button class="btn small ghost" id="btn-recycle-commons" data-nav data-i18n="recycleCommons">Reciclar comuns</button>
           </div>
         </div>
-        <div class="col detail-col"><div id="item-detail"><div class="empty-detail">Selecione um item para ver os detalhes.</div></div></div>
+        <div class="col detail-col"><div id="item-detail"><div class="empty-detail" data-i18n="selectItem">Selecione um item para ver os detalhes.</div></div></div>
       </div>
       <div id="tab-skills" class="tab-body hidden"><div id="skill-list"></div></div>
-      <div class="pad-hints">Ⓐ Selecionar/Equipar · Ⓧ Reciclar · Ⓨ Trocar aba · Ⓑ Fechar</div>
+      <div class="pad-hints" data-i18n="padHints"></div>
     </div>
   </div>
 
   <!-- PAUSA -->
   <div id="panel-pause" class="screen hidden">
     <div class="panel narrow">
-      <h2>PAUSA</h2>
+      <h2 data-i18n="pause">PAUSA</h2>
       <div class="stack">
-        <button class="btn" data-nav id="pause-resume">Continuar</button>
-        <button class="btn ghost" data-nav id="pause-char">Personagem</button>
-        <button class="btn ghost" data-nav id="pause-opts">Opções</button>
-        <button class="btn ghost" data-nav id="pause-help">Controles</button>
-        <button class="btn danger" data-nav id="pause-quit">Salvar e sair</button>
+        <button class="btn" data-nav id="pause-resume" data-i18n="resume">Continuar</button>
+        <button class="btn ghost" data-nav id="pause-char" data-i18n="character">Personagem</button>
+        <button class="btn ghost" data-nav id="pause-opts" data-i18n="options">Opções</button>
+        <button class="btn ghost" data-nav id="pause-help" data-i18n="controls">Controles</button>
+        <button class="btn danger" data-nav id="pause-quit" data-i18n="saveQuit">Salvar e sair</button>
       </div>
     </div>
   </div>
@@ -136,54 +136,39 @@
   <!-- OPÇÕES -->
   <div id="panel-opts" class="screen hidden">
     <div class="panel narrow">
-      <h2>OPÇÕES</h2>
-      <label class="opt">Música <input type="range" min="0" max="1" step="0.05" id="opt-music" data-nav /></label>
-      <label class="opt">Efeitos <input type="range" min="0" max="1" step="0.05" id="opt-sfx" data-nav /></label>
-      <div class="opt">Dificuldade <button class="btn small" id="opt-diff" data-nav></button></div>
-      <div class="opt">Gráficos <button class="btn small" id="opt-quality" data-nav></button></div>
-      <div class="opt">Tremor de tela <button class="btn small" id="opt-shake" data-nav></button></div>
-      <div class="opt">Tela cheia <button class="btn small" id="opt-full" data-nav>Alternar</button></div>
-      <div class="stack"><button class="btn" data-nav id="opts-close">Voltar</button></div>
+      <h2 data-i18n="optionsTitle">OPÇÕES</h2>
+      <label class="opt"><span data-i18n="music">Música</span> <input type="range" min="0" max="1" step="0.05" id="opt-music" data-nav /></label>
+      <label class="opt"><span data-i18n="sfx">Efeitos</span> <input type="range" min="0" max="1" step="0.05" id="opt-sfx" data-nav /></label>
+      <div class="opt"><span data-i18n="difficulty">Dificuldade</span> <button class="btn small" id="opt-diff" data-nav></button></div>
+      <div class="opt"><span data-i18n="graphics">Gráficos</span> <button class="btn small" id="opt-quality" data-nav></button></div>
+      <div class="opt"><span data-i18n="shake">Tremor de tela</span> <button class="btn small" id="opt-shake" data-nav></button></div>
+      <div class="opt"><span data-i18n="fullscreen">Tela cheia</span> <button class="btn small" id="opt-full" data-nav data-i18n="toggle">Alternar</button></div>
+      <div class="stack"><button class="btn" data-nav id="opts-close" data-i18n="back">Voltar</button></div>
     </div>
   </div>
 
   <!-- CONTROLES -->
   <div id="panel-help" class="screen hidden">
     <div class="panel narrow help">
-      <h2>CONTROLES</h2>
+      <h2 data-i18n="controlsTitle">CONTROLES</h2>
       <div class="help-grid">
-        <div class="help-col">
-          <h3>Teclado + Mouse</h3>
-          <p><b>Clique esquerdo</b> no chão: mover · no inimigo: atacar</p>
-          <p><b>WASD</b>: mover · <b>Espaço</b> ou <b>Shift + clique</b>: atacar no lugar</p>
-          <p><b>Q / E / R</b> (ou 1/2/3): habilidades · <b>Botão direito</b>: habilidade 1</p>
-          <p><b>F</b>: stim · <b>I</b> / <b>Tab</b>: personagem · <b>Esc</b>: pausa</p>
-        </div>
-        <div class="help-col">
-          <h3>Controle</h3>
-          <p><b>Analógico esquerdo</b>: mover · <b>direito</b>: mirar (opcional, há mira automática)</p>
-          <p><b>A / RB / RT</b>: atacar · <b>X / Y / B</b>: habilidades</p>
-          <p><b>LB / LT</b>: stim · <b>Select</b>: personagem · <b>Start</b>: pausa</p>
-        </div>
-        <div class="help-col">
-          <h3>Toque</h3>
-          <p>Toque e arraste do <b>lado esquerdo</b> da tela para mover.</p>
-          <p>Botões à direita: ataque (segure), habilidades e stim. A mira é automática.</p>
-        </div>
+        <div class="help-col"><h3 data-i18n="kbm"></h3><div data-i18n-html="help.kb"></div></div>
+        <div class="help-col"><h3 data-i18n="gamepad"></h3><div data-i18n-html="help.pad"></div></div>
+        <div class="help-col"><h3 data-i18n="touch"></h3><div data-i18n-html="help.touch"></div></div>
       </div>
-      <p class="tip">Dica: encontre o <b>elevador</b> brilhante em cada andar para descer. A cada 3 andares, um chefe guarda a saída.</p>
-      <div class="stack"><button class="btn" data-nav id="help-close">Voltar</button></div>
+      <p class="tip" data-i18n-html="help.tip"></p>
+      <div class="stack"><button class="btn" data-nav id="help-close" data-i18n="back">Voltar</button></div>
     </div>
   </div>
 
   <!-- MORTE -->
   <div id="panel-dead" class="screen hidden">
     <div class="panel narrow dead">
-      <h2 class="glitch">SISTEMA DESLIGADO</h2>
+      <h2 class="glitch" data-i18n="systemDown">SISTEMA DESLIGADO</h2>
       <p id="dead-info"></p>
       <div class="stack">
-        <button class="btn" data-nav id="dead-retry">Reiniciar no andar</button>
-        <button class="btn ghost" data-nav id="dead-menu">Menu principal</button>
+        <button class="btn" data-nav id="dead-retry" data-i18n="retryFloor">Reiniciar no andar</button>
+        <button class="btn ghost" data-nav id="dead-menu" data-i18n="mainMenu">Menu principal</button>
       </div>
     </div>
   </div>
@@ -194,14 +179,14 @@
       <h2 id="confirm-title"></h2>
       <p id="confirm-text"></p>
       <div class="stack row">
-        <button class="btn danger" data-nav id="confirm-yes">Sim</button>
-        <button class="btn ghost" data-nav id="confirm-no">Cancelar</button>
+        <button class="btn danger" data-nav id="confirm-yes" data-i18n="yes">Sim</button>
+        <button class="btn ghost" data-nav id="confirm-no" data-i18n="cancel">Cancelar</button>
       </div>
     </div>
   </div>
 
   <div id="fade"></div>
-  <div id="loading"><div class="spinner"></div><div>Carregando…</div></div>
+  <div id="loading"><div class="spinner"></div><div data-i18n="loading">Carregando…</div></div>
 
   <script type="module" src="js/main.js"></script>
 </body>

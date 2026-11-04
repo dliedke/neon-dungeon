@@ -1,9 +1,10 @@
 // Geração de itens, atributos, raridades e descrições.
 import { ri, rr, pick, weightedPick, uid, fmt } from './utils.js';
 import { CLASSES } from './classes.js';
+import { L } from './i18n.js';
 
 export const SLOTS = ['weapon', 'head', 'chest', 'hands', 'feet', 'chip'];
-export const SLOT_NAMES = { weapon: 'Arma', head: 'Implante', chest: 'Torso', hands: 'Mãos', feet: 'Pés', chip: 'Chip' };
+export const SLOT_NAMES = { weapon: L('Arma', 'Weapon'), head: L('Implante', 'Implant'), chest: L('Torso', 'Torso'), hands: L('Mãos', 'Hands'), feet: L('Pés', 'Feet'), chip: 'Chip' };
 export const SLOT_ICONS = {
   weapon: '<path d="M6 26L24 8M20 6l6 6M8 20l4 4"/>',
   head: '<path d="M8 18a8 8 0 0 1 16 0v4H8z"/><path d="M10 17h12"/>',
@@ -14,46 +15,47 @@ export const SLOT_ICONS = {
 };
 
 export const RARITY = [
-  { name: 'Comum', color: '#c8d0e0', hex: 0xc8d0e0, n: [0, 0], mult: 1 },
-  { name: 'Modificado', color: '#4d9bff', hex: 0x3d8bff, n: [1, 2], mult: 1.08 },
-  { name: 'Raro', color: '#ffd23d', hex: 0xffd23d, n: [3, 4], mult: 1.16 },
-  { name: 'Protótipo', color: '#ff7a1a', hex: 0xff7a1a, n: [4, 4], mult: 1.26 },
+  { name: L('Comum', 'Common'), color: '#c8d0e0', hex: 0xc8d0e0, n: [0, 0], mult: 1 },
+  { name: L('Modificado', 'Modded'), color: '#4d9bff', hex: 0x3d8bff, n: [1, 2], mult: 1.08 },
+  { name: L('Raro', 'Rare'), color: '#ffd23d', hex: 0xffd23d, n: [3, 4], mult: 1.16 },
+  { name: L('Protótipo', 'Prototype'), color: '#ff7a1a', hex: 0xff7a1a, n: [4, 4], mult: 1.26 },
 ];
 
 const BASES = {
-  head: ['Implante Ocular', 'Visor Tático', 'Chip Cortical', 'Capacete Neural'],
-  chest: ['Jaqueta Blindada', 'Colete de Kevlar', 'Sobretudo Sintético', 'Placa Subdérmica'],
-  hands: ['Luvas Hidráulicas', 'Manoplas Sinápticas', 'Braços Cromados', 'Luvas de Grafeno'],
-  feet: ['Botas Magnéticas', 'Tênis Reflex', 'Pernas Servo', 'Botas de Salto'],
-  chip: ['Chip Neural', 'Módulo de Memória', 'Núcleo Biocibernético', 'Coprocessador'],
+  head: [L('Implante Ocular', 'Ocular Implant'), L('Visor Tático', 'Tactical Visor'), L('Chip Cortical', 'Cortical Chip'), L('Capacete Neural', 'Neural Helmet')],
+  chest: [L('Jaqueta Blindada', 'Armored Jacket'), L('Colete de Kevlar', 'Kevlar Vest'), L('Sobretudo Sintético', 'Synthetic Coat'), L('Placa Subdérmica', 'Subdermal Plate')],
+  hands: [L('Luvas Hidráulicas', 'Hydraulic Gloves'), L('Manoplas Sinápticas', 'Synaptic Gauntlets'), L('Braços Cromados', 'Chrome Arms'), L('Luvas de Grafeno', 'Graphene Gloves')],
+  feet: [L('Botas Magnéticas', 'Mag Boots'), L('Tênis Reflex', 'Reflex Sneakers'), L('Pernas Servo', 'Servo Legs'), L('Botas de Salto', 'Jump Boots')],
+  chip: [L('Chip Neural', 'Neural Chip'), L('Módulo de Memória', 'Memory Module'), L('Núcleo Biocibernético', 'Biocyber Core'), L('Coprocessador', 'Coprocessor')],
 };
 const ARMOR_BASE = { head: 4, chest: 9, hands: 3, feet: 3, chip: 0 };
-const SUFFIX = ['Mk-II', 'Mk-III', 'X-7', 'V9', 'Série Ômega', 'Militar', 'de Elite', 'Customizado', 'Pirata', 'Corporativo', 'Experimental', 'Kitsune', 'Ronin', 'Spectre'];
+const SUFFIX = ['Mk-II', 'Mk-III', 'X-7', 'V9', L('Série Ômega', 'Omega Series'), L('Militar', 'Military'), L('de Elite', 'Elite'), L('Customizado', 'Custom'), L('Pirata', 'Bootleg'), L('Corporativo', 'Corporate'), L('Experimental', 'Experimental'), 'Kitsune', 'Ronin', 'Spectre'];
+const MOD_SUFFIX = ['v2', 'Plus', 'Turbo', 'Pro', L('Tunado', 'Tuned'), L('Refinado', 'Refined')];
 
 export const AFFIXES = {
-  dmgPct: { fmt: (v) => `+${v}% de dano`, roll: (l) => ri(4, 10) + Math.floor(l * 0.9), w: 1.6 },
-  hp: { fmt: (v) => `+${v} de vida máxima`, roll: (l) => ri(8, 16) + l * 5, w: 0.25 },
-  en: { fmt: (v) => `+${v} de energia máxima`, roll: (l) => ri(6, 12) + l, w: 0.3 },
-  crit: { fmt: (v) => `+${v}% de chance de crítico`, roll: (l) => ri(2, 5) + Math.floor(l / 6), w: 2.2 },
-  critDmg: { fmt: (v) => `+${v}% de dano crítico`, roll: (l) => ri(10, 22) + l, w: 0.6 },
-  atkSpd: { fmt: (v) => `+${v}% de velocidade de ataque`, roll: () => ri(4, 9), w: 2.2 },
-  moveSpd: { fmt: (v) => `+${v}% de velocidade de movimento`, roll: () => ri(3, 8), w: 1.4, slots: ['feet', 'chip'] },
-  armor: { fmt: (v) => `+${v} de blindagem`, roll: (l) => ri(4, 9) + l * 2, w: 0.5 },
-  hpRegen: { fmt: (v) => `+${v} de vida por segundo`, roll: (l) => +(rr(0.6, 1.5) + l * 0.25).toFixed(1), w: 2 },
-  enRegen: { fmt: (v) => `+${v} de energia por segundo`, roll: (l) => +(rr(0.6, 1.5) + l * 0.12).toFixed(1), w: 2 },
-  lifeSteal: { fmt: (v) => `+${v}% de roubo de vida`, roll: () => +rr(1, 3).toFixed(1), w: 3, slots: ['weapon', 'hands', 'chip'] },
-  cdr: { fmt: (v) => `-${v}% de recarga das habilidades`, roll: () => ri(3, 8), w: 2, slots: ['head', 'chip'] },
-  xpPct: { fmt: (v) => `+${v}% de experiência`, roll: () => ri(5, 12), w: 0.5, slots: ['head', 'chip'] },
-  findPct: { fmt: (v) => `+${v}% de chance de achar itens`, roll: () => ri(6, 15), w: 0.5 },
+  dmgPct: { fmt: (v) => L(`+${v}% de dano`, `+${v}% damage`), roll: (l) => ri(4, 10) + Math.floor(l * 0.9), w: 1.6 },
+  hp: { fmt: (v) => L(`+${v} de vida máxima`, `+${v} max health`), roll: (l) => ri(8, 16) + l * 5, w: 0.25 },
+  en: { fmt: (v) => L(`+${v} de energia máxima`, `+${v} max energy`), roll: (l) => ri(6, 12) + l, w: 0.3 },
+  crit: { fmt: (v) => L(`+${v}% de chance de crítico`, `+${v}% critical chance`), roll: (l) => ri(2, 5) + Math.floor(l / 6), w: 2.2 },
+  critDmg: { fmt: (v) => L(`+${v}% de dano crítico`, `+${v}% critical damage`), roll: (l) => ri(10, 22) + l, w: 0.6 },
+  atkSpd: { fmt: (v) => L(`+${v}% de velocidade de ataque`, `+${v}% attack speed`), roll: () => ri(4, 9), w: 2.2 },
+  moveSpd: { fmt: (v) => L(`+${v}% de velocidade de movimento`, `+${v}% movement speed`), roll: () => ri(3, 8), w: 1.4, slots: ['feet', 'chip'] },
+  armor: { fmt: (v) => L(`+${v} de blindagem`, `+${v} armor`), roll: (l) => ri(4, 9) + l * 2, w: 0.5 },
+  hpRegen: { fmt: (v) => L(`+${v} de vida por segundo`, `+${v} health per second`), roll: (l) => +(rr(0.6, 1.5) + l * 0.25).toFixed(1), w: 2 },
+  enRegen: { fmt: (v) => L(`+${v} de energia por segundo`, `+${v} energy per second`), roll: (l) => +(rr(0.6, 1.5) + l * 0.12).toFixed(1), w: 2 },
+  lifeSteal: { fmt: (v) => L(`+${v}% de roubo de vida`, `+${v}% life steal`), roll: () => +rr(1, 3).toFixed(1), w: 3, slots: ['weapon', 'hands', 'chip'] },
+  cdr: { fmt: (v) => L(`-${v}% de recarga das habilidades`, `-${v}% skill cooldown`), roll: () => ri(3, 8), w: 2, slots: ['head', 'chip'] },
+  xpPct: { fmt: (v) => L(`+${v}% de experiência`, `+${v}% experience`), roll: () => ri(5, 12), w: 0.5, slots: ['head', 'chip'] },
+  findPct: { fmt: (v) => L(`+${v}% de chance de achar itens`, `+${v}% item find`), roll: () => ri(6, 15), w: 0.5 },
 };
 
 export const LEGENDARIES = {
-  arc: { name: 'Arco Voltaico', desc: 'Acertos têm 15% de chance de lançar um raio que salta para até 3 inimigos (80% de dano).' },
-  nano: { name: 'Nanorreparo', desc: 'Abater um inimigo restaura 4% da vida máxima.' },
-  core: { name: 'Núcleo Instável', desc: 'Inimigos abatidos explodem, causando 60% do dano da arma ao redor.' },
-  echo: { name: 'Eco Fantasma', desc: 'Habilidades têm 25% de chance de não entrar em recarga.' },
-  shield: { name: 'Escudo Reativo', desc: 'Ao sofrer dano, ganha um escudo de 20% da vida máxima (a cada 10s).' },
-  overload: { name: 'Sobrecarga', desc: 'Habilidades custam 30% menos energia.' },
+  arc: { name: L('Arco Voltaico', 'Voltaic Arc'), desc: L('Acertos têm 15% de chance de lançar um raio que salta para até 3 inimigos (80% de dano).', 'Hits have a 15% chance to cast lightning that jumps to up to 3 enemies (80% damage).') },
+  nano: { name: L('Nanorreparo', 'Nanorepair'), desc: L('Abater um inimigo restaura 4% da vida máxima.', 'Killing an enemy restores 4% of max health.') },
+  core: { name: L('Núcleo Instável', 'Unstable Core'), desc: L('Inimigos abatidos explodem, causando 60% do dano da arma ao redor.', 'Slain enemies explode, dealing 60% weapon damage around them.') },
+  echo: { name: L('Eco Fantasma', 'Ghost Echo'), desc: L('Habilidades têm 25% de chance de não entrar em recarga.', 'Skills have a 25% chance to not go on cooldown.') },
+  shield: { name: L('Escudo Reativo', 'Reactive Shield'), desc: L('Ao sofrer dano, ganha um escudo de 20% da vida máxima (a cada 10s).', 'When hit, gain a shield of 20% max health (every 10s).') },
+  overload: { name: L('Sobrecarga', 'Overload'), desc: L('Habilidades custam 30% menos energia.', 'Skills cost 30% less energy.') },
 };
 
 export function rollRarity(bonus = 0) {
@@ -68,12 +70,12 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
   if (slot === 'weapon') {
     const C = CLASSES[cls];
     it.cls = cls;
-    it.base = pick(C.weaponNames);
+    it.bi = Math.floor(Math.random() * C.weaponNames.length);
     const scale = (1 + 0.14 * (ilvl - 1)) * R.mult * rr(0.92, 1.08);
     it.wMin = Math.max(1, Math.round(C.base.wMin * scale));
     it.wMax = Math.max(it.wMin + 1, Math.round(C.base.wMax * scale));
   } else {
-    it.base = pick(BASES[slot]);
+    it.bi = Math.floor(Math.random() * BASES[slot].length);
     if (ARMOR_BASE[slot]) it.armor = Math.round(ARMOR_BASE[slot] * (1 + 0.22 * (ilvl - 1)) * R.mult * rr(0.9, 1.1));
   }
   let n = ri(R.n[0], R.n[1]);
@@ -84,15 +86,25 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
     it.affixes[k] = AFFIXES[k].roll(ilvl);
   }
   if (rarity === 3) it.leg = pick(Object.keys(LEGENDARIES));
-  it.name = itemName(it);
+  it.si = Math.floor(Math.random() * 64);
   return it;
 }
 
-function itemName(it) {
-  if (it.rarity === 3) return `${it.base} «${LEGENDARIES[it.leg].name}»`;
-  if (it.rarity === 2) return `${it.base} ${pick(SUFFIX)}`;
-  if (it.rarity === 1) return `${it.base} ${pick(['v2', 'Plus', 'Turbo', 'Pro', 'Tunado', 'Refinado'])}`;
-  return it.base;
+// Nome do item no idioma atual (saves antigos guardavam o nome pronto)
+export function itemName(it) {
+  if (it.bi === undefined) return it.name || '?';
+  const base = it.slot === 'weapon' ? CLASSES[it.cls].weaponNames[it.bi] : BASES[it.slot][it.bi];
+  if (it.rarity === 3) return `${base} «${LEGENDARIES[it.leg].name}»`;
+  if (it.rarity === 2) return `${base} ${SUFFIX[it.si % SUFFIX.length]}`;
+  if (it.rarity === 1) return `${base} ${MOD_SUFFIX[it.si % MOD_SUFFIX.length]}`;
+  return base;
+}
+
+// O item é melhor do que o equipado no mesmo espaço?
+export function isUpgrade(it, equip) {
+  const cur = equip[it.slot];
+  if (!cur) return true;
+  return itemScore(it) > itemScore(cur) * 1.03;
 }
 
 export function starterWeapon(cls) {
@@ -119,8 +131,8 @@ export function recycleValue(it) {
 
 export function itemStatLines(it) {
   const lines = [];
-  if (it.slot === 'weapon') lines.push(`<div class="it-main">${fmt(it.wMin)}–${fmt(it.wMax)} <span>de dano</span></div>`);
-  if (it.armor) lines.push(`<div class="it-main">${fmt(it.armor)} <span>de blindagem</span></div>`);
+  if (it.slot === 'weapon') lines.push(`<div class="it-main">${fmt(it.wMin)}–${fmt(it.wMax)} <span>${L('de dano', 'damage')}</span></div>`);
+  if (it.armor) lines.push(`<div class="it-main">${fmt(it.armor)} <span>${L('de blindagem', 'armor')}</span></div>`);
   for (const [k, v] of Object.entries(it.affixes)) lines.push(`<div class="it-aff">${AFFIXES[k].fmt(v)}</div>`);
   if (it.leg) lines.push(`<div class="it-leg"><b>${LEGENDARIES[it.leg].name}:</b> ${LEGENDARIES[it.leg].desc}</div>`);
   return lines.join('');
@@ -129,8 +141,8 @@ export function itemStatLines(it) {
 export function itemCardHtml(it, extra = '') {
   const R = RARITY[it.rarity];
   return `<div class="item-card r${it.rarity}">
-    <div class="it-name" style="color:${R.color}">${it.name}</div>
-    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · Nível ${it.ilvl}</div>
+    <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
+    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}</div>
     ${itemStatLines(it)}
     ${extra}
   </div>`;

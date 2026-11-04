@@ -8,28 +8,40 @@ import { spawnProjectile, damagePlayer, after, enemyExplosion } from './combat.j
 import { burst, ringFx, telegraphFx, lineTelegraph, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
+import { L } from './i18n.js';
+import { spawnChest } from './loot.js';
+import { randomFloorInRoom } from './dungeon.js';
+import { beamFx } from './fx.js';
+import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
-  punk: { name: 'Punk de Rua', hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
-  drone: { name: 'Drone Vigia', hp: 18, dmg: 5, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
-  soldier: { name: 'Agente Corporativo', hp: 42, dmg: 5, speed: 3.0, r: 0.34, h: 1.4, xp: 12, minFloor: 2, weight: 7, ai: 'ranged', range: 9, keep: [5, 8], atkCd: 2.4, burst: 3, proj: { speed: 12, color: 0xffaa00, size: 0.12 }, blood: 0xff2244 },
-  bomber: { name: 'Aranha-Bomba', hp: 14, dmg: 16, speed: 5.3, r: 0.3, h: 0.7, xp: 6, minFloor: 2, weight: 5, ai: 'bomber', blood: 0xff3300 },
-  brute: { name: 'Mech Brutamontes', hp: 160, dmg: 18, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, blood: 0xffc400 },
+  punk: { name: L('Punk de Rua', 'Street Punk'), hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
+  drone: { name: L('Drone Vigia', 'Watcher Drone'), hp: 18, dmg: 5, speed: 4.0, r: 0.34, h: 1.5, xp: 7, minFloor: 1, weight: 6, ai: 'ranged', range: 7.5, keep: [4, 6.5], atkCd: 1.8, proj: { speed: 8.5, color: 0xff3355, size: 0.17 }, blood: 0xff3355 },
+  soldier: { name: L('Agente Corporativo', 'Corporate Agent'), hp: 42, dmg: 5, speed: 3.0, r: 0.34, h: 1.4, xp: 12, minFloor: 2, weight: 7, ai: 'ranged', range: 9, keep: [5, 8], atkCd: 2.4, burst: 3, proj: { speed: 12, color: 0xffaa00, size: 0.12 }, blood: 0xff2244 },
+  bomber: { name: L('Aranha-Bomba', 'Bomb Spider'), hp: 14, dmg: 16, speed: 5.3, r: 0.3, h: 0.7, xp: 6, minFloor: 2, weight: 5, ai: 'bomber', blood: 0xff3300 },
+  sentry: { name: L('Torreta de Segurança', 'Sentry Turret'), hp: 50, dmg: 5, speed: 0, r: 0.42, h: 1.1, xp: 14, minFloor: 2, weight: 2, ai: 'sentry', range: 9, atkCd: 2.3, burst: 4, proj: { speed: 10, color: 0xff3355, size: 0.13 }, heavy: true, static: true, solo: true, blood: 0xff3355 },
+  shield: { name: L('Tropa de Choque', 'Riot Trooper'), hp: 58, dmg: 10, speed: 2.7, r: 0.42, h: 1.5, xp: 16, minFloor: 3, weight: 4, ai: 'melee', shield: true, range: 1.0, atkCd: 1.5, blood: 0x4d9bff },
+  brute: { name: L('Mech Brutamontes', 'Brute Mech'), hp: 160, dmg: 18, speed: 2.2, r: 0.62, h: 2.2, xp: 40, minFloor: 3, weight: 3, ai: 'brute', range: 2.6, atkCd: 2.8, heavy: true, solo: true, blood: 0xffc400 },
+  sniper: { name: L('Franco-atirador', 'Sniper'), hp: 26, dmg: 18, speed: 2.8, r: 0.34, h: 1.4, xp: 14, minFloor: 4, weight: 3, ai: 'sniper', range: 14, keep: [8, 12], atkCd: 3.6, blood: 0xff2244 },
+  ninja: { name: L('Assassino Holográfico', 'Holo Assassin'), hp: 34, dmg: 10, speed: 5.4, r: 0.32, h: 1.4, xp: 18, minFloor: 5, weight: 3, ai: 'melee', blink: true, range: 0.9, atkCd: 0.85, blood: 0xb36bff },
+  medic: { name: L('Drone Médico', 'Medic Drone'), hp: 20, dmg: 0, speed: 3.8, r: 0.34, h: 1.5, xp: 12, minFloor: 2, weight: 0, ai: 'medic', blood: 0x39ff88 },
+  barrel: { name: L('Barril Explosivo', 'Explosive Barrel'), hp: 1, dmg: 14, speed: 0, r: 0.35, h: 0.9, xp: 0, minFloor: 1, weight: 0, ai: 'inert', inert: true, static: true, blood: 0xff7a1a },
   boss: { name: 'Executor ARC-9', hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
+  queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
 };
 
 const ELITE = {
-  veloz: { name: 'Veloz', color: 0x00f0ff, apply: (e) => { e.speed *= 1.45; e.atkCdMult = 0.7; } },
-  blindado: { name: 'Blindado', color: 0xc0c8ff, apply: (e) => { e.dr = 0.4; } },
-  vampirico: { name: 'Vampírico', color: 0xff2244, apply: (e) => { e.vamp = true; } },
-  instavel: { name: 'Instável', color: 0xff7a1a, apply: (e) => { e.explodeOnDeath = true; } },
+  veloz: { name: L('Veloz', 'Swift'), color: 0x00f0ff, apply: (e) => { e.speed *= 1.45; e.atkCdMult = 0.7; } },
+  blindado: { name: L('Blindado', 'Armored'), color: 0xc0c8ff, apply: (e) => { e.dr = 0.4; } },
+  vampirico: { name: L('Vampírico', 'Vampiric'), color: 0xff2244, apply: (e) => { e.vamp = true; } },
+  instavel: { name: L('Instável', 'Unstable'), color: 0xff7a1a, apply: (e) => { e.explodeOnDeath = true; } },
 };
 
 // Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos
 export const DIFFICULTY = {
-  easy: { name: 'Fácil', hp: 0.7, dmg: 0.6, count: 0.85 },
+  easy: { name: L('Fácil', 'Easy'), hp: 0.7, dmg: 0.6, count: 0.85 },
   normal: { name: 'Normal', hp: 1, dmg: 1, count: 1 },
-  hard: { name: 'Difícil', hp: 1.35, dmg: 1.35, count: 1.25 },
+  hard: { name: L('Difícil', 'Hard'), hp: 1.35, dmg: 1.35, count: 1.25 },
 };
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
@@ -56,7 +68,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     speed: T.speed * rr(0.92, 1.08),
     alive: true, atkT: rr(0.6, 1.6), aggro: false, kx: 0, kz: 0, stun: 0, flash: 0,
     model, facing: rr(0, Math.PI * 2), phase: rr(0, 6), hpShow: 0,
-    elite: eliteKey, boss: type === 'boss', heavy: !!T.heavy,
+    elite: eliteKey, boss: type === 'boss' || type === 'queen', heavy: !!T.heavy, inert: !!T.inert, static: !!T.static,
     height: T.h * (eliteKey ? 1.2 : 1), xp: Math.round(T.xp * (1 + 0.3 * (G.floor - 1))),
     losT: rr(0, 0.3), los: false, strafe: chance(0.5) ? 1 : -1, strafeT: rr(1, 3),
     state: 'idle', bloodColor: T.blood, atkCdMult: 1, name: T.name, spawnX: x, spawnZ: z,
@@ -66,9 +78,18 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.maxHp = e.hp;
     e.dmg *= 1.4;
     e.xp *= 3;
-    e.name = `${T.name} ${ELITE[eliteKey].name}`;
+    e.name = L(`${T.name} ${ELITE[eliteKey].name}`, `${ELITE[eliteKey].name} ${T.name}`);
     ELITE[eliteKey].apply(e);
     model.root.scale.setScalar(1.2);
+  }
+  if (T.inert) {
+    e.hp = e.maxHp = 1;
+    e.aggro = false;
+  }
+  if (T.ai === 'sniper') {
+    e.laser = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(2), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
+    e.laser.visible = false;
+    G.world.add(e.laser);
   }
   if (e.boss) {
     e.bstate = 'intro';
@@ -77,7 +98,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.lastAtk = null;
   }
   addShadow(model.root, e.r / (eliteKey ? 1.2 : 1));
-  const bar = makeHpBar(e.boss ? 0 : 0.8, !!eliteKey);
+  const bar = makeHpBar(e.boss || T.inert ? 0 : 0.8, !!eliteKey);
   bar.position.y = T.h + 0.35;
   model.root.add(bar);
   e.bar = bar;
@@ -88,11 +109,18 @@ export function spawnEnemy(type, x, z, o = {}) {
   return e;
 }
 
+const laserGeo = new THREE.BoxGeometry(0.05, 0.05, 1).translate(0, 0, 0.5);
+
 export function onEnemyKilled(e) {
+  if (e.laser) {
+    e.laser.parent && e.laser.parent.remove(e.laser);
+    e.laser.material.dispose();
+    e.laser = null;
+  }
   if (e.boss) {
     G.boss = null;
     bossBar(null);
-    banner('ALVO NEUTRALIZADO', 'O elevador foi liberado');
+    banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
     sfx.levelup();
     G.dungeon.meshes.exit.locked = false;
   }
@@ -133,7 +161,7 @@ export function updateEnemies(dt, cam) {
   const d = G.dungeon;
   let anyAggro = false;
   for (const e of G.enemies) {
-    if (!e.alive) continue;
+    if (!e.alive || e.inert) continue;
     const dx = p.x - e.x;
     const dz = p.z - e.z;
     const dist = Math.hypot(dx, dz);
@@ -150,7 +178,7 @@ export function updateEnemies(dt, cam) {
     }
     if (e.alerted) {
       e.alerted = false;
-      for (const o of G.enemies) if (o.alive && !o.aggro && Math.hypot(o.x - e.x, o.z - e.z) < 5) o.aggro = true;
+      for (const o of G.enemies) if (o.alive && !o.aggro && !o.inert && Math.hypot(o.x - e.x, o.z - e.z) < 5) o.aggro = true;
       if (e.boss && !G.boss) startBoss(e);
     }
     if (e.aggro && p.alive) anyAggro = true;
@@ -174,6 +202,22 @@ export function updateEnemies(dt, cam) {
       };
       switch (e.T.ai) {
         case 'melee': {
+          if (e.T.blink) {
+            e.blinkT = (e.blinkT ?? rr(1, 3)) - dt;
+            if (e.blinkT <= 0 && dist > 2.6 && dist < 11 && e.los && !(e.windup > 0)) {
+              e.blinkT = rr(3.5, 5);
+              const bx = p.x - Math.sin(p.facing) * 1.3;
+              const bz = p.z - Math.cos(p.facing) * 1.3;
+              if (isWalkable(d, bx, bz)) {
+                burst(e.x, 0.8, e.z, 0xb36bff, 16, 4, 0.07, 0.4);
+                e.x = bx;
+                e.z = bz;
+                burst(bx, 0.8, bz, 0xb36bff, 16, 4, 0.07, 0.4);
+                sfx.zap();
+                e.atkT = Math.min(e.atkT, 0.25);
+              }
+            }
+          }
           if (e.windup > 0) {
             e.windup -= dt;
             speed = 0;
@@ -252,6 +296,110 @@ export function updateEnemies(dt, cam) {
           e.faceZ = uz;
           break;
         }
+        case 'sniper': {
+          const [kmin, kmax] = e.T.keep;
+          if (e.aimT > 0) {
+            e.aimT -= dt;
+            speed = 0;
+            if (e.aimT > 0.3) {
+              e.lockX = p.x;
+              e.lockZ = p.z;
+            }
+            updateLaser(e, e.lockX, e.lockZ, 1 - e.aimT / 1.3);
+            if (e.aimT <= 0) {
+              e.laser.visible = false;
+              const ddx = e.lockX - e.x;
+              const ddz = e.lockZ - e.z;
+              const l = Math.hypot(ddx, ddz) || 1;
+              spawnProjectile({ from: 'enemy', x: e.x + (ddx / l) * 0.5, z: e.z + (ddz / l) * 0.5, dx: ddx / l, dz: ddz / l, speed: 30, life: 1, dmg: e.dmg, color: 0xff2244, size: 0.11, r: 0.18 });
+              sfx.laser();
+              e.atkT = e.T.atkCd * e.atkCdMult;
+              e.swing = 1;
+            }
+          } else {
+            if (!e.los || dist > kmax) {
+              const c = chase();
+              if (c) { mvx = c.x; mvz = c.z; }
+            } else if (dist < kmin) {
+              mvx = -ux;
+              mvz = -uz;
+            }
+            if (e.los && dist < e.T.range && e.atkT <= 0) {
+              e.aimT = 1.3;
+              e.lockX = p.x;
+              e.lockZ = p.z;
+              e.laser.visible = true;
+              sfx.telegraph();
+            }
+          }
+          e.faceX = (e.lockX ?? p.x) - e.x;
+          e.faceZ = (e.lockZ ?? p.z) - e.z;
+          break;
+        }
+        case 'sentry': {
+          speed = 0;
+          if (e.los && dist < e.T.range && e.atkT <= 0) {
+            e.atkT = e.T.atkCd * e.atkCdMult;
+            for (let k = 0; k < e.T.burst; k++) {
+              after(k * 0.15, () => {
+                if (!e.alive) return;
+                enemyShoot(e, G.player.x - e.x, G.player.z - e.z, rr(-0.1, 0.1));
+              });
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'medic': {
+          // fica longe do jogador e perto do aliado mais ferido
+          let hurt = null;
+          let worst = 0.98;
+          for (const o of G.enemies) {
+            if (!o.alive || o === e || o.inert || o.T.ai === 'medic') continue;
+            const od = Math.hypot(o.x - e.x, o.z - e.z);
+            if (od > 10) continue;
+            const k = o.hp / o.maxHp;
+            if (k < worst) {
+              worst = k;
+              hurt = o;
+            }
+          }
+          if (dist < 5) {
+            mvx = -ux;
+            mvz = -uz;
+          } else if (hurt && Math.hypot(hurt.x - e.x, hurt.z - e.z) > 3) {
+            const hx = hurt.x - e.x;
+            const hz = hurt.z - e.z;
+            const hl = Math.hypot(hx, hz);
+            mvx = hx / hl;
+            mvz = hz / hl;
+          }
+          if (e.atkT <= 0) {
+            e.atkT = 2.2;
+            let healed = false;
+            for (const o of G.enemies) {
+              if (!o.alive || o === e || o.inert || o.hp >= o.maxHp) continue;
+              if (Math.hypot(o.x - e.x, o.z - e.z) > 5.5) continue;
+              const amt = o.maxHp * (o.boss ? 0.03 : 0.15);
+              o.hp = Math.min(o.maxHp, o.hp + amt);
+              beamFx(e.x, 1.15, e.z, o.x, o.height * 0.6, o.z, 0x39ff88, 0.3);
+              floatText(o.x, o.height + 0.3, o.z, `+${Math.round(amt)}`, 'heal');
+              healed = true;
+            }
+            if (healed) sfx.heal();
+          }
+          e.faceX = hurt ? hurt.x - e.x : ux;
+          e.faceZ = hurt ? hurt.z - e.z : uz;
+          break;
+        }
+        case 'queen': {
+          const r = updateQueen(e, dt, dist, ux, uz);
+          mvx = r.x;
+          mvz = r.z;
+          speed = r.speed;
+          break;
+        }
         case 'brute': {
           if (e.slamT > 0) {
             e.slamT -= dt;
@@ -312,8 +460,8 @@ export function updateEnemies(dt, cam) {
       if (d2 < r * r && d2 > 1e-6) {
         const dd = Math.sqrt(d2);
         const push = Math.min(0.15, (r - dd) * 0.5);
-        const wa = a.heavy ? 0.2 : 1;
-        const wb = b.heavy ? 0.2 : 1;
+        const wa = a.static ? 0 : a.heavy ? 0.2 : 1;
+        const wb = b.static ? 0 : b.heavy ? 0.2 : 1;
         a.x -= (dx / dd) * push * wa;
         a.z -= (dz / dd) * push * wa;
         b.x += (dx / dd) * push * wb;
@@ -328,7 +476,7 @@ export function updateEnemies(dt, cam) {
       if (d2 < r * r && d2 > 1e-6) {
         const dd = Math.sqrt(d2);
         const push = Math.min(0.12, r - dd);
-        const wa = a.heavy ? 0.15 : 0.5;
+        const wa = a.static ? 0 : a.heavy ? 0.15 : 0.5;
         a.x -= (dx / dd) * push * wa;
         a.z -= (dz / dd) * push * wa;
         p.x += (dx / dd) * push * (1 - wa);
@@ -361,7 +509,7 @@ export function updateEnemies(dt, cam) {
       let diff = want - e.facing;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
-      e.facing += diff * Math.min(1, dt * (e.boss ? 4 : 10));
+      e.facing += diff * Math.min(1, dt * (e.boss ? 4 : e.T.shield ? 2.2 : 10));
     }
     m.root.rotation.y = e.facing;
     e.phase += dt * e.speed * 2.6 * (e.moving ? 1 : 0);
@@ -376,7 +524,20 @@ export function updateEnemies(dt, cam) {
         e.swing -= dt * 5;
         m.armR.rotation.x = 0.8 * e.swing;
       }
-      if (e.T.ai === 'ranged') m.armR.rotation.x = -1.4;
+      if (e.T.ai === 'ranged' || e.T.ai === 'sniper') m.armR.rotation.x = -1.4;
+      if (e.T.ai === 'sniper') m.armL.rotation.x = -1.3;
+      if (m.holo) {
+        // assassino holográfico: tremula e fica quase invisível às vezes
+        const op = 0.35 + Math.abs(Math.sin(G.t * 3 + e.phase)) * 0.45 + (Math.random() < 0.05 ? 0.3 : 0);
+        for (const mt of m.mats) mt.opacity = op;
+      }
+    } else if (m.kind === 'sentry') {
+      m.head.rotation.y = e.facing ? 0 : 0;
+      m.head.position.y = 0.72 + (e.atkT > e.T.atkCd - 0.7 ? Math.sin(G.t * 50) * 0.02 : 0);
+    } else if (m.kind === 'queen') {
+      m.legs.forEach((l, i) => (l.rotation.x = Math.sin(e.phase * 1.4 + i * 1.3) * 0.35));
+      m.abdomen.scale.setScalar(1 + Math.sin(G.t * 3) * 0.04);
+      m.eyes.material.color.set(e.phase2 ? 0xff2244 : 0x39ff14).multiplyScalar(2.6);
     } else if (m.kind === 'drone') {
       m.body.position.y = 1.15 + Math.sin(G.t * 3 + e.phase) * 0.12;
       m.ring.rotation.z += dt * 4;
@@ -413,7 +574,7 @@ function startBoss(e) {
   G.boss = e;
   bossBar(e);
   sfx.boss();
-  banner(e.name.toUpperCase(), 'Unidade de execução corporativa');
+  banner(e.name.toUpperCase(), e.type === 'queen' ? L('Mãe de todas as aranhas-bomba', 'Mother of all bomb spiders') : L('Unidade de execução corporativa', 'Corporate execution unit'));
   G.shake = 0.4;
 }
 
@@ -425,7 +586,7 @@ function updateBoss(e, dt, dist, ux, uz) {
   if (!e.phase2 && e.hp < e.maxHp * 0.5) {
     e.phase2 = true;
     e.speed *= 1.25;
-    toast('ARC-9: PROTOCOLO DE EXTERMÍNIO ATIVADO', 'warn');
+    toast(L('ARC-9: PROTOCOLO DE EXTERMÍNIO ATIVADO', 'ARC-9: EXTERMINATION PROTOCOL ENGAGED'), 'warn');
     sfx.boss();
     ringFx(e.x, e.z, 5, 0xff2244, 0.6);
     G.shake = 0.4;
@@ -526,7 +687,7 @@ function updateBoss(e, dt, dist, ux, uz) {
       break;
     case 'summon':
       if (e.bt <= 0) {
-        const alive = G.enemies.filter((o) => o.alive && !o.boss).length;
+        const alive = G.enemies.filter((o) => o.alive && !o.boss && !o.inert).length;
         const n = Math.max(0, Math.min(3, 8 - alive));
         for (let k = 0; k < n; k++) {
           const a = (k / 3) * Math.PI * 2 + rr(0, 1);
@@ -612,7 +773,7 @@ export function populateFloor(d, floor, boss) {
       const cx = r.x + rr(1.5, r.w - 1.5);
       const cz = r.y + rr(1.5, r.h - 1.5);
       const type = pickEnemyType(floor);
-      const base = type === 'brute' ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 1.5 + floor / 2.5));
+      const base = ETYPES[type].solo ? 1 : type === 'bomber' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 1.5 + floor / 2.5));
       const n = Math.max(1, Math.round(base * D.count));
       const elite = chance(eliteChance);
       for (let i = 0; i < n; i++) {
@@ -625,10 +786,16 @@ export function populateFloor(d, floor, boss) {
         if (!isWalkable(d, x, z)) continue;
         spawnEnemy(type, x, z, { elite: elite && i === 0 });
       }
+      // médico de campo acompanhando o grupo
+      if (floor >= 2 && !ETYPES[type].solo && chance(Math.min(0.3, 0.1 + floor * 0.03))) {
+        const x = cx + rr(-1, 1);
+        const z = cz + rr(-1, 1);
+        if (isWalkable(d, x, z)) spawnEnemy('medic', x, z);
+      }
       // mistura alguns inimigos de outro tipo
       if (floor >= 3 && chance(0.4)) {
         const t2 = pickEnemyType(floor);
-        if (t2 !== 'brute') {
+        if (!ETYPES[t2].solo) {
           const x = cx + rr(-1, 1);
           const z = cz + rr(-1, 1);
           if (isWalkable(d, x, z)) spawnEnemy(t2, x, z);
@@ -636,9 +803,184 @@ export function populateFloor(d, floor, boss) {
       }
     }
   }
+  // barris explosivos e cofres
+  for (const r of d.rooms) {
+    if (r === d.rooms[0] || !chance(0.45)) continue;
+    const n = 1 + Math.floor(rr(0, 2.5));
+    for (let k = 0; k < n; k++) {
+      const pt = randomFloorInRoom(d, r, 1);
+      if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 2.5) spawnEnemy('barrel', pt.x, pt.z);
+    }
+  }
+  const chestRooms = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom).sort(() => Math.random() - 0.5);
+  const nChests = Math.min(chestRooms.length, floor < 3 ? 1 : 2);
+  for (let k = 0; k < nChests; k++) {
+    const pt = randomFloorInRoom(d, chestRooms[k], 1);
+    spawnChest(pt.x, pt.z);
+  }
   if (boss) {
-    const e = spawnEnemy('boss', d.exit.x, d.exit.z - 2.5 < d.exitRoom.y + 1 ? d.exit.z : d.exit.z - 2.5);
-    e.name = floor >= 6 ? `Executor ARC-${9 + Math.floor(floor / 3) - 1}` : 'Executor ARC-9';
+    const kind = Math.round(floor / 3) % 2 === 1 ? 'boss' : 'queen';
+    const e = spawnEnemy(kind, d.exit.x, d.exit.z - 2.5 < d.exitRoom.y + 1 ? d.exit.z : d.exit.z - 2.5);
+    if (kind === 'boss') e.name = floor >= 9 ? `Executor ARC-${9 + Math.floor(floor / 6)}` : 'Executor ARC-9';
     G.dungeon.meshes.exit.locked = true;
   }
+}
+
+// ---------------- Laser do franco-atirador ----------------
+function updateLaser(e, tx, tz, k) {
+  const L = e.laser;
+  if (!L) return;
+  L.visible = true;
+  L.position.set(e.x, 1.0, e.z);
+  L.lookAt(tx, 1.0, tz);
+  L.scale.set(1 + k * 1.5, 1 + k * 1.5, Math.hypot(tx - e.x, tz - e.z) + 2);
+  L.material.opacity = 0.25 + k * 0.6 + (k > 0.75 ? Math.sin(G.t * 60) * 0.2 : 0);
+}
+
+// ---------------- Chefe 2: Matriarca Aracnídea ----------------
+function updateQueen(e, dt, dist, ux, uz) {
+  const p = G.player;
+  const out = { x: 0, z: 0, speed: 0 };
+  e.faceX = ux;
+  e.faceZ = uz;
+  if (!e.phase2 && e.hp < e.maxHp * 0.5) {
+    e.phase2 = true;
+    e.speed *= 1.2;
+    toast(L('A MATRIARCA ESTÁ FURIOSA!', 'THE MATRIARCH IS ENRAGED!'), 'warn');
+    sfx.boss();
+    ringFx(e.x, e.z, 5, 0x39ff14, 0.6);
+    G.shake = 0.4;
+    e.bstate = 'walk';
+    e.bt = 0.5;
+  }
+  e.bt -= dt;
+  switch (e.bstate) {
+    case 'intro':
+      if (e.bt <= 0) {
+        e.bstate = 'walk';
+        e.bt = 1;
+      }
+      break;
+    case 'walk':
+      if (dist > 2.8) {
+        out.x = ux;
+        out.z = uz;
+        out.speed = e.speed;
+      }
+      if (e.bt <= 0) {
+        const opts = ['spit', 'leap', 'brood'];
+        if (dist < 4) opts.push('sweep', 'sweep');
+        let a = pick(opts);
+        if (a === e.lastAtk) a = pick(opts);
+        if (a === 'brood' && G.enemies.filter((o) => o.alive && o.type === 'bomber').length > 5) a = 'spit';
+        e.lastAtk = a;
+        e.wave = 0;
+        if (a === 'spit') {
+          e.bstate = 'spit';
+          e.bt = 0.3;
+        } else if (a === 'leap') {
+          e.bstate = 'leapWind';
+          e.bt = 0.55;
+          e.lx = p.x;
+          e.lz = p.z;
+          e.sx = e.x;
+          e.sz = e.z;
+          telegraphFx(e.lx, e.lz, 2.7, 0.55 + 0.75, 0x39ff14);
+          sfx.telegraph();
+        } else if (a === 'brood') {
+          e.bstate = 'brood';
+          e.bt = 0.7;
+          ringFx(e.x, e.z, 2.5, 0x39ff14, 0.7);
+        } else {
+          e.bstate = 'sweep';
+          e.bt = 0.85;
+          telegraphFx(e.x, e.z, 3.4, 0.85, 0x39ff14);
+          sfx.telegraph();
+        }
+      }
+      break;
+    case 'spit':
+      if (e.bt <= 0) {
+        const n = e.phase2 ? 5 : 3;
+        for (let k = 0; k < n; k++) {
+          const tx = p.x + (k === 0 ? 0 : rr(-3, 3));
+          const tz = p.z + (k === 0 ? 0 : rr(-3, 3));
+          if (!isWalkable(G.dungeon, tx, tz)) continue;
+          telegraphFx(tx, tz, 1.6, 0.8, 0x39ff14);
+          lob({ x: e.x, z: e.z, tx, tz, time: 0.8, color: 0x39ff14, onLand: (x, z) => spawnHazard(x, z, 1.6, 5, e.dmg * 0.6) });
+        }
+        sfx.enemyShot();
+        e.wave++;
+        e.bt = 0.9;
+        if (e.wave >= (e.phase2 ? 2 : 1)) toWalk(e);
+      }
+      break;
+    case 'leapWind':
+      e.faceX = e.lx - e.x;
+      e.faceZ = e.lz - e.z;
+      if (e.bt <= 0) {
+        e.bstate = 'leap';
+        e.bt = 0.75;
+        sfx.dash();
+      }
+      break;
+    case 'leap': {
+      const k = 1 - Math.max(0, e.bt) / 0.75;
+      e.x = e.sx + (e.lx - e.sx) * k;
+      e.z = e.sz + (e.lz - e.sz) * k;
+      e.model.body.position.y = Math.sin(k * Math.PI) * 3;
+      if (e.bt <= 0) {
+        e.model.body.position.y = 0;
+        if (Math.hypot(p.x - e.x, p.z - e.z) < 2.7 + p.r) damagePlayer(e.dmg * 1.6);
+        ringFx(e.x, e.z, 2.7, 0x39ff14, 0.4, { from: 0.4 });
+        burst(e.x, 0.3, e.z, 0x39ff14, 40, 8, 0.09, 0.6, { up: 0.4 });
+        sfx.explode();
+        G.shake = 0.45;
+        if (e.phase2 && !e.leapedTwice) {
+          e.leapedTwice = true;
+          e.bstate = 'leapWind';
+          e.bt = 0.45;
+          e.lx = p.x;
+          e.lz = p.z;
+          e.sx = e.x;
+          e.sz = e.z;
+          telegraphFx(e.lx, e.lz, 2.7, 1.2, 0x39ff14);
+        } else {
+          e.leapedTwice = false;
+          toWalk(e);
+        }
+      }
+      break;
+    }
+    case 'brood':
+      if (e.bt <= 0) {
+        const n = e.phase2 ? 4 : 3;
+        for (let k = 0; k < n; k++) {
+          const a = (k / n) * Math.PI * 2 + rr(0, 1);
+          let x = e.x + Math.cos(a) * 1.8;
+          let z = e.z + Math.sin(a) * 1.8;
+          if (!isWalkable(G.dungeon, x, z)) {
+            x = e.x;
+            z = e.z;
+          }
+          const m = spawnEnemy('bomber', x, z);
+          m.aggro = true;
+          m.xp = 2;
+          burst(x, 0.5, z, 0x39ff14, 10, 3, 0.06, 0.4);
+        }
+        toWalk(e);
+      }
+      break;
+    case 'sweep':
+      if (e.bt <= 0) {
+        if (Math.hypot(p.x - e.x, p.z - e.z) < 3.4 + p.r) damagePlayer(e.dmg * 1.4);
+        ringFx(e.x, e.z, 3.4, 0x39ff14, 0.35, { from: 0.6 });
+        burst(e.x, 0.4, e.z, 0x39ff14, 30, 7, 0.08, 0.5, { up: 0.3 });
+        sfx.slash();
+        G.shake = 0.3;
+        toWalk(e);
+      }
+      break;
+  }
+  return out;
 }

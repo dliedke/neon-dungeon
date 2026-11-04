@@ -9,6 +9,8 @@ import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './main.js';
 import { fmt } from './utils.js';
+import { L } from './i18n.js';
+import { itemName, isUpgrade } from './items.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -68,7 +70,7 @@ export function initUI() {
     saveSettings();
     sfx.click();
   };
-  const qNames = { auto: 'Automático', high: 'Alta', low: 'Baixa' };
+  const qNames = { auto: L('Automático', 'Auto'), high: L('Alta', 'High'), low: L('Baixa', 'Low') };
   const updQ = () => ($('opt-quality').textContent = qNames[s.quality]);
   updQ();
   $('opt-quality').onclick = () => {
@@ -84,9 +86,9 @@ export function initUI() {
     s.difficulty = diffOrder[(diffOrder.indexOf(s.difficulty) + 1) % diffOrder.length];
     updD();
     saveSettings();
-    if (G.mode !== 'menu') toast('A nova dificuldade vale a partir do próximo andar.');
+    if (G.mode !== 'menu') toast(L('A nova dificuldade vale a partir do próximo andar.', 'The new difficulty applies from the next floor.'));
   };
-  const updS = () => ($('opt-shake').textContent = s.shake ? 'Ligado' : 'Desligado');
+  const updS = () => ($('opt-shake').textContent = s.shake ? L('Ligado', 'On') : L('Desligado', 'Off'));
   updS();
   $('opt-shake').onclick = () => {
     s.shake = !s.shake;
@@ -149,10 +151,10 @@ function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? `Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates` : 'Novo personagem'}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
-        <button class="btn" data-nav data-play="${id}">${save ? 'Continuar' : 'Jogar'}</button>
-        ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="Recomeçar do zero">Novo</button>` : ''}
+        <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
+        ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}
       </div>`;
     root.appendChild(card);
   }
@@ -163,7 +165,7 @@ function renderClassCards() {
   }));
   root.querySelectorAll('[data-new]').forEach((b) => (b.onclick = () => {
     const id = b.dataset.new;
-    confirmDialog('Recomeçar?', `O progresso de ${CLASSES[id].name} será apagado.`, () => {
+    confirmDialog(L('Recomeçar?', 'Start over?'), L(`O progresso de ${CLASSES[id].name} será apagado.`, `${CLASSES[id].name}'s progress will be erased.`), () => {
       $('menu').classList.add('hidden');
       startGame(id, true);
     });
@@ -265,9 +267,9 @@ export function updateHUD(dt) {
   // buffs
   const buffs = [];
   if (p.buffs.overclock > 0) buffs.push(`Overclock ${p.buffs.overclock.toFixed(0)}s`);
-  if (p.sureCrit > 0) buffs.push(`Crítico x${p.sureCrit}`);
-  if (p.shield > 1) buffs.push(`Escudo ${Math.round(p.shield)}`);
-  if (p.buffs.regen > 0) buffs.push('Regeneração');
+  if (p.sureCrit > 0) buffs.push(`${L('Crítico', 'Crit')} x${p.sureCrit}`);
+  if (p.shield > 1) buffs.push(`${L('Escudo', 'Shield')} ${Math.round(p.shield)}`);
+  if (p.buffs.regen > 0) buffs.push(L('Regeneração', 'Regen'));
   const bh = buffs.map((b) => `<span class="buff">${b}</span>`).join('');
   if (cache.buffs !== bh) {
     cache.buffs = bh;
@@ -316,7 +318,7 @@ export function exitPrompt(state, k) {
   }
   el.classList.remove('hidden');
   el.classList.toggle('locked', state === 'locked');
-  setText('exit-text', state === 'locked' ? 'ELEVADOR BLOQUEADO — DERROTE O CHEFE' : `DESCENDO PARA O ANDAR ${G.floor + 1}…`);
+  setText('exit-text', state === 'locked' ? L('ELEVADOR BLOQUEADO — DERROTE O CHEFE', 'ELEVATOR LOCKED — DEFEAT THE BOSS') : L(`DESCENDO PARA O ANDAR ${G.floor + 1}…`, `GOING DOWN TO FLOOR ${G.floor + 1}…`));
   setScale($('exit-fill'), state === 'locked' ? 0 : k);
 }
 
@@ -346,7 +348,7 @@ export function toast(html, cls = '', key = null) {
 }
 
 export function invFull() {
-  toast('Inventário cheio! Recicle itens (I).', 'warn');
+  toast(L('Inventário cheio! Recicle itens (I).', 'Inventory full! Recycle items (I).'), 'warn');
   sfx.deny();
 }
 
@@ -361,7 +363,7 @@ export function banner(title, sub = '') {
 }
 
 export function levelUpFx(level) {
-  toast(`NÍVEL ${level}! +1 PONTO DE HABILIDADE`, 'lvl');
+  toast(L(`NÍVEL ${level}! +1 PONTO DE HABILIDADE`, `LEVEL ${level}! +1 SKILL POINT`), 'lvl');
 }
 
 // ------------------------------------------------------------------
@@ -428,6 +430,12 @@ function drawMinimap() {
   for (const e of G.enemies) {
     if (!e.alive) continue;
     if (Math.abs(e.x - p.x) > 22 || Math.abs(e.z - p.z) > 22) continue;
+    if (e.inert) {
+      if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
+      ctx.fillStyle = '#ff7a1a';
+      ctx.fillRect(e.x - 0.3, e.z - 0.3, 0.6, 0.6);
+      continue;
+    }
     if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
     ctx.fillStyle = e.boss ? '#ff2244' : e.elite ? '#ffd23d' : '#ff4466';
     const r = e.boss ? 1.3 : e.elite ? 0.7 : 0.45;
@@ -435,9 +443,16 @@ function drawMinimap() {
   }
   // itens
   for (const pk of G.pickups) {
-    if (pk.type !== 'item' || pk.item.rarity < 1) continue;
-    ctx.fillStyle = RARITY[pk.item.rarity].color;
-    ctx.fillRect(pk.x - 0.4, pk.z - 0.4, 0.8, 0.8);
+    if (pk.type === 'chest' && !pk.opened) {
+      if (!d.explored[Math.floor(pk.z) * d.W + Math.floor(pk.x)]) continue;
+      ctx.fillStyle = '#ffd23d';
+      ctx.fillRect(pk.x - 0.6, pk.z - 0.6, 1.2, 1.2);
+      continue;
+    }
+    if (pk.type !== 'item' || (pk.item.rarity < 1 && !pk.up)) continue;
+    ctx.fillStyle = pk.up ? '#39ff88' : RARITY[pk.item.rarity].color;
+    const r = pk.up ? 0.75 : 0.4;
+    ctx.fillRect(pk.x - r, pk.z - r, r * 2, r * 2);
   }
   ctx.restore();
   // jogador no centro (seta apontando para a direção)
@@ -472,7 +487,7 @@ export function closePause() {
 
 export function showDead() {
   const c = G.char;
-  $('dead-info').innerHTML = `Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar e perderá 10% dos créditos.`;
+  $('dead-info').innerHTML = L(`Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar e perderá 10% dos créditos.`, `Floor ${G.floor} · Level ${c.level}<br>You will be rebuilt at the start of the floor and lose 10% of your credits.`);
   $('panel-dead').classList.remove('hidden');
   focused = null;
 }
@@ -515,7 +530,7 @@ export function renderChar() {
   $('sp-badge').textContent = c.skillPoints;
   $('sp-badge').classList.toggle('hidden', !(c.skillPoints > 0));
   if (currentTab === 'equip') {
-    $('char-title').textContent = `${C.name} · Nível ${c.level}`;
+    $('char-title').textContent = `${C.name} · ${L('Nível', 'Level')} ${c.level}`;
     // equipamento
     $('equip-slots').innerHTML = SLOTS.map((slot) => {
       const it = c.equip[slot];
@@ -532,34 +547,35 @@ export function renderChar() {
         html += '<div class="cell empty"></div>';
         continue;
       }
-      const up = itemScore(it) > itemScore(c.equip[it.slot]) ? '<span class="up">▲</span>' : '';
+      const better = isUpgrade(it, c.equip);
+      const up = better ? '<span class="up">▲</span>' : '';
       const sel = selected && selected.where === 'inv' && selected.uid === it.uid ? ' sel' : '';
-      html += `<div class="cell r${it.rarity}${sel}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}</div>`;
+      html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}</div>`;
     }
     $('inv-grid').innerHTML = html;
-    $('inv-count').textContent = `Inventário ${c.inv.length}/${INV_SIZE}`;
+    $('inv-count').textContent = `${L('Inventário', 'Inventory')} ${c.inv.length}/${INV_SIZE}`;
     $('inv-credits').textContent = fmt(c.credits);
     const price = stimPrice();
-    $('btn-buy-stim').textContent = `Comprar Stim (${price}¢) · ${c.stims}/${MAX_STIMS}`;
+    $('btn-buy-stim').textContent = `${L('Comprar Stim', 'Buy Stim')} (${price}¢) · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
     $('btn-recycle-commons').disabled = !c.inv.some((i) => i.rarity === 0);
     // atributos
     const s = p.stats;
     const rows = [
-      ['Vida', fmt(s.maxHp)],
-      ['Energia', fmt(s.maxEn)],
-      ['Dano da arma', `${fmt(s.wMin)}–${fmt(s.wMax)}`],
-      ['Bônus de dano', `+${fmt(s.dmgPct)}%`],
-      ['Crítico', `${s.crit.toFixed(0)}% · +${fmt(s.critDmg)}%`],
-      ['Vel. de ataque', `${s.atkRate.toFixed(2)}/s`],
-      ['Blindagem', `${fmt(s.armor)} (-${Math.round((s.armor / (100 + s.armor)) * 100)}%)`],
-      ['Movimento', `${s.speed.toFixed(1)}`],
-      ['Regeneração', `${s.hpRegen.toFixed(1)}/s · ${s.enRegen.toFixed(1)} en/s`],
+      [L('Vida', 'Health'), fmt(s.maxHp)],
+      [L('Energia', 'Energy'), fmt(s.maxEn)],
+      [L('Dano da arma', 'Weapon damage'), `${fmt(s.wMin)}–${fmt(s.wMax)}`],
+      [L('Bônus de dano', 'Damage bonus'), `+${fmt(s.dmgPct)}%`],
+      [L('Crítico', 'Critical'), `${s.crit.toFixed(0)}% · +${fmt(s.critDmg)}%`],
+      [L('Vel. de ataque', 'Attack speed'), `${s.atkRate.toFixed(2)}/s`],
+      [L('Blindagem', 'Armor'), `${fmt(s.armor)} (-${Math.round((s.armor / (100 + s.armor)) * 100)}%)`],
+      [L('Movimento', 'Movement'), `${s.speed.toFixed(1)}`],
+      [L('Regeneração', 'Regeneration'), `${s.hpRegen.toFixed(1)}/s · ${s.enRegen.toFixed(1)} en/s`],
     ];
-    if (s.lifeSteal) rows.push(['Roubo de vida', `${s.lifeSteal.toFixed(1)}%`]);
-    if (s.cdr) rows.push(['Recarga', `-${s.cdr}%`]);
-    if (s.xpPct) rows.push(['Experiência', `+${s.xpPct}%`]);
-    if (s.findPct) rows.push(['Achar itens', `+${s.findPct}%`]);
+    if (s.lifeSteal) rows.push([L('Roubo de vida', 'Life steal'), `${s.lifeSteal.toFixed(1)}%`]);
+    if (s.cdr) rows.push([L('Recarga', 'Cooldown'), `-${s.cdr}%`]);
+    if (s.xpPct) rows.push([L('Experiência', 'Experience'), `+${s.xpPct}%`]);
+    if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${s.findPct}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
     for (const l of s.legs) sh += `<div class="leg">◆ ${LEGENDARIES[l].name}</div>`;
     $('stat-list').innerHTML = sh;
@@ -568,16 +584,16 @@ export function renderChar() {
     const rows = C.skills.map((sk, i) => {
       const r = c.skills[i];
       const can = c.skillPoints > 0 && r < 10;
-      const meta = i === 0 ? 'Ataque básico' : `Custo ${skillCost(i)} · Recarga ${skillCd(i).toFixed(1)}s`;
+      const meta = i === 0 ? L('Ataque básico', 'Basic attack') : L(`Custo ${skillCost(i)} · Recarga ${skillCd(i).toFixed(1)}s`, `Cost ${skillCost(i)} · Cooldown ${skillCd(i).toFixed(1)}s`);
       return `<div class="srow">
         <div class="sicon">${iconSvg(sk.icon)}</div>
-        <div><div class="sname">${sk.name}<small>Nível ${r}/10</small></div>
+        <div><div class="sname">${sk.name}<small>${L('Nível', 'Level')} ${r}/10</small></div>
           <div class="sdesc">${sk.desc(r)}</div>
-          <div class="smeta">${meta}${r < 10 ? ` · Próximo nível: ${Math.round(rankMult(r + 1) * 100)}% de potência` : ''}</div></div>
+          <div class="smeta">${meta}${r < 10 ? L(` · Próximo nível: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · Next level: ${Math.round(rankMult(r + 1) * 100)}% power`) : ''}</div></div>
         <button class="btn plus" data-nav data-rank="${i}" ${can ? '' : 'disabled'}>+</button>
       </div>`;
     });
-    $('skill-list').innerHTML = `<div class="sp-info">Pontos disponíveis: ${c.skillPoints}</div>` + rows.join('');
+    $('skill-list').innerHTML = `<div class="sp-info">${L('Pontos disponíveis', 'Points available')}: ${c.skillPoints}</div>` + rows.join('');
     $('skill-list').querySelectorAll('[data-rank]').forEach((b) => (b.onclick = () => {
       const i = +b.dataset.rank;
       if (c.skillPoints > 0 && c.skills[i] < 10) {
@@ -608,18 +624,18 @@ function renderDetail() {
   const el = $('item-detail');
   const it = findItem(selected);
   if (!it) {
-    el.innerHTML = '<div class="empty-detail">Selecione um item para ver os detalhes.<br><br>Clique duas vezes (ou Ⓐ no controle) para equipar.</div>';
+    el.innerHTML = `<div class="empty-detail">${L('Selecione um item para ver os detalhes.<br><br>Clique duas vezes (ou Ⓐ no controle) para equipar.', 'Select an item to see its details.<br><br>Double-click (or Ⓐ on a gamepad) to equip.')}</div>`;
     return;
   }
   const c = G.char;
   let actions = '';
   if (selected.where === 'inv') {
-    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">Equipar</button><button class="btn small danger" data-nav data-act="recycle">Reciclar (+${recycleValue(it)}¢)</button></div>`;
+    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}</button><button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)</button></div>`;
   } else {
-    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">Desequipar</button></div>`;
+    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}</button></div>`;
   }
   let cmp = '';
-  if (selected.where === 'inv' && c.equip[it.slot]) cmp = `<div class="it-cmp">Equipado atualmente</div>${itemCardHtml(c.equip[it.slot])}`;
+  if (selected.where === 'inv' && c.equip[it.slot]) cmp = `<div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(c.equip[it.slot])}`;
   el.innerHTML = itemCardHtml(it) + actions + cmp;
   el.querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => {
     const a = b.dataset.act;
@@ -667,7 +683,7 @@ export function equipItem(uid) {
 function unequip(slot) {
   const c = G.char;
   if (slot === 'weapon') {
-    toast('Você precisa de uma arma equipada.', 'warn');
+    toast(L('Você precisa de uma arma equipada.', 'You need a weapon equipped.'), 'warn');
     sfx.deny();
     return;
   }
@@ -693,7 +709,7 @@ function recycleItem(uid) {
   c.inv.splice(idx, 1);
   c.credits += v;
   sfx.coin();
-  toast(`Reciclado: +${v}¢`);
+  toast(L(`Reciclado: +${v}¢`, `Recycled: +${v}¢`));
   selected = null;
   renderChar();
   const next = c.inv[Math.min(idx, c.inv.length - 1)];
@@ -713,7 +729,7 @@ function recycleCommons() {
   if (total) {
     c.credits += total;
     sfx.coin();
-    toast(`Comuns reciclados: +${total}¢`);
+    toast(L(`Comuns reciclados: +${total}¢`, `Commons recycled: +${total}¢`));
   }
   selected = null;
   renderChar();

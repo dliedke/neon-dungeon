@@ -226,6 +226,139 @@ export function makeEnemyModel(type, eliteColor) {
       m = { root, body, core, coreMat, legs, mats: [mBody], kind: 'bomber' };
       break;
     }
+    case 'sniper': {
+      m = humanoid({ body: 0x4a3c5c, dark: 0x1e1828, accent: 0xff2244, scale: 0.95 });
+      m.head.add(mesh(box(0.32, 0.3, 0.32), m.mats[0], 0, 0.06, -0.03)); // capuz
+      m.head.add(mesh(box(0.08, 0.06, 0.04), glowMat(0xff2244, 3), 0.06, 0.04, 0.16)); // mira ocular
+      const rifle = new THREE.Group();
+      rifle.add(mesh(box(0.06, 0.08, 1.0), m.mats[1], 0, 0, 0.35));
+      rifle.add(mesh(box(0.1, 0.1, 0.22), m.mats[1], 0, 0.08, 0.1));
+      rifle.add(mesh(box(0.02, 0.02, 0.8), m.glow, 0.04, 0.02, 0.4));
+      rifle.rotation.x = Math.PI / 2;
+      m.handR.add(rifle);
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'shield': {
+      m = humanoid({ body: 0x3a4a6a, dark: 0x161c2a, accent: 0x4d9bff, wide: 1.25 });
+      m.head.add(mesh(box(0.3, 0.3, 0.3), m.mats[0], 0, 0.05, 0));
+      m.head.add(mesh(box(0.26, 0.05, 0.03), glowMat(0x4d9bff, 2.6), 0, 0.06, 0.155));
+      const sh = new THREE.Group();
+      sh.position.set(0, 0.95, 0.42);
+      sh.add(mesh(box(0.8, 1.1, 0.06), new THREE.MeshLambertMaterial({ color: 0x5a6a90, transparent: true, opacity: 0.85 })));
+      sh.add(mesh(box(0.84, 0.05, 0.08), glowMat(0x4d9bff, 2.6), 0, 0.53, 0));
+      sh.add(mesh(box(0.84, 0.05, 0.08), glowMat(0x4d9bff, 2.6), 0, -0.53, 0));
+      sh.add(mesh(box(0.6, 0.12, 0.08), glowMat(0x4d9bff, 1.6), 0, 0.1, 0.01));
+      m.root.add(sh);
+      m.shield = sh;
+      const baton = mesh(box(0.05, 0.05, 0.5), glowMat(0x4d9bff, 2), 0, 0, 0.2);
+      baton.rotation.x = Math.PI / 2 - 0.3;
+      m.handR.add(baton);
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'ninja': {
+      m = humanoid({ body: 0x3a2a5a, dark: 0x140e22, accent: 0xb36bff, scale: 0.9 });
+      for (const mt of m.mats) {
+        mt.transparent = true;
+        mt.opacity = 0.6;
+        mt.depthWrite = false;
+      }
+      m.head.add(mesh(box(0.06, 0.06, 0.4), glowMat(0xb36bff, 2.4), 0, 0.05, -0.25)); // faixa
+      for (const hand of [m.handL, m.handR]) {
+        const bl = mesh(box(0.03, 0.04, 0.5), glowMat(0xb36bff, 2.8), 0, 0, 0.22);
+        bl.rotation.x = Math.PI / 2 - 0.3;
+        hand.add(bl);
+      }
+      m.holo = true;
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'medic': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0xc8d8d0);
+      body.add(mesh(cached('ico', () => new THREE.IcosahedronGeometry(0.3, 0)), mBody));
+      const ring = mesh(cached('dring', () => new THREE.TorusGeometry(0.42, 0.04, 6, 20)), glowMat(0x39ff88));
+      ring.rotation.x = Math.PI / 2;
+      body.add(ring);
+      // cruz verde
+      body.add(mesh(box(0.08, 0.3, 0.08), glowMat(0x39ff88, 3), 0, 0.36, 0));
+      body.add(mesh(box(0.3, 0.08, 0.08), glowMat(0x39ff88, 3), 0, 0.36, 0));
+      body.position.y = 1.15;
+      m = { root, body, ring, mats: [mBody], kind: 'drone' };
+      break;
+    }
+    case 'sentry': {
+      const root = new THREE.Group();
+      const mBody = lambert(0x5a5f78);
+      const mDark = lambert(0x22242f);
+      root.add(mesh(cached('sbase', () => new THREE.CylinderGeometry(0.42, 0.5, 0.35, 8)), mDark, 0, 0.17, 0));
+      root.add(mesh(box(0.14, 0.4, 0.14), mBody, 0, 0.5, 0));
+      const head = new THREE.Group();
+      head.position.y = 0.72;
+      head.add(mesh(box(0.46, 0.28, 0.46), mBody));
+      head.add(mesh(box(0.08, 0.08, 0.5), mDark, -0.1, 0, 0.35));
+      head.add(mesh(box(0.08, 0.08, 0.5), mDark, 0.1, 0, 0.35));
+      head.add(mesh(box(0.3, 0.06, 0.03), glowMat(0xff3355, 3), 0, 0.06, 0.235));
+      root.add(head);
+      root.add(mesh(cached('sring', () => new THREE.TorusGeometry(0.47, 0.03, 6, 20).rotateX(Math.PI / 2)), glowMat(0xff3355), 0, 0.36, 0));
+      m = { root, body: root, head, mats: [mBody, mDark], kind: 'sentry' };
+      break;
+    }
+    case 'barrel': {
+      const root = new THREE.Group();
+      const mBody = lambert(0xb04a10);
+      root.add(mesh(cached('barrel', () => new THREE.CylinderGeometry(0.3, 0.3, 0.8, 12)), mBody, 0, 0.4, 0));
+      for (const y of [0.18, 0.62]) root.add(mesh(cached('bband', () => new THREE.CylinderGeometry(0.31, 0.31, 0.06, 12)), glowMat(0xffaa00, 2.6), 0, y, 0));
+      root.add(mesh(cached('bcap', () => new THREE.CylinderGeometry(0.16, 0.16, 0.04, 10)), glowMat(0xff3300, 2.2), 0, 0.81, 0));
+      m = { root, body: root, mats: [mBody], kind: 'static' };
+      break;
+    }
+    case 'queen': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0x3a4a3a);
+      const mDark = lambert(0x161f16);
+      const thorax = mesh(cached('qthorax', () => new THREE.SphereGeometry(0.75, 14, 10)), mBody, 0, 1.0, 0.35);
+      thorax.scale.set(1, 0.7, 1.1);
+      body.add(thorax);
+      const abdomen = new THREE.Group();
+      abdomen.position.set(0, 1.15, -0.9);
+      const ab = mesh(cached('qab', () => new THREE.SphereGeometry(1.0, 14, 10)), mDark);
+      ab.scale.set(1, 0.85, 1.25);
+      abdomen.add(ab);
+      for (let k = 0; k < 3; k++) abdomen.add(mesh(cached('qstripe', () => new THREE.TorusGeometry(0.88, 0.04, 6, 24)), glowMat(0x39ff14, 2.2), 0, 0, -0.5 + k * 0.4));
+      abdomen.children.slice(1).forEach((c, k) => {
+        c.scale.setScalar(1 - Math.abs(k - 1) * 0.15);
+      });
+      body.add(abdomen);
+      const eyesMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x39ff14).multiplyScalar(2.6) });
+      const eyes = new THREE.Group();
+      for (const [x, y] of [[-0.18, 0.1], [0.18, 0.1], [-0.32, 0], [0.32, 0], [-0.1, -0.05], [0.1, -0.05]]) eyes.add(new THREE.Mesh(cached('qeye', () => new THREE.SphereGeometry(0.07, 8, 6)), eyesMat));
+      eyes.children.forEach((c, k) => c.position.set([-0.18, 0.18, -0.32, 0.32, -0.1, 0.1][k], 1.15 + [0.1, 0.1, 0, 0, -0.05, -0.05][k], 1.08));
+      body.add(eyes);
+      eyes.material = eyesMat;
+      const legs = [];
+      for (let k = 0; k < 8; k++) {
+        const side = k < 4 ? -1 : 1;
+        const idx = k % 4;
+        const lg = new THREE.Group();
+        lg.position.set(side * 0.55, 1.0, 0.6 - idx * 0.45);
+        const upper = mesh(box(1.3, 0.1, 0.1), mBody, side * 0.6, 0.35, 0);
+        upper.rotation.z = side * 0.55;
+        const lower = mesh(box(0.1, 1.5, 0.1), mDark, side * 1.2, -0.25, 0);
+        lower.rotation.z = -side * 0.25;
+        lg.add(upper, lower);
+        lg.rotation.y = side * (idx - 1.5) * -0.3;
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, abdomen, eyes, legs, mats: [mBody, mDark], kind: 'queen' };
+      break;
+    }
     case 'boss': {
       const root = new THREE.Group();
       const body = new THREE.Group();

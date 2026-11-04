@@ -10,11 +10,12 @@ import { initAudio, applyVolumes, sfx } from './audio.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy } from './enemies.js';
-import { updateProjectiles, updateTimers, updateTurrets } from './combat.js';
+import { updateProjectiles, updateTimers, updateTurrets, updateHazards } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } from './player.js';
-import { updatePickups, clearPickups } from './loot.js';
+import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
 import { makeItem } from './items.js';
+import { L, translateDom } from './i18n.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
   toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen,
@@ -196,6 +197,7 @@ function clearWorld() {
   G.projectiles = [];
   G.turrets = [];
   G.timers = [];
+  G.hazards = [];
   G.boss = null;
   bossBar(null);
 }
@@ -228,8 +230,9 @@ export function startFloor(floor) {
   const newly = revealAround(d, d.start.x, d.start.z, 8);
   markMinimap(newly);
   computeFlow(d, d.start.x, d.start.z);
-  document.getElementById('floor-label').textContent = `ANDAR ${floor} · ${G.theme.name.toUpperCase()}`;
-  banner(`ANDAR ${floor}`, isBossFloor(floor) ? `${G.theme.name} · Chefe à frente` : G.theme.name);
+  const word = L('ANDAR', 'FLOOR');
+  document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}`;
+  banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
   saveGame();
 }
 
@@ -247,7 +250,7 @@ export function startGame(cls, fresh) {
   G.mode = 'play';
   startFloor(G.char.floor || 1);
   if (G.char.level === 1 && G.char.kills === 0) {
-    setTimeout(() => toast(G.isTouch ? 'Arraste à esquerda para mover · botões à direita para atacar' : G.lastInput === 'pad' ? 'Analógico para mover · A para atacar · X/Y/B habilidades' : 'Clique para mover/atacar · Q/E/R habilidades · I inventário'), 2800);
+    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? L('Analógico para mover · A para atacar · X/Y/B habilidades', 'Left stick to move · A to attack · X/Y/B skills') : L('Clique para mover/atacar · Q/E/R habilidades · I inventário', 'Click to move/attack · Q/E/R skills · I inventory')), 2800);
   }
 }
 
@@ -287,7 +290,7 @@ async function nextFloor() {
   G.player.hp = Math.min(G.player.stats.maxHp, G.player.hp + G.player.stats.maxHp * 0.25);
   if (G.char.stims < 3) {
     G.char.stims++;
-    setTimeout(() => toast('+1 Stim de cortesia do elevador', 'heal'), 1200);
+    setTimeout(() => toast(L('+1 Stim de cortesia do elevador', '+1 complimentary Stim from the elevator'), 'heal'), 1200);
   }
   G.mode = 'play';
   fade.classList.remove('on');
@@ -352,6 +355,7 @@ function logic(dt) {
   updateProjectiles(dt);
   updateTurrets(dt);
   updateTimers(dt);
+  updateHazards(dt);
   updatePickups(dt, camera);
   updateExit(dt);
   autosaveT += dt;
@@ -403,6 +407,7 @@ function frame() {
 // Boot
 // ------------------------------------------------------------------
 function boot() {
+  translateDom();
   loadSave();
   initRenderer();
   initFx(scene);
@@ -425,7 +430,7 @@ function boot() {
   addEventListener('beforeunload', () => G.char && saveGame());
   window.__G = G; // útil para depuração no console
   window.__dbg = {
-    spawnEnemy, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem,
+    spawnEnemy, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
     // roda a lógica sem renderizar (usado em testes automatizados)
     sim(seconds, onStep) {
       const step = 1 / 30;

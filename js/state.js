@@ -16,6 +16,7 @@ export const G = {
   pickups: [],
   turrets: [],
   timers: [],
+  hazards: [],
   boss: null,
   floor: 1,
   save: null,

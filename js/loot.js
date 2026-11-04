@@ -1,26 +1,32 @@
-// Itens no chão: créditos, stims e equipamentos.
+// Itens no chão: créditos, stims, orbes de vida, equipamentos e cofres.
 import * as THREE from 'three';
 import { G } from './state.js';
 import { rr, chance } from './utils.js';
-import { makeItem, rollRarity, RARITY } from './items.js';
+import { makeItem, rollRarity, RARITY, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
-import { burst } from './fx.js';
+import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, invFull } from './ui.js';
 import { MAX_STIMS } from './player.js';
+import { healPlayer } from './combat.js';
+import { L } from './i18n.js';
 
 export const INV_SIZE = 30;
+const UP_COLOR = 0x39ff88;
 let labelRoot = null;
 
 export function dropLoot(x, z, o = {}) {
   const p = G.player;
   const find = 1 + (p.stats.findPct || 0) / 100;
-  const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss ? 2 : 0);
+  const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss ? 2 : 0) + (o.chest ? 1 : 0);
   let items = 0;
   let bonus = G.floor * 1.5;
   if (o.boss) {
     items = 4;
     bonus += 40;
+  } else if (o.chest) {
+    items = 1 + (chance(0.5) ? 1 : 0);
+    bonus += 25;
   } else if (o.elite) {
     items = 2;
     bonus += 18;
@@ -29,20 +35,29 @@ export function dropLoot(x, z, o = {}) {
   }
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);
-    if (o.boss && i === 0) rarity = Math.max(rarity, 2);
-    const it = makeItem({ ilvl, rarity, cls: chance(0.8) ? G.char.cls : G.char.cls });
+    if ((o.boss || o.chest) && i === 0) rarity = Math.max(rarity, o.boss ? 2 : 1);
+    const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
-  if (chance(o.boss ? 1 : o.elite ? 0.9 : 0.4)) {
-    const n = o.boss ? 5 : o.elite ? 3 : 1;
+  if (chance(o.boss || o.chest ? 1 : o.elite ? 0.9 : 0.4)) {
+    const n = o.boss ? 5 : o.chest ? 4 : o.elite ? 3 : 1;
     for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5)) });
   }
-  if (chance(o.boss ? 1 : o.elite ? 0.35 : 0.05)) spawnPickup('stim', x, z, {});
+  if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
+  // orbes de vida: ajudam a se recuperar no meio da luta
+  if (!o.chest && chance(o.boss ? 1 : o.elite ? 0.6 : 0.13)) spawnPickup('orb', x, z, {});
 }
 
 const coinGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.04, 6);
 const stimGeo = new THREE.CapsuleGeometry(0.07, 0.2, 4, 8);
+const orbGeo = new THREE.SphereGeometry(0.16, 12, 10);
 const beamGeo = new THREE.CylinderGeometry(0.035, 0.035, 2.6, 6, 1, true).translate(0, 1.3, 0);
+const upBeamGeo = new THREE.CylinderGeometry(0.09, 0.14, 4.2, 10, 1, true).translate(0, 2.1, 0);
+const upRingGeo = new THREE.RingGeometry(0.42, 0.52, 28).rotateX(-Math.PI / 2);
+
+function beamMat(color, opacity) {
+  return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
+}
 
 export function spawnPickup(type, x, z, data) {
   const g = new THREE.Group();
@@ -56,36 +71,104 @@ export function spawnPickup(type, x, z, data) {
     color = 0x39ff88;
     mesh = new THREE.Mesh(stimGeo, glowMat(color, 2));
     mesh.rotation.z = Math.PI / 2;
+  } else if (type === 'orb') {
+    color = 0xff2b5a;
+    mesh = new THREE.Mesh(orbGeo, glowMat(color, 2.4));
   } else {
     const R = RARITY[data.item.rarity];
     color = R.hex;
     mesh = new THREE.Mesh(box(0.26, 0.26, 0.26), glowMat(color, data.item.rarity >= 2 ? 2.4 : 1.6));
     if (data.item.rarity >= 1) {
-      const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.6), transparent: true, opacity: data.item.rarity >= 2 ? 0.55 : 0.25, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.55 : 0.25));
       g.add(beam);
     }
   }
   g.add(mesh);
   const a = rr(0, Math.PI * 2);
   const sp = rr(1.2, 2.6);
-  const pk = { type, x, z, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, y: 0.6, vy: rr(3, 5), mesh, group: g, color, t: 0, ...data };
+  const pk = { type, x, z, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, y: 0.6, vy: rr(3, 5), mesh, group: g, color, t: 0, upT: 0, ...data };
   g.position.set(x, pk.y, z);
   G.world.add(g);
   if (type === 'item') {
     if (!labelRoot) labelRoot = document.getElementById('labels');
     const el = document.createElement('div');
-    el.className = 'ilabel r' + data.item.rarity;
-    el.textContent = data.item.name;
     el.style.display = 'none';
     labelRoot.appendChild(el);
     pk.label = el;
-    if (data.item.rarity === 3) {
+    setUpgrade(pk, isUpgrade(data.item, G.char.equip));
+    const name = itemName(data.item);
+    if (pk.up) {
+      sfx.upgrade();
+      toast(`<b style="color:#39ff88">▲ ${L('MELHORIA!', 'UPGRADE!')}</b> <span style="color:${RARITY[data.item.rarity].color}">${name}</span>`, 'up');
+      floatText(x, 1.6, z, L('▲ MELHORIA', '▲ UPGRADE'), 'up');
+    } else if (data.item.rarity === 3) {
       sfx.legendary();
-      toast(`Protótipo encontrado: ${data.item.name}`, 'leg');
+      toast(`${L('Protótipo encontrado', 'Prototype found')}: ${name}`, 'leg');
     } else if (data.item.rarity === 2) sfx.rare();
+    if (data.item.rarity === 3 && pk.up) sfx.legendary();
   }
   G.pickups.push(pk);
   return pk;
+}
+
+// Liga/desliga o destaque de "melhor que o equipado"
+function setUpgrade(pk, up) {
+  if (pk.up === up && pk.upInit) return;
+  pk.upInit = true;
+  pk.up = up;
+  const it = pk.item;
+  pk.label.className = `ilabel r${it.rarity}${up ? ' up' : ''}`;
+  pk.label.innerHTML = (up ? '<b class="uparrow">▲</b> ' : '') + itemName(it);
+  if (up && !pk.upFx) {
+    const beam = new THREE.Mesh(upBeamGeo, beamMat(UP_COLOR, 0.35));
+    const ring = new THREE.Mesh(upRingGeo, beamMat(UP_COLOR, 0.9));
+    ring.position.y = -0.3;
+    pk.group.add(beam, ring);
+    pk.upFx = { beam, ring };
+    pk.mesh.material = glowMat(it.rarity === 0 ? UP_COLOR : RARITY[it.rarity].hex, 3.2);
+  } else if (!up && pk.upFx) {
+    pk.group.remove(pk.upFx.beam, pk.upFx.ring);
+    pk.upFx.beam.material.dispose();
+    pk.upFx.ring.material.dispose();
+    pk.upFx = null;
+    pk.mesh.material = glowMat(RARITY[it.rarity].hex, it.rarity >= 2 ? 2.4 : 1.6);
+  }
+}
+
+// ---------------- Cofres ----------------
+export function spawnChest(x, z) {
+  const g = new THREE.Group();
+  const baseMat = new THREE.MeshLambertMaterial({ color: 0x3a4060 });
+  const body = new THREE.Mesh(box(0.8, 0.45, 0.55), baseMat);
+  body.position.y = 0.225;
+  g.add(body);
+  const lid = new THREE.Group();
+  lid.position.set(0, 0.45, -0.275);
+  const lidMesh = new THREE.Mesh(box(0.82, 0.12, 0.57), baseMat);
+  lidMesh.position.set(0, 0.06, 0.285);
+  lid.add(lidMesh);
+  g.add(lid);
+  const seam = new THREE.Mesh(box(0.84, 0.04, 0.59), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(2.4) }));
+  seam.position.y = 0.45;
+  g.add(seam);
+  const beam = new THREE.Mesh(beamGeo, beamMat(0xffd23d, 0.4));
+  g.add(beam);
+  g.position.set(x, 0, z);
+  g.rotation.y = rr(0, Math.PI * 2);
+  G.world.add(g);
+  const pk = { type: 'chest', x, z, group: g, mesh: body, lid, seam, beam, t: 1, vy: 0, y: 0, vx: 0, vz: 0, opened: false, static: true };
+  G.pickups.push(pk);
+  return pk;
+}
+
+function openChest(pk) {
+  pk.opened = true;
+  pk.openT = 0;
+  sfx.rare();
+  ringFx(pk.x, pk.z, 1.6, 0xffd23d, 0.5);
+  burst(pk.x, 0.6, pk.z, 0xffd23d, 30, 5, 0.07, 0.6, { up: 1.4 });
+  pk.group.remove(pk.beam);
+  dropLoot(pk.x, pk.z, { chest: true });
 }
 
 const pv = new THREE.Vector3();
@@ -97,6 +180,16 @@ export function updatePickups(dt, camera) {
   fullWarn -= dt;
   for (const pk of G.pickups) {
     pk.t += dt;
+    if (pk.type === 'chest') {
+      if (pk.opened) {
+        pk.openT = Math.min(1, pk.openT + dt * 3);
+        pk.lid.rotation.x = -pk.openT * 1.9;
+      } else {
+        pk.seam.material.color.set(0xffd23d).multiplyScalar(1.8 + Math.sin(pk.t * 4) * 0.8);
+        if (p.alive && Math.hypot(p.x - pk.x, p.z - pk.z) < 1.4) openChest(pk);
+      }
+      continue;
+    }
     // física do "pulo" ao cair
     if (pk.vy !== 0 || pk.y > 0.35) {
       pk.vy -= 14 * dt;
@@ -113,12 +206,28 @@ export function updatePickups(dt, camera) {
         pk.vx = pk.vz = 0;
       }
     }
-    pk.mesh.rotation.y += dt * 2.5;
-    pk.group.position.set(pk.x, pk.vy === 0 ? 0.35 + Math.sin(pk.t * 3) * 0.06 : pk.y, pk.z);
+    pk.mesh.rotation.y += dt * (pk.up ? 4 : 2.5);
+    const bob = pk.up ? 0.5 + Math.sin(pk.t * 4) * 0.12 : 0.35 + Math.sin(pk.t * 3) * 0.06;
+    pk.group.position.set(pk.x, pk.vy === 0 ? bob : pk.y, pk.z);
+    if (pk.upFx) {
+      const k = 0.5 + Math.sin(pk.t * 5) * 0.5;
+      pk.upFx.beam.material.opacity = 0.2 + k * 0.35;
+      pk.upFx.ring.scale.setScalar(1 + k * 0.5);
+      pk.upFx.ring.material.opacity = 0.9 - k * 0.6;
+      if (Math.random() < dt * 6) burst(pk.x, 0.4, pk.z, UP_COLOR, 1, 0.6, 0.05, 0.8, { grav: -2 });
+    }
+    // reavalia se ainda é melhoria (o equipamento pode ter mudado)
+    if (pk.type === 'item') {
+      pk.upT -= dt;
+      if (pk.upT <= 0) {
+        pk.upT = 0.5;
+        setUpgrade(pk, isUpgrade(pk.item, c.equip));
+      }
+    }
 
     if (!p.alive || pk.t < 0.4) continue;
     const d = Math.hypot(p.x - pk.x, p.z - pk.z);
-    if (pk.type === 'credits' && d < 3) {
+    if ((pk.type === 'credits' || pk.type === 'orb') && d < 3) {
       const k = Math.min(1, dt * 10);
       pk.x += (p.x - pk.x) * k;
       pk.z += (p.z - pk.z) * k;
@@ -127,6 +236,12 @@ export function updatePickups(dt, camera) {
       if (pk.type === 'credits') {
         c.credits += pk.amount;
         sfx.coin();
+        pk.dead = true;
+      } else if (pk.type === 'orb') {
+        healPlayer(p.stats.maxHp * 0.15);
+        p.en = Math.min(p.stats.maxEn, p.en + p.stats.maxEn * 0.1);
+        burst(p.x, 1, p.z, 0xff2b5a, 10, 2, 0.06, 0.4, { grav: -2 });
+        sfx.stim();
         pk.dead = true;
       } else if (pk.type === 'stim') {
         if (c.stims < MAX_STIMS) {
@@ -139,8 +254,10 @@ export function updatePickups(dt, camera) {
         if (c.inv.length < INV_SIZE) {
           c.inv.push(pk.item);
           sfx.pickup();
-          burst(pk.x, 0.5, pk.z, pk.color, 10, 3, 0.06, 0.4);
-          invNotify(pk.item);
+          burst(pk.x, 0.5, pk.z, pk.up ? UP_COLOR : pk.color, pk.up ? 20 : 10, 3, 0.06, 0.4);
+          const R = RARITY[pk.item.rarity];
+          const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
+          toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
           pk.dead = true;
         } else if (fullWarn <= 0) {
           fullWarn = 3;
@@ -153,6 +270,10 @@ export function updatePickups(dt, camera) {
     const pk = G.pickups[i];
     if (pk.dead) {
       pk.group.parent && pk.group.parent.remove(pk.group);
+      if (pk.upFx) {
+        pk.upFx.beam.material.dispose();
+        pk.upFx.ring.material.dispose();
+      }
       pk.label && pk.label.remove();
       G.pickups.splice(i, 1);
     }
@@ -163,11 +284,11 @@ export function updatePickups(dt, camera) {
   for (const pk of G.pickups) {
     if (!pk.label) continue;
     const d = Math.hypot(p.x - pk.x, p.z - pk.z);
-    if (d > 10 || pk.vy !== 0) {
+    if (d > (pk.up ? 14 : 10) || pk.vy !== 0) {
       pk.label.style.display = 'none';
       continue;
     }
-    pv.set(pk.x, 0.85, pk.z).project(camera);
+    pv.set(pk.x, pk.up ? 1.05 : 0.85, pk.z).project(camera);
     pk.label.style.display = 'block';
     pk.label.style.transform = `translate(${((pv.x + 1) / 2) * w}px, ${((1 - pv.y) / 2) * h}px) translate(-50%, -100%)`;
   }
@@ -179,11 +300,6 @@ function isFree(x, z) {
   const j = Math.floor(z);
   if (i < 0 || j < 0 || i >= d.W || j >= d.H) return false;
   return d.grid[j * d.W + i] === 1;
-}
-
-function invNotify(item) {
-  const R = RARITY[item.rarity];
-  toast(`<span style="color:${R.color}">${item.name}</span>`, 'item');
 }
 
 export function clearPickups() {

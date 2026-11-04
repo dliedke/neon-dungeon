@@ -1,3 +1,4 @@
+import { LANG } from './i18n.js';
 export const rr = (a, b) => a + Math.random() * (b - a);
 export const ri = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
 export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -32,7 +33,7 @@ export function shuffle(arr) {
   return arr;
 }
 
-export const fmt = (n) => Math.round(n).toLocaleString('pt-BR');
+export const fmt = (n) => Math.round(n).toLocaleString(LANG === 'pt' ? 'pt-BR' : 'en-US');
 
 // Converte um vetor de tela (x = direita, y = cima) para o plano do mundo,
 // considerando a câmera isométrica posicionada em +x/+z olhando para -x/-z.

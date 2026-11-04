@@ -5,6 +5,7 @@ import { slashFx, ringFx, burst, ghostFx } from './fx.js';
 import { sfx } from './audio.js';
 import { isWalkable } from './dungeon.js';
 import { clamp } from './utils.js';
+import { L } from './i18n.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 const pct = (v) => `${Math.round(v * 100)}%`;
@@ -29,56 +30,56 @@ export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="c
 export const CLASSES = {
   blade: {
     id: 'blade',
-    name: 'Lâmina',
-    title: 'Samurai Cromado',
-    desc: 'Corpo a corpo. Muito resistente e ganha energia a cada golpe que acerta.',
+    name: L('Lâmina', 'Blade'),
+    title: L('Samurai Cromado', 'Chrome Samurai'),
+    desc: L('Corpo a corpo. Muito resistente e ganha energia a cada golpe que acerta.', 'Melee fighter. Very tough and gains energy with every hit.'),
     css: '#ff2bd6',
     accent: 0xff2bd6,
     melee: true,
     range: 1.9,
     base: { hp: 190, en: 100, armor: 20, speed: 5.2, wMin: 14, wMax: 21, enRegen: 5, hpRegen: 2, crit: 5, critDmg: 50, atkRate: 2.1 },
-    weaponNames: ['Katana de Plasma', 'Lâmina Monomolecular', 'Wakizashi Térmica', 'Nodachi Vibratória'],
+    weaponNames: [L('Katana de Plasma', 'Plasma Katana'), L('Lâmina Monomolecular', 'Monomolecular Blade'), L('Wakizashi Térmica', 'Thermal Wakizashi'), L('Nodachi Vibratória', 'Vibro Nodachi')],
     skills: [
-      { id: 'slash', name: 'Corte de Plasma', icon: 'slash', cost: 0, cd: 0, desc: (r) => `Golpe em arco que causa ${pct(1.0 * rankMult(r))} do dano da arma. Todo 3º golpe é ampliado. Gera 4 de energia por acerto.` },
-      { id: 'lunge', name: 'Investida', icon: 'dash', cost: 15, cd: 3.5, desc: (r) => `Avança rapidamente causando ${pct(1.8 * rankMult(r))} a todos no caminho. Invulnerável durante o avanço.` },
-      { id: 'whirl', name: 'Turbilhão', icon: 'spin', cost: 35, cd: 7, desc: (r) => `Gira por 1,4s causando ${pct(0.6 * rankMult(r))} a cada 0,2s ao redor. Você pode se mover enquanto gira.` },
-      { id: 'overclock', name: 'Overclock', icon: 'overclock', cost: 40, cd: 18, desc: (r) => `Por ${(5 + 0.5 * r).toFixed(1)}s: +50% de velocidade de ataque, +30% de movimento e 8% de roubo de vida.` },
+      { id: 'slash', name: L('Corte de Plasma', 'Plasma Slash'), icon: 'slash', cost: 0, cd: 0, desc: (r) => L(`Golpe em arco que causa ${pct(1.0 * rankMult(r))} do dano da arma. Todo 3º golpe é ampliado. Gera 4 de energia por acerto.`, `Arc strike dealing ${pct(1.0 * rankMult(r))} weapon damage. Every 3rd hit is empowered. Generates 4 energy per hit.`) },
+      { id: 'lunge', name: L('Investida', 'Lunge'), icon: 'dash', cost: 15, cd: 3.5, desc: (r) => L(`Avança até o inimigo causando ${pct(1.8 * rankMult(r))} a todos no caminho. Invulnerável durante o avanço.`, `Dash to the enemy dealing ${pct(1.8 * rankMult(r))} to everything in the way. Invulnerable while dashing.`) },
+      { id: 'whirl', name: L('Turbilhão', 'Whirlwind'), icon: 'spin', cost: 35, cd: 7, desc: (r) => L(`Gira por 1,4s causando ${pct(0.6 * rankMult(r))} a cada 0,2s ao redor. Você pode se mover enquanto gira.`, `Spin for 1.4s dealing ${pct(0.6 * rankMult(r))} every 0.2s around you. You can move while spinning.`) },
+      { id: 'overclock', name: 'Overclock', icon: 'overclock', cost: 40, cd: 18, desc: (r) => L(`Por ${(5 + 0.5 * r).toFixed(1)}s: +50% de velocidade de ataque, +30% de movimento e 8% de roubo de vida.`, `For ${(5 + 0.5 * r).toFixed(1)}s: +50% attack speed, +30% movement and 8% life steal.`) },
     ],
   },
   gunner: {
     id: 'gunner',
-    name: 'Atiradora',
-    title: 'Pistoleira de Aluguel',
-    desc: 'Ataques à distância muito rápidos. Ágil, com explosivos e esquiva.',
+    name: L('Atiradora', 'Gunslinger'),
+    title: L('Pistoleira de Aluguel', 'Hired Gun'),
+    desc: L('Ataques à distância muito rápidos. Ágil, com explosivos e esquiva.', 'Very fast ranged attacks. Agile, with explosives and a dodge roll.'),
     css: '#00f0ff',
     accent: 0x00f0ff,
     melee: false,
     range: 12,
     base: { hp: 150, en: 100, armor: 10, speed: 5.6, wMin: 10, wMax: 15, enRegen: 8, hpRegen: 1.5, crit: 8, critDmg: 60, atkRate: 3.4 },
-    weaponNames: ['Pistola Gêmea', 'Revólver Magnético', 'Pistola Smart', 'Blaster Compacto'],
+    weaponNames: [L('Pistola Gêmea', 'Twin Pistol'), L('Revólver Magnético', 'Magnetic Revolver'), L('Pistola Smart', 'Smart Pistol'), L('Blaster Compacto', 'Compact Blaster')],
     skills: [
-      { id: 'shot', name: 'Disparo Duplo', icon: 'bullet', cost: 0, cd: 0, desc: (r) => `Dispara alternando as pistolas, causando ${pct(0.85 * rankMult(r))} do dano da arma.` },
-      { id: 'fan', name: 'Leque de Balas', icon: 'fan', cost: 18, cd: 3, desc: (r) => `Dispara 7 balas em leque, cada uma causando ${pct(0.75 * rankMult(r))} e atravessando 1 inimigo.` },
-      { id: 'grenade', name: 'Granada de Pulso', icon: 'grenade', cost: 30, cd: 6, desc: (r) => `Arremessa uma granada que explode causando ${pct(3.0 * rankMult(r))} em área e empurrando os inimigos.` },
-      { id: 'roll', name: 'Rolamento Tático', icon: 'roll', cost: 10, cd: 2.5, desc: (r) => `Rola rapidamente, ficando invulnerável. Os próximos ${2 + Math.floor(r / 3)} disparos são críticos garantidos.` },
+      { id: 'shot', name: L('Disparo Duplo', 'Double Tap'), icon: 'bullet', cost: 0, cd: 0, desc: (r) => L(`Dispara alternando as pistolas, causando ${pct(0.85 * rankMult(r))} do dano da arma.`, `Fires alternating pistols, dealing ${pct(0.85 * rankMult(r))} weapon damage.`) },
+      { id: 'fan', name: L('Leque de Balas', 'Bullet Fan'), icon: 'fan', cost: 18, cd: 3, desc: (r) => L(`Dispara 7 balas em leque, cada uma causando ${pct(0.75 * rankMult(r))} e atravessando 1 inimigo.`, `Fires 7 bullets in a fan, each dealing ${pct(0.75 * rankMult(r))} and piercing 1 enemy.`) },
+      { id: 'grenade', name: L('Granada de Pulso', 'Pulse Grenade'), icon: 'grenade', cost: 30, cd: 6, desc: (r) => L(`Arremessa uma granada que explode causando ${pct(3.0 * rankMult(r))} em área e empurrando os inimigos.`, `Throws a grenade that explodes for ${pct(3.0 * rankMult(r))} area damage and knocks enemies back.`) },
+      { id: 'roll', name: L('Rolamento Tático', 'Tactical Roll'), icon: 'roll', cost: 10, cd: 2.5, desc: (r) => L(`Rola rapidamente, ficando invulnerável. Os próximos ${2 + Math.floor(r / 3)} disparos são críticos garantidos.`, `Quickly roll while invulnerable. Your next ${2 + Math.floor(r / 3)} shots are guaranteed critical hits.`) },
     ],
   },
   netrunner: {
     id: 'netrunner',
     name: 'Netrunner',
-    title: 'Hacker de Combate',
-    desc: 'Controla o campo de batalha com drones, raios em cadeia e teletransporte.',
+    title: L('Hacker de Combate', 'Combat Hacker'),
+    desc: L('Controla o campo de batalha com drones, raios em cadeia e teletransporte.', 'Controls the battlefield with drones, chain lightning and teleportation.'),
     css: '#39ff14',
     accent: 0x39ff14,
     melee: false,
     range: 11,
     base: { hp: 140, en: 140, armor: 8, speed: 5.2, wMin: 14, wMax: 20, enRegen: 11, hpRegen: 1.5, crit: 5, critDmg: 50, atkRate: 2.0 },
-    weaponNames: ['Cyberdeck', 'Deck Quântico', 'Matriz Neural', 'Console Fantasma'],
+    weaponNames: ['Cyberdeck', L('Deck Quântico', 'Quantum Deck'), L('Matriz Neural', 'Neural Matrix'), L('Console Fantasma', 'Ghost Console')],
     skills: [
-      { id: 'orb', name: 'Pulso de Dados', icon: 'orb', cost: 0, cd: 0, desc: (r) => `Lança um orbe teleguiado que causa ${pct(1.05 * rankMult(r))} e salta para mais 1 inimigo (50%).` },
-      { id: 'turret', name: 'Torre-Drone', icon: 'turret', cost: 35, cd: 9, desc: (r) => `Instala uma torre por 12s que dispara no inimigo mais próximo causando ${pct(0.5 * rankMult(r))}. Máximo de 2.` },
-      { id: 'nova', name: 'Curto-Circuito', icon: 'nova', cost: 30, cd: 7, desc: (r) => `Descarga ao seu redor que causa ${pct(2.0 * rankMult(r))} e atordoa os inimigos por 1,6s.` },
-      { id: 'blink', name: 'Salto de Rede', icon: 'blink', cost: 20, cd: 4, desc: (r) => `Teletransporta até o ponto mirado e causa ${pct(1.0 * rankMult(r))} ao redor do destino.` },
+      { id: 'orb', name: L('Pulso de Dados', 'Data Pulse'), icon: 'orb', cost: 0, cd: 0, desc: (r) => L(`Lança um orbe teleguiado que causa ${pct(1.05 * rankMult(r))} e salta para mais 1 inimigo (50%).`, `Launches a homing orb dealing ${pct(1.05 * rankMult(r))} that jumps to 1 more enemy (50%).`) },
+      { id: 'turret', name: L('Torre-Drone', 'Drone Turret'), icon: 'turret', cost: 35, cd: 9, desc: (r) => L(`Instala uma torre por 12s que dispara no inimigo mais próximo causando ${pct(0.5 * rankMult(r))}. Máximo de 2.`, `Deploys a turret for 12s that shoots the nearest enemy for ${pct(0.5 * rankMult(r))}. Up to 2.`) },
+      { id: 'nova', name: L('Curto-Circuito', 'Short Circuit'), icon: 'nova', cost: 30, cd: 7, desc: (r) => L(`Descarga ao seu redor que causa ${pct(2.0 * rankMult(r))} e atordoa os inimigos por 1,6s.`, `Discharge around you dealing ${pct(2.0 * rankMult(r))} and stunning enemies for 1.6s.`) },
+      { id: 'blink', name: L('Salto de Rede', 'Net Jump'), icon: 'blink', cost: 20, cd: 4, desc: (r) => L(`Teletransporta para perto do inimigo e causa ${pct(1.0 * rankMult(r))} ao redor do destino.`, `Teleports next to the enemy and deals ${pct(1.0 * rankMult(r))} around the destination.`) },
     ],
   },
 };
