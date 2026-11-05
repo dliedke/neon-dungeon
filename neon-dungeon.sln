@@ -1,0 +1,43 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "neon-dungeon", ".\", "{6B1E3F42-8C5D-4A7E-9F21-3D4C5B6A7E80}"
+	ProjectSection(WebsiteProperties) = preProject
+		UseIISExpress = "true"
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.8"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_8000"
+		Debug.AspNetCompiler.PhysicalPath = ".\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_8000\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_8000"
+		Release.AspNetCompiler.PhysicalPath = ".\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_8000\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "8000"
+		SlnRelativePath = ".\"
+		StartServerOnDebug = "true"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B1E3F42-8C5D-4A7E-9F21-3D4C5B6A7E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1E3F42-8C5D-4A7E-9F21-3D4C5B6A7E80}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3C9E1D7-5F24-4B86-8E0A-71D2C3B4F596}
+	EndGlobalSection
+EndGlobal

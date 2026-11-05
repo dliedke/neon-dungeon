@@ -1,7 +1,10 @@
 node_modules/
 .DS_Store
 *.log
-*.png
-!icon-192.png
-!icon-512.png
-!og-image.png
+
+# prints/screenshots soltos na raiz (imagens do jogo ficam em img/, capturas em docs/screenshots/)
+/*.png
+
+# Visual Studio / IIS Express
+.vs/
+PrecompiledWeb/

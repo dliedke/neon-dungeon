@@ -126,24 +126,34 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000. To force a language, add `?lang=en` or `?lang=pt` to the URL.
 
+You can also open `neon-dungeon.sln` in Visual Studio and press F5. It runs the folder on IIS Express at port 8000, using `web.config`.
+
 ```
-index.html        page and HUD
-css/style.css     UI styles
-js/main.js        rendering, camera, game loop, floors and saves
-js/i18n.js        translations (English / Portuguese)
-js/dungeon.js     procedural map layouts, collision and pathfinding
-js/biomes.js      biome hazards, mechanisms and decoration
-js/player.js      player character and progression
-js/classes.js     classes and skills
-js/enemies.js     enemies, AI and bosses
-js/combat.js      damage, statuses, projectiles and hazards
-js/items.js       item generation
-js/loot.js        ground loot and loot caches
-js/fx.js          particles and visual effects
-js/models.js      low-poly models built from primitives
-js/input.js       keyboard, mouse, gamepad and touch input
-js/audio.js       synthesized sound effects and music
-js/ui.js          menus, inventory, shop and gamepad navigation
-js/sync.js        Google sign-in and Google Drive cloud save
-vendor/three/     Three.js r160 (MIT)
+index.html             page and HUD
+manifest.webmanifest   PWA manifest (install to home screen)
+css/style.css          UI styles
+img/                   app icons and the link preview image (og-image.png)
+docs/screenshots/      reference screenshots (not used by the game)
+js/main.js             rendering, camera, game loop, floors and saves
+js/state.js            shared global state (G) and tile constants
+js/utils.js            random, math and formatting helpers
+js/i18n.js             translations (English / Portuguese)
+js/dungeon.js          procedural map layouts, collision and pathfinding
+js/biomes.js           biome hazards, mechanisms and decoration
+js/player.js           player character and progression
+js/classes.js          classes, skill trees and skills
+js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)
+js/enemies.js          enemies, AI and bosses
+js/combat.js           damage, statuses, projectiles and hazards
+js/items.js            item generation
+js/loot.js             ground loot and loot caches
+js/fx.js               particles and visual effects
+js/models.js           low-poly models built from primitives
+js/input.js            keyboard, mouse, gamepad and touch input
+js/padglyphs.js        gamepad model detection and button icons
+js/audio.js            synthesized sound effects and music
+js/ui.js               menus, inventory, shop and gamepad navigation
+js/sync.js             Google sign-in and Google Drive cloud save
+vendor/three/          Three.js r160 (MIT)
+web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
 ```
