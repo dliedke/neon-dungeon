@@ -447,7 +447,7 @@ export function bossBar() {
   $('top-center').classList.toggle('duo', list.length > 1);
   const F = G.final;
   $('final-count').classList.toggle('hidden', !F || F.won || F.t0 == null);
-  if (F) $('final-count').textContent = L(`BATALHA FINAL · CHEFES ${F.killed}/${F.total}`, `FINAL BATTLE · BOSSES ${F.killed}/${F.total}`);
+  if (F) $('final-count').textContent = L(`BATALHA FINAL · ONDA ${F.wave}/${F.waves} · CHEFES ${F.killed}/${F.total}`, `FINAL BATTLE · WAVE ${F.wave}/${F.waves} · BOSSES ${F.killed}/${F.total}`);
 }
 
 export function exitPrompt(state, k) {
@@ -649,6 +649,9 @@ const EPILOGUE = {
   brawler: ['O Punho de Aço estala os dedos de titânio. Nenhum ringue jamais vai ser tão difícil.', 'Iron Fist cracks his titanium knuckles. No ring will ever be this tough again.'],
   pyro: ['A Incendiária acende um último fogo, só para iluminar o caminho de volta.', 'The Pyro lights one last fire, just to light the way home.'],
   frost: ['A Geada deixa a mira de lado. Pela primeira vez, o único frio que sente é o vento da manhã.', 'Frost lowers her scope. For once, the only cold she feels is the morning wind.'],
+  hunter: ['A Caçadora solta a última flecha para o céu. Pela primeira vez em anos, ela não tem nenhum alvo.', 'The Huntress looses one last arrow into the sky. For the first time in years, she has no target.'],
+  lancer: ['A Valquíria crava a lança no topo da torre. Agora os raios protegem a cidade, não a corporação.', 'The Valkyrie plants her spear atop the tower. Now the lightning guards the city, not the corporation.'],
+  biohacker: ['A Biohacker sintetiza um antídoto com o que sobrou do laboratório da corporação e distribui de graça nas ruas.', 'The Biohacker synthesizes an antidote from what is left of the corporate lab and hands it out for free on the streets.'],
   heavy: ['O Colosso desliga a minigun. Depois de tanto barulho, o silêncio parece música.', 'The Juggernaut powers down the minigun. After all that noise, the silence sounds like music.'],
 };
 

@@ -58,8 +58,8 @@ const DICT = {
     '<p>Touch and drag on the <b>left side</b> of the screen to move.</p><p>Buttons on the right: attack (hold), up to 6 powers and stim.</p>',
   ],
   'help.tip': [
-    'Ataques e habilidades miram sozinhos no inimigo mais próximo. Encontre o <b>elevador</b> brilhante para descer; a cada 3 andares um chefe guarda a saída. No andar 30, derrote os 7 chefes (2 de cada vez) para vencer o jogo. Itens com <b style="color:#39ff88">▲</b> são melhores que os seus.',
-    'Attacks and skills automatically aim at the nearest enemy. Find the glowing <b>elevator</b> to go down; every 3 floors a boss guards the exit. On floor 30, defeat all 7 bosses (2 at a time) to win the game. Items marked <b style="color:#39ff88">▲</b> are better than yours.',
+    'Ataques e habilidades miram sozinhos no inimigo mais próximo. Encontre o <b>elevador</b> brilhante para descer; a cada 3 andares um chefe guarda a saída. No andar 30, derrote os 7 chefes, que vêm em ondas de 2, para vencer o jogo. Itens com <b style="color:#39ff88">▲</b> são melhores que os seus.',
+    'Attacks and skills automatically aim at the nearest enemy. Find the glowing <b>elevator</b> to go down; every 3 floors a boss guards the exit. On floor 30, defeat all 7 bosses, who come in waves of 2, to win the game. Items marked <b style="color:#39ff88">▲</b> are better than yours.',
   ],
   systemDown: ['SISTEMA DESLIGADO', 'SYSTEM OFFLINE'],
   retryFloor: ['Reiniciar no andar', 'Retry floor'],

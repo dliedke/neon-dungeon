@@ -9,11 +9,14 @@ export const THEMES = [
   { id: 'neon', name: L('Distrito Neon', 'Neon District'), a: 0x00f0ff, b: 0xff2bd6, floor: 0x2a2f4a, wall: 0x1a1d33, fog: 0x07061a, layout: 'rooms', features: ['puddles', 'rain'], hint: L('Cuidado com as poças elétricas!', 'Watch out for the electric puddles!') },
   { id: 'forest', name: L('Floresta Sombria', 'Dark Forest'), a: 0x7affc8, b: 0xb36bff, floor: 0x2a3a2a, wall: 0x14261a, cap: 0x1e3a22, fog: 0x050c0a, layout: 'cave', ground: 'soil', walls: 'natural', wallH: [1.6, 3.2], natural: true, fauna: ['ghost', 'wisp'], features: ['trees', 'mushrooms', 'fireflies', 'thorns'], light: { sky: 0x4a6a8a, ground: 0x0a1a10, hemi: 0.9, dir: 0x9ab0ff, dirI: 0.8, fogNear: 10, fogFar: 26 }, hint: L('Fantasmas atravessam paredes… e os espinhos machucam.', 'Ghosts pass through walls… and the thorns hurt.') },
   { id: 'factory', name: L('Fábrica Corporativa', 'Corporate Factory'), a: 0xff8a00, b: 0x2b8cff, floor: 0x3a3128, wall: 0x2a2118, fog: 0x0d0805, layout: 'rooms', features: ['conveyor', 'crusher'], hint: L('Esteiras empurram tudo e prensas esmagam inimigos também!', 'Conveyors push everything and presses crush enemies too!') },
+  { id: 'snow', name: L('Picos Nevados', 'Snowy Peaks'), a: 0x8ad8ff, b: 0xffffff, floor: 0xdde6ee, wall: 0xb8c4d0, cap: 0xf4f8ff, fog: 0xc8d8e8, layout: 'meadow', ground: 'snow', walls: 'natural', wallH: [1.2, 2.6], natural: true, fauna: ['yeti', 'icewolf'], features: ['pines', 'ice', 'drifts', 'snowfall', 'blizzard'], light: { sky: 0xe0ecff, ground: 0x8a9aaa, hemi: 1.6, dir: 0xeaf2ff, dirI: 1.5, fogNear: 20, fogFar: 44 }, hint: L('Neve fofa deixa você lento; na nevasca não dá pra ver longe.', 'Deep snow slows you down; in a blizzard you can\'t see far.') },
   { id: 'meadow', name: L('Pradaria Mutante', 'Mutant Meadow'), a: 0xffe14d, b: 0xff6ad5, floor: 0x5a8a3a, wall: 0x3a6a2a, cap: 0x4a8a34, fog: 0x9ec8e8, layout: 'meadow', ground: 'grass', walls: 'natural', wallH: [0.9, 1.5], natural: true, fauna: ['boar', 'toad'], features: ['lakes', 'grass', 'flowers', 'boulders', 'butterflies'], light: { sky: 0xcfe8ff, ground: 0x4a6a2a, hemi: 2.0, dir: 0xfff0c8, dirI: 2.0, fogNear: 30, fogFar: 60 }, hint: L('Javalis mutantes avançam em linha reta: desvie para o lado!', 'Mutant boars charge in a straight line: sidestep them!') },
   { id: 'sewer', name: L('Esgotos Tóxicos', 'Toxic Sewers'), a: 0x39ff14, b: 0x9d4dff, floor: 0x24352c, wall: 0x16251d, fog: 0x040d08, layout: 'sewer', features: ['sludge'], hint: L('O lodo tóxico deixa você lento e causa dano.', 'Toxic sludge slows you down and hurts.') },
+  { id: 'mountain', name: L('Passo da Montanha', 'Mountain Pass'), a: 0xffb35a, b: 0x8ab4ff, floor: 0x6a6660, wall: 0x4a4642, cap: 0xc8ccd4, fog: 0x8a96a8, layout: 'cave', ground: 'rock', walls: 'natural', wallH: [2.6, 4.8], natural: true, fauna: ['goat', 'eagle'], features: ['boulders', 'chasms', 'rockfall'], light: { sky: 0xc0d0e8, ground: 0x3a3630, hemi: 1.5, dir: 0xffe8c8, dirI: 1.7, fogNear: 16, fogFar: 40 }, hint: L('Pedras despencam dos penhascos: saia dos círculos!', 'Rocks tumble from the cliffs: get out of the circles!') },
   { id: 'space', name: L('Estação Orbital', 'Orbital Station'), a: 0x00f0ff, b: 0xffffff, floor: 0x3a4250, wall: 0x22283a, fog: 0x000000, layout: 'rooms', ground: 'deck', sky: 'stars', fauna: ['alien'], features: ['void', 'airlocks', 'stars'], light: { sky: 0x9ab8ff, ground: 0x0a0a1a, hemi: 1.2, dir: 0xffffff, dirI: 1.6, fogNear: 34, fogFar: 70 }, hint: L('Comportas de vácuo puxam tudo para o espaço. Fique longe dos buracos!', 'Vacuum airlocks pull everything into space. Stay away from the holes!') },
   { id: 'cryo', name: L('Laboratório Criogênico', 'Cryo Lab'), a: 0x8ad8ff, b: 0xd0f0ff, floor: 0x2c3c4e, wall: 0x1a2836, fog: 0x06101a, layout: 'cave', features: ['ice', 'vents'], hint: L('Gelo escorrega; as ventoinhas congelam inimigos (e deixam você lento).', 'Ice is slippery; vents freeze enemies (and slow you down).') },
   { id: 'desert', name: L('Deserto Radioativo', 'Radioactive Wasteland'), a: 0xc8ff3a, b: 0xff8a00, floor: 0xb08a5a, wall: 0x8a6a44, cap: 0xa88050, fog: 0xd8b088, layout: 'meadow', ground: 'sand', walls: 'natural', wallH: [1.0, 2.4], natural: true, fauna: ['scorpion'], features: ['radiation', 'cacti', 'sandstorm'], light: { sky: 0xffe0b0, ground: 0x6a4a2a, hemi: 1.9, dir: 0xffd8a0, dirI: 2.0, fogNear: 22, fogFar: 48 }, hint: L('Poças radioativas machucam e escorpiões envenenam.', 'Radioactive pools hurt and scorpions poison you.') },
+  { id: 'volcano', name: L('Caldeira Vulcânica', 'Volcanic Caldera'), a: 0xff5a1a, b: 0xffd23d, floor: 0x3a2a26, wall: 0x2a1a16, cap: 0x4a2a1e, fog: 0x1a0805, layout: 'cave', ground: 'ash', walls: 'natural', wallH: [1.4, 3.2], natural: true, fauna: ['salamander', 'magmagolem'], features: ['lava', 'geysers', 'embers', 'boulders'], light: { sky: 0xff8a5a, ground: 0x2a0a04, hemi: 1.1, dir: 0xffa070, dirI: 1.2, fogNear: 14, fogFar: 34 }, hint: L('Rios de lava queimam muito; gêiseres avisam antes de jorrar.', 'Lava rivers burn badly; geysers flash before they erupt.') },
   { id: 'data', name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, layout: 'grid', features: ['lasers'], hint: L('Grades de laser ligam e desligam: espere o momento certo.', 'Laser grids switch on and off: time your crossing.') },
   { id: 'market', name: L('Mercado Noturno', 'Night Market'), a: 0xffd23d, b: 0xff2bd6, floor: 0x3a2a30, wall: 0x2a1a22, fog: 0x100608, layout: 'market', features: ['stalls', 'merchant', 'lanterns'], hint: L('Há um mercador escondido em alguma praça.', 'A merchant is hiding in one of the plazas.') },
 ];
@@ -573,7 +576,7 @@ function naturalTexture(style) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
-  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8' }[style];
+  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8', snow: '#f4f8ff', rock: '#9a968e', ash: '#6a5e5a' }[style];
   g.fillStyle = base;
   g.fillRect(0, 0, 128, 128);
   for (let k = 0; k < 900; k++) {
@@ -592,6 +595,38 @@ function naturalTexture(style) {
       g.beginPath();
       g.ellipse(Math.random() * 128, Math.random() * 128, 3, 1.5, Math.random() * 3, 0, Math.PI * 2);
       g.fill();
+    }
+  }
+  if (style === 'rock') {
+    // rachaduras na rocha
+    g.strokeStyle = 'rgba(0,0,0,0.22)';
+    for (let k = 0; k < 7; k++) {
+      g.beginPath();
+      let x = Math.random() * 128;
+      let y = Math.random() * 128;
+      g.moveTo(x, y);
+      for (let s = 0; s < 4; s++) g.lineTo((x += (Math.random() - 0.5) * 30), (y += (Math.random() - 0.5) * 30));
+      g.stroke();
+    }
+  }
+  if (style === 'ash') {
+    // veios de magma brilhando nas cinzas
+    g.strokeStyle = 'rgba(255,110,30,0.35)';
+    g.lineWidth = 1.5;
+    for (let k = 0; k < 5; k++) {
+      g.beginPath();
+      let x = Math.random() * 128;
+      let y = Math.random() * 128;
+      g.moveTo(x, y);
+      for (let s = 0; s < 3; s++) g.lineTo((x += (Math.random() - 0.5) * 26), (y += (Math.random() - 0.5) * 26));
+      g.stroke();
+    }
+  }
+  if (style === 'snow') {
+    // pegadas e brilho da neve
+    for (let k = 0; k < 40; k++) {
+      g.fillStyle = 'rgba(160,190,230,0.25)';
+      g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
     }
   }
   if (style === 'sand') {
@@ -631,7 +666,7 @@ function deckTexture() {
 }
 
 function floorTexture(theme) {
-  if (theme.ground === 'soil' || theme.ground === 'grass' || theme.ground === 'sand') return naturalTexture(theme.ground);
+  if (['soil', 'grass', 'sand', 'snow', 'rock', 'ash'].includes(theme.ground)) return naturalTexture(theme.ground);
   if (theme.ground === 'deck') return deckTexture();
   const c = document.createElement('canvas');
   c.width = c.height = 128;

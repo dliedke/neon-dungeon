@@ -1,7 +1,7 @@
 // As três classes jogáveis e suas habilidades.
 import { G } from './state.js';
 import { hitEnemy, enemiesInRadius, enemiesInCone, spawnProjectile, lob, explosion, nearestEnemy, spawnTurret, chainFrom, spawnHazard, spawnBarrier, spawnDecoy, after, healPlayer } from './combat.js';
-import { slashFx, ringFx, burst, ghostFx, particle, tempMesh } from './fx.js';
+import { slashFx, ringFx, burst, ghostFx, particle, tempMesh, beamFx } from './fx.js';
 import * as THREE from 'three';
 import { gk } from './state.js';
 import { sfx } from './audio.js';
@@ -68,6 +68,32 @@ export const ICONS = {
   mech: '<rect x="8" y="10" width="16" height="12" rx="2"/><rect x="12" y="4" width="8" height="6"/><path d="M8 14H3v6M24 14h5v6M11 22v6M21 22v6M14 7h1M17 7h1"/>',
   nuke: '<circle cx="16" cy="16" r="3"/><path d="M16 13V4a12 12 0 0 1 10 6l-8 5M13 17.5L5 22a12 12 0 0 1 0-12l8 5M19 17.5l8 4.5a12 12 0 0 1-11 6v-9"/>',
   missileRain: '<path d="M8 4v10M16 2v12M24 4v10"/><path d="M5 12l3 4 3-4M13 10l3 4 3-4M21 12l3 4 3-4"/><path d="M4 27h24"/>',
+  // Caçadora
+  bow: '<path d="M9 4c10 4 10 20 0 24"/><path d="M9 4v24" opacity=".5"/><path d="M6 16h22M24 12l4 4-4 4"/>',
+  multishot: '<path d="M4 16h20M4 16l18-9M4 16l18 9"/><path d="M20 13l4 3-4 3M19 5l4 2-2 4M19 27l4-2-2-4"/>',
+  trap: '<path d="M4 24h24"/><path d="M7 24l3-10 6 6 6-6 3 10"/><circle cx="16" cy="9" r="3"/>',
+  arrowRain: '<path d="M8 3v14M16 3v18M24 3v14"/><path d="M5 14l3 4 3-4M13 18l3 4 3-4M21 14l3 4 3-4"/><path d="M4 28h24"/>',
+  hawk: '<path d="M3 12c5 0 9 2 13 6 4-4 8-6 13-6-3 3-6 8-13 12C9 20 6 15 3 12z"/><path d="M16 18v-6l-2-3h4l-2 3"/>',
+  vault: '<path d="M22 26c-8 0-12-6-10-13"/><path d="M8 16l4-4 4 4"/><path d="M14 6h14M24 3l4 3-4 3"/>',
+  pierceArrow: '<path d="M2 16h26M22 10l6 6-6 6"/><circle cx="10" cy="16" r="3"/><circle cx="18" cy="16" r="3"/>',
+  predator: '<path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z"/><path d="M16 10v12"/><path d="M4 6l5 4M28 6l-5 4"/>',
+  arrowStorm: '<circle cx="16" cy="16" r="3"/><path d="M16 2v8M16 22v8M2 16h8M22 16h8M6 6l5 5M21 21l5 5M26 6l-5 5M11 21l-5 5"/>',
+  // Valquíria
+  spear: '<path d="M5 27L23 9"/><path d="M23 9l2-6 4 4-6 2z"/><path d="M8 20l4 4"/>',
+  charge: '<path d="M3 16h17"/><path d="M20 12l9 4-9 4z"/><path d="M5 10h8M5 22h8" opacity=".6"/>',
+  javelin: '<path d="M3 24L25 8"/><path d="M25 8l4-1-1 4z"/><path d="M14 8l3 5-4 1 3 5" opacity=".7"/>',
+  thunderfall: '<path d="M18 2L11 14h6l-3 9"/><path d="M6 27c3-3 17-3 20 0"/><path d="M4 24l3 1M28 24l-3 1"/>',
+  spearOrbit: '<circle cx="16" cy="16" r="11" stroke-dasharray="3 3"/><path d="M16 5l2 4h-4zM27 16l-4 2v-4zM16 27l-2-4h4zM5 16l4-2v4z"/>',
+  valk: '<path d="M16 10a3 3 0 1 0 0-.1"/><path d="M16 14v9M12 28l4-5 4 5"/><path d="M15 15C10 10 6 10 3 12c3 1 6 3 9 6M17 15c5-5 9-5 12-3-3 1-6 3-9 6"/>',
+  zeus: '<path d="M6 3l-2 7h3l-2 6M16 3l-2 7h3l-2 6M26 3l-2 7h3l-2 6"/><path d="M3 26h26M7 22v4M16 22v4M25 22v4"/>',
+  // Biohacker
+  dart: '<path d="M4 28l12-12"/><path d="M16 16l9-9 3 1-1 3-9 9z"/><path d="M6 20l2 2M10 24l-2-2"/>',
+  cloud: '<path d="M9 22a5 5 0 0 1 0-10 7 7 0 0 1 13-2 5 5 0 0 1 1 12z"/><circle cx="12" cy="27" r="1.5"/><circle cx="19" cy="27" r="1.5"/>',
+  nanoHeal: '<path d="M16 4l10 6v12l-10 6-10-6V10z"/><path d="M16 11v10M11 16h10"/>',
+  plague: '<circle cx="16" cy="16" r="5"/><path d="M16 3v6M16 23v6M3 16h6M23 16h6M7 7l4 4M21 21l4 4M25 7l-4 4M11 21l-4 4"/><circle cx="16" cy="3" r="1.5"/><circle cx="29" cy="16" r="1.5"/>',
+  mutant: '<path d="M9 9a7 7 0 0 1 14 0v5H9z"/><path d="M6 14h20l-3 12H9z"/><circle cx="13" cy="10" r="1.5"/><circle cx="19" cy="10" r="1.5"/><path d="M13 20h6"/>',
+  quarantine: '<circle cx="16" cy="16" r="12" stroke-dasharray="4 3"/><path d="M16 9l7 12H9z"/><path d="M16 14v3M16 19v.5"/>',
+  pandemic: '<circle cx="16" cy="16" r="4"/><circle cx="16" cy="16" r="9" opacity=".6"/><circle cx="16" cy="16" r="13" opacity=".3"/><path d="M16 1v6M16 25v6M1 16h6M25 16h6"/>',
   // ícones dos poderes passivos
   pHeart: '<path d="M16 27C8 21 4 17 4 12a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 5-4 9-12 15z"/><path d="M9 15h4l2-3 3 6 2-3h3"/>',
   pTarget: '<circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="3"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6"/>',
@@ -247,6 +273,75 @@ export const CLASSES = {
       { id: 'nuke', req: 15, name: L('Ataque Nuclear', 'Nuclear Strike'), icon: 'nuke', cost: 70, cd: 35, desc: (r) => L(`Marca uma área; 2s depois, uma explosão nuclear causa ${pct(9 * rankMult(r))} num raio de 6m.`, `Marks an area; 2s later, a nuclear blast deals ${pct(9 * rankMult(r))} within 6m.`) },
     ],
   },
+  hunter: {
+    id: 'hunter',
+    name: L('Caçadora', 'Huntress'),
+    title: L('Arqueira Neon', 'Neon Archer'),
+    desc: L('Longa distância. Flechas de luz que atravessam inimigos, armadilhas e um falcão de caça.', 'Long range. Light arrows that pierce enemies, traps and a hunting hawk.'),
+    css: '#ff6a9a',
+    accent: 0xff6a9a,
+    melee: false,
+    range: 13,
+    base: { hp: 145, en: 110, armor: 9, speed: 5.7, wMin: 17, wMax: 24, enRegen: 8, hpRegen: 1.5, crit: 12, critDmg: 70, atkRate: 1.9 },
+    weaponNames: [L('Arco de Fibra', 'Fiber Bow'), L('Arco Composto Laser', 'Laser Compound Bow'), L('Arco de Fótons', 'Photon Bow'), L('Arco Estelar', 'Starbow')],
+    skills: [
+      { id: 'arrow', name: L('Flecha de Luz', 'Light Arrow'), icon: 'bow', cost: 0, cd: 0, desc: (r) => L(`Flecha rápida que atravessa 1 inimigo e causa ${pct(1.25 * rankMult(r))}.`, `A fast arrow that pierces 1 enemy and deals ${pct(1.25 * rankMult(r))}.`) },
+      { id: 'multishot', name: L('Tiro Múltiplo', 'Multishot'), icon: 'multishot', cost: 25, cd: 5, desc: (r) => L(`Dispara 5 flechas em leque, cada uma causando ${pct(0.9 * rankMult(r))}.`, `Fires 5 arrows in a fan, each dealing ${pct(0.9 * rankMult(r))}.`) },
+      { id: 'trap', req: 2, name: L('Rede Elétrica', 'Shock Net'), icon: 'trap', cost: 20, cd: 8, desc: (r) => L(`Lança uma rede que atordoa por 1,6s (${pct(1.0 * rankMult(r))}) e deixa a área lenta por 4s.`, `Throws a net that stuns for 1.6s (${pct(1.0 * rankMult(r))}) and slows the area for 4s.`) },
+      { id: 'arrowRain', req: 4, name: L('Chuva de Flechas', 'Arrow Rain'), icon: 'arrowRain', cost: 40, cd: 12, desc: (r) => L(`16 flechas caem do céu na área do alvo, cada uma causando ${pct(0.9 * rankMult(r))}.`, `16 arrows fall from the sky on the target area, each dealing ${pct(0.9 * rankMult(r))}.`) },
+      { id: 'hawk', req: 5, name: L('Falcão de Caça', 'Hunting Hawk'), icon: 'hawk', cost: 35, cd: 20, desc: (r) => L(`Chama um falcão biônico por 16s que dá rasantes nos inimigos (${pct(1.0 * rankMult(r))}).`, `Calls a bionic hawk for 16s that dives at enemies (${pct(1.0 * rankMult(r))}).`) },
+      { id: 'vault', req: 7, name: L('Salto Mortal', 'Backflip'), icon: 'vault', cost: 20, cd: 6, desc: (r) => L(`Salta para trás, invulnerável, e dispara 3 flechas (${pct(1.2 * rankMult(r))} cada).`, `Flip backwards while invulnerable and fire 3 arrows (${pct(1.2 * rankMult(r))} each).`) },
+      { id: 'phantomArrow', req: 9, name: L('Flecha Fantasma', 'Phantom Arrow'), icon: 'pierceArrow', cost: 40, cd: 9, desc: (r) => L(`Uma flecha enorme que atravessa tudo em linha reta causando ${pct(4.2 * rankMult(r))}.`, `A huge arrow that pierces everything in a straight line, dealing ${pct(4.2 * rankMult(r))}.`) },
+      { id: 'predator', req: 12, name: L('Instinto Predador', 'Predator Instinct'), icon: 'predator', cost: 35, cd: 20, desc: () => L('Por 8s: +50% de velocidade de ataque, +30% de velocidade e 8% de roubo de vida.', 'For 8s: +50% attack speed, +30% movement speed and 8% life steal.') },
+      { id: 'arrowStorm', req: 15, name: L('Furacão de Flechas', 'Arrow Hurricane'), icon: 'arrowStorm', cost: 60, cd: 20, desc: (r) => L(`6 ondas de 20 flechas saem em todas as direções, cada uma causando ${pct(0.8 * rankMult(r))}.`, `6 waves of 20 arrows fly in every direction, each dealing ${pct(0.8 * rankMult(r))}.`) },
+    ],
+  },
+  lancer: {
+    id: 'lancer',
+    name: L('Valquíria', 'Valkyrie'),
+    title: L('Lanceira Elétrica', 'Volt Lancer'),
+    desc: L('Corpo a corpo de alcance longo. Lança elétrica, investidas e raios do céu.', 'Long-reach melee. An electric spear, charges and lightning from the sky.'),
+    css: '#b36bff',
+    accent: 0xb36bff,
+    melee: true,
+    range: 2.5,
+    base: { hp: 195, en: 100, armor: 20, speed: 5.4, wMin: 15, wMax: 22, enRegen: 6, hpRegen: 2, crit: 7, critDmg: 55, atkRate: 2.0 },
+    weaponNames: [L('Lança de Choque', 'Shock Spear'), L('Alabarda Voltaica', 'Voltaic Halberd'), L('Tridente de Plasma', 'Plasma Trident'), L('Lança do Trovão', 'Thunder Lance')],
+    skills: [
+      { id: 'thrust', name: L('Estocada', 'Thrust'), icon: 'spear', cost: 0, cd: 0, desc: (r) => L(`Estocada longa que causa ${pct(1.15 * rankMult(r))}. O 3º golpe solta um raio que pula em 2 inimigos.`, `A long thrust dealing ${pct(1.15 * rankMult(r))}. Every 3rd hit releases lightning that jumps to 2 enemies.`) },
+      { id: 'spearCharge', name: L('Investida', 'Spear Charge'), icon: 'charge', cost: 20, cd: 5, desc: (r) => L(`Avança com a lança, atravessando os inimigos (${pct(1.7 * rankMult(r))}) e atordoando.`, `Charge forward with your spear, passing through enemies (${pct(1.7 * rankMult(r))}) and stunning them.`) },
+      { id: 'javelin', req: 2, name: L('Dardo Voltaico', 'Volt Javelin'), icon: 'javelin', cost: 25, cd: 6, desc: (r) => L(`Arremessa uma lança que atravessa 3 inimigos (${pct(2.2 * rankMult(r))}) e solta raios em cadeia.`, `Throws a spear that pierces 3 enemies (${pct(2.2 * rankMult(r))}) and releases chain lightning.`) },
+      { id: 'thunderfall', req: 4, name: L('Queda do Trovão', 'Thunderfall'), icon: 'thunderfall', cost: 35, cd: 9, desc: (r) => L(`Salta e cai como um raio no alvo, causando ${pct(2.8 * rankMult(r))} ao redor.`, `Leap up and strike the target like lightning, dealing ${pct(2.8 * rankMult(r))} around you.`) },
+      { id: 'spearOrbit', req: 5, name: L('Lanças Giratórias', 'Spinning Spears'), icon: 'spearOrbit', cost: 30, cd: 12, desc: (r) => L(`3 lanças de energia giram ao seu redor por 8s (${pct(0.9 * rankMult(r))} por toque).`, `3 energy spears orbit you for 8s (${pct(0.9 * rankMult(r))} per touch).`) },
+      { id: 'voltChain', req: 7, name: L('Cadeia Voltaica', 'Volt Chain'), icon: 'thunder', cost: 30, cd: 6, desc: (r) => L(`Um raio pula entre até 8 inimigos, causando ${pct(1.3 * rankMult(r))} em cada.`, `Lightning jumps between up to 8 enemies, dealing ${pct(1.3 * rankMult(r))} to each.`) },
+      { id: 'valk', req: 9, name: L('Irmã de Armas', 'Shield Sister'), icon: 'valk', cost: 50, cd: 25, desc: (r) => L(`Invoca uma valquíria alada por 18s que luta ao seu lado (${pct(1.4 * rankMult(r))}).`, `Summons a winged valkyrie for 18s who fights at your side (${pct(1.4 * rankMult(r))}).`) },
+      { id: 'skyStorm', req: 12, name: L('Fúria dos Céus', 'Wrath of the Skies'), icon: 'storm', cost: 50, cd: 16, desc: (r) => L(`Por 6s, raios caem sobre os inimigos próximos (${pct(1.3 * rankMult(r))} cada).`, `For 6s, lightning strikes nearby enemies (${pct(1.3 * rankMult(r))} each).`) },
+      { id: 'zeus', req: 15, name: L('Lança de Zeus', 'Spear of Zeus'), icon: 'zeus', cost: 55, cd: 12, desc: (r) => L(`Uma fileira de 10 raios cai à sua frente (${pct(2.4 * rankMult(r))} cada) e atordoa.`, `A row of 10 lightning bolts strikes in front of you (${pct(2.4 * rankMult(r))} each) and stuns.`) },
+    ],
+  },
+  biohacker: {
+    id: 'biohacker',
+    name: 'Biohacker',
+    title: L('Química de Rua', 'Street Chemist'),
+    desc: L('Média distância. Dardos tóxicos, nuvens venenosas, cura com nanorrobôs e um mutante de laboratório.', 'Mid range. Toxic darts, poison clouds, nanobot healing and a lab-grown mutant.'),
+    css: '#c8ff3d',
+    accent: 0xc8ff3d,
+    melee: false,
+    range: 9,
+    base: { hp: 165, en: 120, armor: 12, speed: 5.4, wMin: 10, wMax: 14, enRegen: 9, hpRegen: 2.4, crit: 6, critDmg: 50, atkRate: 3 },
+    weaponNames: [L('Pistola de Dardos', 'Dart Pistol'), L('Injetora Tóxica', 'Toxic Injector'), L('Lança-Toxinas', 'Toxin Launcher'), L('Bio-Canhão', 'Bio Cannon')],
+    skills: [
+      { id: 'dart', name: L('Dardo Tóxico', 'Toxic Dart'), icon: 'dart', cost: 0, cd: 0, desc: (r) => L(`Dardo teleguiado que causa ${pct(0.75 * rankMult(r))} e envenena (dano contínuo por 3s).`, `A homing dart that deals ${pct(0.75 * rankMult(r))} and poisons (damage over 3s).`) },
+      { id: 'toxCloud', name: L('Nuvem Tóxica', 'Toxic Cloud'), icon: 'cloud', cost: 25, cd: 6, desc: (r) => L(`Arremessa um frasco que solta uma nuvem venenosa por 5s (${pct(0.3 * rankMult(r))} a cada 0,5s) e deixa lento.`, `Throws a vial that releases a poison cloud for 5s (${pct(0.3 * rankMult(r))} every 0.5s) that slows.`) },
+      { id: 'nanoHeal', req: 2, name: L('Nanocura', 'Nano Heal'), icon: 'nanoHeal', cost: 30, cd: 14, desc: (r) => L(`Cura ${8 + r}% da vida na hora e mais 3% por segundo durante 6s.`, `Heals ${8 + r}% health instantly and 3% per second for 6s.`) },
+      { id: 'plague', req: 4, name: L('Praga', 'Plague'), icon: 'plague', cost: 40, cd: 10, desc: (r) => L(`Uma bomba biológica explode no alvo (${pct(1.6 * rankMult(r))}), envenena forte e deixa lento.`, `A bio-bomb bursts on the target (${pct(1.6 * rankMult(r))}), badly poisoning and slowing.`) },
+      { id: 'nanoSwarm', req: 5, name: L('Nanoenxame', 'Nanoswarm'), icon: 'swarm', cost: 30, cd: 9, desc: (r) => L(`Solta 10 nuvens de nanorrobôs teleguiados, cada uma causando ${pct(0.75 * rankMult(r))} e envenenando.`, `Releases 10 homing nanobot clouds, each dealing ${pct(0.75 * rankMult(r))} and poisoning.`) },
+      { id: 'adrenal', req: 7, name: L('Injeção de Adrenalina', 'Adrenaline Shot'), icon: 'stim', cost: 25, cd: 18, desc: () => L('Por 8s: +30% de velocidade de ataque e +35% de velocidade de movimento.', 'For 8s: +30% attack speed and +35% movement speed.') },
+      { id: 'mutant', req: 9, name: L('Mutante de Laboratório', 'Lab Mutant'), icon: 'mutant', cost: 50, cd: 25, desc: (r) => L(`Solta um mutante gigante por 18s que esmaga os inimigos em área (${pct(2.0 * rankMult(r))}).`, `Releases a giant mutant for 18s that smashes enemies in an area (${pct(2.0 * rankMult(r))}).`) },
+      { id: 'quarantine', req: 12, name: L('Zona de Quarentena', 'Quarantine Zone'), icon: 'quarantine', cost: 45, cd: 16, desc: (r) => L(`Cria uma zona tóxica enorme ao seu redor por 7s (${pct(0.5 * rankMult(r))} a cada 0,5s) que deixa muito lento.`, `Creates a huge toxic zone around you for 7s (${pct(0.5 * rankMult(r))} every 0.5s) that greatly slows.`) },
+      { id: 'pandemic', req: 15, name: L('Pandemia', 'Pandemic'), icon: 'pandemic', cost: 60, cd: 22, desc: (r) => L(`Infecta todos os inimigos à vista num raio de 12m (${pct(2.2 * rankMult(r))}), com veneno forte e lentidão.`, `Infects every visible enemy within 12m (${pct(2.2 * rankMult(r))}) with strong poison and slow.`) },
+    ],
+  },
 };
 
 // --------------------------------------------------------------
@@ -319,6 +414,21 @@ const PASSIVES = {
     passive('pAP', 8, L('Munição Perfurante', 'AP Rounds'), 'pSkull', (r) => ({ dmgPct: r1(2.5 * r), critDmg: 4 * r })),
     passive('pReactor', 14, L('Reator Portátil', 'Portable Reactor'), 'pChip', (r) => ({ hpRegen: r1(0.8 * r), enRegen: r1(0.5 * r), costRed: r1(1.5 * r) })),
   ],
+  hunter: [
+    passive('pHawkEye', 3, L('Olho de Falcão', 'Hawk Eye'), 'pEye', (r) => ({ crit: r1(1.3 * r), critDmg: 6 * r })),
+    passive('pStride', 8, L('Passo Leve', 'Light Step'), 'pWind', (r) => ({ moveSpd: 2 * r, dodge: r1(1.2 * r) })),
+    passive('pApex', 14, L('Predadora Alfa', 'Apex Predator'), 'pCrown', (r) => ({ eliteDmg: 5 * r, atkSpd: 2 * r })),
+  ],
+  lancer: [
+    passive('pConductor', 3, L('Condutora', 'Conductor'), 'pBattery', (r) => ({ enRegen: r1(0.5 * r), cdr: r1(1.2 * r) })),
+    passive('pAegis', 8, L('Égide', 'Aegis'), 'pPlate', (r) => ({ armorPct: 4 * r, hpPct: 2 * r })),
+    passive('pThunderGod', 14, L('Filha do Trovão', 'Daughter of Thunder'), 'pRage', (r) => ({ dmgPct: r1(2.5 * r), lifeSteal: r1(0.6 * r) })),
+  ],
+  biohacker: [
+    passive('pImmune', 3, L('Imunidade', 'Immunity'), 'pHeart', (r) => ({ hpPct: r1(2.5 * r), hpRegen: r1(0.7 * r) })),
+    passive('pCatalyst', 8, L('Catalisador', 'Catalyst'), 'pDrop', (r) => ({ burnPct: 8 * r, dmgPct: r1(1.5 * r) })),
+    passive('pLab', 14, L('Laboratório Móvel', 'Mobile Lab'), 'pChip', (r) => ({ costRed: 2 * r, killHeal: r1(0.4 * r) })),
+  ],
 };
 for (const [id, list] of Object.entries(PASSIVES)) CLASSES[id].skills.push(...list);
 
@@ -334,7 +444,7 @@ export function passiveMods(c) {
 }
 export const isPassive = (cls, i) => !!CLASSES[cls].skills[i]?.passive;
 
-export const CLASS_ORDER = ['blade', 'gunner', 'netrunner', 'brawler', 'pyro', 'frost', 'heavy'];
+export const CLASS_ORDER = ['blade', 'gunner', 'netrunner', 'brawler', 'pyro', 'frost', 'heavy', 'hunter', 'lancer', 'biohacker'];
 
 // --------------------------------------------------------------
 // Implementação das habilidades. Retornam false se não puderam ser usadas.
@@ -806,6 +916,215 @@ Object.assign(SKILL_FN, {
   nuke: (p, r) => {
     const t = PW.aimPoint(p, 10);
     PW.nuke(t.x, t.z, 9 * rankMult(r));
+    return true;
+  },
+
+  // Caçadora
+  arrow(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, dx: p.aim.dx, dz: p.aim.dz, speed: 32, life: 0.5, mult: 1.25 * rankMult(r), color: C_('hunter'), size: 0.11, r: 0.24, pierce: 1, homing: 2 });
+    burst(p.x + p.aim.dx * 0.6, 1, p.z + p.aim.dz * 0.6, C_('hunter'), 3, 2, 0.05, 0.15, { grav: 0 });
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  multishot(p, r) {
+    const base = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = -2; k <= 2; k++) {
+      const a = base + k * 0.13;
+      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.4, z: p.z + Math.sin(a) * 0.4, dx: Math.cos(a), dz: Math.sin(a), speed: 30, life: 0.5, mult: 0.9 * rankMult(r), color: C_('hunter'), size: 0.1, r: 0.22, pierce: 1, homing: 1.5 });
+    }
+    sfx.shoot();
+    setTimeout(() => sfx.shoot(), 50);
+    p.swing = 1;
+    return true;
+  },
+  trap(p, r) {
+    const t = targetPoint(p, 9);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.45, color: C_('hunter'), onLand: (x, z) => {
+      explosion(x, z, 2.6, 1.0 * rankMult(r), { color: C_('hunter'), stun: 1.6, knock: 0.5, small: true });
+      spawnHazard(x, z, 2.6, 4, 0, { faction: 'player', mult: 0.12 * rankMult(r), slow: 1.5, color: C_('hunter'), opacity: 0.3 });
+      sfx.zap();
+    } });
+    p.swing = 1;
+    return true;
+  },
+  arrowRain: (p, r) => {
+    const t = PW.aimPoint(p, 11);
+    PW.meteorShower(t.x, t.z, 16, 0.9 * rankMult(r), C_('hunter'), { gap: 0.09 });
+    p.swing = 1;
+    return true;
+  },
+  hawk: (p, r) => (PW.spawnAlly('hawk', p.x + p.aim.dx, p.z + p.aim.dz, { dur: 16, mult: 1.0 * rankMult(r) }), sfx.dash(), true),
+  vault(p, r) {
+    p.dash = { dx: -p.aim.dx, dz: -p.aim.dz, speed: 22, t: 0.28, hit: null, mult: 0, radius: 0, color: C_('hunter') };
+    p.invuln = Math.max(p.invuln, 0.4);
+    const ax = p.aim.dx;
+    const az = p.aim.dz;
+    for (let k = 0; k < 3; k++) {
+      after(0.1 + k * 0.09, () => {
+        const pl = G.player;
+        if (!pl.alive) return;
+        spawnProjectile({ from: 'player', x: pl.x + ax * 0.5, z: pl.z + az * 0.5, dx: ax, dz: az, speed: 32, life: 0.55, mult: 1.2 * rankMult(r), color: C_('hunter'), size: 0.12, r: 0.24, pierce: 1, homing: 3 });
+        sfx.shoot();
+      });
+    }
+    sfx.dash();
+    return true;
+  },
+  phantomArrow(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, dx: p.aim.dx, dz: p.aim.dz, speed: 38, life: 0.6, mult: 4.2 * rankMult(r), color: 0xffd0e0, size: 0.28, r: 0.55, pierce: 40, knock: 5 });
+    ringFx(p.x, p.z, 1.4, C_('hunter'), 0.3);
+    G.shake = Math.max(G.shake, 0.2);
+    sfx.laser();
+    p.swing = 1;
+    return true;
+  },
+  predator(p) {
+    p.buffs.overclock = 8;
+    ringFx(p.x, p.z, 2.5, C_('hunter'), 0.5);
+    burst(p.x, 1, p.z, C_('hunter'), 25, 5, 0.08, 0.6);
+    sfx.levelup();
+    return true;
+  },
+  arrowStorm: (p, r) => (PW.bulletRing(p, 6, 20, 0.8 * rankMult(r), C_('hunter')), true),
+
+  // Valquíria
+  thrust(p, r) {
+    p.combo = (p.combo + 1) % 3;
+    const big = p.combo === 2;
+    const range = big ? 3.0 : 2.7;
+    const hits = enemiesInCone(p.x, p.z, p.aim.dx, p.aim.dz, range, 0.6);
+    for (const e of hits) hitEnemy(e, (big ? 1.4 : 1.0) * 1.15 * rankMult(r), { knock: big ? 3 : 1, energy: 4 });
+    if (big && hits.length) chainFrom(hits[0], 2, 0.6 * rankMult(r), 5, C_('lancer'), true);
+    for (let k = 0.6; k < range; k += 0.35) particle(p.x + p.aim.dx * k, 1, p.z + p.aim.dz * k, p.aim.dx * 2, 0, p.aim.dz * 2, C_('lancer'), big ? 0.12 : 0.08, 0.22, 0, 2);
+    slashFx(p.x, p.z, angleOf(p.aim.dx, p.aim.dz), range, 0.5, C_('lancer'), 0.95);
+    if (big) sfx.zap();
+    sfx.slash();
+    p.swing = 1;
+    return true;
+  },
+  spearCharge(p, r) {
+    const reach = p.aimEnemy ? Math.min(7, Math.hypot(p.aimEnemy.x - p.x, p.aimEnemy.z - p.z) + 1.5) : 7;
+    p.dash = { dx: p.aim.dx, dz: p.aim.dz, speed: 30, t: reach / 30, hit: new Set(), mult: 1.7 * rankMult(r), radius: 1.1, color: C_('lancer'), stun: 0.8 };
+    p.invuln = Math.max(p.invuln, 0.3);
+    sfx.dash();
+    return true;
+  },
+  javelin(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, y: 1.2, dx: p.aim.dx, dz: p.aim.dz, speed: 30, life: 0.6, mult: 2.2 * rankMult(r), color: C_('lancer'), size: 0.17, r: 0.3, pierce: 3, knock: 3, onHit: (e) => chainFrom(e, 2, 0.6 * rankMult(r), 5, C_('lancer'), true) });
+    sfx.zap();
+    p.swing = 1;
+    return true;
+  },
+  thunderfall(p, r) {
+    const d = G.dungeon;
+    const t = PW.aimPoint(p, 8);
+    let tx = t.x;
+    let tz = t.z;
+    for (let k = 0; k <= 20 && !isWalkable(d, tx, tz); k++) {
+      tx = p.x + (t.x - p.x) * (1 - k / 20);
+      tz = p.z + (t.z - p.z) * (1 - k / 20);
+    }
+    p.leap = { sx: p.x, sz: p.z, tx, tz, t: 0, dur: 0.5, mult: 2.8 * rankMult(r), color: C_('lancer'), radius: 3 };
+    p.invuln = Math.max(p.invuln, 0.6);
+    after(0.5, () => beamFx(tx, 12, tz, tx, 0.2, tz, 0xe0c8ff, 0.3, 6));
+    sfx.dash();
+    return true;
+  },
+  spearOrbit: (p, r) => (PW.orbitBlades(3, 0.9 * rankMult(r), C_('lancer'), 8, { radius: 2.2 }), true),
+  voltChain: (p, r) => PW.chainLightningFrom(p, 8, 1.3 * rankMult(r), 0xd0a0ff),
+  valk: (p, r) => (PW.spawnAlly('valk', p.x + p.aim.dx * 1.2, p.z + p.aim.dz * 1.2, { dur: 18, mult: 1.4 * rankMult(r) }), sfx.zap(), true),
+  skyStorm: (p, r) => (PW.lightningStorm(6, 4, 1.3 * rankMult(r), 0xd0a0ff), true),
+  zeus: (p, r) => {
+    PW.pillars(p, 10, 2.4 * rankMult(r), 0xd0a0ff, { slow: 1 });
+    const sx = p.x;
+    const sz = p.z;
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    for (let k = 1; k <= 10; k++) {
+      after(k * 0.07, () => {
+        const x = sx + dx * k * 1.15;
+        const z = sz + dz * k * 1.15;
+        if (!isWalkable(G.dungeon, x, z)) return;
+        beamFx(x + rr(-0.5, 0.5), 10, z + rr(-0.5, 0.5), x, 0.2, z, 0xe0c8ff, 0.18, 5);
+        for (const e of enemiesInRadius(x, z, 1.3)) if (!e.boss) e.stun = Math.max(e.stun, e.heavy ? 0.4 : 0.8);
+      });
+    }
+    sfx.zap();
+    G.shake = Math.max(G.shake, 0.3);
+    return true;
+  },
+
+  // Biohacker
+  dart(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, dx: p.aim.dx, dz: p.aim.dz, speed: 26, life: 0.45, mult: 0.75 * rankMult(r), color: C_('biohacker'), size: 0.08, r: 0.22, homing: 3.5, burn: 0.3 });
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  toxCloud(p, r) {
+    const t = targetPoint(p, 8);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.5, color: C_('biohacker'), onLand: (x, z) => {
+      spawnHazard(x, z, 2.6, 5, 0, { faction: 'player', mult: 0.3 * rankMult(r), burn: 0.35, slow: 1, color: C_('biohacker'), opacity: 0.4 });
+      burst(x, 0.6, z, C_('biohacker'), 30, 3, 0.12, 0.9, { up: 0.5, grav: -1 });
+      sfx.explode();
+    } });
+    p.swing = 1;
+    return true;
+  },
+  nanoHeal(p, r) {
+    healPlayer(p.stats.maxHp * (0.08 + 0.01 * r));
+    p.buffs.regen = 6;
+    ringFx(p.x, p.z, 1.8, 0x39ff88, 0.5);
+    burst(p.x, 1, p.z, 0x39ff88, 24, 3, 0.06, 0.7, { up: 1.5, grav: -1 });
+    sfx.heal();
+    return true;
+  },
+  plague(p, r) {
+    const t = targetPoint(p, 9);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.5, color: C_('biohacker'), onLand: (x, z) => {
+      explosion(x, z, 3.5, 1.6 * rankMult(r), { color: C_('biohacker'), burn: 0.8, slow: 2, knock: 1 });
+      burst(x, 0.6, z, 0x6aff2a, 30, 4, 0.14, 1, { up: 0.6, grav: -1 });
+    } });
+    p.swing = 1;
+    return true;
+  },
+  nanoSwarm(p, r) {
+    for (let k = 0; k < 10; k++) {
+      const a = (k / 10) * Math.PI * 2;
+      after(k * 0.04, () => {
+        const pl = G.player;
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.8, z: pl.z + Math.sin(a) * 0.8, y: 1.3, dx: Math.cos(a), dz: Math.sin(a), speed: 10, life: 2.4, mult: 0.75 * rankMult(r), color: C_('biohacker'), size: 0.11, r: 0.25, homing: 6, burn: 0.3 });
+      });
+    }
+    sfx.deploy();
+    return true;
+  },
+  adrenal(p) {
+    p.buffs.haste = 8;
+    ringFx(p.x, p.z, 2, C_('biohacker'), 0.45);
+    burst(p.x, 1, p.z, C_('biohacker'), 20, 4, 0.07, 0.5, { up: 1.2 });
+    sfx.stim();
+    return true;
+  },
+  mutant: (p, r) => (PW.spawnAlly('mutant', p.x + p.aim.dx * 1.5, p.z + p.aim.dz * 1.5, { dur: 18, mult: 2.0 * rankMult(r) }), sfx.punchHeavy(), true),
+  quarantine(p, r) {
+    spawnHazard(p.x, p.z, 4.5, 7, 0, { faction: 'player', mult: 0.5 * rankMult(r), burn: 0.5, slow: 2, color: C_('biohacker'), opacity: 0.35 });
+    ringFx(p.x, p.z, 4.5, C_('biohacker'), 0.6, { from: 0.5 });
+    sfx.nova();
+    return true;
+  },
+  pandemic(p, r) {
+    const list = enemiesInRadius(p.x, p.z, 12).filter((e) => lineOfSight(G.dungeon, p.x, p.z, e.x, e.z));
+    list.forEach((e, k) => after(k * 0.03, () => {
+      if (!e.alive) return;
+      beamFx(p.x, 1.2, p.z, e.x, e.height * 0.6, e.z, C_('biohacker'), 0.25, 4);
+      hitEnemy(e, 2.2 * rankMult(r), { burn: 1.2, slow: 3, knock: 1.5 });
+      burst(e.x, 1, e.z, 0x6aff2a, 8, 3, 0.1, 0.6, { grav: -1 });
+    }));
+    ringFx(p.x, p.z, 12, C_('biohacker'), 0.7, { from: 0.1 });
+    G.shake = Math.max(G.shake, 0.3);
+    sfx.nova();
     return true;
   },
 });

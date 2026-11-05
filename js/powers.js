@@ -61,6 +61,9 @@ const ALLY = {
   wolf: { speed: 7.5, r: 0.38, range: 1.3, atk: 0.55, mult: 0.9, melee: true, color: 0x8ab4ff, slow: 1.5 },
   clone: { speed: 5.4, r: 0.35, range: 9, atk: 0.3, mult: 0.6, melee: false, color: 0x00f0ff },
   tesla: { speed: 0, r: 0.4, range: 6.5, atk: 0.6, mult: 0.7, melee: false, color: 0xffd23d, static: true, chain: 4 },
+  hawk: { speed: 8.5, r: 0.35, range: 1.3, atk: 0.5, mult: 1.0, melee: true, color: 0xff6a9a, fly: true },
+  valk: { speed: 5.6, r: 0.42, range: 2.0, atk: 0.65, mult: 1.4, melee: true, color: 0xb36bff },
+  mutant: { speed: 4.0, r: 0.65, range: 1.9, atk: 1.1, mult: 2.0, melee: true, color: 0xc8ff3d, slam: true },
   hacked: { speed: 3.8, r: 0.4, range: 1.5, atk: 0.8, mult: 1.2, melee: true, color: 0x39ff14 },
 };
 
@@ -96,6 +99,49 @@ function allyModel(kind, color) {
     }
     m.fireAura = true;
     return m;
+  }
+  if (kind === 'valk') {
+    const m = humanoid({ body: 0xc8c8e8, dark: 0x3a3a5a, accent: 0xb36bff, scale: 1.05 });
+    for (const sx of [-1, 1]) {
+      const w = mesh(box(0.7, 0.05, 0.3), glowMat(0xe0c8ff, 1.6), sx * 0.4, 0.45, -0.18);
+      w.rotation.z = sx * 0.5;
+      m.torso.add(w);
+    }
+    const spear = new THREE.Group();
+    spear.add(mesh(box(0.04, 0.04, 1.5), m.mats[1], 0, 0, 0.3));
+    spear.add(mesh(new THREE.ConeGeometry(0.07, 0.3, 4).rotateX(Math.PI / 2), glowMat(0xb36bff, 2.4), 0, 0, 1.15));
+    spear.rotation.x = Math.PI / 2 - 0.3;
+    m.handR.add(spear);
+    return m;
+  }
+  if (kind === 'mutant') {
+    const m = humanoid({ body: 0x5a8a3a, dark: 0x2a3a1a, accent: 0xc8ff3d, scale: 1.55, wide: 1.6 });
+    m.torso.add(mesh(new THREE.SphereGeometry(0.16, 8, 6), glowMat(0x9dff3a, 1.8), 0.2, 0.45, -0.12)); // pústulas
+    m.torso.add(mesh(new THREE.SphereGeometry(0.12, 8, 6), glowMat(0x9dff3a, 1.8), -0.18, 0.2, -0.13));
+    m.handL.add(mesh(box(0.34, 0.34, 0.34), m.mats[0]));
+    m.handR.add(mesh(box(0.34, 0.34, 0.34), m.mats[0]));
+    return m;
+  }
+  if (kind === 'hawk') {
+    const root = new THREE.Group();
+    const body = new THREE.Group();
+    root.add(body);
+    const mb = lam(0x8a6a7a);
+    const t = mesh(new THREE.SphereGeometry(0.22, 10, 8), mb);
+    t.scale.set(0.9, 0.8, 1.5);
+    body.add(t);
+    body.add(mesh(new THREE.SphereGeometry(0.13, 8, 6), lam(0xf0e8f0), 0, 0.08, 0.32));
+    body.add(mesh(box(0.18, 0.03, 0.03), glowMat(0xff6a9a, 2.8), 0, 0.1, 0.43));
+    const wings = [];
+    for (const sx of [-1, 1]) {
+      const w = new THREE.Group();
+      w.position.set(sx * 0.16, 0.04, 0);
+      w.add(mesh(box(0.6, 0.03, 0.3), glowMat(0xff6a9a, 1.2), sx * 0.3, 0, 0));
+      body.add(w);
+      wings.push(w);
+    }
+    body.position.y = 1.3;
+    return { root, body, wings, mats: [mb], floaty: true };
   }
   if (kind === 'clone') {
     const m = humanoid({ body: 0x2a8a9a, dark: 0x0a3038, accent: 0x00f0ff });
@@ -306,6 +352,11 @@ export function updateAllies(dt) {
     if (m.legL) animWalk(m, a.phase, !!moving);
     if (m.legs && m.quad) m.legs.forEach((l, k) => (l.rotation.x = moving ? Math.sin(a.phase * 1.6 + (k % 2) * Math.PI) * 0.7 : 0));
     if (m.floaty) m.body.position.y = 1.3 + Math.sin(G.t * 3) * 0.12;
+    if (m.wings) {
+      const fl = Math.sin(G.t * 12 + i) * 0.6;
+      m.wings[0].rotation.z = fl;
+      m.wings[1].rotation.z = -fl;
+    }
     if (m.top) m.top.scale.setScalar(1 + Math.sin(G.t * 12) * 0.1);
     if (m.fireAura && Math.random() < dt * 20) burst(a.x, rr(0.4, 1.6), a.z, pick([0xff6a00, 0xffaa00]), 1, 1, 0.08, 0.5, { grav: -3 });
     if (a.swing > 0 && m.armR) {

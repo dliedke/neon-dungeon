@@ -118,7 +118,7 @@ export function achList() {
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
   add('win5', '🔁', 2, L('Revanche', 'Rematch'), L('Vença a batalha final 5 vezes', 'Win the final battle 5 times'), () => total('wins'), 5);
   add('win3cls', '🎭', 2, L('Trio Lendário', 'Legendary Trio'), L('Vença o jogo com 3 classes diferentes', 'Beat the game with 3 different classes'), () => count('winClasses'), 3);
-  add('winAll', '👑', 3, L('Os Sete Heróis', 'The Seven Heroes'), L('Vença o jogo com as 7 classes', 'Beat the game with all 7 classes'), () => count('winClasses'), CLASS_ORDER.length);
+  add('winAll', '👑', 3, L('Os Dez Heróis', 'The Ten Heroes'), L(`Vença o jogo com as ${CLASS_ORDER.length} classes`, `Beat the game with all ${CLASS_ORDER.length} classes`), () => count('winClasses'), CLASS_ORDER.length);
 
   // profundidade e nível
   for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [25, 2, '🪐'], [30, 2, '🧭']]) {
@@ -129,7 +129,7 @@ export function achList() {
   }
 
   // classes
-  add('allClasses', '🎭', 1, L('Identidade Múltipla', 'Multiple Identities'), L('Jogue com as 7 classes', 'Play all 7 classes'), () => CLASS_ORDER.filter((k) => G.save.slots[k]).length, CLASS_ORDER.length);
+  add('allClasses', '🎭', 1, L('Identidade Múltipla', 'Multiple Identities'), L(`Jogue com as ${CLASS_ORDER.length} classes`, `Play all ${CLASS_ORDER.length} classes`), () => CLASS_ORDER.filter((k) => G.save.slots[k]).length, CLASS_ORDER.length);
   for (const k of CLASS_ORDER) {
     add(`class10_${k}`, '🎖️', 0, L(`Mestre: ${CLASSES[k].name}`, `Master: ${CLASSES[k].name}`), L(`Chegue ao nível 10 com ${CLASSES[k].name}`, `Reach level 10 as ${CLASSES[k].name}`), () => (G.save.slots[k] ? G.save.slots[k].level : 0), 10);
   }

@@ -13,7 +13,7 @@ import { openShop } from './ui.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
-export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12 };
+export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12, LAVA: 13, SNOW: 14 };
 const isConv = (f) => f >= 3 && f <= 6;
 const CONV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -31,6 +31,8 @@ export function groundEffect(d, x, z) {
   if (f === FEAT.THORN) return { speed: 0.65, hurt: 0xb36bff };
   if (f === FEAT.RAD) return { speed: 0.85, hurt: 0xc8ff3a };
   if (f === FEAT.ICE) return { speed: 1.1, ice: true };
+  if (f === FEAT.LAVA) return { speed: 0.7, hurt: 0xff5a1a, mult: 2.6 };
+  if (f === FEAT.SNOW) return { speed: 0.62 };
   if (isConv(f)) {
     const [dx, dz] = CONV_DIRS[f - FEAT.CONV];
     return { speed: 1, push: { x: dx * 2.6, z: dz * 2.6 } };
@@ -68,8 +70,10 @@ export function placeFeatures(d, theme) {
           }
         }
         break;
-      case 'sludge': {
-        // rios de lodo tóxico que atravessam o mapa (também abrem passagens)
+      case 'sludge':
+      case 'lava': {
+        // rios de lodo tóxico (ou de lava) que atravessam o mapa (também abrem passagens)
+        const riverFeat = f === 'lava' ? FEAT.LAVA : FEAT.SLUDGE;
         const n = 2 + Math.floor(W / 30);
         for (let k = 0; k < n; k++) {
           const r = pick(rooms);
@@ -91,7 +95,7 @@ export function placeFeatures(d, theme) {
                 const k2 = (y + dy) * W + x + dx;
                 if (nearKey(d, x + dx + 0.5, y + dy + 0.5, 3.5)) continue;
                 if (grid[k2] === TILE.WALL) grid[k2] = TILE.FLOOR;
-                if (grid[k2] === TILE.FLOOR) d.feat[k2] = FEAT.SLUDGE;
+                if (grid[k2] === TILE.FLOOR) d.feat[k2] = riverFeat;
               }
           }
         }
@@ -193,11 +197,12 @@ export function placeFeatures(d, theme) {
         break;
       }
       case 'trees':
+      case 'pines':
       case 'boulders':
       case 'cacti': {
         // obstáculos isolados (nunca bloqueiam a passagem)
-        const kind = f === 'trees' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
-        const dens = f === 'trees' ? 0.07 : f === 'boulders' ? 0.025 : 0.03;
+        const kind = f === 'trees' || f === 'pines' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
+        const dens = f === 'trees' ? 0.07 : f === 'pines' ? 0.05 : f === 'boulders' ? (theme.id === 'mountain' ? 0.045 : 0.025) : 0.03;
         for (let j = 3; j < H - 3; j++)
           for (let i = 3; i < W - 3; i++) {
             if (grid[j * W + i] !== TILE.FLOOR || Math.random() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
@@ -233,6 +238,42 @@ export function placeFeatures(d, theme) {
             for (let j = Math.floor(c.z - rad); j <= c.z + rad; j++)
               for (let i = Math.floor(c.x - rad); i <= c.x + rad; i++) if (Math.hypot(i + 0.5 - c.x, j + 0.5 - c.z) < rad) set(i, j, f === 'thorns' ? FEAT.THORN : FEAT.RAD);
           }
+        }
+        break;
+      case 'drifts':
+        // montes de neve fofa: deixam todo mundo lento
+        for (const r of rooms) {
+          if (!chance(0.6)) continue;
+          for (let k = ri(1, 2); k > 0; k--) {
+            const c = randomFloorInRoom(d, r, 1);
+            const rad = rr(1.6, 3.2);
+            for (let j = Math.floor(c.z - rad); j <= c.z + rad; j++)
+              for (let i = Math.floor(c.x - rad); i <= c.x + rad; i++) if (Math.hypot(i + 0.5 - c.x, j + 0.5 - c.z) < rad && !d.feat[j * W + i]) set(i, j, FEAT.SNOW);
+          }
+        }
+        break;
+      case 'snowfall':
+        d.snow = true;
+        break;
+      case 'blizzard':
+        d.sandstorm = { t: rr(12, 20), on: false, snow: true };
+        break;
+      case 'chasms':
+        d.pitStyle = 'chasm';
+        carvePits(d, rooms.filter((r) => r.w >= 7 && r.h >= 7), 'blob');
+        break;
+      case 'rockfall':
+        d.rockfall = { t: rr(4, 7) };
+        break;
+      case 'embers':
+        d.embers = true;
+        break;
+      case 'geysers':
+        for (const r of rooms) {
+          if (!chance(0.55)) continue;
+          const pt = randomFloorInRoom(d, r, 1);
+          if (nearKey(d, pt.x, pt.z, 3)) continue;
+          d.props.push({ type: 'geyser', x: Math.floor(pt.x) + 0.5, z: Math.floor(pt.z) + 0.5, t: rr(1, 5), state: 'idle' });
         }
         break;
       case 'lakes':
@@ -448,6 +489,16 @@ export function buildFeatures(d, theme, group) {
   const rm = tileMesh(d, FEAT.RAD, radMat);
   if (rm) group.add(rm);
   B.mats.rad = radMat;
+  const lavaMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff5a1a).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.92, depthWrite: false });
+  const lm = tileMesh(d, FEAT.LAVA, lavaMat);
+  if (lm) group.add(lm);
+  B.mats.lava = lavaMat;
+  const snowMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: new THREE.Color(0x30343c) });
+  const snm = tileMesh(d, FEAT.SNOW, snowMat);
+  if (snm) {
+    snm.position.y += 0.05;
+    group.add(snm);
+  }
   buildNature(d, theme, group, B);
   if (cm) group.add(cm);
 
@@ -484,6 +535,13 @@ export function buildFeatures(d, theme, group) {
         ring.position.y = 0.06;
         g.add(ring);
         p.ringMat = ringMat;
+        break;
+      }
+      case 'geyser': {
+        g.add(meshAt(new THREE.CylinderGeometry(0.6, 0.8, 0.22, 9), new THREE.MeshLambertMaterial({ color: 0x2a1a16 }), 0, 0.1, 0));
+        const coreMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff5a1a).multiplyScalar(gk(1.4)) });
+        g.add(meshAt(new THREE.CircleGeometry(0.42, 14).rotateX(-Math.PI / 2), coreMat, 0, 0.23, 0));
+        p.ringMat = coreMat;
         break;
       }
       case 'crusher': {
@@ -644,6 +702,16 @@ function buildNature(d, theme, group, B) {
     group.add(gm);
     B.glint = glint;
   }
+  // montanha: abismo escuro com névoa no fundo
+  if (d.pitStyle === 'chasm' && pitTiles.length) {
+    const deep = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H + 60).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x14161c }));
+    deep.position.set(W / 2, -7, H / 2);
+    group.add(deep);
+    const mist = new THREE.MeshBasicMaterial({ color: 0xc8d4e8, transparent: true, opacity: 0.12, depthWrite: false });
+    const mm = new THREE.InstancedMesh(planeGeo, mist, pitTiles.length);
+    pitTiles.forEach((k, n) => mm.setMatrixAt(n, m4.makeTranslation((k % W) + 0.5, -1.5, Math.floor(k / W) + 0.5)));
+    group.add(mm);
+  }
   // espaço: céu estrelado por baixo do mapa
   if (d.stars) {
     const tex = starTexture();
@@ -715,8 +783,14 @@ function buildNature(d, theme, group, B) {
       const leaf = new THREE.MeshLambertMaterial({ color: pick([0x1a3a24, 0x16301e, 0x22402a]), emissive: new THREE.Color(0x05100a) });
       g.add(meshAt(new THREE.ConeGeometry(0.85, 1.4, 7), leaf, 0, 1.6, 0));
       g.add(meshAt(new THREE.ConeGeometry(0.6, 1.1, 7), leaf, 0, 2.3, 0));
+      if (theme.id === 'snow') {
+        // pinheiro com neve no topo dos galhos
+        const snowM = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: new THREE.Color(0x2a2e36) });
+        g.add(meshAt(new THREE.ConeGeometry(0.62, 0.55, 7), snowM, 0, 2.05, 0));
+        g.add(meshAt(new THREE.ConeGeometry(0.4, 0.5, 7), snowM, 0, 2.65, 0));
+      }
     } else if (p.kind === FEAT.BOULDER) {
-      const rock = meshAt(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: theme.id === 'desert' ? 0x9a7a54 : 0x7a7a72 }), 0, 0.35, 0);
+      const rock = meshAt(new THREE.DodecahedronGeometry(0.55, 0), new THREE.MeshLambertMaterial({ color: { desert: 0x9a7a54, mountain: 0x6a6660, volcano: 0x2a2224, snow: 0xa8b4c0 }[theme.id] || 0x7a7a72 }), 0, 0.35, 0);
       rock.scale.set(1, 0.75, 1.1);
       g.add(rock);
     } else {
@@ -792,6 +866,17 @@ export function updateBiome(dt, camera) {
   if (B.water) B.water.opacity = 0.8 + Math.sin(G.t * 1.5) * 0.06;
   if (B.glint) B.glint.opacity = 0.15 + Math.abs(Math.sin(G.t * 2)) * 0.25;
   if (B.mats.rad) B.mats.rad.opacity = 0.5 + Math.sin(G.t * 3) * 0.15;
+  if (B.mats.lava) B.mats.lava.color.setRGB(1, 0.35 + Math.sin(G.t * 2.2) * 0.08, 0.1).multiplyScalar(gk(1.4 + Math.sin(G.t * 1.3) * 0.15));
+  // neve caindo: só visual, em volta da câmera
+  if (d.snow && p) {
+    rainAcc += dt * 26;
+    while (rainAcc > 1) {
+      rainAcc--;
+      particle(G.camFocus.x + rr(-13, 13), rr(4, 7), G.camFocus.z + rr(-13, 13), rr(-0.6, 0.6), -1.6, rr(-0.3, 0.3), 0xffffff, rr(0.03, 0.06), 3.2, 0, 0);
+    }
+  }
+  if (d.rockfall && p && p.alive) updateRockfall(d, dt, p);
+  tickRocks(d, dt);
   if (B.sky) B.sky.offset.x += dt * 0.004;
   if (p) ambientParticles(d, dt);
 
@@ -805,6 +890,9 @@ export function updateBiome(dt, camera) {
         break;
       case 'vent':
         updateVent(pr, dt, p);
+        break;
+      case 'geyser':
+        updateGeyser(pr, dt, p);
         break;
       case 'crusher':
         updateCrusher(pr, dt, p);
@@ -843,6 +931,9 @@ function ambientParticles(d, dt) {
   if (d.butterflies && ambAcc > 0.08 && Math.random() < 0.4) {
     particle(cx + rr(-10, 10), rr(0.5, 1.6), cz + rr(-10, 10), rr(-1, 1), rr(-0.2, 0.5), rr(-1, 1), pick([0xff6ad5, 0xffe14d, 0x8ab4ff, 0xffffff]), 0.07, rr(1.5, 2.5), 0, 0);
   }
+  if (d.embers && ambAcc > 0.08) {
+    for (let k = 0; k < 2; k++) particle(cx + rr(-11, 11), rr(0, 0.6), cz + rr(-11, 11), rr(-0.3, 0.3), rr(0.8, 1.8), rr(-0.3, 0.3), pick([0xff5a1a, 0xffaa00, 0xff3300]), rr(0.03, 0.06), rr(1.5, 2.8), -0.3, 0);
+  }
   if (ambAcc > 0.08) ambAcc = 0;
   if (d.sandstorm) {
     const st = d.sandstorm;
@@ -858,11 +949,100 @@ function ambientParticles(d, dt) {
     const far = st.on ? 18 : L2.fogFar;
     fog.near += (near - fog.near) * Math.min(1, dt);
     fog.far += (far - fog.far) * Math.min(1, dt);
-    if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);
+    if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), st.snow ? pick([0xffffff, 0xdde8f4]) : pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);
+    // na nevasca o frio deixa o jogador mais lento
+    if (st.on && st.snow && G.player && G.player.alive) G.player.chillT = Math.max(G.player.chillT || 0, 0.15);
   }
 }
 function toastStorm() {
-  floatText(G.player.x, 2.2, G.player.z, L('TEMPESTADE DE AREIA!', 'SANDSTORM!'), 'info');
+  const snow = G.dungeon && G.dungeon.sandstorm && G.dungeon.sandstorm.snow;
+  floatText(G.player.x, 2.2, G.player.z, snow ? L('NEVASCA!', 'BLIZZARD!') : L('TEMPESTADE DE AREIA!', 'SANDSTORM!'), 'info');
+}
+
+// Montanha: pedras rolam dos penhascos perto do jogador (com aviso no chão)
+const rockGeo = new THREE.DodecahedronGeometry(0.5, 0);
+const rockMat = new THREE.MeshLambertMaterial({ color: 0x6a6660 });
+function updateRockfall(d, dt, p) {
+  const rf = d.rockfall;
+  rf.t -= dt;
+  if (rf.t > 0) return;
+  rf.t = rr(3.5, 6.5);
+  const n = chance(0.35) ? 3 : 1;
+  const R = 1.4;
+  for (let k = 0; k < n; k++) {
+    const x = p.x + rr(-4.5, 4.5) + (p.ivx || 0) * 0.6;
+    const z = p.z + rr(-4.5, 4.5) + (p.ivz || 0) * 0.6;
+    if (!isWalkable(d, x, z)) continue;
+    ringFx(x, z, R, 0xffb35a, 1.1, { from: R - 0.05, opacity: 0.7 });
+    const rock = meshAt(rockGeo, rockMat, x, 12, z);
+    G.world.add(rock);
+    rf.list = rf.list || [];
+    rf.list.push({ rock, x, z, t: 0 });
+  }
+  sfx.telegraph();
+}
+// queda das pedras (no ritmo do jogo)
+function tickRocks(d, dt) {
+  const rf = d.rockfall;
+  if (!rf || !rf.list) return;
+  const R = 1.4;
+  for (const r of rf.list) {
+    r.t += dt;
+    r.rock.position.y = 12 - r.t * r.t * 10; // cai em ~1,1s
+    r.rock.rotation.x += dt * 9;
+    if (r.rock.position.y > 0.4) continue;
+    r.done = true;
+    r.rock.parent && r.rock.parent.remove(r.rock);
+    burst(r.x, 0.3, r.z, 0x8a8478, 22, 5, 0.09, 0.5, { up: 0.5 });
+    sfx.punchHeavy();
+    const p = G.player;
+    if (Math.hypot(p.x - r.x, p.z - r.z) < 10) G.shake = Math.max(G.shake, 0.2);
+    if (p.alive && Math.hypot(p.x - r.x, p.z - r.z) < R + p.r) damagePlayer(6 + G.floor * 2.2);
+    for (const e of enemiesInRadius(r.x, r.z, R)) if (!e.boss && !e.T.fly) damageEnemy(e, e.maxHp * 0.35 + 10, false, {});
+  }
+  rf.list = rf.list.filter((r) => !r.done);
+}
+
+// Vulcão: gêiseres de lava que avisam e depois jorram, queimando quem estiver perto
+function updateGeyser(pr, dt, p) {
+  pr.t -= dt;
+  if (pr.state === 'idle') {
+    pr.ringMat.color.set(0xff5a1a).multiplyScalar(gk(1.2));
+    if (Math.random() < dt * 3) particle(pr.x, 0.3, pr.z, rr(-0.3, 0.3), rr(0.5, 1.2), rr(-0.3, 0.3), 0x554a48, rr(0.1, 0.18), 1.2, -0.3, 1.4);
+    if (pr.t <= 0) {
+      pr.state = 'warn';
+      pr.t = 0.9;
+      ringFx(pr.x, pr.z, 2.2, 0xff5a1a, 0.9, { from: 2.1, opacity: 0.7 });
+    }
+  } else if (pr.state === 'warn') {
+    pr.ringMat.color.set(Math.floor(pr.t * 10) % 2 ? 0xffee88 : 0xff5a1a).multiplyScalar(gk(2));
+    if (pr.t <= 0) {
+      pr.state = 'blast';
+      pr.t = 1.2;
+      pr.hit = new Set();
+      sfx.explode();
+    }
+  } else {
+    for (let k = 0; k < 5; k++) {
+      const a = rr(0, Math.PI * 2);
+      const sp = rr(0.5, 2.2);
+      particle(pr.x, 0.3, pr.z, Math.cos(a) * sp, rr(5, 9), Math.sin(a) * sp, pick([0xff5a1a, 0xffaa00, 0xff3300]), rr(0.1, 0.2), 0.8, 9, 1.4);
+    }
+    if (p && p.alive && !pr.hit.has(p) && Math.hypot(p.x - pr.x, p.z - pr.z) < 2.2) {
+      pr.hit.add(p);
+      damagePlayer(6 + G.floor * 2);
+      floatText(p.x, 1.8, p.z, L('QUEIMANDO', 'BURNING'), 'info');
+    }
+    for (const e of enemiesInRadius(pr.x, pr.z, 2.2)) {
+      if (pr.hit.has(e) || e.boss || e.T.fireproof) continue;
+      pr.hit.add(e);
+      damageEnemy(e, e.maxHp * 0.3 + 8, false, {});
+    }
+    if (pr.t <= 0) {
+      pr.state = 'idle';
+      pr.t = rr(4, 7);
+    }
+  }
 }
 
 // Comportas de vácuo: alarme e depois puxam tudo em direção ao buraco

@@ -582,7 +582,7 @@ export function updatePlayer(dt) {
       for (const e of enemiesInRadius(p.x, p.z, ds.radius)) {
         if (ds.hit.has(e)) continue;
         ds.hit.add(e);
-        hitEnemy(e, ds.mult, { knock: 4, burn: ds.burn });
+        hitEnemy(e, ds.mult, { knock: 4, burn: ds.burn, stun: ds.stun });
       }
     }
     if (Math.random() < 0.6) ghostFx(p.model, ds.color);
@@ -605,7 +605,7 @@ export function updatePlayer(dt) {
       p.sludgeT = (p.sludgeT || 0) - dt;
       if (p.sludgeT <= 0) {
         p.sludgeT = 0.5;
-        damagePlayer(2 + G.floor * 0.8);
+        damagePlayer((2 + G.floor * 0.8) * (ge.mult || 1));
       }
       if (Math.random() < dt * 8) burst(p.x, 0.2, p.z, ge.hurt, 1, 1, 0.05, 0.4, { grav: -1 });
     }
@@ -693,7 +693,26 @@ export function updatePlayer(dt) {
       arm.rotation.x = -1.6 * p.swing;
       m.torso.rotation.y = (p.hand ? -0.4 : 0.4) * p.swing;
     } else m.torso.rotation.y *= 0.8;
-  } else if (c.cls === 'pyro' || c.cls === 'frost' || c.cls === 'heavy') {
+  } else if (c.cls === 'lancer') {
+    // estocada: braço vai pra frente e volta
+    if (p.swing > 0) {
+      m.armR.rotation.x = -1.55;
+      m.armL.rotation.x = -0.9;
+      m.weapon.position.y = -0.25 * Math.sin(p.swing * Math.PI);
+      m.torso.rotation.y = -0.3 * p.swing;
+    } else {
+      m.armR.rotation.x += (-0.5 - m.armR.rotation.x) * 0.3;
+      m.weapon.position.y = 0;
+      m.torso.rotation.y *= 0.8;
+    }
+  } else if (c.cls === 'hunter') {
+    if (p.attackHold > 0 || p.swing > 0) {
+      m.armL.rotation.x = -1.5;
+      m.armR.rotation.x = -1.35 + p.swing * 0.35;
+    }
+    if (p.dash && !p.dash.hit) m.body.rotation.x -= dt * 22;
+    else m.body.rotation.x = 0;
+  } else if (c.cls === 'pyro' || c.cls === 'frost' || c.cls === 'heavy' || c.cls === 'biohacker') {
     if (p.attackHold > 0 || p.swing > 0) {
       m.armR.rotation.x = -1.45;
       m.armL.rotation.x = -1.3;

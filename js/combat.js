@@ -116,6 +116,7 @@ export function applyStatus(e, o) {
   if (o.burn) {
     const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100);
     e.burnT = 3;
+    e.burnColor = G.char && G.char.cls === 'biohacker' ? 0x9dff3a : 0;
     e.burnDps = Math.max(e.burnT > 0 ? e.burnDps || 0 : 0, dps);
   }
   if (o.slow) e.slowT = Math.max(e.slowT || 0, o.slow * (e.boss ? 0.5 : 1));

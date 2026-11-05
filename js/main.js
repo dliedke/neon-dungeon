@@ -267,7 +267,7 @@ export function startFloor(floor) {
   document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}`;
   if (isFinalFloor(floor)) {
     banner(L('ANDAR FINAL', 'FINAL FLOOR'), L('Os 7 chefes esperam no coração da corporação', 'All 7 bosses await at the heart of the corporation'));
-    setTimeout(() => G.floor === floor && toast(L('Batalha final: 2 chefes de cada vez. Derrote os 7 para vencer o jogo!', 'Final battle: 2 bosses at a time. Defeat all 7 to win the game!'), 'warn'), 2800);
+    setTimeout(() => G.floor === floor && toast(L('Batalha final: os chefes vêm em ondas de 2. Derrote os 7 para vencer o jogo!', 'Final battle: the bosses come in waves of 2. Defeat all 7 to win the game!'), 'warn'), 2800);
   } else banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
   if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   saveGame();

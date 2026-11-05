@@ -14,7 +14,7 @@ import { achAdd, achMark } from './ach.js';
 import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
-import { beamFx } from './fx.js';
+import { beamFx, particle } from './fx.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
@@ -44,6 +44,18 @@ export const ETYPES = {
   toad: { name: L('Sapo Ácido', 'Acid Toad'), hp: 34, dmg: 8, speed: 2.8, r: 0.38, h: 0.8, xp: 11, minFloor: 99, weight: 0, ai: 'toad', keep: [4, 8], range: 9, atkCd: 2.6, blood: 0x9dff3a },
   alien: { name: L('Xenomorfo', 'Xeno Stalker'), hp: 42, dmg: 11, speed: 4.6, r: 0.4, h: 1.1, xp: 15, minFloor: 99, weight: 0, ai: 'alien', range: 0.9, atkCd: 2.4, blood: 0xb36bff },
   scorpion: { name: L('Escorpião Radioativo', 'Rad Scorpion'), hp: 52, dmg: 9, speed: 3.0, r: 0.45, h: 0.8, xp: 14, minFloor: 99, weight: 0, ai: 'melee', poison: true, range: 1.1, atkCd: 1.2, blood: 0xc8ff3a },
+  // fauna da neve, da montanha e do vulcão
+  yeti: { name: L('Yeti Ciborgue', 'Cyber Yeti'), hp: 120, dmg: 16, speed: 2.6, r: 0.6, h: 2.2, xp: 32, minFloor: 99, weight: 0, ai: 'yeti', range: 2.4, atkCd: 2.6, heavy: true, solo: true, blood: 0x8ad8ff },
+  icewolf: { name: L('Lobo de Gelo', 'Frost Wolf'), hp: 32, dmg: 8, speed: 5.0, r: 0.36, h: 0.9, xp: 10, minFloor: 99, weight: 0, ai: 'melee', chill: true, range: 0.9, atkCd: 1.0, blood: 0xbfe6ff },
+  goat: { name: L('Bode Blindado', 'Armored Ram'), hp: 55, dmg: 13, speed: 3.4, r: 0.45, h: 1.1, xp: 14, minFloor: 99, weight: 0, ai: 'boar', atkCd: 3.0, heavy: true, blood: 0xffb35a },
+  eagle: { name: L('Águia Biônica', 'Bionic Eagle'), fly: true, hp: 26, dmg: 11, speed: 5.2, r: 0.4, h: 1.7, xp: 13, minFloor: 99, weight: 0, ai: 'eagle', atkCd: 2.8, blood: 0xffe0a0 },
+  salamander: { name: L('Salamandra de Magma', 'Magma Salamander'), hp: 36, dmg: 9, speed: 3.2, r: 0.38, h: 0.6, xp: 12, minFloor: 99, weight: 0, ai: 'toad', spit: 0xff6a00, fireproof: true, keep: [4, 8], range: 9, atkCd: 2.4, blood: 0xff6a00 },
+  magmagolem: { name: L('Golem de Magma', 'Magma Golem'), hp: 190, dmg: 20, speed: 1.9, r: 0.65, h: 2.3, xp: 45, minFloor: 99, weight: 0, ai: 'brute', trail: true, fireproof: true, range: 2.6, atkCd: 2.8, heavy: true, solo: true, blood: 0xff5a1a },
+  // inimigos novos da corporação (aparecem em qualquer bioma urbano)
+  hound: { name: L('Cão Cibernético', 'Cyber Hound'), hp: 30, dmg: 9, speed: 5.2, r: 0.36, h: 0.9, xp: 11, minFloor: 4, weight: 4, ai: 'alien', range: 0.9, atkCd: 2.0, blood: 0xff2244 },
+  tesladrone: { name: L('Drone Tesla', 'Tesla Drone'), fly: true, hp: 28, dmg: 12, speed: 3.6, r: 0.34, h: 1.5, xp: 14, minFloor: 5, weight: 3, ai: 'tesla', range: 5, keep: [3, 4.5], atkCd: 2.8, blood: 0x00f0ff },
+  flamer: { name: L('Lança-Chamas', 'Flame Trooper'), hp: 55, dmg: 4, speed: 3.0, r: 0.36, h: 1.4, xp: 18, minFloor: 6, weight: 3, ai: 'flamer', range: 3.6, atkCd: 3.2, fireproof: true, blood: 0xff6a00 },
+  mortar: { name: L('Aranha-Morteiro', 'Mortar Walker'), hp: 70, dmg: 14, speed: 1.6, r: 0.5, h: 1.2, xp: 24, minFloor: 7, weight: 2, ai: 'mortar', range: 14, keep: [7, 12], atkCd: 3.8, heavy: true, solo: true, blood: 0xffaa00 },
   // evento raro: foge, solta créditos pelo caminho e some se você demorar
   thief: { name: L('Ladrão de Dados', 'Data Thief'), hp: 65, dmg: 0, speed: 4.6, r: 0.34, h: 1.4, xp: 60, minFloor: 99, weight: 0, ai: 'thief', blood: 0xffd23d },
   pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
@@ -64,9 +76,9 @@ const ELITE = {
 // Também mexe no jogador: pHp (vida máxima), pArmor (blindagem) e pRegen (regeneração de vida).
 // A quantidade quase não muda: no fácil vêm muitos inimigos, mas morrem rápido.
 export const DIFFICULTY = {
-  easy: { name: L('Fácil', 'Easy'), hp: 0.55, dmg: 0.5, count: 1.0, bossHp: 0.75, bossDmg: 0.7, bossTempo: 0.85, pHp: 1.3, pArmor: 1.3, pRegen: 1.6 },
-  normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 1.35, bossDmg: 1.2, bossTempo: 1.35, pHp: 1, pArmor: 1, pRegen: 1 },
-  hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 1.9, bossDmg: 1.5, bossTempo: 1.8, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
+  easy: { name: L('Fácil', 'Easy'), hp: 0.55, dmg: 0.5, count: 1.0, bossHp: 1.0, bossDmg: 0.8, bossTempo: 1.05, pHp: 1.3, pArmor: 1.3, pRegen: 1.6 },
+  normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 2.0, bossDmg: 1.4, bossTempo: 1.65, pHp: 1, pArmor: 1, pRegen: 1 },
+  hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 2.8, bossDmg: 1.75, bossTempo: 2.15, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
 };
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
@@ -204,6 +216,7 @@ function enemyShoot(e, dx, dz, spread = 0) {
 function meleeHit(e, dmg) {
   damagePlayer(dmg);
   if (e.T.poison && G.player.invuln <= 0) G.player.poisonT = 4;
+  if (e.T.chill && G.player.invuln <= 0) G.player.chillT = Math.max(G.player.chillT || 0, 1.4);
   if (e.vamp) {
     e.hp = Math.min(e.maxHp, e.hp + dmg * 1.5);
     floatText(e.x, e.height + 0.4, e.z, `+${Math.round(dmg * 1.5)}`, 'heal');
@@ -230,7 +243,7 @@ export function updateEnemies(dt, cam) {
     if (e.burnT > 0) {
       e.burnT -= edt;
       e.burnTick = (e.burnTick || 0) - edt;
-      if (Math.random() < edt * 12) burst(e.x, e.height * rr(0.3, 1), e.z, 0xff6a00, 1, 1, 0.07, 0.4, { grav: -3 });
+      if (Math.random() < edt * 12) burst(e.x, e.height * rr(0.3, 1), e.z, e.burnColor || 0xff6a00, 1, 1, 0.07, 0.4, { grav: -3 });
       if (e.burnTick <= 0) {
         e.burnTick = 0.5;
         damageEnemy(e, e.burnDps * 0.5, false, { dot: true });
@@ -259,7 +272,8 @@ export function updateEnemies(dt, cam) {
     e.atkT -= edt;
     e.flash -= edt;
     // chefes descansam menos entre um ataque e outro
-    if (e.boss && e.bstate === 'walk' && e.bt > 0) e.bt -= edt * (diff().bossTempo - 1);
+    if (e.boss && e.bstate === 'walk' && e.bt > 0) e.bt -= edt * (diff().bossTempo - 1 + (e.enraged ? 0.6 : 0));
+    if (e.boss && !e.decoy) bossPressure(e, edt, tgt);
     if (e.hpShow > 0) e.hpShow -= edt;
 
     let mvx = 0;
@@ -560,8 +574,9 @@ export function updateEnemies(dt, cam) {
             e.atkT = e.T.atkCd * rr(0.85, 1.15);
             const tx = tgt.x;
             const tz = tgt.z;
-            telegraphFx(tx, tz, 1.3, 0.8, 0x9dff3a);
-            lob({ x: e.x, z: e.z, tx, tz, time: 0.8, color: 0x9dff3a, onLand: (x, z) => spawnHazard(x, z, 1.3, 3.5, e.dmg * 0.7, { color: 0x9dff3a }) });
+            const sc = e.T.spit || 0x9dff3a;
+            telegraphFx(tx, tz, 1.3, 0.8, sc);
+            lob({ x: e.x, z: e.z, tx, tz, time: 0.8, color: sc, onLand: (x, z) => spawnHazard(x, z, 1.3, 3.5, e.dmg * 0.7, { color: sc }) });
           }
           e.faceX = ux;
           e.faceZ = uz;
@@ -589,7 +604,7 @@ export function updateEnemies(dt, cam) {
               e.pstate = null;
               e.atkT = e.T.atkCd;
               if (Math.hypot(p.x - e.x, p.z - e.z) < 1.3 + p.r) meleeHit(e, e.dmg * 1.5);
-              burst(e.x, 0.3, e.z, 0xb36bff, 12, 4, 0.06, 0.3);
+              burst(e.x, 0.3, e.z, e.bloodColor, 12, 4, 0.06, 0.3);
             }
           } else if (dist < e.T.range + e.r + p.r) {
             if (e.windup > 0) {
@@ -609,7 +624,7 @@ export function updateEnemies(dt, cam) {
               e.pt = 0.35;
               e.lx = tgt.x;
               e.lz = tgt.z;
-              telegraphFx(e.lx, e.lz, 1.3, 0.75, 0xb36bff);
+              telegraphFx(e.lx, e.lz, 1.3, 0.75, e.bloodColor);
               sfx.telegraph();
             }
           }
@@ -822,15 +837,220 @@ export function updateEnemies(dt, cam) {
           speed = r.speed;
           break;
         }
-        case 'brute': {
+        case 'eagle': {
+          // circula em volta do jogador e dá rasantes em linha reta
+          if (e.kstate === 'lock') {
+            speed = 0;
+            e.kt -= edt;
+            if (e.kt <= 0) {
+              e.kstate = 'dive';
+              e.kt = 0.7;
+              e.hitDone = false;
+              sfx.dash();
+            }
+          } else if (e.kstate === 'dive') {
+            mvx = e.kdx;
+            mvz = e.kdz;
+            speed = 15;
+            e.kt -= edt;
+            if (!e.hitDone && Math.hypot(p.x - e.x, p.z - e.z) < e.r + p.r + 0.3) {
+              e.hitDone = true;
+              meleeHit(e, e.dmg * 1.3);
+            }
+            if (e.kt <= 0 || !isWalkable(d, e.x + e.kdx * 0.6, e.z + e.kdz * 0.6)) {
+              e.kstate = 'climb';
+              e.kt = 0.9;
+            }
+          } else if (e.kstate === 'climb') {
+            mvx = -ux;
+            mvz = -uz;
+            speed *= 0.8;
+            e.kt -= edt;
+            if (e.kt <= 0) {
+              e.kstate = null;
+              e.atkT = e.T.atkCd * e.atkCdMult;
+            }
+          } else {
+            if (!e.los || dist > 7) {
+              const c = chase();
+              if (c) { mvx = c.x; mvz = c.z; }
+            } else {
+              const k = dist < 4 ? -0.6 : 0.2;
+              mvx = -uz * e.strafe + ux * k;
+              mvz = ux * e.strafe + uz * k;
+            }
+            if (e.los && dist < 8 && dist > 2 && e.atkT <= 0) {
+              e.kstate = 'lock';
+              e.kt = 0.6;
+              e.kdx = ux;
+              e.kdz = uz;
+              lineTelegraph(e.x, e.z, Math.atan2(uz, ux), Math.min(12, dist + 3), 0.9, 0.6, 0xffe0a0);
+              sfx.telegraph();
+            }
+          }
+          e.faceX = e.kstate === 'dive' ? e.kdx : mvx || ux;
+          e.faceZ = e.kstate === 'dive' ? e.kdz : mvz || uz;
+          break;
+        }
+        case 'flamer': {
+          // chega perto, avisa e solta um jato de fogo em cone
+          if (e.fstate === 'wind' || e.fstate === 'fire') {
+            speed = 0;
+            e.ft -= edt;
+            // vira devagar na direção do jogador
+            const want = Math.atan2(uz, ux);
+            let da = want - e.fa;
+            while (da > Math.PI) da -= Math.PI * 2;
+            while (da < -Math.PI) da += Math.PI * 2;
+            e.fa += Math.max(-1, Math.min(1, da)) * edt * (e.fstate === 'fire' ? 0.9 : 0);
+            const cx = Math.cos(e.fa);
+            const cz = Math.sin(e.fa);
+            if (e.fstate === 'wind' && e.ft <= 0) {
+              e.fstate = 'fire';
+              e.ft = 1.4;
+              e.tick = 0;
+            } else if (e.fstate === 'fire') {
+              for (let k = 0; k < 3; k++) {
+                const a = e.fa + rr(-0.32, 0.32);
+                const sp = rr(6, 9);
+                particle(e.x + cx * 0.6, 0.9, e.z + cz * 0.6, Math.cos(a) * sp, rr(0, 1), Math.sin(a) * sp, pick([0xff6a00, 0xffaa00, 0xff3300]), rr(0.08, 0.15), 0.45, -2, 1);
+              }
+              if (Math.random() < edt * 6) sfx.flame();
+              e.tick -= edt;
+              if (e.tick <= 0) {
+                e.tick = 0.25;
+                const px = p.x - e.x;
+                const pz = p.z - e.z;
+                const pd = Math.hypot(px, pz);
+                const ang = Math.abs(Math.atan2(cx * pz - cz * px, cx * px + cz * pz));
+                if (pd < e.T.range + 0.6 && ang < 0.42) damagePlayer(e.dmg);
+              }
+              if (e.ft <= 0) {
+                e.fstate = null;
+                e.atkT = e.T.atkCd * e.atkCdMult;
+              }
+            }
+            e.faceX = cx;
+            e.faceZ = cz;
+          } else {
+            if (!e.los || dist > e.T.range - 0.6) {
+              const c = chase();
+              if (c) { mvx = c.x; mvz = c.z; }
+            }
+            if (e.los && dist < e.T.range && e.atkT <= 0) {
+              e.fstate = 'wind';
+              e.ft = 0.55;
+              e.fa = Math.atan2(uz, ux);
+              lineTelegraph(e.x, e.z, e.fa, e.T.range + 0.6, 2.2, 0.55, 0xff6a00);
+              sfx.telegraph();
+            }
+            e.faceX = ux;
+            e.faceZ = uz;
+          }
+          break;
+        }
+        case 'tesla': {
+          // fica rondando; carrega e descarrega um raio em quem estiver no círculo
+          const [kmin, kmax] = e.T.keep;
+          if (e.zapT > 0) {
+            e.zapT -= edt;
+            speed *= 0.2;
+            if (Math.random() < 0.6) burst(e.x + rr(-0.3, 0.3), 1.5, e.z + rr(-0.3, 0.3), 0x00f0ff, 1, 1, 0.05, 0.2, { grav: 0 });
+            if (e.zapT <= 0) {
+              e.atkT = e.T.atkCd * e.atkCdMult * rr(0.9, 1.1);
+              ringFx(e.x, e.z, e.T.range, 0x00f0ff, 0.25, { from: 0.4 });
+              if (p.alive && Math.hypot(p.x - e.x, p.z - e.z) < e.T.range + p.r) {
+                beamFx(e.x, 1.5, e.z, p.x, 1, p.z, 0x88eeff, 0.3, 3);
+                damagePlayer(e.dmg);
+              }
+              sfx.zap();
+            }
+          } else {
+            e.strafeT -= edt;
+            if (e.strafeT <= 0) {
+              e.strafeT = rr(1.2, 2.5);
+              e.strafe *= -1;
+            }
+            if (!e.los || dist > kmax) {
+              const c = chase();
+              if (c) { mvx = c.x; mvz = c.z; }
+            } else if (dist < kmin) {
+              mvx = -ux;
+              mvz = -uz;
+            } else {
+              mvx = -uz * e.strafe;
+              mvz = ux * e.strafe;
+              speed *= 0.6;
+            }
+            if (e.los && dist < e.T.range && e.atkT <= 0) {
+              e.zapT = 0.8;
+              telegraphFx(e.x, e.z, e.T.range, 0.8, 0x00f0ff);
+              sfx.telegraph();
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'mortar': {
+          // fica longe e lança 3 granadas com aviso no chão
+          const [kmin, kmax] = e.T.keep;
+          if (!e.los || dist > kmax) {
+            const c = chase();
+            if (c) { mvx = c.x; mvz = c.z; }
+          } else if (dist < kmin) {
+            mvx = -ux;
+            mvz = -uz;
+          }
+          if (e.los && dist < e.T.range && e.atkT <= 0) {
+            e.atkT = e.T.atkCd * e.atkCdMult * rr(0.9, 1.1);
+            e.swing = 1;
+            for (let k = 0; k < 3; k++) {
+              const tx = tgt.x + (k ? rr(-2, 2) : 0);
+              const tz = tgt.z + (k ? rr(-2, 2) : 0);
+              after(k * 0.25, () => {
+                if (!e.alive) return;
+                telegraphFx(tx, tz, 1.6, 1.2, 0xffaa00);
+                lob({ x: e.x, z: e.z, tx, tz, time: 1.2, color: 0xffaa00, onLand: (x, z) => enemyExplosion(x, z, 1.6, e.dmg, 0xffaa00) });
+                sfx.enemyShot();
+              });
+            }
+          }
+          e.faceX = ux;
+          e.faceZ = uz;
+          break;
+        }
+        case 'brute':
+        case 'yeti': {
+          // golem de magma deixa um rastro de fogo
+          if (e.T.trail && e.moving) {
+            e.trailT = (e.trailT ?? 0.6) - edt;
+            if (e.trailT <= 0) {
+              e.trailT = 0.6;
+              spawnHazard(e.x, e.z, 0.9, 2.6, e.dmg * 0.25, { color: 0xff5a1a, opacity: 0.45 });
+            }
+          }
+          // yeti arremessa bolas de neve de longe
+          e.throwT = (e.throwT ?? rr(1, 3)) - edt;
+          if (e.T.ai === 'yeti' && e.throwT <= 0 && !(e.slamT > 0) && e.los && dist > 4 && dist < 10) {
+            e.throwT = rr(3.5, 5);
+            e.swing = 1;
+            const tx = tgt.x;
+            const tz = tgt.z;
+            telegraphFx(tx, tz, 1.5, 0.9, 0x8ad8ff);
+            lob({ x: e.x, z: e.z, tx, tz, time: 0.9, color: 0xffffff, onLand: (x, z) => {
+              enemyExplosion(x, z, 1.5, e.dmg * 0.8, 0xdff4ff);
+              if (G.player.alive && Math.hypot(G.player.x - x, G.player.z - z) < 1.6) G.player.chillT = Math.max(G.player.chillT || 0, 2);
+            } });
+          }
           if (e.slamT > 0) {
             e.slamT -= edt;
             speed = 0;
             if (e.slamT <= 0) {
               e.swing = 1;
               if (Math.hypot(p.x - e.x, p.z - e.z) < e.T.range + p.r) meleeHit(e, e.dmg);
-              ringFx(e.x, e.z, e.T.range, 0xffc400, 0.35, { from: 0.5 });
-              burst(e.x, 0.3, e.z, 0xffc400, 24, 6, 0.08, 0.5, { up: 0.4 });
+              ringFx(e.x, e.z, e.T.range, e.bloodColor, 0.35, { from: 0.5 });
+              burst(e.x, 0.3, e.z, e.bloodColor, 24, 6, 0.08, 0.5, { up: 0.4 });
               sfx.explode();
               G.shake = Math.max(G.shake, 0.3);
               e.atkT = e.T.atkCd * e.atkCdMult;
@@ -859,7 +1079,7 @@ export function updateEnemies(dt, cam) {
 
     // movimento
     const ge = !e.T.fly && !e.static ? groundEffect(d, e.x, e.z) : null;
-    if (ge && ge.hurt) speed *= 0.75;
+    if (ge && ge.hurt && !e.T.fireproof) speed *= 0.75;
     const push = ge && ge.push ? ge.push : { x: 0, z: 0 };
     e.x += (mvx * speed + e.kx + push.x) * edt;
     e.z += (mvz * speed + e.kz + push.z) * edt;
@@ -949,7 +1169,8 @@ export function updateEnemies(dt, cam) {
         e.swing -= dt * 5;
         m.armR.rotation.x = 0.8 * e.swing;
       }
-      if (e.T.ai === 'ranged' || e.T.ai === 'sniper') m.armR.rotation.x = -1.4;
+      if (e.T.ai === 'ranged' || e.T.ai === 'sniper' || e.T.ai === 'flamer') m.armR.rotation.x = -1.4;
+      if (e.T.ai === 'flamer') m.armL.rotation.x = -1.2;
       if (e.T.ai === 'sniper') m.armL.rotation.x = -1.3;
       if (m.orbs) m.orbs.rotation.y += dt * (e.decoy ? 2.6 : 2);
       if (m.screens) m.screens.rotation.y += dt * 0.8;
@@ -992,6 +1213,12 @@ export function updateEnemies(dt, cam) {
       m.legs.forEach((l, k) => (l.rotation.x = e.moving ? Math.sin(e.phase * 2 + (k % 2) * Math.PI) * 0.6 : 0));
       if (m.tail) m.tail.rotation.x = -0.6 + Math.sin(G.t * 3 + e.phase) * 0.15;
       if (m.hop && !(e.pstate === 'leap')) m.body.position.y = e.moving ? Math.abs(Math.sin(e.phase * 1.4)) * 0.35 : 0;
+    } else if (m.kind === 'bird') {
+      const dive = e.kstate === 'dive';
+      m.body.position.y = (dive ? 0.9 : 1.6) + Math.sin(G.t * 3 + e.phase) * 0.12;
+      const fl = dive ? 0.15 : Math.sin(G.t * (e.kstate === 'lock' ? 4 : 11) + e.phase) * 0.55;
+      m.wings[0].rotation.z = fl;
+      m.wings[1].rotation.z = -fl;
     } else if (m.kind === 'drone') {
       m.body.position.y = 1.15 + Math.sin(G.t * 3 + e.phase) * 0.12;
       m.ring.rotation.z += dt * 4;
@@ -1185,7 +1412,41 @@ function updateBoss(e, dt, dist, ux, uz) {
 
 function toWalk(e) {
   e.bstate = 'walk';
-  e.bt = e.phase2 ? rr(0.6, 1.1) : rr(1.1, 1.8);
+  e.bt = e.phase2 ? rr(0.45, 0.85) : rr(0.8, 1.3);
+}
+
+// Pressão extra de todo chefe: com 30% de vida fica enfurecido (mais rápido e forte),
+// e entre os ataques dispara rajadas mirando o jogador (com aviso, para continuar justo)
+function bossPressure(e, dt, tgt) {
+  if (!e.enraged && e.hp < e.maxHp * 0.3 && e.bstate !== 'intro') {
+    e.enraged = true;
+    e.speed *= 1.15;
+    e.dmg *= 1.15;
+    toast(L(`${e.name.toUpperCase()} ESTÁ ENFURECIDO!`, `${e.name.toUpperCase()} IS ENRAGED!`), 'warn');
+    ringFx(e.x, e.z, 4.5, 0xff2200, 0.6);
+    burst(e.x, e.height * 0.6, e.z, 0xff2200, 50, 7, 0.09, 0.7, { up: 1 });
+    sfx.boss();
+    G.shake = Math.max(G.shake, 0.4);
+  }
+  if (e.enraged && Math.random() < dt * 10) burst(e.x + rr(-e.r, e.r), e.height * rr(0.3, 1), e.z + rr(-e.r, e.r), 0xff2200, 1, 1, 0.08, 0.4, { grav: -3 });
+  if (e.bstate === 'intro' || e.invulnerable || !e.aggro) return;
+  e.volT = (e.volT ?? rr(2, 3.5)) - dt;
+  if (e.volT > 0 || e.bstate !== 'walk') return;
+  e.volT = e.enraged ? rr(1.8, 2.6) : e.phase2 ? rr(2.6, 3.6) : rr(3.6, 5);
+  if (!lineOfSight(G.dungeon, e.x, e.z, tgt.x, tgt.z)) return;
+  const col = e.bloodColor || 0xff2244;
+  const n = e.enraged ? 5 : 3;
+  ringFx(e.x, e.z, e.r + 0.8, col, 0.45, { from: e.r });
+  sfx.telegraph();
+  after(0.45, () => {
+    if (!e.alive || !G.player) return;
+    const base = Math.atan2(G.player.z - e.z, G.player.x - e.x);
+    for (let k = 0; k < n; k++) {
+      const a = base + (k - (n - 1) / 2) * 0.2;
+      spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * (e.r + 0.3), z: e.z + Math.sin(a) * (e.r + 0.3), y: 1.2, dx: Math.cos(a), dz: Math.sin(a), speed: 9, life: 2.4, dmg: e.dmg * 0.7, color: col, size: 0.17, r: 0.19 });
+    }
+    sfx.enemyShot();
+  });
 }
 
 function chooseBossAttack(e, dist) {
@@ -1327,16 +1588,20 @@ export function populateFloor(d, floor, boss) {
     spawnChest(pt.x, pt.z);
   }
   if (final) {
-    // batalha final: os 7 chefes, sempre 2 ao mesmo tempo (quando um cai, entra o próximo)
-    G.final = { queue: BOSS_ORDER.slice(2), killed: 0, total: BOSS_ORDER.length, t0: null, deaths: 0, lastKillT: -99, won: false };
-    spawnFinalBoss(BOSS_ORDER[0], -3.5);
-    spawnFinalBoss(BOSS_ORDER[1], 3.5);
+    // batalha final: os 7 chefes em ondas de 2 (quando os dois caem, entram os próximos 2; o OMEGA vem por último)
+    const waves = [];
+    for (let k = 0; k < BOSS_ORDER.length; k += 2) waves.push(BOSS_ORDER.slice(k, k + 2));
+    G.final = { queue: waves.slice(1), wave: 1, waves: waves.length, killed: 0, total: BOSS_ORDER.length, t0: null, deaths: 0, lastKillT: -99, won: false };
+    spawnFinalBoss(waves[0][0], -3.5);
+    spawnFinalBoss(waves[0][1], 3.5);
     G.dungeon.meshes.exit.locked = true;
   } else if (boss) {
     const idx = Math.round(floor / 3) - 1;
     const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
     const cycle = Math.floor(idx / BOSS_ORDER.length);
     const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
+    // a cada volta no ciclo de chefes eles voltam mais resistentes
+    if (cycle) e.hp = e.maxHp = e.maxHp * (1 + 0.3 * cycle);
     if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;
     G.dungeon.meshes.exit.locked = true;
@@ -1344,7 +1609,7 @@ export function populateFloor(d, floor, boss) {
 }
 
 // ---------------- Batalha final ----------------
-// Chefes da batalha final: um pouco menos de vida e dano, porque são 2 de cada vez e 7 no total
+// Chefes da batalha final: um pouco menos de vida, porque são 2 de cada vez e 7 no total
 function spawnFinalBoss(kind, ox = 0, oz = 0) {
   const d = G.dungeon;
   const c = arenaCenter();
@@ -1356,8 +1621,8 @@ function spawnFinalBoss(kind, ox = 0, oz = 0) {
     z = c.z;
   }
   const e = spawnEnemy(kind, x, z);
-  e.hp = e.maxHp = e.maxHp * 0.6;
-  e.dmg *= 0.85;
+  // o OMEGA luta sozinho na última onda: vida cheia
+  if (kind !== 'omega') e.hp = e.maxHp = e.maxHp * 0.85;
   e.finalBoss = true;
   return e;
 }
@@ -1375,29 +1640,39 @@ function finalBossDown(e) {
   F.lastKillT = G.t;
   bossBar();
   sfx.levelup();
-  if (F.queue.length) {
-    const next = F.queue.shift();
-    banner(L(`CHEFE ${F.killed}/${F.total} DERROTADO`, `BOSS ${F.killed}/${F.total} DEFEATED`), L(`Próximo: ${ETYPES[next].name}`, `Next: ${ETYPES[next].name}`));
-    // aviso no chão de onde o próximo vai aparecer
-    const c = arenaCenter();
-    const a = Math.atan2(e.z - c.z, e.x - c.x);
-    const ox = next === 'omega' ? 0 : Math.cos(a) * 4;
-    const oz = next === 'omega' ? 0 : Math.sin(a) * 4 + 2.5;
-    telegraphFx(next === 'omega' ? c.x : c.x + ox, next === 'omega' ? c.z : c.z + oz - 2.5, 2.2, 2.2, 0xff2bd6);
-    sfx.telegraph();
-    after(2.2, () => {
-      if (!G.final || G.final !== F) return;
-      const b = spawnFinalBoss(next, ox, oz);
+  // a próxima onda só entra quando todos os chefes da onda atual caírem
+  if (G.enemies.some((o) => o.alive && o.boss && o !== e)) {
+    banner(L(`CHEFE ${F.killed}/${F.total} DERROTADO`, `BOSS ${F.killed}/${F.total} DEFEATED`), L('Falta mais um nesta onda!', 'One more left in this wave!'));
+    return;
+  }
+  if (!F.queue.length) return finalVictory();
+  const next = F.queue.shift();
+  F.wave++;
+  const names = next.map((k) => ETYPES[k].name).join(' + ');
+  banner(L(`ONDA ${F.wave - 1}/${F.waves} CONCLUÍDA`, `WAVE ${F.wave - 1}/${F.waves} CLEARED`), L(`Próxima onda: ${names}`, `Next wave: ${names}`));
+  // avisos no chão de onde os próximos vão aparecer
+  const c = arenaCenter();
+  const offs = next.length > 1 ? [-3.5, 3.5] : [0];
+  next.forEach((k, i) => {
+    const x = k === 'omega' ? c.x : c.x + offs[i];
+    const z = k === 'omega' ? c.z : c.z - 2.5;
+    telegraphFx(x, z, 2.4, 3, 0xff2bd6);
+  });
+  sfx.telegraph();
+  after(3, () => {
+    if (!G.final || G.final !== F) return;
+    next.forEach((k, i) => {
+      const b = spawnFinalBoss(k, offs[i]);
       ringFx(b.x, b.z, 4, 0xff2bd6, 0.7);
       burst(b.x, 1.5, b.z, 0xff2bd6, 60, 7, 0.09, 0.8);
-      G.shake = 0.5;
       // se o jogador está na arena, o chefe já entra lutando
       if (G.player && G.player.alive && inArenaNow(G.player.x, G.player.z)) {
         b.aggro = true;
         startBoss(b);
       }
     });
-  } else if (!G.enemies.some((o) => o.alive && o.boss)) finalVictory();
+    G.shake = 0.5;
+  });
 }
 
 // Todos os chefes caíram: a corporação desmorona e o elevador sobe para a superfície

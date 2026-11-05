@@ -9,7 +9,7 @@ The game is shown in **English or Portuguese** based on your browser language.
 
 Descend through 30 dungeon floors, defeat enemies, collect gear and level up your character.
 Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit.
-On **floor 30**, the final battle pits you against all 7 bosses, two at a time. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
+On **floor 30**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
 ## Classes
@@ -23,6 +23,9 @@ Items marked with **▲** and a green glow are better than what you have equippe
 | **Pyro** (Street Pyromaniac) | Short-range fire that burns and lingers | Flamethrower, Napalm Cocktail, Jet Leap, Supernova |
 | **Frost** (Cryo Sniper) | Long-range piercing shots that slow and freeze | Cryo Shot, Ice Bomb, Holo Decoy, Railgun |
 | **Juggernaut** (Heavy Cyborg) | Very tough, a minigun that spins up | Minigun, Rocket, Energy Barrier, Missile Rain |
+| **Huntress** (Neon Archer) | Long-range piercing arrows, traps and a hunting hawk | Light Arrow, Multishot, Shock Net, Arrow Rain |
+| **Valkyrie** (Volt Lancer) | Long-reach melee with an electric spear | Thrust, Spear Charge, Volt Javelin, Thunderfall |
+| **Biohacker** (Street Chemist) | Mid-range poison, healing and a lab mutant | Toxic Dart, Toxic Cloud, Nano Heal, Plague |
 
 Each class has its own save slot, stored in the browser.
 
@@ -41,10 +44,10 @@ Passive powers (levels 3, 8 and 14) are always on and don't take a button. They 
 fit the class, such as dodge chance, damage reduction, healing or energy on kills, extra damage to elites and bosses,
 stronger burns or extra damage to slowed and frozen enemies.
 
-Some of the wilder powers: summoned demons (Oni, Digital Daemon, Ifrit), a steel golem and an ice wolf pack,
+Some of the wilder powers: summoned demons (Oni, Digital Daemon, Ifrit), a steel golem, an ice wolf pack, a bionic hawk, a winged valkyrie and a lab mutant,
 orbiting blades, black holes, orbital lasers, lightning storms, time warps that slow enemies and their bullets,
 plasma shields that reflect shots, Mind Hack (enemies fight for you), Omnislash, Demon Form, Mech Suit,
-meteor showers and a nuclear strike.
+meteor showers, arrow hurricanes, a pandemic and a nuclear strike.
 
 ## Controls
 
@@ -66,18 +69,21 @@ Attacks and skills **aim automatically** at the nearest enemy.
 
 ## Biomes
 
-Every floor changes biome (10 in total), each with its own map layout, lighting and hazards:
+Every floor changes biome (13 in total), each with its own map layout, lighting and hazards:
 
 | Biome | Layout | Environment |
 | --- | --- | --- |
 | **Neon District** | Rooms and corridors | Rain and electric puddles that shock anyone standing in them |
 | **Dark Forest** | Organic clearings | Dense fog, trees, glowing mushrooms, fireflies, thorn patches; **ghosts** that pass through walls and exploding **wisps** |
 | **Corporate Factory** | Rooms and corridors | Conveyor belts and hydraulic presses (they crush enemies too) |
+| **Snowy Peaks** | Open snowfields | Snowfall, pine trees, ice and deep snow that slows you; blizzards cut your vision; **cyber yetis** that throw snowballs and **frost wolves** whose bites chill |
 | **Mutant Meadow** | Open fields | Daylight, grass, flowers, lakes and boulders; charging **mutant boars** and acid-spitting **toads** |
 | **Toxic Sewers** | Wide sewer corridors | Toxic sludge rivers that slow you down and hurt |
+| **Mountain Pass** | Rocky canyons | Tall cliffs, bottomless chasms and falling rocks; charging **armored rams** and diving **bionic eagles** |
 | **Orbital Station** | Rooms over open space | Holes into space, vacuum airlocks that pull everything in; pouncing **xeno stalkers** |
 | **Cryo Lab** | Organic caves | Slippery ice and cryo vents that freeze enemies and chill you |
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
+| **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Grid of rooms | Laser grids that switch on and off |
 | **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades |
 
@@ -85,7 +91,7 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 ## Enemies
 
-**19 enemy types** (13 roaming the tech biomes plus 6 biome creatures):
+**29 enemy types** (17 roaming the tech biomes plus 12 biome creatures):
 
 - Street Punk, Watcher Drone, Corporate Agent, Bomb Spider and Brute Mech.
 - **Sentry Turret.**
@@ -96,8 +102,14 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 - **Kamikaze Drone**, which locks on and dives in a straight line.
 - **Illusionist**, which creates fake copies of itself.
 - **Missile Tank**, whose homing missiles can be shot down.
+- **Cyber Hound**, a fast robot dog that pounces.
+- **Tesla Drone**, which charges up and zaps everything around it.
+- **Flame Trooper**, which warns with a red line and then sweeps a cone of fire.
+- **Mortar Walker**, which shells you from far away with three marked grenades.
 
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
+
+**Bosses** are tough: they fire aimed volleys between their attacks and become **enraged** below 30% health (faster, harder hitting and with bigger volleys).
 
 ## Floor events
 
@@ -110,7 +122,7 @@ Both show up on the minimap once explored.
 
 ## Medals
 
-**67 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**78 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, loot caches,
 legendaries, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

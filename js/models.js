@@ -199,6 +199,71 @@ export function makePlayerModel(cls, accent) {
     m.barrels = barrels;
     return m;
   }
+  if (cls === 'hunter') {
+    const m = humanoid({ body: 0x6a4a5a, dark: 0x2a1c26, accent });
+    // capuz e capa curta
+    m.head.add(mesh(box(0.3, 0.3, 0.3), m.mats[0], 0, 0.05, -0.03));
+    m.head.add(mesh(box(0.22, 0.04, 0.03), m.glow, 0, 0.04, 0.14));
+    m.torso.add(mesh(box(0.44, 0.45, 0.04), m.mats[1], 0, 0, -0.15));
+    // aljava com flechas brilhando
+    const q = mesh(cached('hquiver', () => new THREE.CylinderGeometry(0.07, 0.07, 0.45, 8)), m.mats[1], 0.12, 0.35, -0.2);
+    q.rotation.z = 0.35;
+    m.torso.add(q);
+    for (const dx of [-0.03, 0, 0.03]) m.torso.add(mesh(box(0.02, 0.18, 0.02), m.glow, 0.2 + dx, 0.62, -0.2));
+    // arco
+    const bow = new THREE.Group();
+    bow.add(mesh(box(0.05, 0.05, 0.16), m.mats[1], 0, 0, 0));
+    for (const sz of [-1, 1]) {
+      const limb = mesh(box(0.04, 0.04, 0.38), m.glow, 0, -0.05, sz * 0.22);
+      limb.rotation.x = sz * 0.35;
+      bow.add(limb);
+    }
+    bow.add(mesh(box(0.012, 0.012, 0.8), glowMat(0xffffff, 1.2), 0, 0.06, 0));
+    m.handL.add(bow);
+    return m;
+  }
+  if (cls === 'lancer') {
+    const m = humanoid({ body: 0x8a8aa8, dark: 0x2a2a40, accent });
+    // elmo com asinhas
+    m.head.add(mesh(box(0.3, 0.14, 0.3), m.mats[0], 0, 0.12, 0));
+    m.head.add(mesh(box(0.24, 0.05, 0.03), m.glow, 0, 0.03, 0.14));
+    for (const sx of [-1, 1]) {
+      const w = mesh(box(0.04, 0.12, 0.2), m.glow, sx * 0.17, 0.18, -0.05);
+      w.rotation.x = -0.5;
+      m.head.add(w);
+    }
+    // ombreiras e saia de placas
+    m.torso.add(mesh(box(0.2, 0.1, 0.24), m.mats[0], 0.3, 0.5, 0));
+    m.torso.add(mesh(box(0.2, 0.1, 0.24), m.mats[0], -0.3, 0.5, 0));
+    m.torso.add(mesh(box(0.48, 0.14, 0.3), m.mats[1], 0, -0.05, 0));
+    // lança
+    const spear = new THREE.Group();
+    spear.add(mesh(box(0.04, 0.04, 1.7), m.mats[1], 0, 0, 0.35));
+    spear.add(mesh(cached('lspear', () => new THREE.ConeGeometry(0.07, 0.35, 4).rotateX(Math.PI / 2)), m.glow, 0, 0, 1.35));
+    spear.add(mesh(box(0.025, 0.025, 1.1), glowMat(0xe0c8ff, 1.6), 0.03, 0, 0.4));
+    spear.rotation.x = Math.PI / 2;
+    m.handR.add(spear);
+    m.weapon = spear;
+    return m;
+  }
+  if (cls === 'biohacker') {
+    const m = humanoid({ body: 0x4a5a3a, dark: 0x1e261a, accent });
+    // máscara de gás com filtros
+    m.head.add(mesh(box(0.22, 0.12, 0.08), m.mats[1], 0, -0.05, 0.14));
+    for (const sx of [-1, 1]) m.head.add(mesh(cached('bfilter', () => new THREE.CylinderGeometry(0.05, 0.05, 0.08, 8).rotateX(Math.PI / 2)), m.glow, sx * 0.09, -0.07, 0.2));
+    m.head.add(mesh(box(0.22, 0.05, 0.03), glowMat(0xffffff, 1.4), 0, 0.05, 0.14));
+    // tanque de cultura nas costas
+    m.torso.add(mesh(cached('btank', () => new THREE.CylinderGeometry(0.13, 0.13, 0.42, 10)), glowMat(0x9dff3a, 1.3), 0, 0.32, -0.24));
+    m.torso.add(mesh(box(0.3, 0.06, 0.3), m.mats[1], 0, 0.55, -0.24));
+    m.torso.add(mesh(box(0.3, 0.06, 0.3), m.mats[1], 0, 0.09, -0.24));
+    const gun = new THREE.Group();
+    gun.add(mesh(box(0.09, 0.12, 0.32), m.mats[1], 0, 0, 0.1));
+    gun.add(mesh(cached('bvial', () => new THREE.CylinderGeometry(0.04, 0.04, 0.16, 6)), m.glow, 0, 0.1, 0.05));
+    gun.add(mesh(box(0.02, 0.02, 0.2), m.glow, 0, 0, 0.32));
+    gun.rotation.x = Math.PI / 2;
+    m.handR.add(gun);
+    return m;
+  }
   // netrunner
   const m = humanoid({ body: 0x4c6a5e, dark: 0x1e2a25, accent });
   // capuz
@@ -776,6 +841,205 @@ export function makeEnemyModel(type, eliteColor) {
       const top = mesh(cached('pytop', () => new THREE.OctahedronGeometry(0.28, 0)), glowMat(0x00f0ff, 2.2), 0, 2.2, 0);
       root.add(top);
       m = { root, body: root, top, mats: [mDark], kind: 'pylon' };
+      break;
+    }
+    case 'yeti': {
+      m = humanoid({ body: 0xe8eef4, dark: 0x9aa8b8, accent: 0x8ad8ff, scale: 1.4, wide: 1.45 });
+      // pelo nos ombros, chifres e braços mecânicos
+      m.torso.add(mesh(box(0.8, 0.22, 0.42), m.mats[0], 0, 0.55, 0));
+      for (const sx of [-1, 1]) {
+        const horn = mesh(cached('yhorn', () => new THREE.ConeGeometry(0.06, 0.3, 5)), lambert(0xd8d0c0), sx * 0.13, 0.22, 0);
+        horn.rotation.z = -sx * 0.5;
+        m.head.add(horn);
+      }
+      m.handR.add(mesh(box(0.24, 0.24, 0.24), m.glow, 0, 0, 0));
+      m.handL.add(mesh(box(0.24, 0.24, 0.24), m.mats[1], 0, 0, 0));
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'magmagolem': {
+      m = humanoid({ body: 0x3a2a26, dark: 0x1a1210, accent: 0xff5a1a, scale: 1.5, wide: 1.55, glowK: 2.8 });
+      // rachaduras de magma pelo corpo
+      m.torso.add(mesh(box(0.06, 0.4, 0.02), m.glow, 0.12, 0.25, 0.21));
+      m.torso.add(mesh(box(0.3, 0.05, 0.02), m.glow, -0.05, 0.12, 0.21));
+      m.torso.add(mesh(box(0.38, 0.28, 0.38), m.mats[1], 0.42, 0.5, 0));
+      m.torso.add(mesh(box(0.38, 0.28, 0.38), m.mats[1], -0.42, 0.5, 0));
+      m.handR.add(mesh(box(0.28, 0.28, 0.28), m.glow, 0, 0, 0));
+      m.handL.add(mesh(box(0.28, 0.28, 0.28), m.glow, 0, 0, 0));
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'flamer': {
+      m = humanoid({ body: 0x6a3a2a, dark: 0x2a1810, accent: 0xff6a00 });
+      // tanque de combustível nas costas e máscara
+      m.torso.add(mesh(cached('ftank', () => new THREE.CylinderGeometry(0.11, 0.11, 0.5, 8)), lambert(0xa83a1a), -0.1, 0.3, -0.22));
+      m.torso.add(mesh(cached('ftank', () => new THREE.CylinderGeometry(0.11, 0.11, 0.5, 8)), lambert(0xa83a1a), 0.1, 0.3, -0.22));
+      m.head.add(mesh(box(0.2, 0.12, 0.08), m.mats[1], 0, -0.06, 0.15));
+      const gun = new THREE.Group();
+      gun.add(mesh(box(0.08, 0.1, 0.5), m.mats[1], 0, 0, 0.2));
+      gun.add(mesh(box(0.05, 0.05, 0.08), glowMat(0xff6a00, 2.8), 0, 0, 0.48));
+      gun.rotation.x = Math.PI / 2;
+      m.handR.add(gun);
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'icewolf':
+    case 'hound': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const ice = type === 'icewolf';
+      const mFur = lambert(ice ? 0xc8d8e8 : 0x3a3e4a);
+      const mDark = lambert(ice ? 0x7a8aa0 : 0x1a1c24);
+      const eye = glowMat(ice ? 0x8ad8ff : 0xff2244, 2.8);
+      body.add(mesh(box(0.36, 0.38, 0.9), mFur, 0, 0.6, 0));
+      if (!ice) body.add(mesh(box(0.06, 0.06, 0.8), eye, 0, 0.8, 0)); // espinha de led
+      const head = mesh(box(0.32, 0.3, 0.36), mFur, 0, 0.72, 0.55);
+      body.add(head);
+      head.add(mesh(box(0.18, 0.14, 0.24), mDark, 0, -0.06, 0.24));
+      for (const sx of [-1, 1]) {
+        head.add(mesh(cached('wear', () => new THREE.ConeGeometry(0.06, 0.16, 4)), mDark, sx * 0.1, 0.2, -0.04));
+        head.add(mesh(box(0.05, 0.04, 0.03), eye, sx * 0.09, 0.05, 0.19));
+      }
+      const tail = new THREE.Group();
+      tail.position.set(0, 0.72, -0.45);
+      tail.add(mesh(box(0.1, 0.1, 0.45), mFur, 0, 0, -0.2));
+      body.add(tail);
+      const legs = [];
+      for (const [x, z] of [[0.13, 0.3], [-0.13, 0.3], [0.13, -0.3], [-0.13, -0.3]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.42, z);
+        lg.add(mesh(box(0.1, 0.42, 0.1), mDark, 0, -0.42 / 2, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, tail, mats: [mFur, mDark], kind: 'quad' };
+      break;
+    }
+    case 'goat': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mFur = lambert(0x8a7a68);
+      const mDark = lambert(0x3a3028);
+      body.add(mesh(box(0.45, 0.5, 0.85), mFur, 0, 0.62, 0));
+      body.add(mesh(box(0.47, 0.18, 0.6), lambert(0x5a6070), 0, 0.88, 0)); // placa blindada
+      const head = mesh(box(0.3, 0.32, 0.4), mFur, 0, 0.82, 0.55);
+      body.add(head);
+      for (const sx of [-1, 1]) {
+        const horn = mesh(cached('ghorn', () => new THREE.TorusGeometry(0.14, 0.045, 5, 10, Math.PI * 1.3)), glowMat(0xffb35a, 1.5), sx * 0.15, 0.12, -0.02);
+        horn.rotation.y = Math.PI / 2;
+        head.add(horn);
+        head.add(mesh(box(0.05, 0.05, 0.03), glowMat(0xffb35a, 2.6), sx * 0.09, 0.04, 0.21));
+      }
+      head.add(mesh(box(0.08, 0.16, 0.06), mDark, 0, -0.2, 0.12)); // barbicha
+      const legs = [];
+      for (const [x, z] of [[0.15, 0.28], [-0.15, 0.28], [0.15, -0.28], [-0.15, -0.28]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.42, z);
+        lg.add(mesh(box(0.11, 0.42, 0.11), mDark, 0, -0.42 / 2, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, mats: [mFur, mDark], kind: 'quad' };
+      break;
+    }
+    case 'salamander': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mSkin = lambert(0x3a1a10);
+      const b = mesh(box(0.42, 0.24, 0.95), mSkin, 0, 0.3, 0);
+      body.add(b);
+      for (let k = 0; k < 3; k++) body.add(mesh(box(0.44, 0.04, 0.08), glowMat(0xff6a00, 2.2), 0, 0.43, 0.3 - k * 0.3)); // listras de magma
+      const head = mesh(box(0.34, 0.2, 0.34), mSkin, 0, 0.32, 0.62);
+      body.add(head);
+      for (const sx of [-1, 1]) head.add(mesh(box(0.06, 0.06, 0.04), glowMat(0xffd23d, 3), sx * 0.12, 0.08, 0.15));
+      const tail = new THREE.Group();
+      tail.position.set(0, 0.3, -0.48);
+      tail.add(mesh(cached('stail', () => new THREE.ConeGeometry(0.12, 0.7, 5).rotateX(-Math.PI / 2)), mSkin, 0, 0, -0.3));
+      body.add(tail);
+      const legs = [];
+      for (const [x, z] of [[0.26, 0.28], [-0.26, 0.28], [0.26, -0.28], [-0.26, -0.28]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.2, z);
+        lg.add(mesh(box(0.1, 0.2, 0.1), mSkin, 0, -0.2 / 2, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, tail, mats: [mSkin], kind: 'quad' };
+      break;
+    }
+    case 'mortar': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0x5a5a48);
+      const mDark = lambert(0x22221a);
+      body.add(mesh(cached('mbase', () => new THREE.CylinderGeometry(0.42, 0.48, 0.32, 8)), mBody, 0, 0.75, 0));
+      const tube = new THREE.Group();
+      tube.position.set(0, 0.95, 0);
+      tube.rotation.x = 0.7;
+      tube.add(mesh(cached('mtube', () => new THREE.CylinderGeometry(0.13, 0.15, 0.7, 8)), mDark, 0, 0.3, 0));
+      tube.add(mesh(cached('mtip', () => new THREE.TorusGeometry(0.14, 0.03, 6, 14).rotateX(Math.PI / 2)), glowMat(0xffaa00, 2.4), 0, 0.66, 0));
+      body.add(tube);
+      body.add(mesh(box(0.3, 0.05, 0.03), glowMat(0xffaa00, 2.4), 0, 0.8, 0.46));
+      const legs = [];
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+        const lg = new THREE.Group();
+        lg.position.set(Math.cos(a) * 0.35, 0.7, Math.sin(a) * 0.35);
+        const leg = mesh(box(0.08, 0.75, 0.08), mDark, 0, -0.33, 0);
+        leg.rotation.set(Math.sin(a) * 0.4, 0, -Math.cos(a) * 0.4);
+        lg.add(leg);
+        body.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, tube, mats: [mBody, mDark], kind: 'quad' };
+      break;
+    }
+    case 'tesladrone': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mBody = lambert(0x3a4a5a);
+      body.add(mesh(cached('tcore', () => new THREE.OctahedronGeometry(0.28, 0)), mBody));
+      for (const sx of [-1, 1]) {
+        body.add(mesh(cached('tcoil', () => new THREE.CylinderGeometry(0.07, 0.07, 0.4, 8)), mBody, sx * 0.34, 0, 0));
+        body.add(mesh(cached('tball', () => new THREE.SphereGeometry(0.09, 8, 6)), glowMat(0x00f0ff, 3), sx * 0.34, 0.24, 0));
+      }
+      const ring = mesh(cached('tring', () => new THREE.TorusGeometry(0.36, 0.03, 6, 20)), glowMat(0x00f0ff, 2.4));
+      ring.rotation.x = Math.PI / 2;
+      body.add(ring);
+      body.position.y = 1.2;
+      m = { root, body, ring, mats: [mBody], kind: 'drone' };
+      break;
+    }
+    case 'eagle': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mFeather = lambert(0x6a4a2a);
+      const mMetal = lambert(0x8a909a);
+      const torso = mesh(cached('etorso', () => new THREE.SphereGeometry(0.26, 10, 8)), mFeather);
+      torso.scale.set(0.9, 0.8, 1.5);
+      body.add(torso);
+      const head = mesh(cached('ehead', () => new THREE.SphereGeometry(0.15, 10, 8)), lambert(0xf0ece0), 0, 0.1, 0.38);
+      body.add(head);
+      head.add(mesh(cached('ebeak', () => new THREE.ConeGeometry(0.05, 0.16, 5).rotateX(Math.PI / 2)), glowMat(0xffd23d, 1.8), 0, -0.03, 0.15));
+      head.add(mesh(box(0.2, 0.03, 0.03), glowMat(0xff2244, 2.8), 0, 0.03, 0.1)); // visor biônico
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const w = new THREE.Group();
+        w.position.set(sx * 0.2, 0.05, 0);
+        w.add(mesh(box(0.75, 0.04, 0.36), mFeather, sx * 0.38, 0, 0));
+        w.add(mesh(box(0.5, 0.05, 0.08), mMetal, sx * 0.3, 0.02, 0.14));
+        body.add(w);
+        wings.push(w);
+      }
+      body.add(mesh(box(0.24, 0.04, 0.3), mFeather, 0, 0, -0.42)); // cauda
+      body.position.y = 1.6;
+      m = { root, body, wings, mats: [mFeather, mMetal], kind: 'bird' };
       break;
     }
     case 'boss': {
