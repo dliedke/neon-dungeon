@@ -11,6 +11,7 @@ import { G } from './state.js';
 import { SLOTS, itemScore } from './items.js';
 import { L } from './i18n.js';
 import { INV_SIZE } from './loot.js';
+import { ensureAch, mergeStats, mergeAch } from './ach.js';
 
 const GOOGLE_CLIENT_ID = '737867009905-hc0ilsd0gdedsen98tfmg0qakpnqn0ah.apps.googleusercontent.com';
 const SCOPE = 'openid email profile https://www.googleapis.com/auth/drive.appdata';
@@ -77,11 +78,12 @@ export function mergeProgress(a, b) {
   for (const cls of new Set([...Object.keys(a.slots || {}), ...Object.keys(b.slots || {})])) {
     slots[cls] = mergeChar(a.slots[cls], b.slots[cls]);
   }
-  return { v: 1, slots };
+  return { v: 1, slots, stats: mergeStats(a.stats, b.stats), ach: mergeAch(a.ach, b.ach) };
 }
 
 function snapshot() {
-  return { v: 1, slots: G.save.slots };
+  ensureAch(G.save);
+  return { v: 1, slots: G.save.slots, stats: G.save.stats, ach: G.save.ach };
 }
 
 // a nuvem recebe sempre a mescla completa; aqui só não se troca o personagem em jogo
@@ -94,6 +96,12 @@ function syncMerge(cloud) {
   for (const cls in merged.slots) {
     if (cls === keep || canon(merged.slots[cls]) === canon(local.slots[cls])) continue;
     G.save.slots[cls] = merged.slots[cls];
+    changed = true;
+  }
+  // medalhas e contadores
+  if (canon(merged.stats) !== canon(local.stats) || canon(merged.ach) !== canon(local.ach)) {
+    G.save.stats = merged.stats;
+    G.save.ach = merged.ach;
     changed = true;
   }
   if (changed) {

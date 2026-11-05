@@ -11,6 +11,7 @@ import { dropLoot } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
+import { achKill } from './ach.js';
 import { L } from './i18n.js';
 
 // ---------------- temporizadores ----------------
@@ -185,6 +186,7 @@ export function killEnemy(e) {
   e.hp = 0;
   const p = G.player;
   sfx.die();
+  if (!e.selfDestruct && !e.decoy) achKill(e);
   burst(e.x, e.height * 0.5, e.z, e.bloodColor, e.boss ? 80 : e.elite ? 30 : 16, e.boss ? 9 : 5, 0.08, 0.7);
   if (e.type === 'barrel') {
     // barril: explode ferindo inimigos (e o jogador, se estiver perto)

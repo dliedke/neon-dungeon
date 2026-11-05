@@ -14,6 +14,7 @@ import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
+import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -45,6 +46,9 @@ export function initUI() {
   $('menu-opts').onclick = () => openOverlay('panel-opts');
   $('menu-help').onclick = () => openOverlay('panel-help');
   $('menu-sync').onclick = () => openSync();
+  $('menu-ach').onclick = () => openAch();
+  $('pause-ach').onclick = () => openAch();
+  $('ach-close').onclick = () => closeOverlay('panel-ach');
   $('pause-sync').onclick = () => openSync();
   $('sync-close').onclick = () => closeOverlay('panel-sync');
   $('sync-box').addEventListener('click', (e) => {
@@ -215,6 +219,33 @@ export function confirmDialog(title, text, onYes) {
     onYes();
   };
   openOverlay('panel-confirm');
+}
+
+// ------------------------------------------------------------------
+// Medalhas
+// ------------------------------------------------------------------
+function openAch() {
+  const list = achList();
+  const got = list.filter((a) => G.save.ach[a.id]).length;
+  $('ach-title').textContent = `${L('MEDALHAS', 'MEDALS')} ${got}/${list.length}`;
+  const perTier = MEDAL_TIERS.map((t, i) => {
+    const all = list.filter((a) => a.tier === i);
+    return `<span style="color:${t.css}">● ${t.name} ${all.filter((a) => G.save.ach[a.id]).length}/${all.length}</span>`;
+  });
+  $('ach-sum').innerHTML = `<div class="ach-bar"><div style="width:${(got / list.length) * 100}%"></div></div><div class="ach-tiers">${perTier.join('')}</div>`;
+  // conquistadas primeiro (mais recentes no topo), depois as mais perto de sair
+  const rows = list.map((a) => ({ a, ...achProgress(a) }));
+  rows.sort((x, y) => (y.done - x.done) || (x.done ? G.save.ach[y.a.id] - G.save.ach[x.a.id] : y.cur / y.goal - x.cur / x.goal));
+  $('ach-grid').innerHTML = rows.map(({ a, cur, goal, done }) => {
+    const t = MEDAL_TIERS[a.tier];
+    const bar = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${fmt(cur)}/${fmt(goal)}</span></div>` : '';
+    return `<div class="ach ${done ? 'done' : ''}" data-nav tabindex="-1" style="--t:${t.css}">
+      <div class="ach-ico">${a.icon}</div>
+      <div class="ach-txt"><b>${a.name}</b><small>${a.desc}</small>${bar}</div>
+      <div class="ach-tier">${done ? '✔' : ''} ${t.name}<br>+${fmt(t.reward)}¢</div>
+    </div>`;
+  }).join('');
+  openOverlay('panel-ach');
 }
 
 function openSync() {
@@ -965,7 +996,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1076,6 +1107,7 @@ export function uiBack(root = activePanel()) {
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
+    case 'panel-ach':
       closeOverlay(root.id);
       break;
     case 'panel-char':
@@ -1091,7 +1123,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-ach'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------
@@ -1154,6 +1186,7 @@ function buy(what) {
     delete copy.price;
     delete copy.sold;
     c.inv.push(copy);
+    achAdd('buys');
     sfx.coin();
     toast(`${L('Comprado', 'Bought')}: ${itemName(copy)}`);
   }

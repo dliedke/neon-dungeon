@@ -10,6 +10,7 @@ import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
 import { groundEffect } from './biomes.js';
+import { achAdd } from './ach.js';
 import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
@@ -479,6 +480,7 @@ export function updateEnemies(dt, cam) {
             ringFx(e.x, e.z, 1.6, 0xffd23d, 0.4);
             sfx.zap();
             toast(L('O Ladrão de Dados escapou…', 'The Data Thief got away…'), 'warn', 'thief');
+            achAdd('thiefEscapes');
             e.selfDestruct = true;
             e.hp = 0;
             e.alive = false;
@@ -1035,6 +1037,7 @@ export const BOSS_ORDER = ['boss', 'queen', 'scrap', 'reaper', 'gunship', 'hacke
 
 function startBoss(e) {
   G.boss = e;
+  e.fightT0 = G.t;
   bossBar(e);
   sfx.boss();
   banner(e.name.toUpperCase(), BOSS_SUB[e.type] || '');

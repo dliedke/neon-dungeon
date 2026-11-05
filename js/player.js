@@ -9,6 +9,7 @@ import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from '
 import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
 import { groundEffect } from './biomes.js';
 import { formMods } from './powers.js';
+import { achAdd } from './ach.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
@@ -179,6 +180,7 @@ export function useStim() {
     return;
   }
   c.stims--;
+  achAdd('stims');
   p.stimCd = 1;
   healPlayer(p.stats.maxHp * 0.6);
   p.buffs.regen = 4;
@@ -189,6 +191,7 @@ export function useStim() {
 export function playerDie() {
   const p = G.player;
   if (!p.alive) return;
+  achAdd('deaths');
   p.alive = false;
   p.dash = null;
   p.whirl = null;

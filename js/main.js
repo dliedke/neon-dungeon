@@ -19,6 +19,7 @@ import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import { padText } from './padglyphs.js';
+import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
 import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
@@ -45,6 +46,7 @@ const camPos = new THREE.Vector3();
 let useBloom = true;
 let flowT = 0;
 let autosaveT = 0;
+let achT = 1;
 let transitioning = false;
 
 // ------------------------------------------------------------------
@@ -56,6 +58,7 @@ function loadSave() {
     save = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   } catch (_) {}
   if (!save || !save.slots) save = { v: 1, slots: {} };
+  ensureAch(save);
   G.save = save;
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
@@ -244,6 +247,7 @@ export function startFloor(floor) {
   const c = G.char;
   c.floor = floor;
   c.maxFloor = Math.max(c.maxFloor || 1, floor);
+  achMark('biomes', G.theme.id);
   placePlayer(d.start.x, d.start.z);
   G.camFocus.x = d.start.x;
   G.camFocus.z = d.start.z;
@@ -316,6 +320,7 @@ async function nextFloor() {
   fade.classList.add('on');
   G.mode = 'loading';
   await new Promise((r) => setTimeout(r, 450));
+  achAdd('floors');
   startFloor(G.floor + 1);
   G.player.hp = Math.min(G.player.stats.maxHp, G.player.hp + G.player.stats.maxHp * 0.25);
   if (G.char.stims < 3) {
@@ -392,6 +397,11 @@ function logic(dt) {
   updateDecoy(dt);
   updatePickups(dt, camera);
   updateExit(dt);
+  achT -= dt;
+  if (achT <= 0) {
+    achT = 1;
+    achCheck();
+  }
   autosaveT += dt;
   if (autosaveT > 20) {
     autosaveT = 0;
@@ -471,11 +481,15 @@ function boot() {
   });
   setSyncHooks({
     save: () => saveGame(true),
-    applied: () => G.mode === 'menu' && renderClassCards(),
+    applied: () => {
+      achCheck();
+      if (G.mode === 'menu') renderClassCards();
+    },
     render: renderSync,
     say: (m) => toast(m),
   });
   renderSync();
+  achCheck(); // medalhas já conquistadas por saves antigos
   syncStart(back);
   addEventListener('beforeunload', () => G.char && saveGame());
   window.__G = G; // útil para depuração no console

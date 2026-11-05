@@ -103,6 +103,13 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 Both show up on the minimap once explored.
 
+## Medals
+
+**67 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, loot caches,
+legendaries, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
+Medals and their counters sync with the Google cloud save; progress from every device adds up.
+
 ## Bosses
 
 | Boss | Mechanics |
@@ -163,6 +170,7 @@ js/padglyphs.js        gamepad model detection and button icons
 js/audio.js            synthesized sound effects and music
 js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
+js/ach.js              medals (achievements) and their counters
 vendor/three/          Three.js r160 (MIT)
 web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
 ```

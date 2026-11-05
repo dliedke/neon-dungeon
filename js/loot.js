@@ -10,6 +10,7 @@ import { toast, invFull } from './ui.js';
 import { MAX_STIMS } from './player.js';
 import { healPlayer } from './combat.js';
 import { L } from './i18n.js';
+import { achAdd, achMark } from './ach.js';
 
 export const INV_SIZE = 30;
 const UP_COLOR = 0x39ff88;
@@ -96,6 +97,7 @@ export function spawnPickup(type, x, z, data) {
   g.position.set(x, pk.y, z);
   G.world.add(g);
   if (type === 'item') {
+    if (data.item.rarity === 3) achAdd('legendaries');
     if (!labelRoot) labelRoot = document.getElementById('labels');
     const el = document.createElement('div');
     el.style.display = 'none';
@@ -210,6 +212,8 @@ function useShrine(pk) {
   pk.used = true;
   for (const k in SHRINES) delete p.buffs[k]; // um santuário por vez
   p.buffs[pk.kind] = SHRINE_TIME;
+  achAdd('shrines');
+  achMark('shrineKinds', pk.kind);
   sfx.levelup();
   ringFx(pk.x, pk.z, 2.4, S.color, 0.6);
   burst(pk.x, 1.6, pk.z, S.color, 40, 6, 0.08, 0.7, { up: 1.5 });
@@ -228,6 +232,7 @@ function openChest(pk) {
   burst(pk.x, 0.6, pk.z, 0xffd23d, 30, 5, 0.07, 0.6, { up: 1.4 });
   pk.group.remove(pk.beam);
   dropLoot(pk.x, pk.z, { chest: true });
+  achAdd('chests');
 }
 
 const pv = new THREE.Vector3();
@@ -304,6 +309,7 @@ export function updatePickups(dt, camera) {
     if (d < 0.9) {
       if (pk.type === 'credits') {
         c.credits += pk.amount;
+        achAdd('credits', pk.amount);
         sfx.coin();
         pk.dead = true;
       } else if (pk.type === 'orb') {

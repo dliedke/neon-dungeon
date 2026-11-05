@@ -13,6 +13,7 @@ const DICT = {
   options: ['Opções', 'Options'],
   controls: ['Controles', 'Controls'],
   cloud: ['Nuvem (Google)', 'Cloud (Google)'],
+  medals: ['🏅 Medalhas', '🏅 Medals'],
   cloudTitle: ['NUVEM', 'CLOUD SAVE'],
   equipment: ['Equipamento', 'Equipment'],
   skills: ['Habilidades', 'Skills'],

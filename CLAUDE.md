@@ -66,6 +66,7 @@ Module map (`js/`):
 - `ui.js`: menus, inventory, skill tree, shop, minimap, gamepad menu navigation.
 - `i18n.js`: language handling; `utils.js`: helpers.
 - `sync.js`: Google sign-in and Google Drive cloud save.
+- `ach.js`: medals (achievements). Counters are per device in `G.save.stats.dev` and summed; sets and unlocks are unioned on cloud merge. Record events with `achAdd` / `achMark` / `achKill`; the list is built lazily in `achList()` because of circular imports.
 
 ## Conventions and gotchas
 
