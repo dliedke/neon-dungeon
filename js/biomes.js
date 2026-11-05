@@ -493,7 +493,7 @@ export function buildFeatures(d, theme, group) {
   const lm = tileMesh(d, FEAT.LAVA, lavaMat);
   if (lm) group.add(lm);
   B.mats.lava = lavaMat;
-  const snowMat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: new THREE.Color(0x30343c) });
+  const snowMat = new THREE.MeshLambertMaterial({ color: 0xd8e2ee, emissive: new THREE.Color(0x0c1018) });
   const snm = tileMesh(d, FEAT.SNOW, snowMat);
   if (snm) {
     snm.position.y += 0.05;
@@ -785,7 +785,7 @@ function buildNature(d, theme, group, B) {
       g.add(meshAt(new THREE.ConeGeometry(0.6, 1.1, 7), leaf, 0, 2.3, 0));
       if (theme.id === 'snow') {
         // pinheiro com neve no topo dos galhos
-        const snowM = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: new THREE.Color(0x2a2e36) });
+        const snowM = new THREE.MeshLambertMaterial({ color: 0xd8e2ee, emissive: new THREE.Color(0x0c1018) });
         g.add(meshAt(new THREE.ConeGeometry(0.62, 0.55, 7), snowM, 0, 2.05, 0));
         g.add(meshAt(new THREE.ConeGeometry(0.4, 0.5, 7), snowM, 0, 2.65, 0));
       }
@@ -869,10 +869,10 @@ export function updateBiome(dt, camera) {
   if (B.mats.lava) B.mats.lava.color.setRGB(1, 0.35 + Math.sin(G.t * 2.2) * 0.08, 0.1).multiplyScalar(gk(1.4 + Math.sin(G.t * 1.3) * 0.15));
   // neve caindo: só visual, em volta da câmera
   if (d.snow && p) {
-    rainAcc += dt * 26;
+    rainAcc += dt * 70;
     while (rainAcc > 1) {
       rainAcc--;
-      particle(G.camFocus.x + rr(-13, 13), rr(4, 7), G.camFocus.z + rr(-13, 13), rr(-0.6, 0.6), -1.6, rr(-0.3, 0.3), 0xffffff, rr(0.03, 0.06), 3.2, 0, 0);
+      particle(G.camFocus.x + rr(-14, 12), rr(5, 9), G.camFocus.z + rr(-13, 13), rr(0.2, 0.9), rr(-2.4, -1.4), rr(-0.4, 0.4), pick([0xffffff, 0xeaf2ff, 0xd8e8ff]), rr(0.05, 0.1), 4.5, 0, 0);
     }
   }
   if (d.rockfall && p && p.alive) updateRockfall(d, dt, p);

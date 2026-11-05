@@ -1578,9 +1578,15 @@ export function populateFloor(d, floor, boss) {
     const pt = randomFloorInRoom(d, pick(far), 1);
     spawnEnemy('thief', pt.x, pt.z);
   }
-  if (far.length && chance(0.6)) {
-    const pt = randomFloorInRoom(d, pick(far), 2);
-    if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, pick(Object.keys(SHRINES)));
+  // Santuários Neon: 2 ou 3 por andar, de tipos diferentes e em salas diferentes
+  if (!final) {
+    const kinds = Object.keys(SHRINES).sort(() => Math.random() - 0.5);
+    const rooms = (far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice().sort(() => Math.random() - 0.5);
+    const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 3 : 2);
+    for (let k = 0; k < n; k++) {
+      const pt = randomFloorInRoom(d, rooms[k], 2);
+      if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, kinds[k]);
+    }
   }
   const nChests = Math.min(chestRooms.length, floor < 3 ? 1 : 2);
   for (let k = 0; k < nChests; k++) {

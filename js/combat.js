@@ -81,7 +81,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const fm = formMods(p);
   let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1);
   let crit = false;
-  if (forceCrit || Math.random() < s.crit / 100) {
+  if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
     d *= 1 + s.critDmg / 100;
   }
@@ -99,7 +99,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.chillDmg && (e.slowT > 0 || e.frozenT > 0)) r.d *= 1 + ps.chillDmg / 100;
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
-  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
+  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
   if (ls > 0 && dealt > 0) healPlayer((dealt * ls) / 100, false);
   if (o.energy) p.en = Math.min(p.stats.maxEn, p.en + o.energy);
   applyStatus(e, o);

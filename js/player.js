@@ -153,6 +153,7 @@ export function placePlayer(x, z) {
 export function skillCost(i) {
   const p = G.player;
   const base = CLASSES[G.char.cls].skills[i].cost;
+  if (p.buffs && p.buffs.arcane > 0) return 0; // Santuário Arcano
   return Math.round(base * (p.stats.legs.has('overload') ? 0.7 : 1) * (1 - (p.stats.costRed || 0) / 100));
 }
 
@@ -164,7 +165,7 @@ export function gainXp(n) {
   const c = G.char;
   if (c.level >= MAX_LEVEL) return;
   const p = G.player;
-  c.xp += Math.round(n * (1 + (p.stats.xpPct || 0) / 100));
+  c.xp += Math.round(n * (1 + (p.stats.xpPct || 0) / 100) * (p.buffs && p.buffs.wisdom > 0 ? 2 : 1));
   let leveled = false;
   while (c.level < MAX_LEVEL && c.xp >= xpNeeded(c.level)) {
     c.xp -= xpNeeded(c.level);
@@ -403,7 +404,8 @@ export function updatePlayer(dt) {
   const s = p.stats;
 
   // temporizadores
-  for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - dt);
+  const cdt = p.buffs.chrono > 0 ? dt * 2 : dt; // Santuário de Cronos
+  for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - cdt);
   p.invuln = Math.max(0, p.invuln - dt);
   p.stimCd = Math.max(0, p.stimCd - dt);
   p.shieldCd = Math.max(0, p.shieldCd - dt);

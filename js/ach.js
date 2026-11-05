@@ -153,7 +153,7 @@ export function achList() {
   add('thief10', '🤑', 2, L('Caçador de Recompensas', 'Bounty Hunter'), L('Derrote 10 Ladrões de Dados', 'Take down 10 Data Thieves'), () => total('thieves'), 10);
   add('thiefEsc', '💨', 0, L('Quase…', 'So Close…'), L('Deixe um Ladrão de Dados escapar', 'Let a Data Thief get away'), () => total('thiefEscapes'));
   add('shrine1', '🔮', 0, L('Abençoado', 'Blessed'), L('Use um Santuário Neon', 'Use a Neon Shrine'), () => total('shrines'));
-  add('shrineAll', '💎', 1, L('Peregrino', 'Pilgrim'), L('Use os 4 tipos de santuário', 'Use all 4 kinds of shrine'), () => Object.keys(SHRINES).filter((k) => has('shrineKinds', k)).length, Object.keys(SHRINES).length);
+  add('shrineAll', '💎', 1, L('Peregrino', 'Pilgrim'), L(`Use os ${Object.keys(SHRINES).length} tipos de santuário`, `Use all ${Object.keys(SHRINES).length} kinds of shrine`), () => Object.keys(SHRINES).filter((k) => has('shrineKinds', k)).length, Object.keys(SHRINES).length);
   add('shrine50', '🛐', 2, L('Devoto do Neon', 'Neon Devotee'), L('Use 50 santuários', 'Use 50 shrines'), () => total('shrines'), 50);
   add('chest10', '📦', 0, L('Arrombador', 'Safecracker'), L('Abra 10 cofres', 'Open 10 loot caches'), () => total('chests'), 10);
   add('chest100', '🗃️', 2, L('Saqueador Profissional', 'Professional Looter'), L('Abra 100 cofres', 'Open 100 loot caches'), () => total('chests'), 100);

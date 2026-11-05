@@ -4,11 +4,11 @@ import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
 import { makeItem, rollRarity, RARITY, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
-import { burst, ringFx, floatText } from './fx.js';
+import { burst, ringFx, floatText, beamFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, invFull } from './ui.js';
 import { MAX_STIMS } from './player.js';
-import { healPlayer } from './combat.js';
+import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 
@@ -175,6 +175,13 @@ export const SHRINES = {
   haste: { name: L('Velocidade', 'Haste'), desc: L('+35% de velocidade e +30% de ataque', '+35% move speed and +30% attack speed'), color: 0x00f0ff, css: '#00f0ff' },
   fortune: { name: L('Fortuna', 'Fortune'), desc: L('mais loot e o dobro de créditos', 'more loot and double credits'), color: 0xffd23d, css: '#ffd23d' },
   aegis: { name: L('Égide', 'Aegis'), desc: L('metade do dano recebido', 'half damage taken'), color: 0x39ff88, css: '#39ff88' },
+  crit: { name: L('Precisão', 'Precision'), desc: L('+25% de chance de crítico', '+25% critical chance'), color: 0xff8a2b, css: '#ff9a45' },
+  vamp: { name: L('Vampiro', 'Vampire'), desc: L('6% do dano vira vida', '6% life steal'), color: 0xc4103a, css: '#ff3a64' },
+  arcane: { name: L('Arcano', 'Arcana'), desc: L('habilidades sem custo de energia', 'skills cost no energy'), color: 0x4d7bff, css: '#6b93ff' },
+  chrono: { name: L('Cronos', 'Chrono'), desc: L('recarga das habilidades 2x mais rápida', 'skills recharge twice as fast'), color: 0xe0e0ff, css: '#e0e0ff' },
+  storm: { name: L('Tempestade', 'Storm'), desc: L('raios caem nos inimigos por perto', 'lightning strikes nearby enemies'), color: 0xb06bff, css: '#c08aff' },
+  frost: { name: L('Inverno', 'Winter'), desc: L('aura gélida que fere e congela quem chega perto', 'icy aura that hurts and freezes enemies close by'), color: 0x8ad8ff, css: '#8ad8ff' },
+  wisdom: { name: L('Sabedoria', 'Wisdom'), desc: L('o dobro de experiência', 'double experience'), color: 0x3dffd2, css: '#3dffd2' },
 };
 export const SHRINE_TIME = 30;
 const shrineGem = new THREE.OctahedronGeometry(0.32, 0);
@@ -210,7 +217,7 @@ function useShrine(pk) {
   const S = SHRINES[pk.kind];
   const p = G.player;
   pk.used = true;
-  for (const k in SHRINES) delete p.buffs[k]; // um santuário por vez
+  // santuários diferentes se acumulam; o mesmo tipo renova o tempo
   p.buffs[pk.kind] = SHRINE_TIME;
   achAdd('shrines');
   achMark('shrineKinds', pk.kind);
@@ -238,10 +245,40 @@ function openChest(pk) {
 const pv = new THREE.Vector3();
 let fullWarn = 0;
 
+// auras dos santuários da Tempestade e do Inverno
+let stormT = 0;
+let frostT = 0;
+function shrineAuras(dt, p) {
+  if (!p || !p.alive || !p.buffs) return;
+  if (p.buffs.storm > 0 && (stormT -= dt) <= 0) {
+    stormT = 0.7;
+    const e = nearestEnemy(p.x, p.z, 8, true);
+    if (e) {
+      beamFx(e.x + rr(-0.3, 0.3), 7, e.z + rr(-0.3, 0.3), e.x, e.height * 0.6, e.z, 0xb06bff);
+      burst(e.x, 0.3, e.z, 0xc08aff, 10, 4, 0.05, 0.35, { up: 1 });
+      hitEnemy(e, 1.1, { noProc: true, kx: e.x, kz: e.z });
+      sfx.zap();
+    }
+  }
+  if (p.buffs.frost > 0) {
+    if (Math.random() < dt * 14) {
+      const a = rr(0, Math.PI * 2);
+      burst(p.x + Math.cos(a) * 3, 0.3, p.z + Math.sin(a) * 3, 0xbfeaff, 1, 1, 0.05, 0.6, { up: 0.6 });
+    }
+    if ((frostT -= dt) <= 0) {
+      frostT = 0.5;
+      const near = enemiesInRadius(p.x, p.z, 3.2);
+      if (near.length) ringFx(p.x, p.z, 3.2, 0x8ad8ff, 0.35);
+      for (const e of near) hitEnemy(e, 0.35, { noProc: true, slow: 1.2, freeze: chance(0.15) ? 1 : 0 });
+    }
+  }
+}
+
 export function updatePickups(dt, camera) {
   const p = G.player;
   const c = G.char;
   fullWarn -= dt;
+  shrineAuras(dt, p);
   for (const pk of G.pickups) {
     pk.t += dt;
     if (pk.type === 'shrine') {
