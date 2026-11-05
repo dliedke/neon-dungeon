@@ -63,10 +63,10 @@ function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
     if (s) {
-      // opções salvas antes de o brilho neon passar a ser "Forte" por padrão
-      if (!(s.sv >= 2)) {
+      // opções salvas antes da v3: o brilho neon volta a ser "Forte" (padrão) para todos
+      if (!(s.sv >= 3)) {
         s.glow = 'strong';
-        s.sv = 2;
+        s.sv = 3;
       }
       Object.assign(G.settings, s);
     }
