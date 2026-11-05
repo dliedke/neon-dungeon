@@ -20,6 +20,23 @@ Debug handles in the console (set at the end of `boot()` in `js/main.js`):
 
 To check something visually, use headless Edge/Chrome against a local server, e.g. `msedge --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --screenshot=...`. Save screenshots outside the repo or in the root (root `*.png` files are gitignored).
 
+## Deploy: always report when the Pages build is live
+
+After every push to `main`, **always** wait for the GitHub Pages build and tell the user when the site is live. Don't stop at "pushed".
+Pages uses the legacy "build from branch" mode, which runs the `pages-build-deployment` workflow (usually 30s–1.5min):
+
+```bash
+sha=$(git rev-parse HEAD)
+# the run takes a few seconds to appear after the push; retry until it shows up
+id=$(gh run list --workflow pages-build-deployment --commit "$sha" --json databaseId --jq '.[0].databaseId')
+gh run watch "$id" --exit-status
+```
+
+- Run the watch in the background so the session isn't blocked.
+- On success, say the build finished and link https://dliedke.github.io/neon-dungeon/. Mention that the CDN or browser cache may need a hard refresh (Ctrl+F5).
+- On failure, report it with `gh run view "$id" --log-failed`.
+- Quick status check: `gh api repos/dliedke/neon-dungeon/pages/builds/latest --jq '{status, commit}'`.
+
 ## Layout
 
 ```
