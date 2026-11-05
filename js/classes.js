@@ -68,6 +68,19 @@ export const ICONS = {
   mech: '<rect x="8" y="10" width="16" height="12" rx="2"/><rect x="12" y="4" width="8" height="6"/><path d="M8 14H3v6M24 14h5v6M11 22v6M21 22v6M14 7h1M17 7h1"/>',
   nuke: '<circle cx="16" cy="16" r="3"/><path d="M16 13V4a12 12 0 0 1 10 6l-8 5M13 17.5L5 22a12 12 0 0 1 0-12l8 5M19 17.5l8 4.5a12 12 0 0 1-11 6v-9"/>',
   missileRain: '<path d="M8 4v10M16 2v12M24 4v10"/><path d="M5 12l3 4 3-4M13 10l3 4 3-4M21 12l3 4 3-4"/><path d="M4 27h24"/>',
+  // ícones dos poderes passivos
+  pHeart: '<path d="M16 27C8 21 4 17 4 12a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 5-4 9-12 15z"/><path d="M9 15h4l2-3 3 6 2-3h3"/>',
+  pTarget: '<circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="3"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6"/>',
+  pWind: '<path d="M3 11h16a4 4 0 1 0-4-4M3 17h22a4 4 0 1 1-4 4M3 23h10"/>',
+  pDrop: '<path d="M16 3c5 7 9 12 9 17a9 9 0 0 1-18 0c0-5 4-10 9-17z"/><path d="M12 20a4 4 0 0 0 4 4"/>',
+  pBattery: '<rect x="5" y="9" width="20" height="14" rx="2"/><path d="M25 13h3v6h-3M14 11l-3 6h5l-3 5"/>',
+  pSkull: '<path d="M6 15a10 10 0 0 1 20 0c0 4-2 6-4 7v4H10v-4c-2-1-4-3-4-7z"/><circle cx="12" cy="15" r="2"/><circle cx="20" cy="15" r="2"/><path d="M14 26v-3M18 26v-3"/>',
+  pGear: '<circle cx="16" cy="16" r="5"/><path d="M16 3v5M16 24v5M3 16h5M24 16h5M7 7l3.5 3.5M21.5 21.5L25 25M7 25l3.5-3.5M21.5 10.5L25 7"/>',
+  pPlate: '<path d="M6 5h20v9c0 7-4 11-10 14C10 25 6 21 6 14z"/><path d="M6 11h20M6 17h19M16 5v23" opacity=".6"/>',
+  pCrown: '<path d="M4 24l2-14 6 6 4-9 4 9 6-6 2 14z"/><path d="M5 28h22"/>',
+  pRage: '<path d="M3 17h6l3-7 4 14 4-11 2 4h7"/>',
+  pChip: '<rect x="9" y="9" width="14" height="14" rx="2"/><path d="M13 4v5M19 4v5M13 23v5M19 23v5M4 13h5M4 19h5M23 13h5M23 19h5"/><circle cx="16" cy="16" r="3"/>',
+  pEye: '<path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z"/><circle cx="16" cy="16" r="4"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
@@ -235,6 +248,91 @@ export const CLASSES = {
     ],
   },
 };
+
+// --------------------------------------------------------------
+// Poderes passivos: 3 por classe (índices 9, 10 e 11 da árvore).
+// Não vão para os botões; dão bônus permanentes que crescem com o nível (1–10).
+// --------------------------------------------------------------
+const nfmt = (v) => (+v).toLocaleString(L('pt-BR', 'en-US'), { maximumFractionDigits: 1 });
+const PFMT = {
+  crit: (v) => L(`+${nfmt(v)}% de chance de crítico`, `+${nfmt(v)}% critical chance`),
+  critDmg: (v) => L(`+${nfmt(v)}% de dano crítico`, `+${nfmt(v)}% critical damage`),
+  dmgPct: (v) => L(`+${nfmt(v)}% de dano`, `+${nfmt(v)}% damage`),
+  atkSpd: (v) => L(`+${nfmt(v)}% de velocidade de ataque`, `+${nfmt(v)}% attack speed`),
+  moveSpd: (v) => L(`+${nfmt(v)}% de velocidade de movimento`, `+${nfmt(v)}% movement speed`),
+  hpPct: (v) => L(`+${nfmt(v)}% de vida máxima`, `+${nfmt(v)}% max health`),
+  armorPct: (v) => L(`+${nfmt(v)}% de blindagem`, `+${nfmt(v)}% armor`),
+  maxEn: (v) => L(`+${nfmt(v)} de energia máxima`, `+${nfmt(v)} max energy`),
+  hpRegen: (v) => L(`+${nfmt(v)} de vida por segundo`, `+${nfmt(v)} health per second`),
+  enRegen: (v) => L(`+${nfmt(v)} de energia por segundo`, `+${nfmt(v)} energy per second`),
+  lifeSteal: (v) => L(`+${nfmt(v)}% de roubo de vida`, `+${nfmt(v)}% life steal`),
+  cdr: (v) => L(`-${nfmt(v)}% de recarga dos poderes`, `-${nfmt(v)}% power cooldown`),
+  costRed: (v) => L(`-${nfmt(v)}% de custo de energia`, `-${nfmt(v)}% energy cost`),
+  findPct: (v) => L(`+${nfmt(v)}% de chance de achar itens`, `+${nfmt(v)}% item find`),
+  dodge: (v) => L(`${nfmt(v)}% de chance de esquivar de um golpe`, `${nfmt(v)}% chance to dodge a hit`),
+  dmgRed: (v) => L(`-${nfmt(v)}% de dano recebido`, `-${nfmt(v)}% damage taken`),
+  killHeal: (v) => L(`Abates curam ${nfmt(v)}% da vida máxima`, `Kills heal ${nfmt(v)}% of max health`),
+  killEn: (v) => L(`Abates dão ${nfmt(v)} de energia`, `Kills grant ${nfmt(v)} energy`),
+  eliteDmg: (v) => L(`+${nfmt(v)}% de dano em elites e chefes`, `+${nfmt(v)}% damage to elites and bosses`),
+  lowHpDmg: (v) => L(`+${nfmt(v)}% de dano com menos de 50% de vida`, `+${nfmt(v)}% damage below 50% health`),
+  burnPct: (v) => L(`+${nfmt(v)}% de dano de queimadura`, `+${nfmt(v)}% burn damage`),
+  chillDmg: (v) => L(`+${nfmt(v)}% de dano em inimigos lentos ou congelados`, `+${nfmt(v)}% damage to slowed or frozen enemies`),
+};
+const r1 = (v) => Math.round(v * 10) / 10;
+const passive = (id, req, name, icon, mods) => ({
+  id, req, name, icon, passive: true, cost: 0, cd: 0, mods,
+  desc: (r) => Object.entries(mods(r)).map(([k, v]) => PFMT[k](v)).join(' · ') + '.',
+});
+const PASSIVES = {
+  blade: [
+    passive('pEdge', 3, L('Fio Perfeito', 'Perfect Edge'), 'pTarget', (r) => ({ crit: r1(1.2 * r), critDmg: 5 * r })),
+    passive('pReflex', 8, L('Reflexos de Samurai', 'Samurai Reflexes'), 'pWind', (r) => ({ dodge: r1(1.5 * r), moveSpd: 2 * r })),
+    passive('pBushido', 14, L('Bushido Digital', 'Digital Bushido'), 'pCrown', (r) => ({ eliteDmg: 4 * r, killHeal: r1(0.5 * r) })),
+  ],
+  gunner: [
+    passive('pSight', 3, L('Mira Laser', 'Laser Sight'), 'pEye', (r) => ({ crit: r1(1.2 * r), critDmg: 6 * r })),
+    passive('pTrigger', 8, L('Gatilho Leve', 'Hair Trigger'), 'pWind', (r) => ({ atkSpd: 3 * r, moveSpd: r1(1.5 * r) })),
+    passive('pBounty', 14, L('Caçador de Recompensas', 'Bounty Hunter'), 'pCrown', (r) => ({ eliteDmg: 5 * r, findPct: 4 * r })),
+  ],
+  netrunner: [
+    passive('pBattery', 3, L('Bateria Quântica', 'Quantum Battery'), 'pBattery', (r) => ({ maxEn: 6 * r, enRegen: r1(0.4 * r) })),
+    passive('pNeural', 8, L('Overclock Neural', 'Neural Overclock'), 'pChip', (r) => ({ cdr: r1(1.5 * r), costRed: 2 * r })),
+    passive('pFirewall', 14, 'Firewall', 'pPlate', (r) => ({ dmgRed: r1(1.5 * r), killEn: r })),
+  ],
+  brawler: [
+    passive('pPlated', 3, L('Corpo Blindado', 'Plated Body'), 'pPlate', (r) => ({ armorPct: 5 * r, hpPct: 2 * r })),
+    passive('pAdrenaline', 8, L('Adrenalina', 'Adrenaline'), 'pRage', (r) => ({ lowHpDmg: 5 * r, hpRegen: r1(0.6 * r) })),
+    passive('pBloodlust', 14, L('Sede de Sangue', 'Bloodlust'), 'pDrop', (r) => ({ lifeSteal: r1(0.8 * r), killHeal: r1(0.4 * r) })),
+  ],
+  pyro: [
+    passive('pFuel', 3, L('Combustível Extra', 'Extra Fuel'), 'pBattery', (r) => ({ dmgPct: 3 * r, maxEn: 3 * r })),
+    passive('pFireproof', 8, L('Pele Antichamas', 'Fireproof Skin'), 'pPlate', (r) => ({ dmgRed: r1(1.5 * r), hpRegen: r1(0.5 * r) })),
+    passive('pInferno', 14, L('Inferno Interior', 'Inner Inferno'), 'pRage', (r) => ({ burnPct: 8 * r, dmgPct: r1(1.5 * r) })),
+  ],
+  frost: [
+    passive('pFrozenHeart', 3, L('Coração Gélido', 'Frozen Heart'), 'pHeart', (r) => ({ hpPct: 2 * r, armorPct: 4 * r })),
+    passive('pGlacial', 8, L('Precisão Glacial', 'Glacial Precision'), 'pTarget', (r) => ({ crit: r1(1.2 * r), critDmg: 5 * r })),
+    passive('pWinter', 14, L('Inverno Eterno', 'Endless Winter'), 'pGear', (r) => ({ chillDmg: 4 * r, cdr: r1(1.2 * r) })),
+  ],
+  heavy: [
+    passive('pHeavyPlate', 3, L('Blindagem Pesada', 'Heavy Plating'), 'pPlate', (r) => ({ hpPct: 3 * r, armorPct: 4 * r })),
+    passive('pAP', 8, L('Munição Perfurante', 'AP Rounds'), 'pSkull', (r) => ({ dmgPct: r1(2.5 * r), critDmg: 4 * r })),
+    passive('pReactor', 14, L('Reator Portátil', 'Portable Reactor'), 'pChip', (r) => ({ hpRegen: r1(0.8 * r), enRegen: r1(0.5 * r), costRed: r1(1.5 * r) })),
+  ],
+};
+for (const [id, list] of Object.entries(PASSIVES)) CLASSES[id].skills.push(...list);
+
+// Bônus somados de todos os passivos aprendidos (usado em computeStats)
+export function passiveMods(c) {
+  const out = {};
+  CLASSES[c.cls].skills.forEach((sk, i) => {
+    const r = c.skills[i] || 0;
+    if (!sk.passive || r <= 0) return;
+    for (const [k, v] of Object.entries(sk.mods(r))) out[k] = (out[k] || 0) + v;
+  });
+  return out;
+}
+export const isPassive = (cls, i) => !!CLASSES[cls].skills[i]?.passive;
 
 export const CLASS_ORDER = ['blade', 'gunner', 'netrunner', 'brawler', 'pyro', 'frost', 'heavy'];
 

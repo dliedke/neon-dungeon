@@ -2,13 +2,14 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { Input } from './input.js';
-import { CLASSES, SKILL_FN } from './classes.js';
+import { CLASSES, SKILL_FN, passiveMods } from './classes.js';
 import { starterWeapon, SLOTS } from './items.js';
 import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
 import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
 import { groundEffect } from './biomes.js';
 import { formMods } from './powers.js';
+import { DIFFICULTY } from './enemies.js';
 import { achAdd } from './ach.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
@@ -24,7 +25,7 @@ export const MAX_STIMS = 9;
 export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
-    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null], skillPoints: 0,
+    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null, null, null, null], skillPoints: 0,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
 }
@@ -52,6 +53,8 @@ export function computeStats(c) {
     cdr: 0,
     xpPct: 0,
     findPct: 0,
+    // efeitos especiais dos poderes passivos
+    dodge: 0, dmgRed: 0, killHeal: 0, killEn: 0, eliteDmg: 0, lowHpDmg: 0, burnPct: 0, chillDmg: 0, costRed: 0,
     legs: new Set(),
   };
   for (const slot of SLOTS) {
@@ -70,6 +73,23 @@ export function computeStats(c) {
     }
     if (it.leg) s.legs.add(it.leg);
   }
+  // poderes passivos da árvore
+  const pm = passiveMods(c);
+  for (const [k, v] of Object.entries(pm)) {
+    if (k === 'hpPct' || k === 'armorPct') continue;
+    s[k] = (s[k] || 0) + v;
+  }
+  if (pm.hpPct) s.maxHp *= 1 + pm.hpPct / 100;
+  if (pm.armorPct) s.armor *= 1 + pm.armorPct / 100;
+  s.armor = Math.round(s.armor);
+  s.dodge = Math.min(s.dodge, 25);
+  s.dmgRed = Math.min(s.dmgRed, 30);
+  s.costRed = Math.min(s.costRed, 40);
+  // dificuldade: no difícil o jogador tem menos vida, blindagem e regeneração; no fácil, mais
+  const D = DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
+  s.maxHp *= D.pHp;
+  s.armor = Math.round(s.armor * D.pArmor);
+  s.hpRegen *= D.pRegen;
   s.crit = Math.min(s.crit, 75);
   s.cdr = Math.min(s.cdr, 40);
   s.lifeSteal = Math.min(s.lifeSteal, 20);
@@ -133,7 +153,7 @@ export function placePlayer(x, z) {
 export function skillCost(i) {
   const p = G.player;
   const base = CLASSES[G.char.cls].skills[i].cost;
-  return Math.round(base * (p.stats.legs.has('overload') ? 0.7 : 1));
+  return Math.round(base * (p.stats.legs.has('overload') ? 0.7 : 1) * (1 - (p.stats.costRed || 0) / 100));
 }
 
 export function skillCd(i) {
@@ -315,7 +335,7 @@ function setMoveTarget(p, x, z) {
 function tryUseSkill(p, i) {
   const C = CLASSES[G.char.cls];
   const sk = C.skills[i];
-  if (!sk || !(G.char.skills[i] > 0)) return;
+  if (!sk || sk.passive || !(G.char.skills[i] > 0)) return;
   if (p.cds[i] > 0) {
     sfx.deny();
     return;
@@ -508,8 +528,8 @@ export function updatePlayer(dt) {
   p.attackHold = Math.max(0, (p.attackHold || 0) - dt);
 
   // ---------- habilidades ----------
-  // Q/E/R (X/Y/B) usam as habilidades colocadas nos 3 espaços
-  ['s1', 's2', 's3'].forEach((a, k) => {
+  // 1–6 (X/Y/B/LB/RB/LT no controle) usam os poderes colocados nos 6 espaços
+  ['s1', 's2', 's3', 's4', 's5', 's6'].forEach((a, k) => {
     if (!Input.pressed(a)) return;
     const i = c.slots[k];
     if (i == null) {
@@ -718,7 +738,7 @@ export function spendPoint(i) {
   c.skills[i] = (c.skills[i] || 0) + 1;
   c.skillPoints--;
   // ao desbloquear, coloca no primeiro espaço livre
-  if (wasLocked && i > 0) {
+  if (wasLocked && i > 0 && !CLASSES[c.cls].skills[i].passive) {
     const free = c.slots.indexOf(null);
     if (free >= 0) c.slots[free] = i;
   }
@@ -728,6 +748,7 @@ export function spendPoint(i) {
 export function assignSlot(slot, i) {
   const c = G.char;
   if (i > 0 && !(c.skills[i] > 0)) return;
+  if (CLASSES[c.cls].skills[i]?.passive) return;
   const prev = c.slots.indexOf(i);
   if (prev >= 0) c.slots[prev] = c.slots[slot];
   c.slots[slot] = i;

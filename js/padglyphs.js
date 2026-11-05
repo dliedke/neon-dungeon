@@ -11,10 +11,10 @@ export function detectPadType(id = '') {
 
 // Rótulo e estilo de cada botão no layout padrão (A = botão de baixo, B = direita, X = esquerda, Y = cima)
 const MAP = {
-  xbox: { a: ['A', 'xa'], b: ['B', 'xb'], x: ['X', 'xx'], y: ['Y', 'xy'], lb: ['LB'], rb: ['RB'], lt: ['LT'], rt: ['RT'], start: ['☰'], select: ['⧉'] },
-  ps4: { a: ['✕', 'pa'], b: ['○', 'pb'], x: ['□', 'px'], y: ['△', 'py'], lb: ['L1'], rb: ['R1'], lt: ['L2'], rt: ['R2'], start: ['OPTIONS'], select: ['SHARE'] },
-  ps5: { a: ['✕', 'pa'], b: ['○', 'pb'], x: ['□', 'px'], y: ['△', 'py'], lb: ['L1'], rb: ['R1'], lt: ['L2'], rt: ['R2'], start: ['OPTIONS'], select: ['CREATE'] },
-  nintendo: { a: ['B', 'nf'], b: ['A', 'nf'], x: ['Y', 'nf'], y: ['X', 'nf'], lb: ['L'], rb: ['R'], lt: ['ZL'], rt: ['ZR'], start: ['+'], select: ['−'] },
+  xbox: { a: ['A', 'xa'], b: ['B', 'xb'], x: ['X', 'xx'], y: ['Y', 'xy'], lb: ['LB'], rb: ['RB'], lt: ['LT'], rt: ['RT'], ls: ['LS'], rs: ['RS'], start: ['☰'], select: ['⧉'] },
+  ps4: { a: ['✕', 'pa'], b: ['○', 'pb'], x: ['□', 'px'], y: ['△', 'py'], lb: ['L1'], rb: ['R1'], lt: ['L2'], rt: ['R2'], ls: ['L3'], rs: ['R3'], start: ['OPTIONS'], select: ['SHARE'] },
+  ps5: { a: ['✕', 'pa'], b: ['○', 'pb'], x: ['□', 'px'], y: ['△', 'py'], lb: ['L1'], rb: ['R1'], lt: ['L2'], rt: ['R2'], ls: ['L3'], rs: ['R3'], start: ['OPTIONS'], select: ['CREATE'] },
+  nintendo: { a: ['B', 'nf'], b: ['A', 'nf'], x: ['Y', 'nf'], y: ['X', 'nf'], lb: ['L'], rb: ['R'], lt: ['ZL'], rt: ['ZR'], ls: ['LS'], rs: ['RS'], start: ['+'], select: ['−'] },
 };
 
 const type = () => G.padType || 'xbox';
@@ -29,9 +29,9 @@ export function glyph(name) {
   return `<span class="pg ${face ? 'pg-face' : 'pg-pill'} ${cls || ''}">${label}</span>`;
 }
 
-// Troca {A} {B} {X} {Y} {LB} {RB} {LT} {RT} {START} {SELECT} pelos ícones do controle atual
+// Troca {A} {B} {X} {Y} {LB} {RB} {LT} {RT} {LS} {RS} {START} {SELECT} pelos ícones do controle atual
 export function padText(str) {
-  return str.replace(/\{(A|B|X|Y|LB|RB|LT|RT|START|SELECT)\}/g, (_, k) => glyph(k.toLowerCase()));
+  return str.replace(/\{(A|B|X|Y|LB|RB|LT|RT|LS|RS|START|SELECT)\}/g, (_, k) => glyph(k.toLowerCase()));
 }
 
 export function padName() {

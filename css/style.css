@@ -166,7 +166,13 @@ body.touch #skillbar { display: none; }
 #tb-s1 { right: calc(124px + var(--safe-r)); bottom: calc(18px + var(--safe-b)); }
 #tb-s2 { right: calc(112px + var(--safe-r)); bottom: calc(96px + var(--safe-b)); }
 #tb-s3 { right: calc(36px + var(--safe-r)); bottom: calc(124px + var(--safe-b)); }
-.tbtn.small { width: 50px; height: 50px; right: calc(200px + var(--safe-r)); bottom: calc(20px + var(--safe-b)); }
+/* poderes 4–6: arco externo ao redor do ataque */
+.tbtn.mid { width: 54px; height: 54px; }
+.tbtn.mid .icon { inset: 12px; }
+#tb-s4 { right: calc(210px + var(--safe-r)); bottom: calc(40px + var(--safe-b)); }
+#tb-s5 { right: calc(187px + var(--safe-r)); bottom: calc(125px + var(--safe-b)); }
+#tb-s6 { right: calc(125px + var(--safe-r)); bottom: calc(187px + var(--safe-b)); }
+.tbtn.small { width: 50px; height: 50px; right: calc(280px + var(--safe-r)); bottom: calc(16px + var(--safe-b)); }
 .tbtn.small .icon { inset: 11px; color: #39ff88; }
 
 #exit-prompt {
@@ -547,6 +553,14 @@ body.ios #rotate .rot-ios { display: block; }
   position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--accent); color: #05030c;
   font-size: 12px; font-weight: 700; display: grid; place-items: center; padding: 0 4px;
 }
+/* poderes passivos: nó quadrado dourado */
+.tnode.passive { border-radius: 14px; }
+.tnode.passive.learned { border-color: #ffd23d; color: #ffd23d; box-shadow: 0 0 14px rgba(255, 210, 61, 0.45), inset 0 0 12px rgba(255, 210, 61, 0.2); }
+.tnode.passive .tpas {
+  position: absolute; top: -6px; left: -6px; height: 18px; border-radius: 9px; background: #ffd23d; color: #05030c;
+  font-size: 10px; font-weight: 700; display: grid; place-items: center; padding: 0 5px; letter-spacing: 0.5px;
+}
+body.touch .tbtn.mid.empty-slot { display: none; }
 .tree-detail { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); padding: 16px; position: sticky; top: 0; }
 .td-head { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
 .td-head .sicon { width: 54px; height: 54px; padding: 10px; border: 1px solid var(--accent); color: var(--accent); flex: 0 0 auto; }

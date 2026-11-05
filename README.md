@@ -31,10 +31,14 @@ If two devices disagree, each class keeps the most advanced character and the be
 
 ### Skill tree
 
-Every class has a **skill tree with 9 powers**. You start with only the basic attack and one skill;
+Every class has a **skill tree with 9 active powers and 3 passive powers**. You start with only the basic attack and one skill;
 new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn.
-Points also upgrade each power up to rank 10. Pick which **3 powers** go on your Q / E / R buttons
-(X / Y / B on a gamepad).
+Points also upgrade each power up to rank 10. Pick which **6 powers** go on your 1–6 buttons
+(X / Y / B / LB / RB / LT on a gamepad).
+
+Passive powers (levels 3, 8 and 14) are always on and don't take a button. They give permanent bonuses that
+fit the class, such as dodge chance, damage reduction, healing or energy on kills, extra damage to elites and bosses,
+stronger burns or extra damage to slowed and frozen enemies.
 
 Some of the wilder powers: summoned demons (Oni, Digital Daemon, Ifrit), a steel golem and an ice wolf pack,
 orbiting blades, black holes, orbital lasers, lightning storms, time warps that slow enemies and their bullets,
@@ -45,15 +49,15 @@ meteor showers and a nuclear strike.
 
 - **Keyboard + mouse:**
   - Click to move and attack, or use WASD to move and Space to attack.
-  - Q / E / R for skills, F for a stim, I for the inventory and Esc to pause.
+  - 1–6 for powers (Q / E / R also fire the first three), F for a stim, I for the inventory and Esc to pause.
 - **Gamepad:**
-  - Left stick to move; A, RB or RT to attack.
-  - X / Y / B for skills, LB for a stim, Select for the inventory and Start to pause.
+  - Left stick to move; A or RT to attack.
+  - X / Y / B / LB / RB / LT for powers 1–6, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.
   - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y switches tabs and B goes back.
   - The game detects Xbox, PlayStation 4/5 and Nintendo Switch Pro controllers and shows the matching button icons.
 - **Mobile:**
   - Drag on the left side of the screen to move.
-  - Use the buttons on the right to attack and use skills.
+  - Use the buttons on the right to attack and use up to 6 powers.
   - The game switches to fullscreen landscape when you tap Play (on Android), and pauses with a hint if the phone is held upright.
   - It can be installed to the home screen as an app (Share → Add to Home Screen on iPhone) to play in fullscreen.
 

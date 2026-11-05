@@ -286,7 +286,7 @@ export function startGame(cls, fresh) {
   G.mode = 'play';
   startFloor(G.char.floor || 1);
   if (G.char.level === 1 && G.char.kills === 0) {
-    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} habilidades', 'Left stick to move · {A} to attack · {X} {Y} {B} skills')) : L('Clique para mover/atacar · Q/E/R habilidades · I inventário', 'Click to move/attack · Q/E/R skills · I inventory')), 2800);
+    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} powers')) : L('Clique para mover/atacar · 1–6 poderes · F stim · I inventário', 'Click to move/attack · 1–6 powers · F stim · I inventory')), 2800);
   }
 }
 
@@ -296,6 +296,15 @@ function sanitizeChar(c) {
   c.skills = c.skills || [1, 1, 1, 1];
   while (c.skills.length < n) c.skills.push(0);
   if (!c.slots) c.slots = [1, 2, 3].map((i) => (c.skills[i] > 0 ? i : null));
+  // 6 espaços de poderes (antes eram 3); passivos nunca ficam em botões
+  c.slots = c.slots.slice(0, 6).map((i) => (i != null && c.skills[i] > 0 && !CLASSES[c.cls].skills[i]?.passive ? i : null));
+  while (c.slots.length < 6) c.slots.push(null);
+  // preenche os espaços vazios com poderes já aprendidos que estavam fora da barra
+  CLASSES[c.cls].skills.forEach((sk, i) => {
+    if (i === 0 || sk.passive || !(c.skills[i] > 0) || c.slots.includes(i)) return;
+    const free = c.slots.indexOf(null);
+    if (free >= 0) c.slots[free] = i;
+  });
   c.inv = c.inv || [];
   c.equip = c.equip || {};
   c.stims = c.stims ?? 3;

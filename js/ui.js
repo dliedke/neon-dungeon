@@ -117,7 +117,9 @@ export function initUI() {
     s.difficulty = diffOrder[(diffOrder.indexOf(s.difficulty) + 1) % diffOrder.length];
     updD();
     saveSettings();
-    if (G.mode !== 'menu') toast(L('A nova dificuldade vale a partir do próximo andar.', 'The new difficulty applies from the next floor.'));
+    // vida/blindagem do jogador mudam na hora; os inimigos, no próximo andar
+    if (G.player && G.char) refreshStats();
+    if (G.mode !== 'menu') toast(L('Seus atributos já mudaram. Os inimigos mudam a partir do próximo andar.', 'Your stats changed now. Enemies change from the next floor.'));
   };
   const updS = () => ($('opt-shake').textContent = s.shake ? L('Ligado', 'On') : L('Desligado', 'Off'));
   updS();
@@ -136,9 +138,12 @@ export function initUI() {
   bindTouchButton($('tb-s1'), 's1');
   bindTouchButton($('tb-s2'), 's2');
   bindTouchButton($('tb-s3'), 's3');
+  bindTouchButton($('tb-s4'), 's4');
+  bindTouchButton($('tb-s5'), 's5');
+  bindTouchButton($('tb-s6'), 's6');
   bindTouchButton($('tb-stim'), 'stim');
   $('tb-stim').querySelector('.icon').innerHTML = iconSvg('stim');
-  $('sk4').querySelector('.icon').innerHTML = iconSvg('stim');
+  $('skstim').querySelector('.icon').innerHTML = iconSvg('stim');
 
   // cliques nos itens (delegação)
   $('panel-char').addEventListener('click', onCharClick);
@@ -187,7 +192,7 @@ export function renderClassCards() {
       <div class="cname">${C.name.toUpperCase()}</div>
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
-      <div class="cskills">${C.skills.map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
+      <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
       <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
@@ -285,7 +290,7 @@ export function showHUD() {
   refreshSkillBar();
 }
 
-// Índices das habilidades em cada botão: [ataque básico, Q, E, R]
+// Índices das habilidades em cada botão: [ataque básico, 1, 2, 3, 4, 5, 6]
 const barSkills = () => [0, ...G.char.slots];
 
 export function refreshSkillBar() {
@@ -306,8 +311,9 @@ export function refreshSkillBar() {
 // Rótulos dos botões na barra de habilidades (teclado ou ícones do controle)
 export function refreshKeyLabels() {
   const pad = G.lastInput === 'pad';
-  const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb')] : ['LMB', 'Q', 'E', 'R', 'F'];
+  const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb'), glyph('rb'), glyph('lt')] : ['LMB', '1', '2', '3', '4', '5', '6'];
   labels.forEach((l, k) => ($('sk' + k).querySelector('.key').innerHTML = l));
+  $('skstim').querySelector('.key').innerHTML = pad ? glyph('ls') : 'F';
 }
 
 // Textos com ícones de controle (dicas do inventário e tela de controles)
@@ -360,7 +366,7 @@ export function updateHUD(dt) {
 
   // habilidades
   const bar = barSkills();
-  for (let b = 0; b < 4; b++) {
+  for (let b = 0; b < bar.length; b++) {
     const i = bar[b];
     const cdMax = i ? skillCd(i) : 0;
     const k = cdMax > 0 ? p.cds[i] / cdMax : 0;
@@ -378,7 +384,7 @@ export function updateHUD(dt) {
     }
   }
   const sk = p.stimCd > 0 ? p.stimCd : 0;
-  $('sk4').querySelector('.cd').style.setProperty('--p', sk.toFixed(2));
+  $('skstim').querySelector('.cd').style.setProperty('--p', sk.toFixed(2));
   $('tb-stim').querySelector('.cd').style.setProperty('--p', sk.toFixed(2));
 
   // buffs
@@ -731,14 +737,13 @@ export function renderChar() {
 let treeSel = 1;
 const TIERS = [
   { label: [1, 1], idx: [0, 1] },
-  { label: [2, 4], idx: [2, 3] },
-  { label: [5, 9], idx: [4, 5, 6] },
-  { label: [12, 15], idx: [7, 8] },
+  { label: [2, 4], idx: [2, 9, 3] },
+  { label: [5, 9], idx: [4, 5, 10, 6] },
+  { label: [12, 15], idx: [7, 11, 8] },
 ];
 function slotKey(k) {
-  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b'][k]);
-  if (G.isTouch) return String(k + 1);
-  return ['Q', 'E', 'R'][k];
+  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt'][k]);
+  return String(k + 1);
 }
 
 // Desbloqueia ou evolui o poder (botão de confirmar do controle ou clique duplo)
@@ -760,12 +765,12 @@ function treeSpend(i) {
   restoreFocus(`[data-node="${i}"]`);
 }
 
-// Coloca o poder no próximo botão (Q → E → R)
+// Coloca o poder no próximo botão (1 → 2 → … → 6)
 function treeCycleSlot(i) {
   const c = G.char;
-  if (i === 0 || !(c.skills[i] > 0)) return sfx.deny();
+  if (i === 0 || !(c.skills[i] > 0) || CLASSES[c.cls].skills[i].passive) return sfx.deny();
   const cur = c.slots.indexOf(i);
-  assignSlot((cur + 1) % 3, i);
+  assignSlot((cur + 1) % c.slots.length, i);
   sfx.click();
   refreshSkillBar();
   renderTree();
@@ -792,10 +797,10 @@ function renderTree() {
       const canUp = !locked && r < 10 && c.skillPoints > 0;
       const slot = c.slots.indexOf(i);
       const state = locked ? (c.level >= req ? 'available' : 'locked') : 'learned';
-      html += `<button class="tnode ${state}${treeSel === i ? ' sel' : ''}${canLearn || canUp ? ' can' : ''}" data-nav data-node="${i}" title="${sk.name}">
+      html += `<button class="tnode ${state}${sk.passive ? ' passive' : ''}${treeSel === i ? ' sel' : ''}${canLearn || canUp ? ' can' : ''}" data-nav data-node="${i}" title="${sk.name}">
         <span class="ticon">${iconSvg(sk.icon)}</span>
         <span class="tbadge">${locked ? (c.level >= req ? '+' : `🔒${req}`) : `${r}/10`}</span>
-        ${slot >= 0 ? `<span class="tslot">${slotKey(slot)}</span>` : i === 0 ? `<span class="tslot">⚔</span>` : ''}
+        ${slot >= 0 ? `<span class="tslot">${slotKey(slot)}</span>` : i === 0 ? `<span class="tslot">⚔</span>` : ''}${sk.passive ? `<span class="tpas">${L('PASSIVO', 'PASSIVE')}</span>` : ''}
       </button>`;
     }
     html += '</div></div>';
@@ -807,15 +812,15 @@ function renderTree() {
   const r = c.skills[i] || 0;
   const req = sk.req || 1;
   const locked = r === 0;
-  const meta = i === 0 ? L('Ataque básico', 'Basic attack') : L(`Custo ${skillCost(i)} de energia · Recarga ${skillCd(i).toFixed(1)}s`, `Cost ${skillCost(i)} energy · Cooldown ${skillCd(i).toFixed(1)}s`);
+  const meta = sk.passive ? L('Poder passivo · sempre ativo, não usa botão', 'Passive power · always on, no button needed') : i === 0 ? L('Ataque básico', 'Basic attack') : L(`Custo ${skillCost(i)} de energia · Recarga ${skillCd(i).toFixed(1)}s`, `Cost ${skillCost(i)} energy · Cooldown ${skillCd(i).toFixed(1)}s`);
   let status = '';
   if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
   else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
-  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`) : ''}</div>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? (sk.passive ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
   const canSpend = c.skillPoints > 0 && r < 10 && c.level >= req;
   let actions = `<button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>`;
-  if (i > 0 && !locked) {
-    actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${[0, 1, 2].map((k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
+  if (i > 0 && !locked && !sk.passive) {
+    actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${c.slots.map((_, k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
   }
   const tip = G.lastInput === 'pad' ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão', '{A} on a power: unlock/upgrade · {X}: change button')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-detail">

@@ -92,6 +92,11 @@ export function hitEnemy(e, mult, o = {}) {
   if (!e.alive) return;
   const p = G.player;
   const r = playerDamageRoll(mult, o.forceCrit);
+  // bônus dos poderes passivos
+  const ps = p.stats;
+  if (ps.eliteDmg && (e.elite || e.boss)) r.d *= 1 + ps.eliteDmg / 100;
+  if (ps.lowHpDmg && p.hp < ps.maxHp * 0.5) r.d *= 1 + ps.lowHpDmg / 100;
+  if (ps.chillDmg && (e.slowT > 0 || e.frozenT > 0)) r.d *= 1 + ps.chillDmg / 100;
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
@@ -109,7 +114,7 @@ export function applyStatus(e, o) {
   const s = G.player.stats;
   const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100);
   if (o.burn) {
-    const dps = avg * o.burn;
+    const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100);
     e.burnT = 3;
     e.burnDps = Math.max(e.burnT > 0 ? e.burnDps || 0 : 0, dps);
   }
@@ -206,6 +211,8 @@ export function killEnemy(e) {
     }
     G.char.kills = (G.char.kills || 0) + 1;
     if (p.stats.legs.has('nano')) healPlayer(p.stats.maxHp * 0.04);
+    if (p.stats.killHeal) healPlayer((p.stats.maxHp * p.stats.killHeal) / 100, false);
+    if (p.stats.killEn) p.en = Math.min(p.stats.maxEn, p.en + p.stats.killEn);
     if (p.stats.legs.has('core')) {
       const x = e.x;
       const z = e.z;
@@ -258,7 +265,13 @@ export function enemyExplosion(x, z, radius, dmg, color) {
 export function damagePlayer(amount) {
   const p = G.player;
   if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
+  // esquiva (poder passivo)
+  if (p.stats.dodge && Math.random() * 100 < p.stats.dodge) {
+    floatText(p.x, 1.8, p.z, L('ESQUIVA', 'DODGE'), 'shield');
+    return;
+  }
   amount *= 100 / (100 + p.stats.armor);
+  if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
   if (p.buffs.titan > 0) amount *= 0.4;
   if (p.buffs.aegis > 0) amount *= 0.5;
   const fmd = formMods(p);

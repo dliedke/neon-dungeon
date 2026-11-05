@@ -125,7 +125,7 @@ export function achList() {
   add('allClasses10', '🌈', 3, L('Esquadrão Completo', 'Full Squad'), L('Chegue ao nível 10 com todas as classes', 'Reach level 10 with every class'), () => CLASS_ORDER.filter((k) => G.save.slots[k] && G.save.slots[k].level >= 10).length, CLASS_ORDER.length);
 
   // poderes e equipamento
-  add('fullTree', '🌳', 2, L('Árvore Completa', 'Full Tree'), L('Libere os 9 poderes de uma classe', 'Unlock all 9 powers of a class'), () => maxOf((c) => (c.skills || []).filter((r) => r > 0).length), 9);
+  add('fullTree', '🌳', 2, L('Árvore Completa', 'Full Tree'), L('Libere os 9 poderes de uma classe', 'Unlock all 9 powers of a class'), () => maxOf((c) => (c.skills || []).slice(0, 9).filter((r) => r > 0).length), 9);
   add('rank10', '🔟', 1, L('Especialista', 'Specialist'), L('Leve um poder ao nível 10', 'Take a power to rank 10'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 10);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));

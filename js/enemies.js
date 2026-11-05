@@ -60,11 +60,13 @@ const ELITE = {
 
 // Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos.
 // Chefes têm multiplicadores próprios; bossTempo encurta a pausa entre os ataques
-// (os avisos no chão continuam com a mesma duração, para continuar justo)
+// (os avisos no chão continuam com a mesma duração, para continuar justo).
+// Também mexe no jogador: pHp (vida máxima), pArmor (blindagem) e pRegen (regeneração de vida).
+// A quantidade quase não muda: no fácil vêm muitos inimigos, mas morrem rápido.
 export const DIFFICULTY = {
-  easy: { name: L('Fácil', 'Easy'), hp: 0.7, dmg: 0.6, count: 0.85, bossHp: 0.85, bossDmg: 0.85, bossTempo: 0.85 },
-  normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 1.35, bossDmg: 1.2, bossTempo: 1.35 },
-  hard: { name: L('Difícil', 'Hard'), hp: 1.55, dmg: 1.5, count: 1.3, bossHp: 1.6, bossDmg: 1.3, bossTempo: 1.7 },
+  easy: { name: L('Fácil', 'Easy'), hp: 0.55, dmg: 0.5, count: 1.0, bossHp: 0.75, bossDmg: 0.7, bossTempo: 0.85, pHp: 1.3, pArmor: 1.3, pRegen: 1.6 },
+  normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 1.35, bossDmg: 1.2, bossTempo: 1.35, pHp: 1, pArmor: 1, pRegen: 1 },
+  hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 1.9, bossDmg: 1.5, bossTempo: 1.8, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
 };
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
@@ -1229,15 +1231,19 @@ export function populateFloor(d, floor, boss) {
   const eliteChance = floor <= 1 ? 0 : Math.min(0.3, 0.04 + floor * 0.025);
   const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
   const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
-  // orçamento de inimigos por andar: mapas abertos não ficam lotados
-  const budget = Math.min(95, Math.round((12 + floor * 7) * D.count));
+  // mapas abertos (deserto, floresta, pradaria...) são 2-4x maiores: mais inimigos para não ficarem vazios
+  let walk = 0;
+  for (const t of d.grid) if (t === 1) walk++;
+  const areaK = Math.max(1, Math.min(2.4, walk / 1800));
+  // orçamento de inimigos por andar
+  const budget = Math.min(140, Math.round((15 + floor * 8) * D.count * areaK));
   const quotas = new Map();
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
     if (boss && r === d.exitRoom) continue;
     if (r.safe) continue;
     if (chance(emptyChance)) continue;
-    quotas.set(r, Math.max(1, Math.round(((r.w * r.h) / perPack) * D.count)));
+    quotas.set(r, Math.max(1, Math.round(((r.w * r.h) / perPack) * D.count * areaK)));
   }
   // distribui os grupos em rodadas para espalhar pelo mapa
   const slots = [];
@@ -1257,7 +1263,7 @@ export function populateFloor(d, floor, boss) {
       const cz = c0.z;
       const type = pickEnemyType(floor);
       const base = ETYPES[type].solo ? 1 : type === 'bomber' || type === 'kamikaze' ? 2 + Math.floor(rr(0, 1 + floor / 3)) : 1 + Math.floor(rr(0, 2.2 + floor / 2.5));
-      const n = Math.max(1, Math.round(base * D.count));
+      const n = Math.max(1, Math.round(base * D.count * 1.15));
       const elite = chance(eliteChance);
       for (let i = 0; i < n; i++) {
         let x = cx + rr(-1.5, 1.5);
