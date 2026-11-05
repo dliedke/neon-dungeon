@@ -57,11 +57,13 @@ const ELITE = {
   instavel: { name: L('Instável', 'Unstable'), color: 0xff7a1a, apply: (e) => { e.explodeOnDeath = true; } },
 };
 
-// Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos
+// Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos.
+// Chefes têm multiplicadores próprios; bossTempo encurta a pausa entre os ataques
+// (os avisos no chão continuam com a mesma duração, para continuar justo)
 export const DIFFICULTY = {
-  easy: { name: L('Fácil', 'Easy'), hp: 0.7, dmg: 0.6, count: 0.85 },
-  normal: { name: 'Normal', hp: 1, dmg: 1, count: 1 },
-  hard: { name: L('Difícil', 'Hard'), hp: 1.35, dmg: 1.35, count: 1.25 },
+  easy: { name: L('Fácil', 'Easy'), hp: 0.7, dmg: 0.6, count: 0.85, bossHp: 0.85, bossDmg: 0.85, bossTempo: 0.85 },
+  normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 1.35, bossDmg: 1.2, bossTempo: 1.35 },
+  hard: { name: L('Difícil', 'Hard'), hp: 1.55, dmg: 1.5, count: 1.3, bossHp: 1.6, bossDmg: 1.3, bossTempo: 1.7 },
 };
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
@@ -120,6 +122,9 @@ export function spawnEnemy(type, x, z, o = {}) {
     G.world.add(e.laser);
   }
   if (e.boss) {
+    const D = diff();
+    e.hp = e.maxHp = e.hp * D.bossHp;
+    e.dmg *= D.bossDmg;
     e.bstate = 'intro';
     e.bt = 1.2;
     e.phase2 = false;
@@ -246,6 +251,8 @@ export function updateEnemies(dt, cam) {
 
     e.atkT -= edt;
     e.flash -= edt;
+    // chefes descansam menos entre um ataque e outro
+    if (e.boss && e.bstate === 'walk' && e.bt > 0) e.bt -= edt * (diff().bossTempo - 1);
     if (e.hpShow > 0) e.hpShow -= edt;
 
     let mvx = 0;
