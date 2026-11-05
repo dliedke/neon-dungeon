@@ -184,9 +184,74 @@ function removeAlly(a, explode) {
   a.model.root.parent && a.model.root.parent.remove(a.model.root);
 }
 
+// Formação: aliados ociosos se alinham lado a lado atrás do jogador (fileiras de 4)
+function formationSlots(p) {
+  const mob = G.allies.filter((a) => !a.static);
+  if (!mob.length) return;
+  let cx = 0;
+  let cz = 0;
+  for (const a of mob) {
+    cx += a.x;
+    cz += a.z;
+  }
+  // direção "para frente" = do grupo para o jogador
+  let fx = p.x - cx / mob.length;
+  let fz = p.z - cz / mob.length;
+  const fl = Math.hypot(fx, fz);
+  if (fl > 0.3) {
+    fx /= fl;
+    fz /= fl;
+    G.allyDir = { x: fx, z: fz };
+  } else ({ x: fx, z: fz } = G.allyDir || { x: 0, z: 1 });
+  const rowN = 4;
+  mob.forEach((a, k) => {
+    const row = Math.floor(k / rowN);
+    const inRow = Math.min(rowN, mob.length - row * rowN);
+    const side = (k % rowN - (inRow - 1) / 2) * 1.25;
+    const back = 2 + row * 1.3;
+    a.slotX = p.x - fx * back - fz * side;
+    a.slotZ = p.z - fz * back + fx * side;
+    a.slotFace = Math.atan2(fx, fz);
+  });
+}
+
+// Aliados não se sobrepõem (empurrão suave entre pares)
+function separateAllies() {
+  const arr = G.allies;
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = i + 1; j < arr.length; j++) {
+      const a = arr[i];
+      const b = arr[j];
+      if (a.static && b.static) continue;
+      let dx = b.x - a.x;
+      let dz = b.z - a.z;
+      let dist = Math.hypot(dx, dz);
+      const min = a.r + b.r + 0.25;
+      if (dist >= min) continue;
+      if (dist < 1e-4) {
+        dx = Math.cos(i + j);
+        dz = Math.sin(i + j);
+        dist = 1;
+      }
+      const push = (min - dist) * 0.5;
+      const ux = dx / dist;
+      const uz = dz / dist;
+      // estáticos (bobina) não se mexem; o outro leva o empurrão todo
+      const wa = a.static ? 0 : b.static ? 2 : 1;
+      const wb = b.static ? 0 : a.static ? 2 : 1;
+      a.x -= ux * push * wa;
+      a.z -= uz * push * wa;
+      b.x += ux * push * wb;
+      b.z += uz * push * wb;
+    }
+  }
+}
+
 export function updateAllies(dt) {
   const p = P();
   const d = G.dungeon;
+  formationSlots(p);
+  separateAllies();
   for (let i = G.allies.length - 1; i >= 0; i--) {
     const a = G.allies[i];
     a.t -= dt;
@@ -212,17 +277,22 @@ export function updateAllies(dt) {
         allyAttack(a, tgt);
       }
     } else if (!a.static && p.alive) {
-      const dx = p.x - a.x;
-      const dz = p.z - a.z;
+      // vai para o seu lugar na formação ao lado dos outros
+      const sx = a.slotX ?? p.x;
+      const sz = a.slotZ ?? p.z;
+      const dx = sx - a.x;
+      const dz = sz - a.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 2.5) {
-        mvx = dx / dist;
-        mvz = dz / dist;
+      if (dist > 0.3) {
+        // desacelera ao chegar para não ficar tremendo em cima do lugar
+        const k = Math.min(1, dist / Math.max(0.01, a.speed * dt));
+        mvx = (dx / dist) * k;
+        mvz = (dz / dist) * k;
         a.facing = Math.atan2(dx, dz);
-      }
-      if (dist > 16) {
-        a.x = p.x;
-        a.z = p.z;
+      } else if (a.slotFace !== undefined) a.facing = a.slotFace;
+      if (Math.hypot(p.x - a.x, p.z - a.z) > 16) {
+        a.x = sx;
+        a.z = sz;
       }
     }
     a.x += mvx * a.speed * dt;

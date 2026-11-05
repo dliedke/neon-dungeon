@@ -379,6 +379,13 @@ body.pad .cell.empty { pointer-events: auto; }
 .it-cmp + .item-card { margin-top: 4px; opacity: 0.8; }
 .detail-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
 .empty-detail { color: var(--muted); font-size: 14px; padding: 20px 6px; text-align: center; border: 1px dashed var(--line); }
+/* comparação com o equipado */
+.it-diff { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 14px; font-weight: 600; color: var(--muted); }
+.it-diff-h { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: 400; }
+.it-diff .up { color: #39ff88; }
+.it-diff .down { color: #ff5577; }
+.cmp-cur .it-cmp { margin-top: 0; }
+.cmp-new + .cmp-cur { margin-top: 10px; }
 #skill-list { display: grid; gap: 10px; }
 .srow { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
 .srow .sicon { width: 54px; height: 54px; padding: 10px; border: 1px solid var(--line); color: var(--accent); }
@@ -411,6 +418,18 @@ body.pad .pad-hints { display: block; }
   .tab-body { grid-template-columns: 1fr 1fr; }
   .detail-col { grid-column: 1 / -1; }
   .help-grid { grid-template-columns: 1fr; }
+  /* item selecionado e equipado lado a lado, sem precisar rolar para comparar */
+  .cmp-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: start; }
+  .cmp-new + .cmp-cur { margin-top: 0; }
+  .cmp-wrap .item-card { padding: 8px; }
+  .cmp-wrap .it-name { font-size: 15px; }
+  .cmp-wrap .it-type { font-size: 10px; margin: 2px 0 4px; }
+  .cmp-wrap .it-main { font-size: 16px; }
+  .cmp-wrap .it-main span { font-size: 12px; }
+  .cmp-wrap .it-aff, .cmp-wrap .it-diff { font-size: 13px; }
+  .cmp-wrap .it-leg { font-size: 12px; }
+  .cmp-wrap .detail-actions { margin: 6px 0 0; }
+  .cmp-cur .it-cmp { font-size: 10px; margin-bottom: 2px; }
 }
 @media (max-width: 760px) {
   #class-cards .ccard { flex-basis: 100%; }
@@ -436,11 +455,16 @@ body.pad .pad-hints { display: block; }
   .panel { padding: 12px; }
   .panel-head { margin-bottom: 8px; }
   .tab-btn { padding: 6px 12px; font-size: 13px; }
+  /* celular deitado: equipamento | inventário | detalhes, com os detalhes sempre à vista */
   .tab-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 12px; }
-  .detail-col { grid-column: 1 / -1; }
+  #tab-equip.tab-body { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 1.2fr); gap: 10px; }
+  .detail-col { grid-column: auto; position: sticky; top: 0; align-self: start; }
   #equip-slots { grid-template-columns: repeat(6, 1fr); gap: 5px; }
   .eslot { font-size: 9px; }
-  #inv-grid { grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  #inv-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  /* coluna estreita: equipado embaixo; o resumo ▲▼ já fica no topo */
+  .cmp-wrap { display: block; }
+  .cmp-new + .cmp-cur { margin-top: 8px; }
   #stat-list { font-size: 12px; margin-top: 8px; }
   #char-title { margin-bottom: 6px; }
   .srow { padding: 6px; }

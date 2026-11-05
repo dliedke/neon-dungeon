@@ -2,7 +2,7 @@
 import { G } from './state.js';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
-import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemScore, recycleValue, slotIconSvg } from './items.js';
+import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
@@ -127,7 +127,7 @@ export function initUI() {
     saveSettings();
   };
   $('opt-full').onclick = () => {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+    if (!document.fullscreenElement) enterDesktopFullscreen(true);
     else document.exitFullscreen?.();
   };
 
@@ -678,7 +678,8 @@ export function renderChar() {
         ? `<div class="cell r${it.rarity}${sel}" data-nav data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}</div>`
         : `<div class="cell empty">${slotIconSvg(slot)}</div>`}${SLOT_NAMES[slot]}</div>`;
     }).join('');
-    // inventário
+    // inventário (sempre ordenado: melhores itens primeiro)
+    sortInventory(c.inv, c.equip);
     let html = '';
     for (let i = 0; i < INV_SIZE; i++) {
       const it = c.inv[i];
@@ -878,9 +879,11 @@ function renderDetail() {
   } else {
     actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}</button></div>`;
   }
-  let cmp = '';
-  if (selected.where === 'inv' && c.equip[it.slot]) cmp = `<div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(c.equip[it.slot])}`;
-  el.innerHTML = itemCardHtml(it) + actions + cmp;
+  const cur = selected.where === 'inv' ? c.equip[it.slot] : null;
+  if (cur) {
+    // selecionado e equipado lado a lado (no celular fica tudo visível sem rolar)
+    el.innerHTML = `<div class="cmp-wrap"><div class="cmp-new">${itemCardHtml(it, itemDiffHtml(it, cur))}${actions}</div><div class="cmp-cur"><div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(cur)}</div></div>`;
+  } else el.innerHTML = itemCardHtml(it) + actions;
   el.querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => {
     const a = b.dataset.act;
     if (a === 'equip') equipItem(it.uid);
@@ -1197,9 +1200,27 @@ function buy(what) {
 // ------------------------------------------------------------------
 // Celular: tela cheia e orientação horizontal
 // ------------------------------------------------------------------
+// Desktop: tela cheia ao entrar no jogo. Prende o Esc (Chrome/Edge) para ele continuar
+// pausando; para sair segura Esc. Se o jogador sair da tela cheia, não força de novo.
+let fullOptOut = false;
+function lockEsc() {
+  try {
+    const p = navigator.keyboard && navigator.keyboard.lock && navigator.keyboard.lock(['Escape']);
+    if (p && p.catch) p.catch(() => {});
+  } catch (_) {}
+}
+export function enterDesktopFullscreen(force) {
+  const el = document.documentElement;
+  if (document.fullscreenElement || !el.requestFullscreen || (fullOptOut && !force)) return;
+  el.requestFullscreen({ navigationUI: 'hide' }).then(lockEsc).catch(() => {});
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && !G.isTouch) fullOptOut = true;
+});
+
 // Precisa ser chamado dentro de um toque/clique (exigência dos navegadores)
 export function enterMobileFullscreen() {
-  if (!G.isTouch) return;
+  if (!G.isTouch) return enterDesktopFullscreen();
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   const lock = () => {

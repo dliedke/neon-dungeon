@@ -148,6 +148,47 @@ export function itemCardHtml(it, extra = '') {
   </div>`;
 }
 
+// Diferenças de atributos entre um item e o equipado (▲ verde ganha, ▼ vermelho perde)
+const DIFF_NAMES = {
+  dmgPct: ['% de dano', '% damage'], hp: [' de vida', ' health'], en: [' de energia', ' energy'], crit: ['% de crítico', '% crit'],
+  critDmg: ['% de dano crítico', '% crit damage'], atkSpd: ['% vel. de ataque', '% attack speed'], moveSpd: ['% movimento', '% movement'],
+  armor: [' de blindagem', ' armor'], hpRegen: [' vida/s', ' health/s'], enRegen: [' energia/s', ' energy/s'], lifeSteal: ['% roubo de vida', '% life steal'],
+  cdr: ['% recarga', '% cooldown'], xpPct: ['% experiência', '% experience'], findPct: ['% achar itens', '% item find'],
+};
+export function itemDiffHtml(it, cur) {
+  if (!cur) return '';
+  const rows = [];
+  const add = (d, label, lowerBetter) => {
+    d = Math.round(d * 10) / 10;
+    if (!d) return;
+    const good = lowerBetter ? d < 0 : d > 0;
+    rows.push(`<div class="${good ? 'up' : 'down'}">${good ? '▲' : '▼'} ${d > 0 ? '+' : ''}${d.toLocaleString(L('pt-BR', 'en-US'), { maximumFractionDigits: 1 })}${label}</div>`);
+  };
+  if (it.slot === 'weapon') add((it.wMin + it.wMax) / 2 - (cur.wMin + cur.wMax) / 2, L(' de dano médio', ' avg damage'));
+  // blindagem base + afixo de blindagem somados
+  add((it.armor || 0) + (it.affixes.armor || 0) - (cur.armor || 0) - (cur.affixes.armor || 0), L(DIFF_NAMES.armor[0], DIFF_NAMES.armor[1]));
+  for (const k of Object.keys(AFFIXES)) {
+    if (k === 'armor') continue;
+    const n = DIFF_NAMES[k];
+    // recarga aparece como "-X%": mais é melhor, mostra como redução
+    if (k === 'cdr') add(-((it.affixes.cdr || 0) - (cur.affixes.cdr || 0)), L(n[0], n[1]), true);
+    else add((it.affixes[k] || 0) - (cur.affixes[k] || 0), L(n[0], n[1]));
+  }
+  if (it.leg !== cur.leg) {
+    if (cur.leg) rows.push(`<div class="down">▼ ${LEGENDARIES[cur.leg].name}</div>`);
+    if (it.leg) rows.push(`<div class="up">▲ ${LEGENDARIES[it.leg].name}</div>`);
+  }
+  if (!rows.length) rows.push(`<div>= ${L('Igual ao equipado', 'Same as equipped')}</div>`);
+  return `<div class="it-diff"><div class="it-diff-h">${L('Comparado ao equipado', 'Compared to equipped')}</div>${rows.join('')}</div>`;
+}
+
+// Ordem do inventário: melhorias primeiro, depois raridade, tipo e pontuação
+export function sortInventory(inv, equip) {
+  const key = inv.map((it) => ({ it, up: isUpgrade(it, equip) ? 1 : 0, s: itemScore(it) }));
+  key.sort((a, b) => b.up - a.up || b.it.rarity - a.it.rarity || SLOTS.indexOf(a.it.slot) - SLOTS.indexOf(b.it.slot) || b.s - a.s);
+  key.forEach((k, i) => (inv[i] = k.it));
+}
+
 export function slotIconSvg(slot) {
   return `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SLOT_ICONS[slot]}</svg>`;
 }
