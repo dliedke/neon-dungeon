@@ -184,6 +184,11 @@ export const sfx = {
   legendary() {
     [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.3, vol: 0.1, delay: i * 0.07 }));
   },
+  // fanfarra da vitória final
+  victory() {
+    [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((f, i) => tone({ type: 'square', f, dur: i === 7 ? 1.2 : 0.26, vol: 0.08, delay: i * 0.16, lp: 3600 }));
+    [262, 330, 392, 523].forEach((f, i) => tone({ type: 'triangle', f, dur: 1.6, vol: 0.06, delay: 1.1 + i * 0.02 }));
+  },
   levelup() {
     [440, 554, 659, 880, 1109].forEach((f, i) => tone({ type: 'square', f, dur: 0.22, vol: 0.07, delay: i * 0.08, lp: 3200 }));
   },

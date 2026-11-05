@@ -109,8 +109,12 @@ button { font-family: inherit; }
   position: absolute; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(460px, 46vw);
 }
-#boss-bar, #target-info { width: 100%; text-align: center; }
-#boss-name { font-family: Orbitron, sans-serif; font-size: 14px; letter-spacing: 3px; color: #ff4466; text-shadow: 0 0 10px #ff2244; margin-bottom: 4px; }
+#boss-bar, #boss-bar2, #target-info { width: 100%; text-align: center; }
+#boss-name, #boss-name2 { font-family: Orbitron, sans-serif; font-size: 14px; letter-spacing: 3px; color: #ff4466; text-shadow: 0 0 10px #ff2244; margin-bottom: 4px; }
+/* batalha final: duas barras mais finas e o placar de chefes */
+#top-center.duo .bar.boss { height: 10px; }
+#top-center.duo #boss-name, #top-center.duo #boss-name2 { font-size: 12px; margin-bottom: 2px; }
+#final-count { font-family: Orbitron, sans-serif; font-size: 11px; letter-spacing: 2px; color: #ff2bd6; text-shadow: 0 0 8px #ff2bd6; }
 .bar.boss { height: 14px; }
 .bar.boss .fill { background: linear-gradient(90deg, #8a0020, #ff2244); box-shadow: 0 0 14px #ff2244; }
 #target-name { font-size: 14px; margin-bottom: 2px; text-shadow: 0 1px 3px #000; }
@@ -415,6 +419,64 @@ body.pad .pad-hints { display: block; }
 .dead h2 { color: #ff4466; text-shadow: 0 0 14px #ff2244; }
 .glitch { animation: glitch 2s infinite; }
 @keyframes glitch { 0%, 90%, 100% { transform: none; } 92% { transform: translateX(-3px) skewX(8deg); } 94% { transform: translateX(3px); } }
+
+/* ---------------- Final do jogo: o sol nasce sobre a cidade ---------------- */
+#panel-end { background: #05020f; overflow: hidden auto; z-index: 25; }
+.end-sky {
+  position: fixed; inset: 0; overflow: hidden; pointer-events: none;
+  background: linear-gradient(#05020f 0%, #1a0630 35%, #6a0f4a 62%, #ff5a3c 82%, #ffd23d 100%);
+  background-size: 100% 260%; animation: dawn 12s ease-out forwards;
+}
+@keyframes dawn { from { background-position: 0 0; } to { background-position: 0 100%; } }
+.end-sun {
+  position: absolute; left: 50%; bottom: -40vmin; width: 60vmin; height: 60vmin; margin-left: -30vmin; border-radius: 50%;
+  background: repeating-linear-gradient(#ffe27a 0 8%, #ff7a3c 8% 9.5%); box-shadow: 0 0 120px 30px rgba(255, 140, 60, 0.55);
+  animation: sunrise 12s ease-out forwards;
+}
+@keyframes sunrise { to { bottom: 6vh; } }
+.end-city {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 26vh;
+  background:
+    linear-gradient(transparent 92%, #ff2bd6 92% 94%, transparent 94%),
+    repeating-linear-gradient(90deg, #07030f 0 6%, transparent 6% 7%, #07030f 7% 11%, transparent 11% 12.5%, #07030f 12.5% 15%, transparent 15% 16%);
+  -webkit-mask: linear-gradient(transparent 0 18%, #000 18%); mask: linear-gradient(transparent 0 18%, #000 18%);
+  clip-path: polygon(0 40%, 6% 40%, 6% 10%, 11% 10%, 11% 55%, 15% 55%, 15% 25%, 22% 25%, 22% 0, 26% 0, 26% 45%, 33% 45%, 33% 20%, 40% 20%, 40% 60%, 46% 60%, 46% 8%, 52% 8%, 52% 38%, 60% 38%, 60% 15%, 64% 15%, 64% 50%, 71% 50%, 71% 28%, 78% 28%, 78% 5%, 83% 5%, 83% 42%, 90% 42%, 90% 22%, 95% 22%, 95% 48%, 100% 48%, 100% 100%, 0 100%);
+}
+.end-city.far { height: 34vh; opacity: 0.45; filter: blur(1px); transform: scaleX(-1); }
+.end-sparks {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(2px 2px at 10% 90%, #00f0ff, transparent), radial-gradient(2px 2px at 30% 95%, #ff2bd6, transparent), radial-gradient(3px 3px at 55% 92%, #ffd23d, transparent), radial-gradient(2px 2px at 75% 97%, #39ff88, transparent), radial-gradient(2px 2px at 90% 93%, #00f0ff, transparent);
+  background-size: 100% 100%; animation: sparks 6s linear infinite;
+}
+@keyframes sparks { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-90vh); opacity: 0; } }
+.panel.end {
+  position: relative; max-width: 620px; text-align: center; background: rgba(8, 4, 20, 0.72);
+  border-color: rgba(255, 210, 61, 0.5); box-shadow: 0 0 60px rgba(255, 90, 60, 0.25);
+}
+.end-kicker { font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: 6px; color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+.end-title { margin: 6px 0 12px; font-size: clamp(22px, 5vw, 36px); letter-spacing: 4px; color: #fff; text-shadow: 0 0 14px #ff2bd6, 0 0 30px #ff5a3c; }
+#end-story p { margin: 8px 0; font-size: 15px; line-height: 1.45; color: #e2e4ff; opacity: 0; animation: endLine 1.2s ease-out forwards; }
+#end-story p.tease { color: #ff4466; font-style: italic; text-shadow: 0 0 8px #ff2244; }
+@keyframes endLine { from { opacity: 0; transform: translateY(8px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+#end-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 6px; opacity: 0; animation: endLine 1s ease-out forwards;
+}
+#end-stats div { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); padding: 6px 4px; display: flex; flex-direction: column; gap: 2px; }
+#end-stats span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+#end-stats b { font-family: Orbitron, sans-serif; font-size: 14px; color: var(--yellow); }
+.end-btns { margin-top: 12px; }
+@media (max-height: 520px), (max-width: 640px) {
+  .panel.end { padding: 8px 12px; max-width: 700px; }
+  .end-kicker { font-size: 10px; letter-spacing: 4px; }
+  .end-title { margin: 0 0 4px; font-size: 20px; }
+  #end-story p { font-size: 12px; margin: 2px 0; line-height: 1.25; }
+  #end-stats { grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 6px 0 2px; }
+  #end-stats div { padding: 3px 2px; }
+  #end-stats span { font-size: 8px; letter-spacing: 0; }
+  #end-stats b { font-size: 10px; }
+  .end-btns { margin-top: 6px; }
+  .end-btns .btn { padding: 7px 14px; font-size: 12px; }
+}
 
 /* ---------------- Responsivo ---------------- */
 @media (max-width: 1100px) {

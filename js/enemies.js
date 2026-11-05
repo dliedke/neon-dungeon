@@ -3,14 +3,14 @@ import * as THREE from 'three';
 import { G, gk } from './state.js';
 import { rr, pick, chance, weightedPick, shuffle } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
-import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile } from './dungeon.js';
+import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor } from './dungeon.js';
 import { spawnProjectile, damagePlayer, after, enemyExplosion, damageEnemy } from './combat.js';
 import { burst, ringFx, telegraphFx, lineTelegraph, floatText, slashFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
 import { groundEffect } from './biomes.js';
-import { achAdd } from './ach.js';
+import { achAdd, achMark } from './ach.js';
 import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
@@ -169,11 +169,15 @@ export function onEnemyKilled(e) {
     e.laser = null;
   }
   if (e.boss) {
-    G.boss = null;
-    bossBar(null);
-    banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
-    sfx.levelup();
-    G.dungeon.meshes.exit.locked = false;
+    G.bosses = G.bosses.filter((b) => b !== e);
+    G.boss = G.bosses[0] || null;
+    bossBar();
+    if (G.final) finalBossDown(e);
+    else {
+      banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
+      sfx.levelup();
+      G.dungeon.meshes.exit.locked = false;
+    }
   }
   // animação de morte: afunda e some
   const root = e.model.root;
@@ -248,7 +252,7 @@ export function updateEnemies(dt, cam) {
     if (e.alerted) {
       e.alerted = false;
       for (const o of G.enemies) if (o.alive && !o.aggro && !o.inert && Math.hypot(o.x - e.x, o.z - e.z) < 5) o.aggro = true;
-      if (e.boss && !G.boss) startBoss(e);
+      if (e.boss) startBoss(e);
     }
     if (e.aggro && p.alive) anyAggro = true;
 
@@ -1038,9 +1042,12 @@ const BOSS_SUB = {
 export const BOSS_ORDER = ['boss', 'queen', 'scrap', 'reaper', 'gunship', 'hacker', 'omega'];
 
 function startBoss(e) {
-  G.boss = e;
+  if (G.bosses.includes(e)) return;
+  G.bosses.push(e);
+  G.boss = G.bosses[0];
   e.fightT0 = G.t;
-  bossBar(e);
+  if (G.final && G.final.t0 == null) G.final.t0 = G.t; // o cronômetro da batalha final começa no primeiro chefe
+  bossBar();
   sfx.boss();
   banner(e.name.toUpperCase(), BOSS_SUB[e.type] || '');
   G.shake = 0.4;
@@ -1236,7 +1243,9 @@ export function populateFloor(d, floor, boss) {
   for (const t of d.grid) if (t === 1) walk++;
   const areaK = Math.max(1, Math.min(2.4, walk / 1800));
   // orçamento de inimigos por andar
-  const budget = Math.min(140, Math.round((15 + floor * 8) * D.count * areaK));
+  const final = isFinalFloor(floor);
+  // no andar final o foco são os chefes: metade dos inimigos comuns
+  const budget = Math.round(Math.min(140, Math.round((15 + floor * 8) * D.count * areaK)) * (final ? 0.5 : 1));
   const quotas = new Map();
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
@@ -1304,7 +1313,7 @@ export function populateFloor(d, floor, boss) {
   const chestRooms = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom).sort(() => Math.random() - 0.5);
   // eventos: Ladrão de Dados e Santuário Neon em salas longe do início
   const far = d.rooms.filter((r) => r !== d.rooms[0] && !(boss && r === d.exitRoom) && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
-  if (floor >= 2 && far.length && chance(boss ? 0.15 : 0.35)) {
+  if (floor >= 2 && !final && far.length && chance(boss ? 0.15 : 0.35)) {
     const pt = randomFloorInRoom(d, pick(far), 1);
     spawnEnemy('thief', pt.x, pt.z);
   }
@@ -1317,7 +1326,13 @@ export function populateFloor(d, floor, boss) {
     const pt = randomFloorInRoom(d, chestRooms[k], 1);
     spawnChest(pt.x, pt.z);
   }
-  if (boss) {
+  if (final) {
+    // batalha final: os 7 chefes, sempre 2 ao mesmo tempo (quando um cai, entra o próximo)
+    G.final = { queue: BOSS_ORDER.slice(2), killed: 0, total: BOSS_ORDER.length, t0: null, deaths: 0, lastKillT: -99, won: false };
+    spawnFinalBoss(BOSS_ORDER[0], -3.5);
+    spawnFinalBoss(BOSS_ORDER[1], 3.5);
+    G.dungeon.meshes.exit.locked = true;
+  } else if (boss) {
     const idx = Math.round(floor / 3) - 1;
     const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
     const cycle = Math.floor(idx / BOSS_ORDER.length);
@@ -1326,6 +1341,107 @@ export function populateFloor(d, floor, boss) {
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;
     G.dungeon.meshes.exit.locked = true;
   }
+}
+
+// ---------------- Batalha final ----------------
+// Chefes da batalha final: um pouco menos de vida e dano, porque são 2 de cada vez e 7 no total
+function spawnFinalBoss(kind, ox = 0, oz = 0) {
+  const d = G.dungeon;
+  const c = arenaCenter();
+  // o Núcleo OMEGA (o último) ocupa o centro da arena
+  let x = kind === 'omega' ? c.x : c.x + ox;
+  let z = kind === 'omega' ? c.z : c.z + oz - 2.5;
+  if (!isWalkable(d, x, z)) {
+    x = c.x;
+    z = c.z;
+  }
+  const e = spawnEnemy(kind, x, z);
+  e.hp = e.maxHp = e.maxHp * 0.6;
+  e.dmg *= 0.85;
+  e.finalBoss = true;
+  return e;
+}
+
+const inArenaNow = (x, z) => {
+  const a = G.dungeon.arena;
+  return a && x >= a.x - 1 && x <= a.x + a.w + 1 && z >= a.y - 1 && z <= a.y + a.h + 1;
+};
+
+function finalBossDown(e) {
+  const F = G.final;
+  F.killed++;
+  // dois chefes derrubados quase juntos
+  if (G.t - F.lastKillT < 5) achMark('flags', 'finalDuo');
+  F.lastKillT = G.t;
+  bossBar();
+  sfx.levelup();
+  if (F.queue.length) {
+    const next = F.queue.shift();
+    banner(L(`CHEFE ${F.killed}/${F.total} DERROTADO`, `BOSS ${F.killed}/${F.total} DEFEATED`), L(`Próximo: ${ETYPES[next].name}`, `Next: ${ETYPES[next].name}`));
+    // aviso no chão de onde o próximo vai aparecer
+    const c = arenaCenter();
+    const a = Math.atan2(e.z - c.z, e.x - c.x);
+    const ox = next === 'omega' ? 0 : Math.cos(a) * 4;
+    const oz = next === 'omega' ? 0 : Math.sin(a) * 4 + 2.5;
+    telegraphFx(next === 'omega' ? c.x : c.x + ox, next === 'omega' ? c.z : c.z + oz - 2.5, 2.2, 2.2, 0xff2bd6);
+    sfx.telegraph();
+    after(2.2, () => {
+      if (!G.final || G.final !== F) return;
+      const b = spawnFinalBoss(next, ox, oz);
+      ringFx(b.x, b.z, 4, 0xff2bd6, 0.7);
+      burst(b.x, 1.5, b.z, 0xff2bd6, 60, 7, 0.09, 0.8);
+      G.shake = 0.5;
+      // se o jogador está na arena, o chefe já entra lutando
+      if (G.player && G.player.alive && inArenaNow(G.player.x, G.player.z)) {
+        b.aggro = true;
+        startBoss(b);
+      }
+    });
+  } else if (!G.enemies.some((o) => o.alive && o.boss)) finalVictory();
+}
+
+// Todos os chefes caíram: a corporação desmorona e o elevador sobe para a superfície
+function finalVictory() {
+  const F = G.final;
+  F.won = true;
+  F.time = G.t - (F.t0 ?? G.t);
+  const p = G.player;
+  p.invuln = 9999;
+  for (const pr of G.projectiles) if (pr.from === 'enemy') pr.alive = false;
+  // os inimigos que sobraram entram em curto-circuito
+  for (const o of G.enemies) {
+    if (!o.alive || o.inert) continue;
+    o.alive = false;
+    o.selfDestruct = true;
+    burst(o.x, 1, o.z, o.bloodColor, 18, 5, 0.07, 0.5);
+    onEnemyKilled(o);
+  }
+  const c = arenaCenter();
+  sfx.victory();
+  G.shake = 1;
+  banner(L('SISTEMA DERRUBADO', 'SYSTEM TAKEN DOWN'), L('A corporação caiu. Suba no elevador!', 'The corporation has fallen. Take the elevator up!'));
+  // fogos de artifício neon com as cores dos 7 chefes
+  const cols = [0xff2244, 0x39ff14, 0xffaa00, 0xb36bff, 0x00f0ff, 0x39ff88, 0xff2bd6, 0xffd23d];
+  for (let k = 0; k < 26; k++) {
+    after(0.3 + k * 0.22, () => {
+      const x = c.x + rr(-8, 8);
+      const z = c.z + rr(-8, 8);
+      const col = pick(cols);
+      burst(x, rr(3, 5.5), z, col, 46, 7, 0.09, 1.1, { grav: 3 });
+      ringFx(x, z, rr(1.5, 3), col, 0.5);
+      if (k % 3 === 0) sfx.explode();
+    });
+  }
+  G.dungeon.meshes.exit.locked = false;
+  G.dungeon.meshes.exit.golden = true;
+  // medalhas e registro da vitória
+  const ch = G.char;
+  ch.wins = (ch.wins || 0) + 1;
+  achAdd('wins');
+  achMark('winClasses', ch.cls);
+  if (!F.deaths) achMark('flags', 'winNoDeath');
+  if (G.settings.difficulty === 'hard') achMark('flags', 'winHard');
+  if (F.time < 600) achMark('flags', 'winFast');
 }
 
 // ---------------- Laser do franco-atirador ----------------

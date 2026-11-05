@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { G, gk } from './state.js';
 import { Input, initInput, setTouchMode } from './input.js';
 import { initAudio, applyVolumes, sfx } from './audio.js';
-import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
+import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
@@ -23,7 +23,7 @@ import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
 import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync,
+  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
 
@@ -220,7 +220,9 @@ function clearWorld() {
   G.decoy = null;
   clearPowers();
   G.boss = null;
-  bossBar(null);
+  G.bosses = [];
+  G.final = null;
+  bossBar();
 }
 
 function buildFloor(floor, withEnemies = true) {
@@ -263,8 +265,11 @@ export function startFloor(floor) {
   computeFlow(d, d.start.x, d.start.z);
   const word = L('ANDAR', 'FLOOR');
   document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}`;
-  banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
-  if (G.theme.hint) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
+  if (isFinalFloor(floor)) {
+    banner(L('ANDAR FINAL', 'FINAL FLOOR'), L('Os 7 chefes esperam no coração da corporação', 'All 7 bosses await at the heart of the corporation'));
+    setTimeout(() => G.floor === floor && toast(L('Batalha final: 2 chefes de cada vez. Derrote os 7 para vencer o jogo!', 'Final battle: 2 bosses at a time. Defeat all 7 to win the game!'), 'warn'), 2800);
+  } else banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
+  if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   saveGame();
 }
 
@@ -311,6 +316,9 @@ function sanitizeChar(c) {
   c.credits = c.credits || 0;
   c.skillPoints = c.skillPoints || 0;
   c.kills = c.kills || 0;
+  c.wins = c.wins || 0;
+  // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
+  if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
 }
 
@@ -330,6 +338,7 @@ export function quitToMenu() {
 
 async function nextFloor() {
   if (transitioning) return;
+  if (G.final && G.final.won) return endGame();
   transitioning = true;
   sfx.elevator();
   const fade = document.getElementById('fade');
@@ -348,6 +357,34 @@ async function nextFloor() {
   transitioning = false;
 }
 
+// Fim de jogo: o elevador sobe para a superfície e aparece o final
+async function endGame() {
+  transitioning = true;
+  const F = G.final;
+  sfx.elevator();
+  G.mode = 'loading';
+  const fade = document.getElementById('fade');
+  fade.classList.add('on');
+  await new Promise((r) => setTimeout(r, 700));
+  achCheck();
+  saveGame();
+  syncNow();
+  showEnding({ time: F.time, deaths: F.deaths });
+  fade.classList.remove('on');
+  transitioning = false;
+}
+
+// Revanche: joga a batalha final de novo com o mesmo personagem
+export function replayFinal() {
+  G.mode = 'play';
+  G.player.alive = true;
+  G.player.hp = G.player.stats.maxHp;
+  G.player.en = G.player.stats.maxEn;
+  showHUD();
+  startFloor(FINAL_FLOOR);
+  G.player.invuln = 1;
+}
+
 // ------------------------------------------------------------------
 // Laço principal
 // ------------------------------------------------------------------
@@ -358,7 +395,7 @@ function updateExit(dt) {
   ex.holo.rotation.y += dt * 1.5;
   ex.holo.position.y = 1.4 + Math.sin(G.t * 2) * 0.1;
   const locked = !!ex.locked;
-  const col = locked ? 0xff2244 : ex.theme.a;
+  const col = locked ? 0xff2244 : ex.golden ? 0xffd23d : ex.theme.a;
   ex.ringMat.color.set(col).multiplyScalar(gk(2.4));
   ex.beamMat.color.set(col).multiplyScalar(gk(1.2));
   ex.beamMat.opacity = 0.12 + Math.sin(G.t * 3) * 0.05;

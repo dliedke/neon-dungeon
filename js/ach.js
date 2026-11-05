@@ -109,8 +109,19 @@ export function achList() {
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil', 'Defeat a boss on Hard'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
+  // batalha final (andar 30)
+  const NB = BOSS_ORDER.length;
+  add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 30`, `Win the final battle against all ${NB} bosses on floor 30`), () => total('wins'));
+  add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 30', 'Win the final battle without dying on floor 30'), () => (has('flags', 'winNoDeath') ? 1 : 0));
+  add('winHard', '😈', 3, L('Lenda do Pesadelo', 'Nightmare Legend'), L('Vença a batalha final no Difícil', 'Win the final battle on Hard'), () => (has('flags', 'winHard') ? 1 : 0));
+  add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
+  add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
+  add('win5', '🔁', 2, L('Revanche', 'Rematch'), L('Vença a batalha final 5 vezes', 'Win the final battle 5 times'), () => total('wins'), 5);
+  add('win3cls', '🎭', 2, L('Trio Lendário', 'Legendary Trio'), L('Vença o jogo com 3 classes diferentes', 'Beat the game with 3 different classes'), () => count('winClasses'), 3);
+  add('winAll', '👑', 3, L('Os Sete Heróis', 'The Seven Heroes'), L('Vença o jogo com as 7 classes', 'Beat the game with all 7 classes'), () => count('winClasses'), CLASS_ORDER.length);
+
   // profundidade e nível
-  for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [30, 2, '🧭'], [50, 3, '🪐']]) {
+  for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [25, 2, '🪐'], [30, 2, '🧭']]) {
     add(`floor${n}`, ic, t, L(`Andar ${n}`, `Floor ${n}`), L(`Chegue ao andar ${n} com qualquer classe`, `Reach floor ${n} with any class`), () => maxOf((c) => c.maxFloor || c.floor), n);
   }
   for (const [n, t, ic, pt, en] of [[5, 0, '📈', 'Pegando o Jeito', 'Getting the Hang of It'], [10, 1, '💪', 'Veterano', 'Veteran'], [25, 2, '🦾', 'Cromado até os Ossos', 'Chrome to the Bone'], [50, 3, '🧬', 'Evolução Máxima', 'Maximum Evolution']]) {

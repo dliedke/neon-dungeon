@@ -13,7 +13,7 @@ import { DIFFICULTY } from './enemies.js';
 import { achAdd } from './ach.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
-import { toast, showDead, markMinimap, levelUpFx } from './ui.js';
+import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
 import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 
@@ -212,6 +212,7 @@ export function playerDie() {
   const p = G.player;
   if (!p.alive) return;
   achAdd('deaths');
+  if (G.final) G.final.deaths++;
   p.alive = false;
   p.dash = null;
   p.whirl = null;
@@ -250,6 +251,8 @@ export function respawn() {
     }
   }
   G.boss = null;
+  G.bosses = [];
+  bossBar();
   for (const pr of G.projectiles) pr.alive = false;
   for (const h of G.hazards) h.t = 0;
   if (lost > 0) toast(L(`Você perdeu ${lost}¢ no resgate.`, `You lost ${lost}¢ in the rescue.`), 'warn');

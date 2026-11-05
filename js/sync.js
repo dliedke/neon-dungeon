@@ -68,6 +68,7 @@ function mergeChar(a, b) {
     if (mine && win.inv.length < INV_SIZE) win.inv.push(mine);
   }
   win.skillPoints = Math.max(win.skillPoints || 0, 0);
+  win.wins = Math.max(a.wins || 0, b.wins || 0); // vitórias na batalha final nunca se perdem
   return win;
 }
 

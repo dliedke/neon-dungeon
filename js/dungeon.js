@@ -22,10 +22,14 @@ THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
 
 export const BOSS_EVERY = 3;
 export const isBossFloor = (f) => f % BOSS_EVERY === 0;
+// último andar: batalha final contra os 7 chefes (2 de cada vez); vencer termina o jogo
+export const FINAL_FLOOR = 30;
+export const isFinalFloor = (f) => f >= FINAL_FLOOR;
 
 // Cada andar tem um bioma diferente
 // (a rotação muda a cada ciclo para que os chefes apareçam em biomas diferentes)
 export function themeFor(floor) {
+  if (isFinalFloor(floor)) return THEMES.find((t) => t.id === 'data'); // o coração da corporação
   const n = THEMES.length;
   return THEMES[(floor - 1 + Math.floor((floor - 1) / n)) % n];
 }
@@ -270,7 +274,7 @@ function tryGenerate(floor, W, H, layout, force) {
 
   // andar de chefe: abre uma arena grande em volta da saída
   if (isBossFloor(floor)) {
-    const R = 7;
+    const R = isFinalFloor(floor) ? 10 : 7; // a batalha final precisa de espaço para dois chefes
     const x0 = clamp(Math.floor(d.exit.x) - R, 2, W - 3 - 2 * R);
     const y0 = clamp(Math.floor(d.exit.z) - R, 2, H - 3 - 2 * R);
     for (let j = y0; j <= y0 + 2 * R; j++) for (let i = x0; i <= x0 + 2 * R; i++) grid[j * W + i] = TILE.FLOOR;

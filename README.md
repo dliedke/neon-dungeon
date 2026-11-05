@@ -7,8 +7,9 @@ The game is shown in **English or Portuguese** based on your browser language.
 
 ## Goal
 
-Descend through endless dungeon floors, defeat enemies, collect gear and level up your character.
+Descend through 30 dungeon floors, defeat enemies, collect gear and level up your character.
 Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit.
+On **floor 30**, the final battle pits you against all 7 bosses, two at a time. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
 ## Classes
@@ -53,7 +54,7 @@ meteor showers and a nuclear strike.
 - **Gamepad:**
   - Left stick to move; A or RT to attack.
   - X / Y / B / LB / RB / LT for powers 1–6, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.
-  - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y switches tabs and B goes back.
+  - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y recycles all (equipment tab) or switches tabs, LB/RB switch tabs and B goes back.
   - The game detects Xbox, PlayStation 4/5 and Nintendo Switch Pro controllers and shows the matching button icons.
 - **Mobile:**
   - Drag on the left side of the screen to move.

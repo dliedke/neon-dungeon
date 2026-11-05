@@ -1,6 +1,6 @@
 // Estado global compartilhado entre os módulos do jogo.
 export const G = {
-  mode: 'boot', // boot | menu | play | pause | char | dead | loading
+  mode: 'boot', // boot | menu | play | pause | char | dead | loading | ending
   t: 0,
   scene: null,
   camera: null,
@@ -26,7 +26,8 @@ export const G = {
   storms: [],
   decoy: null,
   boss: null,
-  floor: 1,
+  bosses: [], // chefes em combate (na batalha final são 2 ao mesmo tempo)
+  final: null, // estado da batalha final do último andar  floor: 1,
   save: null,
   char: null,
   settings: { music: 0.45, sfx: 0.75, quality: 'auto', shake: true, difficulty: 'normal', glow: 'strong', sv: 3 },

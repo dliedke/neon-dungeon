@@ -7,7 +7,7 @@ import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respa
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
-import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './main.js';
+import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal } from './main.js';
 import { fmt } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
@@ -74,6 +74,14 @@ export function initUI() {
     quitToMenu();
   };
   $('confirm-no').onclick = () => closeOverlay('panel-confirm');
+  $('end-menu').onclick = () => {
+    $('panel-end').classList.add('hidden');
+    quitToMenu();
+  };
+  $('end-replay').onclick = () => {
+    $('panel-end').classList.add('hidden');
+    replayFinal();
+  };
   $('shop-close').onclick = () => closeShop();
 
   // opções
@@ -193,7 +201,7 @@ export function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) : L('Novo personagem', 'New character')}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
         ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}
@@ -412,10 +420,11 @@ export function updateHUD(dt) {
   } else {
     $('target-info').classList.add('hidden');
   }
-  if (G.boss) {
-    setScale($('boss-fill'), G.boss.hp / G.boss.maxHp);
-    setScale($('boss-lag'), G.boss.hp / G.boss.maxHp);
-  }
+  G.bosses.slice(0, 2).forEach((b, k) => {
+    const n = k ? '2' : '';
+    setScale($('boss-fill' + n), b.hp / b.maxHp);
+    setScale($('boss-lag' + n), b.hp / b.maxHp);
+  });
 
   // badge de pontos de habilidade
   $('char-badge').classList.toggle('hidden', !(c.skillPoints > 0));
@@ -427,13 +436,18 @@ export function updateHUD(dt) {
   }
 }
 
-export function bossBar(e) {
-  if (!e) {
-    $('boss-bar').classList.add('hidden');
-    return;
-  }
-  $('boss-bar').classList.remove('hidden');
-  $('boss-name').textContent = e.name.toUpperCase();
+// Barras dos chefes em combate (até 2, na batalha final) e o placar da batalha final
+export function bossBar() {
+  const list = G.bosses.slice(0, 2);
+  ['', '2'].forEach((n, k) => {
+    const b = list[k];
+    $('boss-bar' + n).classList.toggle('hidden', !b);
+    if (b) $('boss-name' + n).textContent = b.name.toUpperCase();
+  });
+  $('top-center').classList.toggle('duo', list.length > 1);
+  const F = G.final;
+  $('final-count').classList.toggle('hidden', !F || F.won || F.t0 == null);
+  if (F) $('final-count').textContent = L(`BATALHA FINAL · CHEFES ${F.killed}/${F.total}`, `FINAL BATTLE · BOSSES ${F.killed}/${F.total}`);
 }
 
 export function exitPrompt(state, k) {
@@ -444,7 +458,11 @@ export function exitPrompt(state, k) {
   }
   el.classList.remove('hidden');
   el.classList.toggle('locked', state === 'locked');
-  setText('exit-text', state === 'locked' ? L('ELEVADOR BLOQUEADO — DERROTE O CHEFE', 'ELEVATOR LOCKED — DEFEAT THE BOSS') : L(`DESCENDO PARA O ANDAR ${G.floor + 1}…`, `GOING DOWN TO FLOOR ${G.floor + 1}…`));
+  const F = G.final;
+  let txt;
+  if (state === 'locked') txt = F ? L(`ELEVADOR BLOQUEADO — DERROTE OS ${F.total} CHEFES`, `ELEVATOR LOCKED — DEFEAT ALL ${F.total} BOSSES`) : L('ELEVADOR BLOQUEADO — DERROTE O CHEFE', 'ELEVATOR LOCKED — DEFEAT THE BOSS');
+  else txt = F && F.won ? L('SUBINDO PARA A SUPERFÍCIE…', 'GOING UP TO THE SURFACE…') : L(`DESCENDO PARA O ANDAR ${G.floor + 1}…`, `GOING DOWN TO FLOOR ${G.floor + 1}…`);
+  setText('exit-text', txt);
   setScale($('exit-fill'), state === 'locked' ? 0 : k);
 }
 
@@ -620,6 +638,52 @@ export function closePause() {
   Input.reset();
 }
 
+// ------------------------------------------------------------------
+// Final do jogo
+// ------------------------------------------------------------------
+// uma frase de despedida para cada classe
+const EPILOGUE = {
+  blade: ['A Lâmina embainha a espada de plasma. A dívida de honra com a cidade está paga.', 'The Blade sheathes the plasma sword. The debt of honor to the city is paid.'],
+  gunner: ['A Atiradora gira as pistolas uma última vez e as guarda. Esse trabalho ela faria de graça.', 'The Gunslinger spins her pistols one last time and holsters them. This job she would have done for free.'],
+  netrunner: ['A Netrunner apaga o último registro da corporação e deixa uma mensagem no lugar: "a rede é de todos".', 'The Netrunner wipes the corporation’s last record and leaves a message in its place: "the net belongs to everyone".'],
+  brawler: ['O Punho de Aço estala os dedos de titânio. Nenhum ringue jamais vai ser tão difícil.', 'Iron Fist cracks his titanium knuckles. No ring will ever be this tough again.'],
+  pyro: ['A Incendiária acende um último fogo, só para iluminar o caminho de volta.', 'The Pyro lights one last fire, just to light the way home.'],
+  frost: ['A Geada deixa a mira de lado. Pela primeira vez, o único frio que sente é o vento da manhã.', 'Frost lowers her scope. For once, the only cold she feels is the morning wind.'],
+  heavy: ['O Colosso desliga a minigun. Depois de tanto barulho, o silêncio parece música.', 'The Juggernaut powers down the minigun. After all that noise, the silence sounds like music.'],
+};
+
+export function showEnding(info = {}) {
+  const c = G.char;
+  const C = CLASSES[c.cls];
+  G.mode = 'ending';
+  $('hud').classList.add('hidden');
+  exitPrompt(null);
+  const lines = [
+    L('O Núcleo OMEGA pisca uma última vez e se apaga. Pela primeira vez em décadas, as torres da corporação ficam em silêncio.', 'The OMEGA Core flickers one last time and goes dark. For the first time in decades, the corporate towers fall silent.'),
+    L('Executor, Matriarca, Rei do Ferro-Velho, Ceifadora, Nave de Ataque, Hacker Supremo e OMEGA: os sete guardiões do subsolo agora são sucata.', 'Executor, Matriarch, Scrap King, Reaper, Gunship, Grand Hacker and OMEGA: the seven guardians of the underworld are now scrap.'),
+    L(...(EPILOGUE[c.cls] || EPILOGUE.blade)),
+    L('O elevador sobe trinta andares. Lá em cima, os letreiros neon piscam… e o sol nasce sobre a cidade.', 'The elevator climbs thirty floors. Up top, the neon signs flicker… and the sun rises over the city.'),
+    L('Mas lá embaixo, em algum servidor esquecido, um LED vermelho volta a acender…', 'But far below, in some forgotten server, a red LED blinks back on…'),
+  ];
+  const step = 1.4; // segundos entre cada parágrafo
+  $('end-story').innerHTML = lines.map((txt, i) => `<p style="animation-delay:${0.6 + i * step}s"${i === lines.length - 1 ? ' class="tease"' : ''}>${txt}</p>`).join('');
+  const tm = info.time || 0;
+  const D = DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
+  const stats = [
+    [L('Herói', 'Hero'), `${C.name} · ${L('Nível', 'Level')} ${c.level}`],
+    [L('Batalha final', 'Final battle'), `${Math.floor(tm / 60)}:${String(Math.floor(tm % 60)).padStart(2, '0')}`],
+    [L('Mortes no andar final', 'Deaths on the final floor'), info.deaths || 0],
+    [L('Abates', 'Kills'), fmt(c.kills || 0)],
+    [L('Dificuldade', 'Difficulty'), D.name],
+    [L('Vitórias', 'Wins'), c.wins || 1],
+  ];
+  $('end-stats').innerHTML = stats.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
+  $('end-stats').style.animationDelay = `${0.6 + lines.length * step}s`;
+  $('panel-end').classList.remove('hidden');
+  $('panel-end').scrollTop = 0;
+  clearFocus();
+}
+
 export function showDead() {
   const c = G.char;
   $('dead-info').innerHTML = L(`Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar e perderá 10% dos créditos.`, `Floor ${G.floor} · Level ${c.level}<br>You will be rebuilt at the start of the floor and lose 10% of your credits.`);
@@ -681,8 +745,8 @@ export function renderChar() {
       const it = c.equip[slot];
       const sel = selected && selected.where === 'equip' && selected.slot === slot ? ' sel' : '';
       return `<div class="eslot">${it
-        ? `<div class="cell r${it.rarity}${sel}" data-nav data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}</div>`
-        : `<div class="cell empty">${slotIconSvg(slot)}</div>`}${SLOT_NAMES[slot]}</div>`;
+        ? `<div class="cell r${it.rarity}${sel}" data-nav data-eslot="${slot}" data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}</div>`
+        : `<div class="cell empty" data-nav data-eslot="${slot}">${slotIconSvg(slot)}</div>`}${SLOT_NAMES[slot]}</div>`;
     }).join('');
     // inventário (sempre ordenado: melhores itens primeiro)
     sortInventory(c.inv, c.equip);
@@ -858,7 +922,7 @@ function renderTree() {
 }
 
 function restoreFocus(sel) {
-  const el = document.querySelector(sel);
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
   if (el && !el.disabled) setFocus(el);
   else clearFocus();
 }
@@ -929,7 +993,13 @@ export function equipItem(uid) {
   sfx.pickup();
   selected = { where: 'equip', uid: it.uid, slot: it.slot };
   renderChar();
-  restoreFocus(`.cell[data-uid="${old ? old.uid : it.uid}"]`);
+  focusInvCell(idx); // o seletor fica na mesma casa do inventário
+}
+
+// Foca a casa N do inventário (as vazias também são navegáveis), para o seletor não pular de lugar
+function focusInvCell(idx) {
+  const cells = document.querySelectorAll('#inv-grid > .cell');
+  if (cells.length) restoreFocus(cells[Math.min(idx, cells.length - 1)]);
 }
 
 function unequip(slot) {
@@ -950,6 +1020,7 @@ function unequip(slot) {
   refreshStats();
   selected = { where: 'inv', uid: it.uid, slot };
   renderChar();
+  restoreFocus(`#equip-slots [data-eslot="${slot}"]`);
 }
 
 function recycleItem(uid) {
@@ -964,8 +1035,7 @@ function recycleItem(uid) {
   toast(L(`Reciclado: +${v}¢`, `Recycled: +${v}¢`));
   selected = null;
   renderChar();
-  const next = c.inv[Math.min(idx, c.inv.length - 1)];
-  if (next) restoreFocus(`.cell[data-uid="${next.uid}"]`);
+  focusInvCell(idx);
 }
 
 // Recicla todo o inventário (o que está equipado não é tocado)
@@ -1004,7 +1074,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1104,13 +1174,16 @@ export function uiPadUpdate() {
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
-  if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
+  if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
+  else if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
   if (Input.nav('b')) uiBack(root);
 }
 
 export function uiBack(root = activePanel()) {
   if (!root) return;
   switch (root.id) {
+    case 'panel-end':
+      break; // o final só fecha pelos botões
     case 'panel-confirm':
     case 'panel-opts':
     case 'panel-help':
