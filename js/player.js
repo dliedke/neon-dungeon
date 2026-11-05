@@ -496,7 +496,7 @@ export function updatePlayer(dt) {
   }
   if (wantAttack && p.atkT <= 0 && !p.dash && !p.leap) {
     const fm = formMods(p);
-    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1) * (fm && fm.rate ? fm.rate : 1));
+    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1) * (fm && fm.rate ? fm.rate : 1) * (p.buffs.haste > 0 ? 1.3 : 1));
     SKILL_FN[C.skills[0].id](p, c.skills[0]);
     p.facing = Math.atan2(p.aim.dx, p.aim.dz);
     p.lockFace = 0.22;
@@ -519,7 +519,7 @@ export function updatePlayer(dt) {
   if (Input.pressed('stim')) useStim();
 
   const fmv = formMods(p);
-  let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1);
+  let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1) * (p.buffs.haste > 0 ? 1.35 : 1);
   if (p.attackHold > 0) speed *= C.melee ? 0.45 : C.spinUp ? 0.55 : 0.8;
   if (p.whirl) speed *= 0.75;
 

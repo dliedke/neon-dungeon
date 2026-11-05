@@ -21,7 +21,11 @@ export function dropLoot(x, z, o = {}) {
   const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss ? 2 : 0) + (o.chest ? 1 : 0);
   let items = 0;
   let bonus = G.floor * 1.5;
-  if (o.boss) {
+  const rich = p.buffs.fortune > 0; // Santuário da Fortuna
+  if (o.thief) {
+    items = 3;
+    bonus += 35;
+  } else if (o.boss) {
     items = 4;
     bonus += 40;
   } else if (o.chest) {
@@ -30,19 +34,21 @@ export function dropLoot(x, z, o = {}) {
   } else if (o.elite) {
     items = 2;
     bonus += 18;
-  } else if (chance(0.14 * find)) {
+  } else if (chance(0.14 * find * (rich ? 2.5 : 1))) {
     items = 1;
   }
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);
-    if ((o.boss || o.chest) && i === 0) rarity = Math.max(rarity, o.boss ? 2 : 1);
+    if ((o.boss || o.chest || o.thief) && i === 0) rarity = Math.max(rarity, o.boss || o.thief ? 2 : 1);
+    if (rich && rarity < 3 && chance(0.25)) rarity++;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
-  if (chance(o.boss || o.chest ? 1 : o.elite ? 0.9 : 0.4)) {
-    const n = o.boss ? 5 : o.chest ? 4 : o.elite ? 3 : 1;
-    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5)) });
+  if (chance(o.boss || o.chest || o.thief ? 1 : o.elite ? 0.9 : 0.4)) {
+    const n = o.thief ? 12 : o.boss ? 5 : o.chest ? 4 : o.elite ? 3 : 1;
+    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1)) });
   }
+  if (o.thief) spawnPickup('stim', x, z, {});
   if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
   // orbes de vida: ajudam a se recuperar no meio da luta
   if (!o.chest && chance(o.boss ? 1 : o.elite ? 0.6 : 0.13)) spawnPickup('orb', x, z, {});
@@ -161,6 +167,59 @@ export function spawnChest(x, z) {
   return pk;
 }
 
+// ---------- Santuários Neon: bônus temporário ao passar por eles ----------
+export const SHRINES = {
+  fury: { name: L('Fúria', 'Fury'), desc: L('+50% de dano', '+50% damage'), color: 0xff2b5a, css: '#ff4d75' },
+  haste: { name: L('Velocidade', 'Haste'), desc: L('+35% de velocidade e +30% de ataque', '+35% move speed and +30% attack speed'), color: 0x00f0ff, css: '#00f0ff' },
+  fortune: { name: L('Fortuna', 'Fortune'), desc: L('mais loot e o dobro de créditos', 'more loot and double credits'), color: 0xffd23d, css: '#ffd23d' },
+  aegis: { name: L('Égide', 'Aegis'), desc: L('metade do dano recebido', 'half damage taken'), color: 0x39ff88, css: '#39ff88' },
+};
+export const SHRINE_TIME = 30;
+const shrineGem = new THREE.OctahedronGeometry(0.32, 0);
+const shrineRing = new THREE.TorusGeometry(0.55, 0.04, 6, 28).rotateX(Math.PI / 2);
+
+export function spawnShrine(x, z, kind) {
+  const S = SHRINES[kind];
+  const g = new THREE.Group();
+  const stone = new THREE.MeshLambertMaterial({ color: 0x2a2e44 });
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.75, 0.3, 8), stone);
+  base.position.y = 0.15;
+  g.add(base);
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.9, 6), stone);
+  col.position.y = 0.75;
+  g.add(col);
+  const gemMat = glowMat(S.color, 2.6);
+  const gem = new THREE.Mesh(shrineGem, gemMat);
+  gem.position.y = 1.65;
+  g.add(gem);
+  const ring = new THREE.Mesh(shrineRing, glowMat(S.color, 2));
+  ring.position.y = 0.32;
+  g.add(ring);
+  const beam = new THREE.Mesh(beamGeo, beamMat(S.color, 0.35));
+  g.add(beam);
+  g.position.set(x, 0, z);
+  G.world.add(g);
+  const pk = { type: 'shrine', kind, x, z, group: g, mesh: gem, ring, beam, gemMat, t: rr(0, 6), vy: 0, y: 0, vx: 0, vz: 0, used: false, static: true };
+  G.pickups.push(pk);
+  return pk;
+}
+
+function useShrine(pk) {
+  const S = SHRINES[pk.kind];
+  const p = G.player;
+  pk.used = true;
+  for (const k in SHRINES) delete p.buffs[k]; // um santuário por vez
+  p.buffs[pk.kind] = SHRINE_TIME;
+  sfx.levelup();
+  ringFx(pk.x, pk.z, 2.4, S.color, 0.6);
+  burst(pk.x, 1.6, pk.z, S.color, 40, 6, 0.08, 0.7, { up: 1.5 });
+  burst(p.x, 1, p.z, S.color, 24, 3, 0.07, 0.5, { up: 2 });
+  toast(`<b style="color:${S.css}">${L('Santuário da', 'Shrine of')} ${S.name}</b>: ${S.desc} (${SHRINE_TIME}s)`, 'up');
+  floatText(p.x, 2, p.z, S.name.toUpperCase(), 'up');
+  pk.group.remove(pk.beam);
+  pk.gemMat.color.set(0x444455);
+}
+
 function openChest(pk) {
   pk.opened = true;
   pk.openT = 0;
@@ -180,6 +239,16 @@ export function updatePickups(dt, camera) {
   fullWarn -= dt;
   for (const pk of G.pickups) {
     pk.t += dt;
+    if (pk.type === 'shrine') {
+      pk.mesh.rotation.y += dt * (pk.used ? 0.3 : 1.6);
+      pk.mesh.position.y = 1.65 + Math.sin(pk.t * 2) * (pk.used ? 0.02 : 0.12);
+      if (!pk.used) {
+        pk.ring.scale.setScalar(1 + Math.sin(pk.t * 3) * 0.08);
+        if (Math.random() < dt * 6) burst(pk.x + rr(-0.5, 0.5), 0.4, pk.z + rr(-0.5, 0.5), SHRINES[pk.kind].color, 1, 1, 0.05, 0.6, { grav: -2 });
+        if (p.alive && Math.hypot(p.x - pk.x, p.z - pk.z) < 1.3) useShrine(pk);
+      }
+      continue;
+    }
     if (pk.type === 'chest') {
       if (pk.opened) {
         pk.openT = Math.min(1, pk.openT + dt * 3);

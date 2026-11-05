@@ -10,7 +10,7 @@ import { sfx } from './audio.js';
 import { dropLoot } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
-import { hurtFlash, toast } from './ui.js';
+import { hurtFlash, toast, banner } from './ui.js';
 import { L } from './i18n.js';
 
 // ---------------- temporizadores ----------------
@@ -78,7 +78,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1);
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1);
   let crit = false;
   if (forceCrit || Math.random() < s.crit / 100) {
     crit = true;
@@ -197,7 +197,11 @@ export function killEnemy(e) {
     });
   } else if (!e.selfDestruct && !e.decoy) {
     gainXp(e.xp);
-    dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss });
+    dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss, thief: e.type === 'thief' });
+    if (e.type === 'thief') {
+      banner(L('JACKPOT!', 'JACKPOT!'), L('Ladrão de Dados derrubado', 'Data Thief taken down'));
+      sfx.legendary();
+    }
     G.char.kills = (G.char.kills || 0) + 1;
     if (p.stats.legs.has('nano')) healPlayer(p.stats.maxHp * 0.04);
     if (p.stats.legs.has('core')) {
@@ -254,6 +258,7 @@ export function damagePlayer(amount) {
   if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
   amount *= 100 / (100 + p.stats.armor);
   if (p.buffs.titan > 0) amount *= 0.4;
+  if (p.buffs.aegis > 0) amount *= 0.5;
   const fmd = formMods(p);
   if (fmd) amount *= fmd.taken;
   amount = Math.max(1, Math.round(amount));

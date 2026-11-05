@@ -4,7 +4,7 @@ import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
-import { INV_SIZE } from './loot.js';
+import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality } from './main.js';
@@ -357,8 +357,9 @@ export function updateHUD(dt) {
   if (p.shield > 1) buffs.push(`${L('Escudo', 'Shield')} ${Math.round(p.shield)}`);
   if (p.buffs.regen > 0) buffs.push(L('Regeneração', 'Regen'));
   if (p.buffs.titan > 0) buffs.push(`${L('Titânio', 'Titanium')} ${p.buffs.titan.toFixed(0)}s`);
+  for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
-  const bh = buffs.map((b) => `<span class="buff">${b}</span>`).join('');
+  const bh = buffs.map((b) => (b.startsWith('<span') ? b.replace('<span ', '<span class="buff" ') : `<span class="buff">${b}</span>`)).join('');
   if (cache.buffs !== bh) {
     cache.buffs = bh;
     $('buffs').innerHTML = bh;
@@ -526,8 +527,8 @@ function drawMinimap() {
       continue;
     }
     if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
-    ctx.fillStyle = e.boss ? '#ff2244' : e.elite ? '#ffd23d' : '#ff4466';
-    const r = e.boss ? 1.3 : e.elite ? 0.7 : 0.45;
+    ctx.fillStyle = e.boss ? '#ff2244' : e.elite || e.type === 'thief' ? '#ffd23d' : '#ff4466';
+    const r = e.boss ? 1.3 : e.elite || e.type === 'thief' ? 0.7 : 0.45;
     ctx.fillRect(e.x - r, e.z - r, r * 2, r * 2);
   }
   // itens
@@ -536,6 +537,14 @@ function drawMinimap() {
       if (!d.explored[Math.floor(pk.z) * d.W + Math.floor(pk.x)]) continue;
       ctx.fillStyle = '#ffd23d';
       ctx.fillRect(pk.x - 0.6, pk.z - 0.6, 1.2, 1.2);
+      continue;
+    }
+    if (pk.type === 'shrine') {
+      if (pk.used || !d.explored[Math.floor(pk.z) * d.W + Math.floor(pk.x)]) continue;
+      ctx.fillStyle = SHRINES[pk.kind].css;
+      ctx.beginPath();
+      ctx.arc(pk.x, pk.z, 0.9, 0, Math.PI * 2);
+      ctx.fill();
       continue;
     }
     if (pk.type !== 'item' || (pk.item.rarity < 1 && !pk.up)) continue;

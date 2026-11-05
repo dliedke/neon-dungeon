@@ -94,6 +94,15 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
 
+## Floor events
+
+- **Data Thief:** a rare golden runner carrying a backpack of stolen data. It flees from you, drops credits as it runs and teleports away after about 14 seconds.
+  Catch it for a jackpot: guaranteed rare-or-better items, a pile of credits and a stim.
+- **Neon Shrines:** glowing pillars that grant a 30-second buff when you walk over them:
+  **Fury** (+50% damage), **Haste** (+35% move speed, +30% attack speed), **Fortune** (more loot and double credits) or **Aegis** (half damage taken).
+
+Both show up on the minimap once explored.
+
 ## Bosses
 
 | Boss | Mechanics |

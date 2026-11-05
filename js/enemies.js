@@ -11,7 +11,7 @@ import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
 import { groundEffect } from './biomes.js';
 import { timeFactor } from './powers.js';
-import { spawnChest } from './loot.js';
+import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx } from './fx.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
@@ -43,6 +43,8 @@ export const ETYPES = {
   toad: { name: L('Sapo Ácido', 'Acid Toad'), hp: 34, dmg: 8, speed: 2.8, r: 0.38, h: 0.8, xp: 11, minFloor: 99, weight: 0, ai: 'toad', keep: [4, 8], range: 9, atkCd: 2.6, blood: 0x9dff3a },
   alien: { name: L('Xenomorfo', 'Xeno Stalker'), hp: 42, dmg: 11, speed: 4.6, r: 0.4, h: 1.1, xp: 15, minFloor: 99, weight: 0, ai: 'alien', range: 0.9, atkCd: 2.4, blood: 0xb36bff },
   scorpion: { name: L('Escorpião Radioativo', 'Rad Scorpion'), hp: 52, dmg: 9, speed: 3.0, r: 0.45, h: 0.8, xp: 14, minFloor: 99, weight: 0, ai: 'melee', poison: true, range: 1.1, atkCd: 1.2, blood: 0xc8ff3a },
+  // evento raro: foge, solta créditos pelo caminho e some se você demorar
+  thief: { name: L('Ladrão de Dados', 'Data Thief'), hp: 65, dmg: 0, speed: 4.6, r: 0.34, h: 1.4, xp: 60, minFloor: 99, weight: 0, ai: 'thief', blood: 0xffd23d },
   pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
   boss: { name: 'Executor ARC-9', boss: true, hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
   queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
@@ -210,7 +212,7 @@ export function updateEnemies(dt, cam) {
     const dx = tgt.x - e.x;
     const dz = tgt.z - e.z;
     const dist = Math.hypot(dx, dz);
-    if (Math.hypot(p.x - e.x, p.z - e.z) > 30 && !e.boss) continue;
+    if (Math.hypot(p.x - e.x, p.z - e.z) > 30 && !e.boss && !e.fleeT) continue;
 
     // queimadura / lentidão / congelamento
     if (e.burnT > 0) {
@@ -425,6 +427,58 @@ export function updateEnemies(dt, cam) {
           }
           e.faceX = ux;
           e.faceZ = uz;
+          break;
+        }
+        case 'thief': {
+          if (!e.fleeT) {
+            e.fleeT = 14;
+            e.dropT = 0.6;
+            sfx.rare();
+            toast(L('💰 Um <b>Ladrão de Dados</b>! Pegue-o antes que ele fuja!', '💰 A <b>Data Thief</b>! Catch it before it escapes!'), 'leg', 'thief');
+          }
+          e.fleeT -= edt;
+          // foge do jogador, contornando paredes
+          e.wob = (e.wob || rr(0, 6)) + edt * 2.2;
+          let fx = -ux + Math.cos(e.wob) * 0.45;
+          let fz = -uz + Math.sin(e.wob) * 0.45;
+          const fl = Math.hypot(fx, fz) || 1;
+          fx /= fl;
+          fz /= fl;
+          if (!isWalkable(d, e.x + fx * 1.1, e.z + fz * 1.1)) {
+            const side = e.side || (e.side = chance(0.5) ? 1 : -1);
+            const ox = -fz * side;
+            const oz = fx * side;
+            if (isWalkable(d, e.x + ox * 1.1, e.z + oz * 1.1)) {
+              fx = ox;
+              fz = oz;
+            } else {
+              e.side = -side; // tenta o outro lado
+              fx = -ox;
+              fz = -oz;
+            }
+          }
+          mvx = fx;
+          mvz = fz;
+          if (dist > 13) speed *= 0.45; // longe: anda devagar, para dar chance
+          e.dropT -= edt;
+          if (e.dropT <= 0 && dist < 10) {
+            e.dropT = 1.1;
+            spawnPickup('credits', e.x, e.z, { amount: Math.round(rr(2, 5) * (1 + G.floor * 0.5)) });
+          }
+          if (Math.random() < edt * 14) burst(e.x, rr(0.3, 1.3), e.z, 0xffd23d, 1, 1, 0.06, 0.4, { grav: -2 });
+          if (e.fleeT <= 0) {
+            // escapou: teleporta para longe
+            burst(e.x, 0.9, e.z, 0xffd23d, 40, 6, 0.08, 0.6, { up: 2 });
+            ringFx(e.x, e.z, 1.6, 0xffd23d, 0.4);
+            sfx.zap();
+            toast(L('O Ladrão de Dados escapou…', 'The Data Thief got away…'), 'warn', 'thief');
+            e.selfDestruct = true;
+            e.hp = 0;
+            e.alive = false;
+            onEnemyKilled(e);
+          }
+          e.faceX = mvx;
+          e.faceZ = mvz;
           break;
         }
         case 'boar': {
@@ -1232,6 +1286,16 @@ export function populateFloor(d, floor, boss) {
     }
   }
   const chestRooms = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom).sort(() => Math.random() - 0.5);
+  // eventos: Ladrão de Dados e Santuário Neon em salas longe do início
+  const far = d.rooms.filter((r) => r !== d.rooms[0] && !(boss && r === d.exitRoom) && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
+  if (floor >= 2 && far.length && chance(boss ? 0.15 : 0.35)) {
+    const pt = randomFloorInRoom(d, pick(far), 1);
+    spawnEnemy('thief', pt.x, pt.z);
+  }
+  if (far.length && chance(0.6)) {
+    const pt = randomFloorInRoom(d, pick(far), 2);
+    if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, pick(Object.keys(SHRINES)));
+  }
   const nChests = Math.min(chestRooms.length, floor < 3 ? 1 : 2);
   for (let k = 0; k < nChests; k++) {
     const pt = randomFloorInRoom(d, chestRooms[k], 1);

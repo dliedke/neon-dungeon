@@ -321,6 +321,15 @@ export function makeEnemyModel(type, eliteColor) {
       m.kind = 'humanoid';
       break;
     }
+    case 'thief': {
+      m = humanoid({ body: 0x5a4a22, dark: 0x1e1808, accent: 0xffd23d, scale: 0.85 });
+      // mochila cheia de dados roubados
+      m.torso.add(mesh(box(0.42, 0.5, 0.28), m.mats[1], 0, 0.3, -0.3));
+      m.torso.add(mesh(box(0.3, 0.36, 0.06), glowMat(0xffd23d, 2.6), 0, 0.32, -0.46));
+      m.head.add(mesh(box(0.34, 0.08, 0.06), glowMat(0xffd23d, 2.4), 0, 0.04, 0.16)); // visor
+      m.kind = 'humanoid';
+      break;
+    }
     case 'ninja': {
       m = humanoid({ body: 0x3a2a5a, dark: 0x140e22, accent: 0xb36bff, scale: 0.9 });
       for (const mt of m.mats) {
