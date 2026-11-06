@@ -159,8 +159,10 @@ export function initUI() {
     saveSettings();
   };
   $('opt-full').onclick = () => {
-    if (!document.fullscreenElement) enterDesktopFullscreen(true);
-    else document.exitFullscreen?.();
+    const on = document.fullscreenElement || document.webkitFullscreenElement;
+    mobileFullOptOut = !!on;
+    if (!on) (G.isTouch ? enterMobileFullscreen() : enterDesktopFullscreen(true));
+    else (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
   };
 
   // botões de toque
@@ -1689,6 +1691,7 @@ document.addEventListener('fullscreenchange', () => {
 // Precisa ser chamado dentro de um toque/clique (exigência dos navegadores)
 export function enterMobileFullscreen() {
   if (!G.isTouch) return enterDesktopFullscreen();
+  mobileFullOptOut = false;
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   const lock = () => {
@@ -1705,6 +1708,21 @@ export function enterMobileFullscreen() {
     } catch (_) {}
   } else lock();
 }
+
+// Mobile: o navegador sai da tela cheia quando o celular fica em pé ou o jogador troca de app.
+// Como a tela cheia só pode ser pedida num toque, volta a ela no próximo toque durante o jogo
+// (a não ser que o jogador tenha desligado pela opção Tela cheia).
+let mobileFullOptOut = false;
+function refullOnTouch(e) {
+  if (e.target && e.target.closest && e.target.closest('#opt-full')) return; // o próprio botão decide
+  if (!G.isTouch || mobileFullOptOut || G.mode === 'menu' || G.mode === 'boot') return;
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const el = document.documentElement;
+  if (!(el.requestFullscreen || el.webkitRequestFullscreen)) return; // iPhone não tem
+  if (innerHeight > innerWidth * 1.05) return; // em pé: espera virar
+  enterMobileFullscreen();
+}
+addEventListener('touchend', refullOnTouch, { capture: true, passive: true });
 
 // Mostra o aviso de "gire o celular" e pausa o jogo quando estiver em pé
 let wasPortrait = false;
