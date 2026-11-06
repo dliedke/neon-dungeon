@@ -1,5 +1,6 @@
 // Interface: HUD, menus, inventário, minimapa e navegação por controle.
 import { G } from './state.js';
+import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
@@ -193,6 +194,7 @@ export function initUI() {
 // Menu principal
 // ------------------------------------------------------------------
 export function showMenu() {
+  $('thief-ptr').classList.add('hidden');
   toggleBigMap(false);
   G.mode = 'menu';
   $('hud').classList.add('hidden');
@@ -215,7 +217,7 @@ export function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save.playTime >= 60 ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') : L('Novo personagem', 'New character')}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
         ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}
@@ -422,9 +424,43 @@ function setScale(el, k) {
 }
 
 let mmTimer = 0;
+// Ladrão de Dados fora da tela: seta dourada na borda apontando para ele
+const thiefV = new THREE.Vector3();
+function updateThiefPointer() {
+  const el = $('thief-ptr');
+  const e = G.mode === 'play' && G.camera ? G.enemies.find((x) => x.alive && x.type === 'thief') : null;
+  let show = false;
+  if (e) {
+    thiefV.set(e.x, 1, e.z).project(G.camera);
+    const W = innerWidth;
+    const H = innerHeight;
+    let sx = ((thiefV.x + 1) / 2) * W;
+    let sy = ((1 - thiefV.y) / 2) * H;
+    if (thiefV.z > 1) {
+      sx = W - sx;
+      sy = H - sy;
+    }
+    const m = 30;
+    if (sx < m || sx > W - m || sy < m || sy > H - m || thiefV.z > 1) {
+      // prende na borda, na direção do ladrão a partir do centro
+      const cx = W / 2;
+      const cy = H / 2;
+      const dx = sx - cx;
+      const dy = sy - cy;
+      const k = Math.min((cx - m) / Math.abs(dx || 1e-6), (cy - m) / Math.abs(dy || 1e-6));
+      el.style.left = cx + dx * k + 'px';
+      el.style.top = cy + dy * k + 'px';
+      el.firstChild.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+      show = true;
+    }
+  }
+  el.classList.toggle('hidden', !show);
+}
+
 export function updateHUD(dt) {
   const p = G.player;
   const c = G.char;
+  updateThiefPointer();
   if (!p) return;
   const s = p.stats;
   const im = G.lastInput + G.padType;
@@ -653,6 +689,7 @@ function drawMinimap() {
   ctx.drawImage(mmCanvas, 0, 0);
   drawMapMarks(ctx, d, p, 22);
   ctx.restore();
+  drawThiefArrows(ctx, W, sc);
   // jogador no centro (seta apontando para a direção)
   drawPlayerArrow(ctx, W / 2, W / 2, 1);
 }
@@ -687,7 +724,7 @@ function drawMapMarks(ctx, d, p, near) {
   }
   // inimigos próximos
   for (const e of G.enemies) {
-    if (!e.alive) continue;
+    if (!e.alive || e.type === 'thief') continue;
     if (near && (Math.abs(e.x - p.x) > near || Math.abs(e.z - p.z) > near)) continue;
     if (e.inert) {
       if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
@@ -720,6 +757,52 @@ function drawMapMarks(ctx, d, p, near) {
     ctx.fillStyle = pk.up ? '#39ff88' : RARITY[pk.item.rarity].color;
     const r = pk.up ? 0.75 : 0.4;
     ctx.fillRect(pk.x - r, pk.z - r, r * 2, r * 2);
+  }
+  // Ladrão de Dados: sempre aparece (mesmo longe ou em área não explorada), grande e piscando
+  for (const e of G.enemies) {
+    if (!e.alive || e.type !== 'thief') continue;
+    const k = 1 + Math.sin(G.t * 8) * 0.25;
+    ctx.strokeStyle = '#ffd23d';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.arc(e.x, e.z, 2.6 * k, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#ffd23d';
+    ctx.beginPath();
+    ctx.arc(e.x, e.z, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// seta na borda do minimapa apontando para o Ladrão de Dados quando ele está fora do alcance
+function drawThiefArrows(ctx, W, sc) {
+  const p = G.player;
+  const c = Math.SQRT1_2;
+  for (const e of G.enemies) {
+    if (!e.alive || e.type !== 'thief') continue;
+    const dx = e.x - p.x;
+    const dz = e.z - p.z;
+    const sx = (dx * c - dz * c) * sc;
+    const sy = (dx * c + dz * c) * sc;
+    const R = W / 2 - 9;
+    const len = Math.hypot(sx, sy);
+    if (len < R) continue;
+    const a = Math.atan2(sy, sx);
+    ctx.save();
+    ctx.translate(W / 2 + Math.cos(a) * R, W / 2 + Math.sin(a) * R);
+    ctx.rotate(a);
+    ctx.globalAlpha = 0.75 + Math.sin(G.t * 8) * 0.25;
+    ctx.fillStyle = '#ffd23d';
+    ctx.shadowColor = '#ffd23d';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(8, 0);
+    ctx.lineTo(-5, -6.5);
+    ctx.lineTo(-2, 0);
+    ctx.lineTo(-5, 6.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 }
 

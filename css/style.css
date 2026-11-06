@@ -205,6 +205,12 @@ body.touch #skillbar { display: none; }
 
 /* ---------------- Textos flutuantes ---------------- */
 #floaters, #labels { position: fixed; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+/* seta na borda da tela apontando para o Ladrão de Dados fora de vista */
+#thief-ptr { position: fixed; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; z-index: 5; pointer-events: none; animation: thiefPulse 0.7s ease-in-out infinite alternate; }
+#thief-ptr span { position: absolute; inset: 7px; border-radius: 50%; background: rgba(40, 30, 0, 0.85); border: 2px solid #ffd23d; box-shadow: 0 0 14px #ffd23d; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+#thief-ptr i { position: absolute; inset: 0; }
+#thief-ptr i::after { content: ''; position: absolute; right: -9px; top: 50%; margin-top: -8px; border: 8px solid transparent; border-left: 11px solid #ffd23d; filter: drop-shadow(0 0 4px #ffd23d); }
+@keyframes thiefPulse { from { transform: scale(0.9); } to { transform: scale(1.12); } }
 .floater {
   position: absolute; left: 0; top: 0; font-family: Orbitron, sans-serif; font-weight: 700; font-size: 15px;
   color: #fff; text-shadow: 0 0 4px #000, 0 2px 2px #000; white-space: nowrap; will-change: transform;

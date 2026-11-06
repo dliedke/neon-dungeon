@@ -9,6 +9,7 @@ export const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 
 // tempo de jogo: "2h 05min" ou "45min"
 export function fmtPlay(sec) {
+  if ((sec || 0) < 60) return '<1min';
   const m = Math.floor((sec || 0) / 60);
   const h = Math.floor(m / 60);
   return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m}min`;

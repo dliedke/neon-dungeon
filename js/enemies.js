@@ -494,6 +494,13 @@ export function updateEnemies(dt, cam) {
             spawnPickup('credits', e.x, e.z, { amount: Math.round(rr(2, 5) * (1 + G.floor * 0.5)) });
           }
           if (Math.random() < edt * 14) burst(e.x, rr(0.3, 1.3), e.z, 0xffd23d, 1, 1, 0.06, 0.4, { grav: -2 });
+          // farol pulsando (mais forte quando falta pouco para ele fugir)
+          const bc = e.model.beacon;
+          if (bc) {
+            const pulse = Math.sin(G.t * (e.fleeT < 5 ? 14 : 6));
+            bc.mat.opacity = 0.32 + pulse * 0.14;
+            bc.ring.scale.setScalar(1 + pulse * 0.18);
+          }
           if (e.fleeT <= 0) {
             // escapou: teleporta para longe
             burst(e.x, 0.9, e.z, 0xffd23d, 40, 6, 0.08, 0.6, { up: 2 });

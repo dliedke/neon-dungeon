@@ -392,6 +392,15 @@ export function makeEnemyModel(type, eliteColor) {
       m.torso.add(mesh(box(0.42, 0.5, 0.28), m.mats[1], 0, 0.3, -0.3));
       m.torso.add(mesh(box(0.3, 0.36, 0.06), glowMat(0xffd23d, 2.6), 0, 0.32, -0.46));
       m.head.add(mesh(box(0.34, 0.08, 0.06), glowMat(0xffd23d, 2.4), 0, 0.04, 0.16)); // visor
+      // farol dourado: um feixe alto que aparece por cima das paredes e um anel no chão
+      const beamMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(gk(1.6)), transparent: true, opacity: 0.4, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending });
+      const beam = mesh(cached('tbeam', () => new THREE.CylinderGeometry(0.1, 0.22, 9, 10, 1, true)), beamMat, 0, 5, 0);
+      beam.renderOrder = 5;
+      m.root.add(beam);
+      const ring = mesh(cached('tring', () => new THREE.RingGeometry(0.75, 0.95, 28).rotateX(-Math.PI / 2)), beamMat, 0, 0.05, 0);
+      ring.renderOrder = 5;
+      m.root.add(ring);
+      m.beacon = { beam, ring, mat: beamMat };
       m.kind = 'humanoid';
       break;
     }
