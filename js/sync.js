@@ -5,7 +5,9 @@
 // Conflito entre aparelhos nunca perde progresso: por classe fica o personagem mais
 // avançado, e em cada espaço de equipamento fica o melhor item entre os dois.
 // Login: OAuth do Google por redirecionamento (#access_token=... na volta). O token vale
-// ~1h; vencido, a próxima abertura do jogo renova sozinha com prompt=none.
+// ~1h e sem servidor não existe refresh token; então ele é renovado sozinho (prompt=none,
+// sem tela) ao abrir o jogo, ao voltar para o menu e a cada minuto parado no menu.
+// Nunca durante a partida: lá o progresso fica no aparelho e sobe quando renovar.
 // Só o Client ID vai aqui — o client secret nunca entra no site.
 import { G } from './state.js';
 import { SLOTS, itemScore } from './items.js';
@@ -69,6 +71,8 @@ function mergeChar(a, b) {
   }
   win.skillPoints = Math.max(win.skillPoints || 0, 0);
   win.wins = Math.max(a.wins || 0, b.wins || 0); // vitórias na batalha final nunca se perdem
+  win.playTime = Math.max(a.playTime || 0, b.playTime || 0);
+  win.deaths = Math.max(a.deaths || 0, b.deaths || 0);
   return win;
 }
 
@@ -153,17 +157,34 @@ function saveLocal() {
   } catch (e) {}
 }
 
-// login salvo mas vencido: renova sem tela antes de montar o jogo (uma tentativa por aba)
-export function syncShouldRefresh(back) {
-  const s = saved();
-  if (back || !s || !s.user || Date.now() < (s.exp || 0) || !navigator.onLine) return false;
+// tentativas de renovar sem tela: no máximo uma a cada 4 minutos por aba (evita laço de redirecionamento)
+const RETRY = 4 * 60000;
+function mayTry() {
   try {
-    if (sessionStorage.getItem(K_TRIED)) return false;
-    sessionStorage.setItem(K_TRIED, '1');
+    if (Date.now() - (Number(sessionStorage.getItem(K_TRIED)) || 0) < RETRY) return false;
+    sessionStorage.setItem(K_TRIED, String(Date.now()));
+    return true;
   } catch (e) {
     return false;
   }
+}
+
+// login salvo mas vencido: renova sem tela antes de montar o jogo
+export function syncShouldRefresh(back) {
+  const s = saved();
+  if (back || !s || !s.user || Date.now() < (s.exp || 0) || !navigator.onLine) return false;
+  if (!mayTry()) return false;
   sync.user = s.user;
+  return true;
+}
+
+// no menu: se o token venceu (ou vence em menos de margin ms), renova sem tela (vai ao Google e volta)
+export function syncRefreshSoon(margin = 0) {
+  if (!sync.user || G.mode !== 'menu' || document.hidden || !navigator.onLine || sync.busy) return false;
+  if (sync.token && Date.now() < sync.exp - margin) return false;
+  if (!mayTry()) return false;
+  hooks.save(true);
+  syncAuthRedirect(true);
   return true;
 }
 
@@ -288,7 +309,7 @@ export function syncBoxHtml() {
     syncing: L('🔄 Sincronizando…', '🔄 Syncing…'),
     ok: L('✅ Progresso sincronizado', '✅ Progress synced'),
     error: L('⚠️ Sem conexão — sincroniza quando voltar', '⚠️ Offline — will sync when back'),
-    expired: L('⏳ O login expirou — toque em Reconectar', '⏳ Sign-in expired — tap Reconnect'),
+    expired: L('⏳ Login vencido — renova sozinho no menu (ou toque em Reconectar)', '⏳ Sign-in expired — it renews by itself in the menu (or tap Reconnect)'),
   }[sync.status] || '';
   if (!u) {
     return `<p>${L('☁️ Entre com o Google para levar seus personagens (maior nível e melhor equipamento) para qualquer aparelho. Fica numa pasta escondida do seu Google Drive.', '☁️ Sign in with Google to take your characters (highest level and best gear) to any device. Stored in a hidden folder in your Google Drive.')}</p>

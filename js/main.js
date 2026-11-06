@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { G, gk } from './state.js';
 import { Input, initInput, setTouchMode } from './input.js';
 import { initAudio, applyVolumes, sfx } from './audio.js';
+import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy } from './enemies.js';
@@ -20,7 +21,7 @@ import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
-import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow } from './sync.js';
+import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow, syncRefreshSoon } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
   toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
@@ -219,6 +220,7 @@ function clearWorld() {
   G.barriers = [];
   G.decoy = null;
   clearPowers();
+  clearPets();
   G.boss = null;
   G.bosses = [];
   G.final = null;
@@ -248,6 +250,7 @@ function buildFloor(floor, withEnemies = true) {
   dirLight.intensity = Lt.dirI;
   resetMinimap(d);
   if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
+  if (withEnemies && !isFinalFloor(floor)) spawnPets(d);
   return d;
 }
 
@@ -317,6 +320,8 @@ function sanitizeChar(c) {
   c.skillPoints = c.skillPoints || 0;
   c.kills = c.kills || 0;
   c.wins = c.wins || 0;
+  c.playTime = c.playTime || 0;
+  c.deaths = c.deaths || 0;
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
@@ -334,6 +339,8 @@ export function quitToMenu() {
   G.camFocus.x = G.dungeon.start.x;
   G.camFocus.z = G.dungeon.start.z;
   showMenu();
+  // login do Google perto de vencer: renova agora, no menu, sem atrapalhar a partida
+  setTimeout(() => syncRefreshSoon(15 * 60000), 1500);
 }
 
 async function nextFloor() {
@@ -451,6 +458,7 @@ function logic(dt) {
   updatePowers(dt);
   updateDecoy(dt);
   updatePickups(dt, camera);
+  updatePets(dt);
   updateExit(dt);
   achT -= dt;
   if (achT <= 0) {
@@ -475,7 +483,10 @@ function frame() {
   updateMouseWorld();
 
   const playing = G.mode === 'play' || G.mode === 'dying';
-  if (playing && G.player) logic(dt);
+  if (playing && G.player) {
+    logic(dt);
+    if (G.mode === 'play' && G.char) G.char.playTime = (G.char.playTime || 0) + dt; // tempo total de jogo do personagem
+  }
   if (G.player && G.mode !== 'menu') {
     updateHUD(dt);
     // a câmera olha levemente à frente da mira
@@ -533,7 +544,10 @@ function boot() {
       if (G.mode === 'play') openPause();
     }
     if (document.hidden) syncNow();
+    else setTimeout(() => syncRefreshSoon(), 800);
   });
+  // no menu, renova o login do Google sozinho quando ele vence
+  setInterval(() => syncRefreshSoon(), 60000);
   setSyncHooks({
     save: () => saveGame(true),
     applied: () => {
@@ -550,7 +564,7 @@ function boot() {
   window.__G = G; // útil para depuração no console
   window.__classes = CLASSES;
   window.__dbg = {
-    spawnEnemy, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
+    spawnEnemy, spawnPet, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
     // roda a lógica sem renderizar (usado em testes automatizados)
     sim(seconds, onStep) {
       const step = 1 / 30;

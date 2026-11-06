@@ -213,6 +213,7 @@ export function playerDie() {
   const p = G.player;
   if (!p.alive) return;
   achAdd('deaths');
+  G.char.deaths = (G.char.deaths || 0) + 1;
   if (G.final) G.final.deaths++;
   p.alive = false;
   p.dash = null;

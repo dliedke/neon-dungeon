@@ -9,6 +9,7 @@ import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
 import { SHRINES } from './loot.js';
+import { PET_KINDS } from './pets.js';
 import { toast, medalPopup } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
@@ -154,6 +155,9 @@ export function achList() {
   add('thiefEsc', '💨', 0, L('Quase…', 'So Close…'), L('Deixe um Ladrão de Dados escapar', 'Let a Data Thief get away'), () => total('thiefEscapes'));
   add('shrine1', '🔮', 0, L('Abençoado', 'Blessed'), L('Use um Santuário Neon', 'Use a Neon Shrine'), () => total('shrines'));
   add('shrineAll', '💎', 1, L('Peregrino', 'Pilgrim'), L(`Use os ${Object.keys(SHRINES).length} tipos de santuário`, `Use all ${Object.keys(SHRINES).length} kinds of shrine`), () => Object.keys(SHRINES).filter((k) => has('shrineKinds', k)).length, Object.keys(SHRINES).length);
+  add('pet1', '🐾', 0, L('Amigo dos Bichos', 'Animal Friend'), L('Faça um bichinho seguir você', 'Get a critter to follow you'), () => total('pets'));
+  add('pet25', '🦴', 1, L('Encantador de Bichos', 'Critter Whisperer'), L('Faça 25 bichinhos seguirem você', 'Get 25 critters to follow you'), () => total('pets'), 25);
+  add('petAll', '🐶', 2, L('Arca Neon', 'Neon Ark'), L(`Faça amizade com os ${Object.keys(PET_KINDS).length} tipos de bichinho`, `Befriend all ${Object.keys(PET_KINDS).length} kinds of critter`), () => Object.keys(PET_KINDS).filter((k) => has('petKinds', k)).length, Object.keys(PET_KINDS).length);
   add('shrine50', '🛐', 2, L('Devoto do Neon', 'Neon Devotee'), L('Use 50 santuários', 'Use 50 shrines'), () => total('shrines'), 50);
   add('chest10', '📦', 0, L('Arrombador', 'Safecracker'), L('Abra 10 cofres', 'Open 10 loot caches'), () => total('chests'), 10);
   add('chest100', '🗃️', 2, L('Saqueador Profissional', 'Professional Looter'), L('Abra 100 cofres', 'Open 100 loot caches'), () => total('chests'), 100);

@@ -7,6 +7,13 @@ export const lerp = (a, b, t) => a + (b - a) * t;
 export const chance = (p) => Math.random() < p;
 export const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 
+// tempo de jogo: "2h 05min" ou "45min"
+export function fmtPlay(sec) {
+  const m = Math.floor((sec || 0) / 60);
+  const h = Math.floor(m / 60);
+  return h ? `${h}h ${String(m % 60).padStart(2, '0')}min` : `${m}min`;
+}
+
 export function weightedPick(list, w) {
   let total = 0;
   for (const x of list) total += w(x);
