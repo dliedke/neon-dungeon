@@ -11,6 +11,7 @@ import { groundEffect } from './biomes.js';
 import { formMods } from './powers.js';
 import { DIFFICULTY } from './enemies.js';
 import { achAdd } from './ach.js';
+import { amod, implantMods } from './run.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
@@ -74,7 +75,9 @@ export function computeStats(c) {
     if (it.leg) s.legs.add(it.leg);
   }
   // poderes passivos da árvore
-  const pm = passiveMods(c);
+  const pm = { ...passiveMods(c) };
+  // implantes escolhidos depois dos chefes
+  for (const [k, v] of Object.entries(implantMods(c))) pm[k] = (pm[k] || 0) + v;
   for (const [k, v] of Object.entries(pm)) {
     if (k === 'hpPct' || k === 'armorPct') continue;
     s[k] = (s[k] || 0) + v;
@@ -158,7 +161,7 @@ export function skillCost(i) {
 }
 
 export function skillCd(i) {
-  return CLASSES[G.char.cls].skills[i].cd * (1 - G.player.stats.cdr / 100);
+  return CLASSES[G.char.cls].skills[i].cd * (1 - G.player.stats.cdr / 100) * amod('cd');
 }
 
 export function gainXp(n) {
@@ -422,7 +425,7 @@ export function updatePlayer(dt) {
   const oc = p.buffs.overclock > 0;
 
   // regeneração
-  const regen = s.hpRegen + (p.buffs.regen > 0 ? s.maxHp * 0.03 : 0) + (p.inCombat > 0 ? 0 : s.maxHp * 0.015);
+  const regen = (s.hpRegen + (p.inCombat > 0 ? 0 : s.maxHp * 0.015)) * amod('regen') + (p.buffs.regen > 0 ? s.maxHp * 0.03 : 0);
   p.hp = Math.min(s.maxHp, p.hp + regen * dt);
   p.en = Math.min(s.maxEn, p.en + s.enRegen * dt);
 

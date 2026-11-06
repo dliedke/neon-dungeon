@@ -23,6 +23,7 @@ const DICT = {
   padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {LB} {RB} Switch tab · {B} Close'],
   padHintsTree: ['{A} Desbloquear/Evoluir · {X} Trocar de botão · {LB} {RB} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {X} Change button · {LB} {RB} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
+  implantTitle: ['ESCOLHA UM IMPLANTE', 'CHOOSE AN IMPLANT'],
   resume: ['Continuar', 'Resume'],
   character: ['Personagem', 'Character'],
   saveQuit: ['Salvar e sair', 'Save & quit'],

@@ -16,6 +16,7 @@ import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
+import { runHud, implantSummary } from './run.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -462,6 +463,7 @@ export function updateHUD(dt) {
   const c = G.char;
   updateThiefPointer();
   if (!p) return;
+  runHud();
   const s = p.stats;
   const im = G.lastInput + G.padType;
   if (cache.inputMode !== im) {
@@ -753,6 +755,18 @@ function drawMapMarks(ctx, d, p, near) {
       ctx.fill();
       continue;
     }
+    if (pk.type === 'rift') {
+      // Fenda de Desafio: losango rosa, sempre visível até ser fechada
+      if (pk.state === 'done') continue;
+      ctx.fillStyle = '#ff2bd6';
+      ctx.beginPath();
+      ctx.moveTo(pk.x, pk.z - 1.3);
+      ctx.lineTo(pk.x + 1.3, pk.z);
+      ctx.lineTo(pk.x, pk.z + 1.3);
+      ctx.lineTo(pk.x - 1.3, pk.z);
+      ctx.fill();
+      continue;
+    }
     if (pk.type !== 'item' || (pk.item.rarity < 1 && !pk.up)) continue;
     ctx.fillStyle = pk.up ? '#39ff88' : RARITY[pk.item.rarity].color;
     const r = pk.up ? 0.75 : 0.4;
@@ -1040,6 +1054,8 @@ export function renderChar() {
     if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${s.findPct}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
     for (const l of s.legs) sh += `<div class="leg">◆ ${LEGENDARIES[l].name}</div>`;
+    const imp = implantSummary(G.char);
+    if (imp) sh += `<div class="imp-row">${L('Implantes', 'Implants')}: ${imp}</div>`;
     $('stat-list').innerHTML = sh;
     renderDetail();
   } else {
@@ -1326,7 +1342,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1435,6 +1451,7 @@ export function uiBack(root = activePanel()) {
   if (!root) return;
   switch (root.id) {
     case 'panel-end':
+    case 'panel-implant':
       break; // o final só fecha pelos botões
     case 'panel-confirm':
     case 'panel-opts':

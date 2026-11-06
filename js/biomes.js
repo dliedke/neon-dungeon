@@ -945,8 +945,10 @@ function ambientParticles(d, dt) {
     }
     const fog = G.scene.fog;
     const L2 = G.theme.light;
-    const near = st.on ? 6 : L2.fogNear;
-    const far = st.on ? 18 : L2.fogFar;
+    // anomalia Apagão: a névoa continua perto depois da tempestade
+    const dark = G.anomaly === 'dark';
+    const near = st.on ? 6 : L2.fogNear * (dark ? 0.35 : 1);
+    const far = st.on ? 18 : L2.fogFar * (dark ? 0.5 : 1);
     fog.near += (near - fog.near) * Math.min(1, dt);
     fog.far += (far - fog.far) * Math.min(1, dt);
     if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), st.snow ? pick([0xffffff, 0xdde8f4]) : pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);

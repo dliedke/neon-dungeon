@@ -13,6 +13,7 @@ import { onEnemyKilled } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
+import { amod, runKill, runHurt } from './run.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -79,7 +80,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1);
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * amod('pdmg');
   let crit = false;
   if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
@@ -211,6 +212,7 @@ export function killEnemy(e) {
       sfx.legendary();
     }
     G.char.kills = (G.char.kills || 0) + 1;
+    runKill(e);
     if (p.stats.legs.has('nano')) healPlayer(p.stats.maxHp * 0.04);
     if (p.stats.killHeal) healPlayer((p.stats.maxHp * p.stats.killHeal) / 100, false);
     if (p.stats.killEn) p.en = Math.min(p.stats.maxEn, p.en + p.stats.killEn);
@@ -272,6 +274,7 @@ export function damagePlayer(amount) {
     return;
   }
   amount *= 100 / (100 + p.stats.armor);
+  amount *= amod('taken');
   if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
   if (p.buffs.titan > 0) amount *= 0.4;
   if (p.buffs.aegis > 0) amount *= 0.5;
@@ -287,6 +290,7 @@ export function damagePlayer(amount) {
     if (amount <= 0) return;
   }
   p.hp -= amount;
+  runHurt();
   p.hurtT = 0.12;
   floatText(p.x, 1.8, p.z, `-${amount}`, 'hurt');
   sfx.hurt();

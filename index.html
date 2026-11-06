@@ -56,6 +56,7 @@
       </div>
       <div id="minimap-wrap"><canvas id="minimap" width="168" height="168"></canvas></div>
       <div id="floor-label"></div>
+      <div id="run-info"></div>
       <div id="credits"><span class="cr">¢</span> <span id="credits-val">0</span></div>
     </div>
 
@@ -88,6 +89,8 @@
       <div class="tbtn mid" id="tb-s6"><div class="icon"></div><div class="cd"></div></div>
       <div class="tbtn small" id="tb-stim"><div class="icon"></div><div class="cd"></div><span class="count" id="tstim-count">0</span></div>
     </div>
+
+    <div id="combo" class="hidden"><b>x0</b><small></small><div class="combo-bar"><i></i></div></div>
 
     <div id="exit-prompt" class="hidden"><div id="exit-text"></div><div class="bar exitbar"><div class="fill" id="exit-fill"></div></div></div>
   </div>
@@ -151,6 +154,16 @@
   </div>
 
   <!-- LOJA DO MERCADOR -->
+  <!-- IMPLANTE (depois de cada chefe) -->
+  <div id="panel-implant" class="screen hidden">
+    <div class="panel wide implant">
+      <h2 data-i18n="implantTitle">ESCOLHA UM IMPLANTE</h2>
+      <p class="shop-sub" id="implant-sub"></p>
+      <div id="implant-cards"></div>
+      <p class="implant-pad" id="implant-pad"></p>
+    </div>
+  </div>
+
   <div id="panel-shop" class="screen hidden">
     <div class="panel wide shop">
       <div class="panel-head">

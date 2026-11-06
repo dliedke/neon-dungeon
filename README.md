@@ -110,6 +110,9 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
 
 **Bosses** are tough: they fire aimed volleys between their attacks and become **enraged** below 30% health (faster, harder hitting and with bigger volleys).
+The first boss hits softer and attacks more slowly, since you are still weak; every boss after it gets more health.
+
+After each boss you **choose an implant** (1 of 3 random options; golden implants are worth double): permanent bonuses such as damage, health, crit, speed, cooldowns, lifesteal, dodge or extra damage to elites. They stack for the whole run.
 
 ## Floor events
 
@@ -118,12 +121,19 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 - **Neon Shrines:** glowing pillars that grant a 30-second buff when you walk over them:
   **Fury** (+50% damage), **Haste** (+35% move speed, +30% attack speed), **Fortune** (more loot and double credits) or **Aegis** (half damage taken).
 
-Both show up on the minimap once explored.
+- **Floor anomalies:** many floors roll a random modifier that changes how they play, with risk and reward:
+  Horde, Frenzy, Elite Surge, Gold Rush, Glass Cannon, Blood Moon, Chain Reaction, Overload, Giants and Blackout.
+- **Contracts:** an optional objective per floor (kill elites, kill fast, reach a combo, clear the floor, kill without getting hit, catch the Data Thief, close the rift...).
+  Completing one pays credits and good items.
+- **Challenge Rifts:** stand on the rift to open it and survive 3 waves; the last one includes an elite. The reward is a guaranteed Prototype item and more.
+- **Kill combo:** chain kills quickly to build a combo. It adds bonus experience and pays credits every 10 kills.
+
+Thieves, shrines and rifts show up on the minimap once explored.
 
 ## Medals
 
-**81 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
-They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, loot caches,
+**92 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
 legendaries, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
@@ -188,6 +198,7 @@ js/audio.js            synthesized sound effects and music
 js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
+js/run.js              floor anomalies, contracts, rifts, kill combo and implants
 vendor/three/          Three.js r160 (MIT)
 web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
 ```

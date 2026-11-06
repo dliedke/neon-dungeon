@@ -11,6 +11,7 @@ import { MAX_STIMS } from './player.js';
 import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
+import { amod } from './run.js';
 
 export const INV_SIZE = 30;
 const UP_COLOR = 0x39ff88;
@@ -19,11 +20,18 @@ let labelRoot = null;
 export function dropLoot(x, z, o = {}) {
   const p = G.player;
   const find = 1 + (p.stats.findPct || 0) / 100;
-  const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss ? 2 : 0) + (o.chest ? 1 : 0);
+  const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract ? 1 : 0);
   let items = 0;
-  let bonus = G.floor * 1.5;
+  let bonus = G.floor * 1.5 + amod('loot', 0);
   const rich = p.buffs.fortune > 0; // Santuário da Fortuna
-  if (o.thief) {
+  if (o.rift) {
+    // Fenda de Desafio: cofre lendário
+    items = 3;
+    bonus += 45;
+  } else if (o.contract) {
+    items = 2;
+    bonus += 30;
+  } else if (o.thief) {
     items = 3;
     bonus += 35;
   } else if (o.boss) {
@@ -40,19 +48,21 @@ export function dropLoot(x, z, o = {}) {
   }
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);
-    if ((o.boss || o.chest || o.thief) && i === 0) rarity = Math.max(rarity, o.boss || o.thief ? 2 : 1);
+    if ((o.boss || o.chest || o.thief || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.contract ? 2 : 1);
+    if (o.rift && i === 0) rarity = 3;
+    if (o.rift && i === 1) rarity = Math.max(rarity, 2);
     if (rich && rarity < 3 && chance(0.25)) rarity++;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
-  if (chance(o.boss || o.chest || o.thief ? 1 : o.elite ? 0.9 : 0.4)) {
-    const n = o.thief ? 12 : o.boss ? 5 : o.chest ? 4 : o.elite ? 3 : 1;
-    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1)) });
+  if (chance(o.boss || o.chest || o.thief || o.rift || o.contract ? 1 : o.elite ? 0.9 : 0.4)) {
+    const n = o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
+    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1) * amod('credits')) });
   }
-  if (o.thief) spawnPickup('stim', x, z, {});
+  if (o.thief || o.rift) spawnPickup('stim', x, z, {});
   if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
   // orbes de vida: ajudam a se recuperar no meio da luta
-  if (!o.chest && chance(o.boss ? 1 : o.elite ? 0.6 : 0.13)) spawnPickup('orb', x, z, {});
+  if (!o.chest && chance(o.boss || o.rift ? 1 : o.elite ? 0.6 : Math.min(0.6, 0.13 * amod('orbs')))) spawnPickup('orb', x, z, {});
 }
 
 const coinGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.04, 6);
@@ -280,6 +290,7 @@ export function updatePickups(dt, camera) {
   fullWarn -= dt;
   shrineAuras(dt, p);
   for (const pk of G.pickups) {
+    if (pk.type === 'rift') continue; // a Fenda de Desafio é atualizada em run.js
     pk.t += dt;
     if (pk.type === 'shrine') {
       pk.mesh.rotation.y += dt * (pk.used ? 0.3 : 1.6);

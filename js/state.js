@@ -27,6 +27,8 @@ export const G = {
   decoy: null,
   boss: null,
   bosses: [], // chefes em combate (na batalha final são 2 ao mesmo tempo)
+  anomaly: null, // anomalia do andar atual (run.js)
+  contract: null, // contrato do andar atual (run.js)
   final: null, // estado da batalha final do último andar  floor: 1,
   save: null,
   char: null,

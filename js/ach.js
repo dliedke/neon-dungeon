@@ -10,6 +10,7 @@ import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
 import { SHRINES } from './loot.js';
 import { PET_KINDS } from './pets.js';
+import { ANOMALIES } from './run.js';
 import { toast, medalPopup } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
@@ -159,6 +160,17 @@ export function achList() {
   add('pet25', '🦴', 1, L('Encantador de Bichos', 'Critter Whisperer'), L('Faça 25 bichinhos seguirem você', 'Get 25 critters to follow you'), () => total('pets'), 25);
   add('petAll', '🐶', 2, L('Arca Neon', 'Neon Ark'), L(`Faça amizade com os ${Object.keys(PET_KINDS).length} tipos de bichinho`, `Befriend all ${Object.keys(PET_KINDS).length} kinds of critter`), () => Object.keys(PET_KINDS).filter((k) => has('petKinds', k)).length, Object.keys(PET_KINDS).length);
   add('shrine50', '🛐', 2, L('Devoto do Neon', 'Neon Devotee'), L('Use 50 santuários', 'Use 50 shrines'), () => total('shrines'), 50);
+  add('contract1', '📜', 0, L('Freelancer', 'Freelancer'), L('Cumpra um contrato', 'Complete a contract'), () => total('contracts'));
+  add('contract10', '🖋️', 1, L('Mercenário', 'Mercenary'), L('Cumpra 10 contratos', 'Complete 10 contracts'), () => total('contracts'), 10);
+  add('contract50', '🎩', 2, L('Lenda dos Contratos', 'Contract Legend'), L('Cumpra 50 contratos', 'Complete 50 contracts'), () => total('contracts'), 50);
+  add('rift1', '🌀', 0, L('Fenda Fechada', 'Rift Closed'), L('Feche uma Fenda de Desafio', 'Close a Challenge Rift'), () => total('rifts'));
+  add('rift10', '🌌', 2, L('Caçador de Fendas', 'Rift Hunter'), L('Feche 10 Fendas de Desafio', 'Close 10 Challenge Rifts'), () => total('rifts'), 10);
+  add('combo25', '🔥', 1, L('Imparável', 'Unstoppable'), L('Faça um combo de 25 abates', 'Reach a 25-kill combo'), () => (has('flags', 'combo25') ? 1 : 0));
+  add('combo50', '🌪️', 2, L('Massacre', 'Massacre'), L('Faça um combo de 50 abates', 'Reach a 50-kill combo'), () => (has('flags', 'combo50') ? 1 : 0));
+  add('combo100', '☄️', 3, L('Tempestade Neon', 'Neon Storm'), L('Faça um combo de 100 abates', 'Reach a 100-kill combo'), () => (has('flags', 'combo100') ? 1 : 0));
+  add('anomalyAll', '🧪', 2, L('Caos Controlado', 'Controlled Chaos'), L(`Termine andares com as ${Object.keys(ANOMALIES).length} anomalias`, `Clear floors under all ${Object.keys(ANOMALIES).length} anomalies`), () => Object.keys(ANOMALIES).filter((k) => has('anomaliesDone', k)).length, Object.keys(ANOMALIES).length);
+  add('goldImplant', '🥇', 1, L('Implante Dourado', 'Golden Implant'), L('Instale um implante dourado', 'Install a golden implant'), () => (has('flags', 'goldImplant') ? 1 : 0));
+  add('implants9', '🤖', 2, L('Ciborgue Completo', 'Full Cyborg'), L('Ganhe os 9 implantes dos chefes com um personagem', 'Earn all 9 boss implants with one character'), () => maxOf((c) => (c.implantFloors || []).length), 9);
   add('chest10', '📦', 0, L('Arrombador', 'Safecracker'), L('Abra 10 cofres', 'Open 10 loot caches'), () => total('chests'), 10);
   add('chest100', '🗃️', 2, L('Saqueador Profissional', 'Professional Looter'), L('Abra 100 cofres', 'Open 100 loot caches'), () => total('chests'), 100);
 

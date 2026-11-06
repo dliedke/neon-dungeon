@@ -27,6 +27,7 @@ import {
   toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
+import { rollAnomaly, announceFloor, updateRun, runFloorDone } from './run.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
 const SETTINGS_KEY = 'neon-dungeon-settings-v1';
@@ -232,6 +233,10 @@ function buildFloor(floor, withEnemies = true) {
   G.floor = floor;
   const theme = themeFor(floor);
   G.theme = theme;
+  // anomalia do andar: sorteada antes de povoar (muda quantidade e força dos inimigos)
+  G.contract = null;
+  if (withEnemies) rollAnomaly(floor);
+  else G.anomaly = null;
   const d = generateDungeon(floor);
   G.dungeon = d;
   placeFeatures(d, theme);
@@ -248,6 +253,13 @@ function buildFloor(floor, withEnemies = true) {
   hemi.intensity = Lt.hemi;
   dirLight.color.set(Lt.dir);
   dirLight.intensity = Lt.dirI;
+  // anomalia Apagão: névoa bem perto e pouca luz (a luz do personagem vira a lanterna)
+  if (G.anomaly === 'dark') {
+    scene.fog.near *= 0.35;
+    scene.fog.far *= 0.5;
+    hemi.intensity *= 0.45;
+    dirLight.intensity *= 0.35;
+  }
   resetMinimap(d);
   if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
   if (withEnemies && !isFinalFloor(floor)) spawnPets(d);
@@ -273,6 +285,7 @@ export function startFloor(floor) {
     setTimeout(() => G.floor === floor && toast(L('Batalha final: os chefes vêm em ondas de 2. Derrote os 7 para vencer o jogo!', 'Final battle: the bosses come in waves of 2. Defeat all 7 to win the game!'), 'warn'), 2800);
   } else banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
   if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
+  announceFloor(floor);
   saveGame();
 }
 
@@ -322,6 +335,10 @@ function sanitizeChar(c) {
   c.wins = c.wins || 0;
   c.playTime = c.playTime || 0;
   c.deaths = c.deaths || 0;
+  // implantes (escolhidos depois de cada chefe)
+  c.implants = c.implants || {};
+  c.implantFloors = c.implantFloors || [];
+  c.implantPending = c.implantPending || 0;
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
@@ -353,6 +370,7 @@ async function nextFloor() {
   G.mode = 'loading';
   await new Promise((r) => setTimeout(r, 450));
   achAdd('floors');
+  runFloorDone();
   startFloor(G.floor + 1);
   G.player.hp = Math.min(G.player.stats.maxHp, G.player.hp + G.player.stats.maxHp * 0.25);
   if (G.char.stims < 3) {
@@ -459,6 +477,7 @@ function logic(dt) {
   updateDecoy(dt);
   updatePickups(dt, camera);
   updatePets(dt);
+  updateRun(dt);
   updateExit(dt);
   achT -= dt;
   if (achT <= 0) {

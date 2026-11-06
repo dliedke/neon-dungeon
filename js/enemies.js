@@ -15,6 +15,7 @@ import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
+import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail } from './run.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
@@ -154,6 +155,8 @@ export function spawnEnemy(type, x, z, o = {}) {
   model.root.rotation.y = e.facing;
   G.world.add(model.root);
   G.enemies.push(e);
+  // anomalia do andar (só nos inimigos do povoamento; a fenda aplica por conta própria)
+  if (o.anomaly) applyAnomalyToEnemy(e);
   return e;
 }
 
@@ -187,6 +190,7 @@ export function onEnemyKilled(e) {
     if (G.final) finalBossDown(e);
     else {
       banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
+      bossReward();
       sfx.levelup();
       G.dungeon.meshes.exit.locked = false;
     }
@@ -272,7 +276,7 @@ export function updateEnemies(dt, cam) {
     e.atkT -= edt;
     e.flash -= edt;
     // chefes descansam menos entre um ataque e outro
-    if (e.boss && e.bstate === 'walk' && e.bt > 0) e.bt -= edt * (diff().bossTempo - 1 + (e.enraged ? 0.6 : 0));
+    if (e.boss && e.bstate === 'walk' && e.bt > 0) e.bt -= edt * (diff().bossTempo - 1 + (e.enraged ? 0.6 : 0)) * (e.tempoK ?? 1);
     if (e.boss && !e.decoy) bossPressure(e, edt, tgt);
     if (e.hpShow > 0) e.hpShow -= edt;
 
@@ -508,6 +512,7 @@ export function updateEnemies(dt, cam) {
             sfx.zap();
             toast(L('O Ladrão de Dados escapou…', 'The Data Thief got away…'), 'warn', 'thief');
             achAdd('thiefEscapes');
+            contractFail('thief');
             e.selfDestruct = true;
             e.hp = 0;
             e.alive = false;
@@ -1503,7 +1508,7 @@ function chooseBossAttack(e, dist) {
 // ---------------- Povoamento do andar ----------------
 export function populateFloor(d, floor, boss) {
   const D = diff();
-  const eliteChance = floor <= 1 ? 0 : Math.min(0.3, 0.04 + floor * 0.025);
+  const eliteChance = floor <= 1 ? 0 : Math.min(0.6, Math.min(0.3, 0.04 + floor * 0.025) * amod('elite'));
   const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
   const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
   // mapas abertos (deserto, floresta, pradaria...) são 2-4x maiores: mais inimigos para não ficarem vazios
@@ -1513,14 +1518,14 @@ export function populateFloor(d, floor, boss) {
   // orçamento de inimigos por andar
   const final = isFinalFloor(floor);
   // no andar final o foco são os chefes: metade dos inimigos comuns
-  const budget = Math.round(Math.min(140, Math.round((15 + floor * 8) * D.count * areaK)) * (final ? 0.5 : 1));
+  const budget = Math.round(Math.min(140, Math.round((15 + floor * 8) * D.count * areaK)) * (final ? 0.5 : 1) * amod('count'));
   const quotas = new Map();
   for (const r of d.rooms) {
     if (r === d.rooms[0]) continue;
     if (boss && r === d.exitRoom) continue;
     if (r.safe) continue;
     if (chance(emptyChance)) continue;
-    quotas.set(r, Math.max(1, Math.round(((r.w * r.h) / perPack) * D.count * areaK)));
+    quotas.set(r, Math.max(1, Math.round(((r.w * r.h) / perPack) * D.count * areaK * Math.max(1, amod('count')))));
   }
   // distribui os grupos em rodadas para espalhar pelo mapa
   const slots = [];
@@ -1550,13 +1555,13 @@ export function populateFloor(d, floor, boss) {
           z = cz;
         }
         if (!isWalkable(d, x, z)) continue;
-        spawnEnemy(type, x, z, { elite: elite && i === 0 });
+        spawnEnemy(type, x, z, { elite: elite && i === 0, anomaly: true });
       }
       // médico de campo acompanhando o grupo
       if (floor >= 2 && !(G.theme && G.theme.natural) && !ETYPES[type].solo && chance(Math.min(0.3, 0.1 + floor * 0.03))) {
         const x = cx + rr(-1, 1);
         const z = cz + rr(-1, 1);
-        if (isWalkable(d, x, z)) spawnEnemy('medic', x, z);
+        if (isWalkable(d, x, z)) spawnEnemy('medic', x, z, { anomaly: true });
       }
       // mistura alguns inimigos de outro tipo
       if (floor >= 3 && chance(0.4)) {
@@ -1564,7 +1569,7 @@ export function populateFloor(d, floor, boss) {
         if (!ETYPES[t2].solo) {
           const x = cx + rr(-1, 1);
           const z = cz + rr(-1, 1);
-          if (isWalkable(d, x, z)) spawnEnemy(t2, x, z);
+          if (isWalkable(d, x, z)) spawnEnemy(t2, x, z, { anomaly: true });
         }
       }
     }
@@ -1600,6 +1605,8 @@ export function populateFloor(d, floor, boss) {
     const pt = randomFloorInRoom(d, chestRooms[k], 1);
     spawnChest(pt.x, pt.z);
   }
+  // Fenda de Desafio e contrato do andar
+  setupFloorEvents(d, floor, boss, far.length ? far : d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
   if (final) {
     // batalha final: os 7 chefes em ondas de 2 (quando os dois caem, entram os próximos 2; o OMEGA vem por último)
     const waves = [];
@@ -1613,8 +1620,16 @@ export function populateFloor(d, floor, boss) {
     const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
     const cycle = Math.floor(idx / BOSS_ORDER.length);
     const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
-    // a cada volta no ciclo de chefes eles voltam mais resistentes
-    if (cycle) e.hp = e.maxHp = e.maxHp * (1 + 0.3 * cycle);
+    // curva dos chefes: o primeiro bate bem menos e ataca com mais calma (o jogador ainda está fraco);
+    // cada chefe seguinte vem mais resistente, porque o jogador cresce mais rápido que eles
+    if (idx === 0) {
+      e.hp = e.maxHp = e.maxHp * 0.9;
+      e.dmg *= 0.62;
+      e.tempoK = 0.6;
+    } else {
+      e.hp = e.maxHp = e.maxHp * (1 + 0.22 * idx);
+      e.dmg *= 1 + 0.04 * idx;
+    }
     if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;
     G.dungeon.meshes.exit.locked = true;
@@ -1634,8 +1649,10 @@ function spawnFinalBoss(kind, ox = 0, oz = 0) {
     z = c.z;
   }
   const e = spawnEnemy(kind, x, z);
+  // mais resistentes que antes (o jogador chega aqui com todos os implantes);
   // o OMEGA luta sozinho na última onda: vida cheia
-  if (kind !== 'omega') e.hp = e.maxHp = e.maxHp * 0.85;
+  e.hp = e.maxHp = e.maxHp * (kind !== 'omega' ? 1.9 : 2.3);
+  e.dmg *= 1.2;
   e.finalBoss = true;
   return e;
 }

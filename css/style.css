@@ -810,3 +810,71 @@ body.pad .btn.gp-focus:disabled { opacity: 0.55; }
   .medal-card p { font-size: 15px; }
 }
 .nowrap { white-space: nowrap; }
+
+/* ---------- eventos da partida (run.js) ---------- */
+/* anomalia e contrato do andar, embaixo do minimapa */
+#run-info { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 240px; }
+#run-info:empty { display: none; }
+.ri-anom {
+  font-size: 11px; padding: 2px 8px; border: 1px solid var(--c); color: var(--c); background: rgba(0, 0, 0, 0.55);
+  text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 6px var(--c);
+}
+.ri-con {
+  font-size: 11px; line-height: 1.3; padding: 3px 8px; text-align: right; color: #ffe9a8;
+  background: rgba(0, 0, 0, 0.55); border-right: 2px solid var(--yellow);
+}
+.ri-con b { color: var(--yellow); margin-left: 4px; white-space: nowrap; }
+.ri-con.done { border-color: #39ff88; color: #b8ffd4; }
+.ri-con.done b { color: #39ff88; }
+.ri-con.fail { opacity: 0.55; text-decoration: line-through; border-color: #ff4466; }
+.ri-con.fail b { color: #ff4466; }
+
+/* combo de abates */
+#combo {
+  position: absolute; right: calc(16px + var(--safe-r)); top: 54%; text-align: right;
+  font-family: Orbitron, sans-serif; color: #ffd23d; pointer-events: none;
+}
+#combo b { display: block; font-size: 40px; line-height: 1; text-shadow: 0 0 14px #ff7a1a, 0 2px 3px #000; }
+#combo small { display: block; font-size: 11px; letter-spacing: 2px; color: #ffe9a8; text-shadow: 0 1px 2px #000; margin-top: 2px; }
+#combo .combo-bar { height: 3px; width: 120px; margin: 4px 0 0 auto; background: rgba(255, 255, 255, 0.15); }
+#combo .combo-bar i { display: block; height: 100%; background: #ffd23d; box-shadow: 0 0 8px #ffd23d; transform-origin: right; }
+#combo.pop b { animation: comboPop 0.25s ease-out; }
+@keyframes comboPop { 0% { transform: scale(1.45); } 100% { transform: scale(1); } }
+@media (max-height: 520px), (max-width: 640px) {
+  #combo { top: 50%; }
+  #combo b { font-size: 28px; }
+  #run-info { max-width: 170px; }
+  .ri-con, .ri-anom { font-size: 10px; }
+  body.touch #combo { right: auto; left: calc(16px + var(--safe-l, 0px)); top: 30%; text-align: left; }
+  body.touch #combo .combo-bar { margin: 4px auto 0 0; }
+  body.touch #combo .combo-bar i { transform-origin: left; }
+}
+
+/* escolha de implante */
+.panel.implant { text-align: center; max-width: 860px; }
+#implant-cards { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.imp-card {
+  position: relative; flex: 1 1 200px; max-width: 250px; min-height: 190px; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 18px 14px 14px; cursor: pointer; color: var(--text); font: inherit;
+  background: linear-gradient(180deg, rgba(0, 240, 255, 0.08), rgba(8, 8, 22, 0.9)); border: 1px solid rgba(0, 240, 255, 0.45);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.imp-card:hover, .imp-card.gp-focus { transform: translateY(-4px); border-color: #00f0ff; box-shadow: 0 0 22px rgba(0, 240, 255, 0.45); }
+.imp-card.gold { border-color: #ffd23d; background: linear-gradient(180deg, rgba(255, 210, 61, 0.16), rgba(8, 8, 22, 0.9)); }
+.imp-card.gold:hover, .imp-card.gold.gp-focus { box-shadow: 0 0 26px rgba(255, 210, 61, 0.6); border-color: #ffe98a; }
+.imp-ico { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6)); }
+.imp-card b { font-family: Orbitron, sans-serif; font-size: 15px; letter-spacing: 1px; color: #00f0ff; }
+.imp-card.gold b { color: #ffd23d; }
+.imp-desc { font-size: 14px; color: #c8ffe0; }
+.imp-card small { color: var(--muted); font-size: 12px; }
+.imp-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 10px; letter-spacing: 1px; padding: 2px 8px; background: #ffd23d; color: #000; font-weight: 700; }
+.implant-pad { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+.implant-pad:empty { display: none; }
+.imp-row { grid-column: 1 / -1; margin-top: 6px; color: #00f0ff; }
+.imp-chip { display: inline-block; margin-right: 6px; font-size: 15px; }
+@media (max-height: 520px) {
+  .imp-card { min-height: 0; padding: 12px 10px 10px; gap: 4px; }
+  .imp-ico { font-size: 30px; }
+  .imp-desc { font-size: 12px; }
+  #implant-cards { gap: 10px; flex-wrap: nowrap; }
+}
