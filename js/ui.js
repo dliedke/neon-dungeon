@@ -51,7 +51,17 @@ export function initUI() {
   $('menu-sync').onclick = () => openSync();
   $('menu-ach').onclick = () => openAch();
   $('pause-ach').onclick = () => openAch();
-  $('ach-close').onclick = () => closeOverlay('panel-ach');
+  $('ach-close').onclick = () => {
+    closeMedal();
+    closeOverlay('panel-ach');
+  };
+  $('ach-grid').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-ach]');
+    if (!el) return;
+    if (medalOpen()) closeMedal();
+    else openMedal(el.dataset.ach);
+  });
+  $('ach-zoom').addEventListener('click', closeMedal);
   $('pause-sync').onclick = () => openSync();
   $('sync-close').onclick = () => closeOverlay('panel-sync');
   $('sync-box').addEventListener('click', (e) => {
@@ -256,13 +266,74 @@ function openAch() {
   $('ach-grid').innerHTML = rows.map(({ a, cur, goal, done }) => {
     const t = MEDAL_TIERS[a.tier];
     const bar = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${fmt(cur)}/${fmt(goal)}</span></div>` : '';
-    return `<div class="ach ${done ? 'done' : ''}" data-nav tabindex="-1" style="--t:${t.css}">
+    return `<div class="ach ${done ? 'done' : ''}" data-nav data-ach="${a.id}" tabindex="-1" style="--t:${t.css}">
       <div class="ach-ico">${a.icon}</div>
       <div class="ach-txt"><b>${a.name}</b><small>${a.desc}</small>${bar}</div>
       <div class="ach-tier">${done ? '✔' : ''} ${t.name}<br>+${fmt(t.reward)}¢</div>
     </div>`;
   }).join('');
+  closeMedal();
   openOverlay('panel-ach');
+}
+
+// medalha redonda grande (ícone no centro, raios e fita com o nível)
+function medalHtml(a, done) {
+  const t = MEDAL_TIERS[a.tier];
+  return `<div class="medal ${done ? '' : 'locked'}" style="--t:${t.css}"><div class="medal-rays"></div><div class="medal-disc"><span>${a.icon}</span></div><div class="medal-ribbon">${t.name}</div></div>`;
+}
+
+// clique numa medalha do painel: mostra ela grande
+function openMedal(id) {
+  const a = achList().find((x) => x.id === id);
+  if (!a) return;
+  const { cur, goal, done } = achProgress(a);
+  const t = MEDAL_TIERS[a.tier];
+  const when = done && G.save.ach[a.id] > 1 ? new Date(G.save.ach[a.id]).toLocaleDateString(L('pt-BR', 'en-US'), { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const prog = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${fmt(cur)}/${fmt(goal)}</span></div>` : '';
+  const z = $('ach-zoom');
+  z.innerHTML = `<div class="medal-card ${done ? '' : 'locked'}" style="--t:${t.css}">
+    ${medalHtml(a, done)}
+    <h3>${a.name}</h3>
+    <p>${a.desc}</p>
+    <div class="mc-meta">${t.name} · +${fmt(t.reward)}¢</div>
+    ${done ? `<div class="mc-when">✔ ${when ? L('Conquistada em ', 'Earned on ') + when : L('Conquistada', 'Earned')}</div>` : `<div class="mc-when">🔒 ${L('Ainda não conquistada', 'Not earned yet')}</div>` + prog}
+    <div class="mc-close">${G.lastInput === 'pad' ? padText(L('{B} voltar', '{B} back')) : L('Clique para fechar', 'Click to close')}</div>
+  </div>`;
+  z.classList.remove('hidden');
+  sfx.click();
+}
+function closeMedal() {
+  $('ach-zoom').classList.add('hidden');
+}
+function medalOpen() {
+  return !$('ach-zoom').classList.contains('hidden');
+}
+
+// aviso grande quando ganha uma medalha (um de cada vez)
+const medalQueue = [];
+let medalBusy = false;
+export function medalPopup(a, reward) {
+  medalQueue.push({ a, reward });
+  if (!medalBusy) nextMedalPopup();
+}
+function nextMedalPopup() {
+  const it = medalQueue.shift();
+  if (!it) {
+    medalBusy = false;
+    return;
+  }
+  medalBusy = true;
+  const t = MEDAL_TIERS[it.a.tier];
+  const el = document.createElement('div');
+  el.className = 'mpop';
+  el.style.setProperty('--t', t.css);
+  el.innerHTML = `${medalHtml(it.a, true)}<div class="mpop-txt"><small>${L('MEDALHA DESBLOQUEADA', 'MEDAL UNLOCKED')} · ${t.name}</small><b>${it.a.name}</b><span>${it.a.desc}${it.reward ? ` · <em>+${fmt(it.reward)}¢</em>` : ''}</span></div>`;
+  $('medal-pop').appendChild(el);
+  setTimeout(() => el.classList.add('out'), 3800);
+  setTimeout(() => {
+    el.remove();
+    nextMedalPopup();
+  }, 4250);
 }
 
 function openSync() {
@@ -1284,8 +1355,11 @@ export function uiBack(root = activePanel()) {
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
-    case 'panel-ach':
       closeOverlay(root.id);
+      break;
+    case 'panel-ach':
+      if (medalOpen()) closeMedal(); // o primeiro {B} fecha só a medalha grande
+      else closeOverlay(root.id);
       break;
     case 'panel-char':
       closeChar();

@@ -9,7 +9,7 @@ import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
 import { SHRINES } from './loot.js';
-import { toast } from './ui.js';
+import { toast, medalPopup } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
 
@@ -198,7 +198,7 @@ export function achCheck() {
   if (fresh.length > 3 || !booted) {
     toast(`🏅 <b>${fresh.length} ${L('medalhas desbloqueadas', 'medals unlocked')}</b>${cr}`, 'leg', 'ach');
   } else {
-    for (const a of fresh) toast(`${a.icon} <b style="color:${TIERS[a.tier].css}">${L('Medalha', 'Medal')}: ${a.name}</b> · ${a.desc}${G.char ? ` · +${TIERS[a.tier].reward}¢` : ''}`, 'leg');
+    for (const a of fresh) medalPopup(a, G.char ? TIERS[a.tier].reward : 0);
   }
   if (booted) sfx.legendary();
   booted = true;
