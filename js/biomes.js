@@ -192,7 +192,8 @@ export function placeFeatures(d, theme) {
         const r = rooms.filter((x) => x !== d.exitRoom).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
         if (r) {
           r.safe = true;
-          d.props.push({ type: 'merchant', x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5, near: false });
+          const pt = openSpot(d, r, reachMap(d)) || { x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5 };
+          d.props.push({ type: 'merchant', x: pt.x, z: pt.z, near: false });
         }
         break;
       }
@@ -313,10 +314,64 @@ export const smithFloor = (f) => f >= 2 && !isFinalFloor(f) && (f % 3 === 1 || c
 function placeSmith(d, rooms) {
   if (!G.char || !smithFloor(d.floor)) return;
   const ok = rooms.filter((r) => r !== d.exitRoom && !r.safe && r.w >= 6 && r.h >= 6);
-  const r = pick(ok.length ? ok : rooms.filter((r) => r !== d.exitRoom && !r.safe));
-  if (!r) return;
-  r.safe = true;
-  d.props.push({ type: 'smith', x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5, near: false, t: 0 });
+  const list = shuffle((ok.length ? ok : rooms.filter((r) => r !== d.exitRoom && !r.safe)).slice());
+  const seen = reachMap(d);
+  for (const r of list) {
+    const pt = openSpot(d, r, seen);
+    if (!pt) continue;
+    r.safe = true;
+    d.props.push({ type: 'smith', x: pt.x, z: pt.z, near: false, t: 0 });
+    return;
+  }
+}
+
+// Ladrilhos alcançáveis a pé a partir do início do andar
+function reachMap(d) {
+  const { W, H, grid } = d;
+  const seen = new Uint8Array(W * H);
+  const s = Math.floor(d.start.z) * W + Math.floor(d.start.x);
+  const q = [s];
+  seen[s] = 1;
+  while (q.length) {
+    const c = q.pop();
+    const ci = c % W;
+    for (const nb of [c + 1, c - 1, c + W, c - W]) {
+      if (nb < 0 || nb >= W * H || seen[nb] || grid[nb] !== TILE.FLOOR) continue;
+      if (Math.abs((nb % W) - ci) > 1) continue;
+      seen[nb] = 1;
+      q.push(nb);
+    }
+  }
+  return seen;
+}
+
+// Lugar livre para um NPC na sala: alcançável, sem perigo no chão e com chão aberto em volta
+// (nos mapas de pradaria e caverna o centro da sala pode ser pedra). O mais perto do centro vence.
+function openSpot(d, r, seen) {
+  const { W, H, grid, feat } = d;
+  let best = null;
+  let bd = Infinity;
+  for (const rad of [2, 1]) {
+    for (let j = r.y; j < r.y + r.h; j++)
+      for (let i = r.x; i < r.x + r.w; i++) {
+        if (i < rad + 1 || j < rad + 1 || i >= W - rad - 1 || j >= H - rad - 1) continue;
+        if (!seen[j * W + i] || nearKey(d, i + 0.5, j + 0.5, 4)) continue;
+        let free = true;
+        for (let dy = -rad; dy <= rad && free; dy++)
+          for (let dx = -rad; dx <= rad && free; dx++) {
+            const k = (j + dy) * W + i + dx;
+            if (grid[k] !== TILE.FLOOR || feat[k]) free = false;
+          }
+        if (!free) continue;
+        const dd = Math.hypot(i + 0.5 - r.cx, j + 0.5 - r.cy);
+        if (dd < bd) {
+          bd = dd;
+          best = { x: i + 0.5, z: j + 0.5 };
+        }
+      }
+    if (best) return best;
+  }
+  return null;
 }
 
 // A loja sempre oferece itens MELHORES que os equipados (em espaços diferentes),
