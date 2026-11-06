@@ -488,12 +488,15 @@ body.pad .pad-hints { display: block; }
 #end-stats span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 #end-stats b { font-family: Orbitron, sans-serif; font-size: 14px; color: var(--yellow); }
 .end-btns { margin-top: 12px; }
+#end-tier { background: rgba(255, 68, 102, 0.14); border-color: #ff4466; color: #ffd0d8; box-shadow: 0 0 14px rgba(255, 68, 102, 0.35); }
+.end-tier-info { margin: 8px auto 0; max-width: 560px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
 @media (max-height: 520px), (max-width: 640px) {
   .panel.end { padding: 8px 12px; max-width: 700px; }
   .end-kicker { font-size: 10px; letter-spacing: 4px; }
   .end-title { margin: 0 0 4px; font-size: 20px; }
   #end-story p { font-size: 12px; margin: 2px 0; line-height: 1.25; }
-  #end-stats { grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 6px 0 2px; }
+  #end-stats { grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 4px; margin: 6px 0 2px; }
+  .end-tier-info { font-size: 11px; margin-top: 4px; }
   #end-stats div { padding: 3px 2px; }
   #end-stats span { font-size: 8px; letter-spacing: 0; }
   #end-stats b { font-size: 10px; }

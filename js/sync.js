@@ -39,7 +39,8 @@ function canon(v) {
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 // ---------- mescla ----------
-const progressOf = (c) => [c.level || 0, c.maxFloor || c.floor || 0, c.kills || 0, c.xp || 0];
+// o modo (Pesadelo/Inferno) vem primeiro: quem já desceu de novo está mais adiantado, mesmo num andar menor
+const progressOf = (c) => [c.tier || 0, c.level || 0, c.maxFloor || c.floor || 0, c.kills || 0, c.xp || 0];
 function better(a, b) {
   const pa = progressOf(a);
   const pb = progressOf(b);
@@ -73,6 +74,7 @@ function mergeChar(a, b) {
   win.wins = Math.max(a.wins || 0, b.wins || 0); // vitórias na batalha final nunca se perdem
   win.playTime = Math.max(a.playTime || 0, b.playTime || 0);
   win.deaths = Math.max(a.deaths || 0, b.deaths || 0);
+  win.bestTier = Math.max(a.bestTier || 0, b.bestTier || 0, win.tier || 0);
   return win;
 }
 

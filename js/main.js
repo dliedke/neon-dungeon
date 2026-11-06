@@ -27,7 +27,7 @@ import {
   toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
-import { rollAnomaly, announceFloor, updateRun, runFloorDone } from './run.js';
+import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
 const SETTINGS_KEY = 'neon-dungeon-settings-v1';
@@ -279,7 +279,8 @@ export function startFloor(floor) {
   markMinimap(newly);
   computeFlow(d, d.start.x, d.start.z);
   const word = L('ANDAR', 'FLOOR');
-  document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}`;
+  const T = tierOf(c);
+  document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}${T.off ? ` · ${T.icon} ${T.name.toUpperCase()}` : ''}`;
   if (isFinalFloor(floor)) {
     banner(L('ANDAR FINAL', 'FINAL FLOOR'), L('Os 7 chefes esperam no coração da corporação', 'All 7 bosses await at the heart of the corporation'));
     setTimeout(() => G.floor === floor && toast(L('Batalha final: os chefes vêm em ondas de 2. Derrote os 7 para vencer o jogo!', 'Final battle: the bosses come in waves of 2. Defeat all 7 to win the game!'), 'warn'), 2800);
@@ -339,6 +340,9 @@ function sanitizeChar(c) {
   c.implants = c.implants || {};
   c.implantFloors = c.implantFloors || [];
   c.implantPending = c.implantPending || 0;
+  // modo depois de vencer (0 Normal, 1 Pesadelo, 2 Inferno) e o maior modo liberado
+  c.tier = Math.min(MAX_TIER, c.tier | 0);
+  c.bestTier = Math.max(c.bestTier | 0, c.tier);
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
@@ -397,6 +401,22 @@ async function endGame() {
   showEnding({ time: F.time, deaths: F.deaths });
   fade.classList.remove('on');
   transitioning = false;
+}
+
+// Novo Jogo+: o personagem desce de novo do andar 1 no modo escolhido, com nível, itens e implantes
+export function startTier(tier) {
+  const c = G.char;
+  c.tier = Math.max(0, Math.min(MAX_TIER, tier, c.bestTier | 0));
+  c.floor = 1;
+  G.mode = 'play';
+  G.player.alive = true;
+  G.player.hp = G.player.stats.maxHp;
+  G.player.en = G.player.stats.maxEn;
+  showHUD();
+  startFloor(1);
+  G.player.invuln = 1;
+  const T = tierOf(c);
+  setTimeout(() => G.floor === 1 && toast(L(`${T.icon} Modo ${T.name}: inimigos muito mais fortes, elites com mais afixos, itens e créditos melhores.`, `${T.icon} ${T.name} mode: much stronger enemies, elites with more affixes, better items and credits.`), 'warn'), 2600);
 }
 
 // Revanche: joga a batalha final de novo com o mesmo personagem

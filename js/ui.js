@@ -8,7 +8,7 @@ import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respa
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
 import { sfx, applyVolumes, initAudio } from './audio.js';
-import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal } from './main.js';
+import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
 import { fmt, fmtPlay } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
@@ -16,7 +16,7 @@ import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
-import { runHud, implantSummary } from './run.js';
+import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER } from './run.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -96,6 +96,10 @@ export function initUI() {
   $('end-replay').onclick = () => {
     $('panel-end').classList.add('hidden');
     replayFinal();
+  };
+  $('end-tier').onclick = () => {
+    $('panel-end').classList.add('hidden');
+    startTier(Math.min(MAX_TIER, (G.char.tier | 0) + 1));
   };
   $('shop-close').onclick = () => closeShop();
 
@@ -218,7 +222,7 @@ export function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') : L('Novo personagem', 'New character')}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
         ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}
@@ -941,10 +945,15 @@ export function showEnding(info = {}) {
     [L('Abates', 'Kills'), fmt(c.kills || 0)],
     [L('Créditos', 'Credits'), fmt(c.credits || 0)],
     [L('Dificuldade', 'Difficulty'), D.name],
+    ...(c.tier ? [[L('Modo', 'Mode'), `${tierOf(c).icon} ${tierOf(c).name}`]] : []),
     [L('Vitórias', 'Wins'), c.wins || 1],
   ];
   $('end-stats').innerHTML = stats.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('');
   $('end-stats').style.animationDelay = `${0.6 + lines.length * step}s`;
+  // Novo Jogo+: descer de novo no próximo modo (ou repetir o Inferno)
+  const nx = MODES[Math.min(MAX_TIER, (c.tier | 0) + 1)];
+  $('end-tier').textContent = (c.tier | 0) >= MAX_TIER ? L(`${nx.icon} Inferno de novo`, `${nx.icon} Inferno again`) : L(`${nx.icon} Descer no ${nx.name}`, `${nx.icon} Descend into ${nx.name}`);
+  $('end-tier-info').innerHTML = L(`Recomece do andar 1 com este personagem (nível, itens e implantes) no modo <b style="color:${nx.css}">${nx.name}</b>: inimigos muito mais fortes, elites com mais afixos e itens melhores.`, `Start again from floor 1 with this character (level, items and implants) in <b style="color:${nx.css}">${nx.name}</b> mode: much stronger enemies, elites with more affixes and better items.`);
   $('panel-end').classList.remove('hidden');
   $('panel-end').scrollTop = 0;
   clearFocus();

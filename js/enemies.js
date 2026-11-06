@@ -15,7 +15,7 @@ import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
-import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail } from './run.js';
+import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor } from './run.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
@@ -64,12 +64,81 @@ export const ETYPES = {
   queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
 };
 
+// Afixos de elite. minF: andar (efetivo) a partir do qual aparece.
+// Guardião, Regenerador e Artilheiro mudam a luta: mate o guardião/regenerador primeiro, não fique parado perto do artilheiro.
 const ELITE = {
-  veloz: { name: L('Veloz', 'Swift'), color: 0x00f0ff, apply: (e) => { e.speed *= 1.45; e.atkCdMult = 0.7; } },
-  blindado: { name: L('Blindado', 'Armored'), color: 0xc0c8ff, apply: (e) => { e.dr = 0.4; } },
-  vampirico: { name: L('Vampírico', 'Vampiric'), color: 0xff2244, apply: (e) => { e.vamp = true; } },
-  instavel: { name: L('Instável', 'Unstable'), color: 0xff7a1a, apply: (e) => { e.explodeOnDeath = true; } },
+  veloz: { name: L('Veloz', 'Swift'), color: 0x00f0ff, minF: 1, apply: (e) => { e.speed *= 1.45; e.atkCdMult = 0.7; } },
+  blindado: { name: L('Blindado', 'Armored'), color: 0xc0c8ff, minF: 1, apply: (e) => { e.dr = 0.4; } },
+  vampirico: { name: L('Vampírico', 'Vampiric'), color: 0xff2244, minF: 1, apply: (e) => { e.vamp = true; } },
+  instavel: { name: L('Instável', 'Unstable'), color: 0xff7a1a, minF: 1, apply: (e) => { e.explodeOnDeath = true; } },
+  regenerador: { name: L('Regenerador', 'Mender'), color: 0x39ff88, minF: 5, apply: (e) => { e.mender = true; auraRing(e, AURA_R, 0x39ff88); },
+    hint: L('Elite <b>Regenerador</b>: cura os inimigos ao redor. Mate-o primeiro!', '<b>Mender</b> elite: heals nearby enemies. Kill it first!') },
+  guardiao: { name: L('Guardião', 'Warden'), color: 0x4dd2ff, minF: 6, apply: (e) => { e.warden = true; auraRing(e, AURA_R, 0x4dd2ff); },
+    hint: L('Elite <b>Guardião</b>: inimigos dentro do anel azul recebem 60% menos dano. Derrube-o primeiro!', '<b>Warden</b> elite: enemies inside the blue ring take 60% less damage. Take it down first!') },
+  artilheiro: { name: L('Artilheiro', 'Bombardier'), color: 0xff3a3a, minF: 8, apply: (e) => { e.artillery = true; },
+    hint: L('Elite <b>Artilheiro</b>: chama bombardeios onde você está. Não fique parado!', '<b>Bombardier</b> elite: calls strikes where you stand. Keep moving!') },
 };
+const AURA_R = 5.5;
+const auraGeo = new THREE.RingGeometry(0.93, 1, 48).rotateX(-Math.PI / 2);
+// anel no chão mostrando o alcance da aura (o modelo do elite é 1,2x maior, então compensa)
+function auraRing(e, r, color) {
+  const m = new THREE.Mesh(auraGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.4)), transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false }));
+  m.scale.setScalar(r / 1.2);
+  m.position.y = 0.06;
+  e.model.root.add(m);
+  e.auraRing = m;
+}
+const eliteHints = new Set();
+// efeitos contínuos dos elites com aura / bombardeio
+function eliteAura(e, edt, p) {
+  if (!e.aggro || !p.alive) return;
+  if (e.auraRing) e.auraRing.material.opacity = 0.3 + Math.sin(G.t * 4) * 0.12;
+  for (const k of e.affixes) {
+    if (ELITE[k].hint && !eliteHints.has(k)) {
+      eliteHints.add(k);
+      toast(ELITE[k].hint, 'warn');
+    }
+  }
+  if (e.warden) {
+    e.wardTick = (e.wardTick || 0) - edt;
+    if (e.wardTick <= 0) {
+      e.wardTick = 0.25;
+      for (const o of G.enemies) if (o !== e && o.alive && !o.inert && !o.boss && Math.hypot(o.x - e.x, o.z - e.z) < AURA_R) o.wardT = 0.4;
+    }
+  }
+  if (e.mender) {
+    e.mendT = (e.mendT ?? 1.2) - edt;
+    if (e.mendT <= 0) {
+      e.mendT = 1.2;
+      let healed = false;
+      for (const o of G.enemies) {
+        if (!o.alive || o.inert || o.boss || o.hp >= o.maxHp || Math.hypot(o.x - e.x, o.z - e.z) > AURA_R) continue;
+        o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.05);
+        o.hpShow = 2;
+        healed = true;
+        burst(o.x, o.height * 0.8, o.z, 0x39ff88, 4, 2, 0.05, 0.4, { up: 1 });
+      }
+      if (healed) ringFx(e.x, e.z, AURA_R, 0x39ff88, 0.45, { from: 0.4 });
+    }
+  }
+  if (e.artillery) {
+    e.artT = (e.artT ?? rr(1.5, 3)) - edt;
+    if (e.artT <= 0 && Math.hypot(p.x - e.x, p.z - e.z) < 15) {
+      e.artT = rr(3.6, 4.6);
+      // mira um pouco à frente de quem está andando
+      const tx = p.x + (p.moving ? p.moveDir.x * 1.2 : 0);
+      const tz = p.z + (p.moving ? p.moveDir.z * 1.2 : 0);
+      telegraphFx(tx, tz, 1.9, 1.1, 0xff3a3a);
+      sfx.telegraph();
+      const dmg = e.dmg * 1.2;
+      after(1.1, () => {
+        if (!e.alive) return;
+        beamFx(tx, 9, tz, tx, 0, tz, 0xff3a3a, 0.25, 3);
+        enemyExplosion(tx, tz, 1.9, dmg, 0xff3a3a);
+      });
+    }
+  }
+}
 
 // Dificuldade escolhida nas opções: multiplica vida, dano e quantidade de inimigos.
 // Chefes têm multiplicadores próprios; bossTempo encurta a pausa entre os ataques
@@ -85,7 +154,12 @@ const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 export function floorScale(f) {
   const D = diff();
-  return { hp: (1 + (f - 1) * 0.35 + Math.pow(f - 1, 2) * 0.025) * D.hp, dmg: (1 + (f - 1) * 0.18) * D.dmg };
+  // do 4º andar em diante o jogador cresce muito mais rápido que a curva básica
+  // (nível, árvore, itens, implantes); a parte "deep" acompanha esse crescimento
+  const deep = Math.max(0, f - 3);
+  const hp = (1 + (f - 1) * 0.35 + Math.pow(f - 1, 2) * 0.025) * (1 + 0.11 * deep);
+  const dmg = (1 + (f - 1) * 0.18) * (1 + 0.025 * deep);
+  return { hp: hp * D.hp, dmg: dmg * D.dmg };
 }
 
 // Cada bioma favorece sua fauna; nos naturais quase não aparecem robôs
@@ -97,8 +171,15 @@ export function pickEnemyType(floor, theme = G.theme) {
 
 export function spawnEnemy(type, x, z, o = {}) {
   const T = ETYPES[type];
-  const sc = floorScale(G.floor);
-  const eliteKey = o.elite ? pick(Object.keys(ELITE)) : null;
+  const ef = effFloor();
+  const sc = floorScale(ef);
+  // elites fundos acumulam afixos: 2 a partir do andar efetivo 14, 3 a partir do 26
+  let affixes = null;
+  if (o.elite) {
+    const pool = shuffle(Object.keys(ELITE).filter((k) => ELITE[k].minF <= ef));
+    affixes = pool.slice(0, 1 + (ef >= 14 ? 1 : 0) + (ef >= 26 ? 1 : 0));
+  }
+  const eliteKey = affixes ? affixes[0] : null;
   const model = makeEnemyModel(type, eliteKey ? ELITE[eliteKey].color : null);
   const e = {
     type, T, x, z,
@@ -109,18 +190,20 @@ export function spawnEnemy(type, x, z, o = {}) {
     alive: true, atkT: rr(0.6, 1.6), aggro: false, kx: 0, kz: 0, stun: 0, flash: 0,
     model, facing: rr(0, Math.PI * 2), phase: rr(0, 6), hpShow: 0,
     elite: eliteKey, boss: !!T.boss && !o.decoy, heavy: !!T.heavy, inert: !!T.inert, static: !!T.static,
-    height: T.h * (eliteKey ? 1.2 : 1), xp: Math.round(T.xp * (1 + 0.3 * (G.floor - 1))),
+    height: T.h * (eliteKey ? 1.2 : 1), xp: Math.round(T.xp * (1 + 0.3 * (ef - 1))),
     losT: rr(0, 0.3), los: false, strafe: chance(0.5) ? 1 : -1, strafeT: rr(1, 3),
     state: 'idle', bloodColor: T.blood, atkCdMult: 1, name: T.name, spawnX: x, spawnZ: z,
   };
   if (eliteKey) {
-    e.hp *= 3.2;
+    e.hp *= 4 + 0.6 * (affixes.length - 1);
     e.maxHp = e.hp;
     e.dmg *= 1.4;
-    e.xp *= 3;
-    e.name = L(`${T.name} ${ELITE[eliteKey].name}`, `${ELITE[eliteKey].name} ${T.name}`);
-    ELITE[eliteKey].apply(e);
+    e.xp *= 3 + affixes.length - 1;
+    e.affixes = affixes;
+    const names = affixes.map((k) => ELITE[k].name).join(' ');
+    e.name = L(`${T.name} ${names}`, `${names} ${T.name}`);
     model.root.scale.setScalar(1.2);
+    for (const k of affixes) ELITE[k].apply(e);
   }
   if (o.decoy) {
     e.decoy = true;
@@ -163,6 +246,7 @@ export function spawnEnemy(type, x, z, o = {}) {
 const laserGeo = new THREE.BoxGeometry(0.05, 0.05, 1).translate(0, 0, 0.5);
 
 export function onEnemyKilled(e) {
+  if (e.auraRing) e.auraRing.visible = false;
   // se a Ilusionista verdadeira morre, as cópias somem
   if (e.decoys) {
     for (const c of e.decoys) {
@@ -256,6 +340,8 @@ export function updateEnemies(dt, cam) {
     }
     if (e.slowT > 0) e.slowT -= edt;
     if (e.frozenT > 0) e.frozenT -= edt;
+    if (e.wardT > 0) e.wardT -= edt;
+    if (e.affixes && e.stun <= 0) eliteAura(e, edt, p);
 
     e.losT -= edt;
     if (e.losT <= 0) {
@@ -1505,10 +1591,12 @@ function chooseBossAttack(e, dist) {
   }
 }
 
+const BOSS_HP_K = 1.3;
+
 // ---------------- Povoamento do andar ----------------
 export function populateFloor(d, floor, boss) {
   const D = diff();
-  const eliteChance = floor <= 1 ? 0 : Math.min(0.6, Math.min(0.3, 0.04 + floor * 0.025) * amod('elite'));
+  const eliteChance = floor <= 1 && !tierOf().off ? 0 : Math.min(0.6, (Math.min(0.3, 0.04 + floor * 0.025) + tierOf().elite) * amod('elite'));
   const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
   const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
   // mapas abertos (deserto, floresta, pradaria...) são 2-4x maiores: mais inimigos para não ficarem vazios
@@ -1622,13 +1710,15 @@ export function populateFloor(d, floor, boss) {
     const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
     // curva dos chefes: o primeiro bate bem menos e ataca com mais calma (o jogador ainda está fraco);
     // cada chefe seguinte vem mais resistente, porque o jogador cresce mais rápido que eles
-    if (idx === 0) {
+    // (a curva dos andares já cresce bastante; aqui é só o empurrão extra de cada chefe)
+    // no Pesadelo/Inferno o primeiro chefe não tem desconto
+    if (idx === 0 && !tierOf().off) {
       e.hp = e.maxHp = e.maxHp * 0.9;
       e.dmg *= 0.62;
       e.tempoK = 0.6;
     } else {
-      e.hp = e.maxHp = e.maxHp * (1 + 0.22 * idx);
-      e.dmg *= 1 + 0.04 * idx;
+      e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * idx);
+      e.dmg *= 1 + 0.03 * idx;
     }
     if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;
@@ -1747,6 +1837,9 @@ function finalVictory() {
   if (!F.deaths) achMark('flags', 'winNoDeath');
   if (G.settings.difficulty === 'hard') achMark('flags', 'winHard');
   if (F.time < 600) achMark('flags', 'winFast');
+  if (ch.tier >= 1) achMark('flags', 'winNightmare');
+  if (ch.tier >= 2) achMark('flags', 'winInferno');
+  ch.bestTier = Math.max(ch.bestTier | 0, (ch.tier | 0) + 1); // libera o próximo modo
 }
 
 // ---------------- Laser do franco-atirador ----------------

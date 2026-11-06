@@ -154,6 +154,11 @@ export function damageEnemy(e, amount, crit, o = {}) {
     }
   }
   if (e.armorUp) amount *= 0.5;
+  // dentro do anel de um elite Guardião
+  if (e.wardT > 0) {
+    amount *= 0.4;
+    if (!o.dot && Math.random() < 0.15) floatText(e.x, e.height + 0.6, e.z, L('PROTEGIDO', 'WARDED'), 'shield');
+  }
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
   if (!o.dot) e.flash = 0.09;

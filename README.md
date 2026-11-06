@@ -12,6 +12,10 @@ Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss
 On **floor 30**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
+After you win, the same character can descend again from floor 1 in **Nightmare ☠️** and then **Inferno 🔥** mode (New Game+).
+You keep your level, items and implants. Enemies are far stronger, elites are more common and have more affixes, and items and credits are better.
+Each mode grants its own set of implants and has its own medal.
+
 ## Classes
 
 | Class | Style | Skills |
@@ -108,6 +112,10 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 - **Mortar Walker**, which shells you from far away with three marked grenades.
 
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
+Deeper floors add support elites that change the fight: the **Mender** heals nearby enemies (green aura), the **Warden** shields nearby enemies so they take 60% less damage (blue aura), and the **Bombardier** marks your position and strikes it a moment later, so you have to keep moving.
+Kill them first. From floor 14 onwards elites can have two affixes, and from floor 26 three.
+
+Enemies keep getting tougher faster on deep floors, so a strong character still has to fight.
 
 **Bosses** are tough: they fire aimed volleys between their attacks and become **enraged** below 30% health (faster, harder hitting and with bigger volleys).
 The first boss hits softer and attacks more slowly, since you are still weak; every boss after it gets more health.
@@ -132,7 +140,7 @@ Thieves, shrines and rifts show up on the minimap once explored.
 
 ## Medals
 
-**92 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**94 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
 legendaries, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

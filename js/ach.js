@@ -115,9 +115,11 @@ export function achList() {
   const NB = BOSS_ORDER.length;
   add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 30`, `Win the final battle against all ${NB} bosses on floor 30`), () => total('wins'));
   add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 30', 'Win the final battle without dying on floor 30'), () => (has('flags', 'winNoDeath') ? 1 : 0));
-  add('winHard', '😈', 3, L('Lenda do Pesadelo', 'Nightmare Legend'), L('Vença a batalha final no Difícil', 'Win the final battle on Hard'), () => (has('flags', 'winHard') ? 1 : 0));
+  add('winHard', '😈', 3, L('Lenda Implacável', 'Relentless Legend'), L('Vença a batalha final no Difícil', 'Win the final battle on Hard'), () => (has('flags', 'winHard') ? 1 : 0));
   add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
+  add('winNightmare', '☠️', 3, L('Despertar do Pesadelo', 'Nightmare Survivor'), L('Vença o jogo no modo Pesadelo', 'Beat the game in Nightmare mode'), () => (has('flags', 'winNightmare') ? 1 : 0));
+  add('winInferno', '🌋', 3, L('Senhor do Inferno', 'Lord of Inferno'), L('Vença o jogo no modo Inferno', 'Beat the game in Inferno mode'), () => (has('flags', 'winInferno') ? 1 : 0));
   add('win5', '🔁', 2, L('Revanche', 'Rematch'), L('Vença a batalha final 5 vezes', 'Win the final battle 5 times'), () => total('wins'), 5);
   add('win3cls', '🎭', 2, L('Trio Lendário', 'Legendary Trio'), L('Vença o jogo com 3 classes diferentes', 'Beat the game with 3 different classes'), () => count('winClasses'), 3);
   add('winAll', '👑', 3, L('Os Dez Heróis', 'The Ten Heroes'), L(`Vença o jogo com as ${CLASS_ORDER.length} classes`, `Beat the game with all ${CLASS_ORDER.length} classes`), () => count('winClasses'), CLASS_ORDER.length);

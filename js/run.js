@@ -41,6 +41,22 @@ export const ANOMALIES = {
   dark: { icon: '🌑', css: '#8a8aff', name: L('Apagão', 'Blackout'), desc: L('a escuridão engole o andar · itens bem melhores e +20% de experiência', 'darkness swallows the floor · much better items and +20% experience'), dark: true, loot: 30, xp: 1.2 },
 };
 
+// ------------------------------------------------------------------
+// Modos depois de vencer (Novo Jogo+ por personagem): Pesadelo e Inferno.
+// O personagem desce de novo do andar 1 com tudo o que tem, e os inimigos agem
+// como se estivessem `off` andares mais fundo (mais vida, dano e elites com mais afixos).
+// Em troca: itens de nível maior, raridade melhor e mais créditos.
+// ------------------------------------------------------------------
+export const TIERS = [
+  { off: 0, loot: 0, credits: 1, elite: 0, icon: '', css: '#00f0ff', name: L('Normal', 'Normal') },
+  { off: 14, loot: 15, credits: 1.4, elite: 0.06, icon: '☠️', css: '#ff4466', name: L('Pesadelo', 'Nightmare') },
+  { off: 26, loot: 30, credits: 1.8, elite: 0.12, icon: '🔥', css: '#ff7a1a', name: L('Inferno', 'Inferno') },
+];
+export const MAX_TIER = TIERS.length - 1;
+export const tierOf = (c = G.char) => TIERS[Math.min(MAX_TIER, (c && c.tier) | 0)];
+// andar "efetivo" dos inimigos e dos itens
+export const effFloor = (f = G.floor) => f + tierOf().off;
+
 // valor de uma regra da anomalia atual (ou o padrão, sem anomalia)
 export function amod(k, d = 1) {
   const A = G.anomaly && ANOMALIES[G.anomaly];
@@ -380,8 +396,10 @@ export function bossReward() {
   const c = G.char;
   if (!c || G.final) return;
   c.implantFloors = c.implantFloors || [];
-  if (c.implantFloors.includes(G.floor)) return;
-  c.implantFloors.push(G.floor);
+  // cada modo (Normal, Pesadelo, Inferno) tem os seus 9 implantes
+  const key = G.floor + 100 * (c.tier | 0);
+  if (c.implantFloors.includes(key)) return;
+  c.implantFloors.push(key);
   c.implantPending = (c.implantPending || 0) + 1;
   implantDelay = 2.2;
   saveGame();

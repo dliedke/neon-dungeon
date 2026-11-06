@@ -11,7 +11,7 @@ import { MAX_STIMS } from './player.js';
 import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
-import { amod } from './run.js';
+import { amod, tierOf } from './run.js';
 
 export const INV_SIZE = 30;
 const UP_COLOR = 0x39ff88;
@@ -20,9 +20,10 @@ let labelRoot = null;
 export function dropLoot(x, z, o = {}) {
   const p = G.player;
   const find = 1 + (p.stats.findPct || 0) / 100;
-  const ilvl = G.floor + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract ? 1 : 0);
+  const T = tierOf();
+  const ilvl = G.floor + T.off + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract ? 1 : 0);
   let items = 0;
-  let bonus = G.floor * 1.5 + amod('loot', 0);
+  let bonus = G.floor * 1.5 + amod('loot', 0) + T.loot;
   const rich = p.buffs.fortune > 0; // Santuário da Fortuna
   if (o.rift) {
     // Fenda de Desafio: cofre lendário
@@ -57,7 +58,7 @@ export function dropLoot(x, z, o = {}) {
   }
   if (chance(o.boss || o.chest || o.thief || o.rift || o.contract ? 1 : o.elite ? 0.9 : 0.4)) {
     const n = o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
-    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1) * amod('credits')) });
+    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1) * amod('credits') * T.credits) });
   }
   if (o.thief || o.rift) spawnPickup('stim', x, z, {});
   if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
