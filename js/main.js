@@ -16,6 +16,7 @@ import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } f
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
 import { placeFeatures, buildFeatures, updateBiome } from './biomes.js';
+import { updateMythic, resetMythic } from './mythic.js';
 import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
 import { L, translateDom } from './i18n.js';
@@ -272,6 +273,7 @@ export function startFloor(floor) {
   c.floor = floor;
   c.maxFloor = Math.max(c.maxFloor || 1, floor);
   achMark('biomes', G.theme.id);
+  if (d.props.some((p) => p.type === 'smith')) setTimeout(() => G.floor === floor && G.mode === 'play' && toast(L('⚒ Há um <b>ferreiro</b> neste andar: ele aprimora seu equipamento por créditos.', '⚒ There is a <b>blacksmith</b> on this floor: he upgrades your gear for credits.'), 'item'), 3400);
   placePlayer(d.start.x, d.start.z);
   G.camFocus.x = d.start.x;
   G.camFocus.z = d.start.z;
@@ -292,6 +294,7 @@ export function startFloor(floor) {
 
 export function startGame(cls, fresh) {
   initAudio();
+  resetMythic();
   if (fresh || !G.save.slots[cls]) {
     const old = G.save.slots[cls];
     G.char = newCharacter(cls);
@@ -497,6 +500,7 @@ function logic(dt) {
   updateDecoy(dt);
   updatePickups(dt, camera);
   updatePets(dt);
+  updateMythic(dt);
   updateRun(dt);
   updateExit(dt);
   achT -= dt;

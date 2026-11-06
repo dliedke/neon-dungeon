@@ -37,6 +37,8 @@ const DICT = {
   rotateSub: ['O jogo funciona melhor na horizontal. Ele fica pausado enquanto isso.', 'The game plays best in landscape. It stays paused meanwhile.'],
   rotateIos: ['Dica: no iPhone, use Compartilhar → Adicionar à Tela de Início para jogar em tela cheia.', 'Tip: on iPhone, use Share → Add to Home Screen to play in fullscreen.'],
   shopTitle: ['MERCADOR', 'MERCHANT'],
+  forgeTitle: ['FERREIRO', 'BLACKSMITH'],
+  forgeSub: ['“Traga o que você está usando que eu deixo melhor. A cada 4 níveis o item ganha um atributo novo.”', '“Bring me what you’re wearing and I’ll make it better. Every 4 levels the item gains a new stat.”'],
   shopSub: ['"Peças fresquinhas, direto do caminhão da corporação. Não pergunte de onde vieram."', '"Fresh parts, straight off a corporate truck. Don\'t ask where they came from."'],
   shake: ['Tremor de tela', 'Screen shake'],
   fullscreen: ['Tela cheia', 'Fullscreen'],

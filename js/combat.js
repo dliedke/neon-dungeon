@@ -11,6 +11,7 @@ import { dropLoot } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
+import { mythDmgMult, mythOnHit, mythOnKill, mythSave } from './mythic.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt } from './run.js';
@@ -80,7 +81,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * amod('pdmg');
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
   let crit = false;
   if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
@@ -98,6 +99,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.eliteDmg && (e.elite || e.boss)) r.d *= 1 + ps.eliteDmg / 100;
   if (ps.lowHpDmg && p.hp < ps.maxHp * 0.5) r.d *= 1 + ps.lowHpDmg / 100;
   if (ps.chillDmg && (e.slowT > 0 || e.frozenT > 0)) r.d *= 1 + ps.chillDmg / 100;
+  if (ps.myths.size) r.d *= mythDmgMult(e);
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
@@ -107,6 +109,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (!o.noProc && p.stats.legs.has('arc') && chance(0.15)) {
     after(0.05, () => chainFrom(e, 3, 0.8, 5.5, 0x88ccff, true));
   }
+  if (ps.myths.size || p.buffs.avatar > 0) mythOnHit(e, r.crit, o);
 }
 
 // Efeitos de status causados pelo jogador
@@ -219,6 +222,7 @@ export function killEnemy(e) {
     G.char.kills = (G.char.kills || 0) + 1;
     runKill(e);
     if (p.stats.legs.has('nano')) healPlayer(p.stats.maxHp * 0.04);
+    if (p.stats.myths.size) mythOnKill();
     if (p.stats.killHeal) healPlayer((p.stats.maxHp * p.stats.killHeal) / 100, false);
     if (p.stats.killEn) p.en = Math.min(p.stats.maxEn, p.en + p.stats.killEn);
     if (p.stats.legs.has('core')) {
@@ -307,6 +311,7 @@ export function damagePlayer(amount) {
     ringFx(p.x, p.z, 1.3, 0x66ccff, 0.4);
   }
   if (p.hp <= 0) {
+    if (mythSave()) return;
     p.hp = 0;
     playerDie();
   }

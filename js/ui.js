@@ -3,7 +3,7 @@ import { G } from './state.js';
 import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
-import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
+import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
@@ -13,10 +13,12 @@ import { fmt, fmtPlay } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
-import { itemName, isUpgrade } from './items.js';
+import { itemName, isUpgrade, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER } from './run.js';
+import { mythHud } from './mythic.js';
+import { burst } from './fx.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -102,6 +104,7 @@ export function initUI() {
     startTier(Math.min(MAX_TIER, (G.char.tier | 0) + 1));
   };
   $('shop-close').onclick = () => closeShop();
+  $('forge-close').onclick = () => closeForge();
 
   // opções
   const s = G.settings;
@@ -520,6 +523,7 @@ export function updateHUD(dt) {
   if (p.buffs.regen > 0) buffs.push(L('Regeneração', 'Regen'));
   if (p.buffs.titan > 0) buffs.push(`${L('Titânio', 'Titanium')} ${p.buffs.titan.toFixed(0)}s`);
   for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
+  for (const b of mythHud()) buffs.push(`<span style="color:#c56bff;border-color:#c56bff">✦ ${b}</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
   const bh = buffs.map((b) => (b.startsWith('<span') ? b.replace('<span ', '<span class="buff" ') : `<span class="buff">${b}</span>`)).join('');
   if (cache.buffs !== bh) {
@@ -605,8 +609,9 @@ export function toast(html, cls = '', key = null) {
   el.innerHTML = html;
   root.appendChild(el);
   while (root.children.length > 4) root.firstChild.remove();
-  setTimeout(() => el.classList.add('out'), cls === 'leg' ? 4000 : 2200);
-  setTimeout(() => el.remove(), cls === 'leg' ? 4500 : 2700);
+  const long = cls === 'leg' || cls === 'myth';
+  setTimeout(() => el.classList.add('out'), cls === 'myth' ? 6000 : long ? 4000 : 2200);
+  setTimeout(() => el.remove(), cls === 'myth' ? 6500 : long ? 4500 : 2700);
 }
 
 export function invFull() {
@@ -743,6 +748,14 @@ function drawMapMarks(ctx, d, p, near) {
     const r = e.boss ? 1.3 : e.elite || e.type === 'thief' ? 0.7 : 0.45;
     ctx.fillRect(e.x - r, e.z - r, r * 2, r * 2);
   }
+  // ferreiro e mercador (depois de explorados)
+  for (const pr of d.props) {
+    if (pr.type !== 'smith' && pr.type !== 'merchant') continue;
+    if (!d.explored[Math.floor(pr.z) * d.W + Math.floor(pr.x)]) continue;
+    ctx.fillStyle = pr.type === 'smith' ? '#ff7a1a' : '#ffd23d';
+    ctx.fillRect(pr.x - 1.2, pr.z - 0.5, 2.4, 0.8);
+    ctx.fillRect(pr.x - 0.4, pr.z + 0.3, 0.8, 0.9);
+  }
   // itens
   for (const pk of G.pickups) {
     if (pk.type === 'chest' && !pk.opened) {
@@ -773,7 +786,7 @@ function drawMapMarks(ctx, d, p, near) {
     }
     if (pk.type !== 'item' || (pk.item.rarity < 1 && !pk.up)) continue;
     ctx.fillStyle = pk.up ? '#39ff88' : RARITY[pk.item.rarity].color;
-    const r = pk.up ? 0.75 : 0.4;
+    const r = pk.item.myth ? 1.1 + Math.sin(G.t * 6) * 0.25 : pk.up ? 0.75 : 0.4;
     ctx.fillRect(pk.x - r, pk.z - r, r * 2, r * 2);
   }
   // Ladrão de Dados: sempre aparece (mesmo longe ou em área não explorada), grande e piscando
@@ -1062,6 +1075,7 @@ export function renderChar() {
     if (s.xpPct) rows.push([L('Experiência', 'Experience'), `+${s.xpPct}%`]);
     if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${s.findPct}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+    for (const l of s.myths) sh += `<div class="leg myth">✦ ${MYTHICS[l].name}</div>`;
     for (const l of s.legs) sh += `<div class="leg">◆ ${LEGENDARIES[l].name}</div>`;
     const imp = implantSummary(G.char);
     if (imp) sh += `<div class="imp-row">${L('Implantes', 'Implants')}: ${imp}</div>`;
@@ -1318,13 +1332,17 @@ function recycleItem(uid) {
 // Recicla todo o inventário (o que está equipado não é tocado)
 function recycleAll() {
   const c = G.char;
-  if (!c.inv.length) return;
-  const n = c.inv.length;
-  const total = c.inv.reduce((s, it) => s + recycleValue(it), 0);
-  const ups = c.inv.filter((it) => isUpgrade(it, c.equip)).length;
+  // itens míticos nunca são reciclados em lote (só um a um)
+  const list = c.inv.filter((it) => !it.myth);
+  if (!list.length) return;
+  const n = list.length;
+  const kept = c.inv.length - n;
+  const total = list.reduce((s, it) => s + recycleValue(it), 0);
+  const ups = list.filter((it) => isUpgrade(it, c.equip)).length;
   const warn = ups ? L(` Atenção: ${ups} ${ups > 1 ? 'são melhores' : 'é melhor'} que o equipado (▲).`, ` Warning: ${ups} ${ups > 1 ? 'are' : 'is'} better than what you have equipped (▲).`) : '';
-  confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + warn, () => {
-    c.inv = [];
+  const keep = kept ? L(` Os míticos ficam.`, ` Mythic items are kept.`) : '';
+  confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + keep + warn, () => {
+    c.inv = c.inv.filter((it) => it.myth);
     c.credits += total;
     sfx.coin();
     toast(L(`Inventário reciclado: +${fmt(total)}¢`, `Inventory recycled: +${fmt(total)}¢`));
@@ -1351,7 +1369,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1478,6 +1496,9 @@ export function uiBack(root = activePanel()) {
     case 'panel-shop':
       closeShop();
       break;
+    case 'panel-forge':
+      closeForge();
+      break;
     case 'panel-pause':
       closePause();
       break;
@@ -1554,6 +1575,94 @@ function buy(what) {
   }
   renderShop();
   clearFocus();
+}
+
+// ------------------------------------------------------------------
+// Ferreiro: aprimora o equipamento em uso por créditos
+// ------------------------------------------------------------------
+export function openForge() {
+  if (G.mode !== 'play') return;
+  G.mode = 'forge';
+  $('panel-forge').classList.remove('hidden');
+  clearFocus();
+  sfx.forge(false);
+  renderForge();
+}
+
+export function closeForge() {
+  $('panel-forge').classList.add('hidden');
+  if (G.mode === 'forge') G.mode = 'play';
+  saveGame();
+  Input.reset();
+}
+
+// atributo principal do item (dano da arma, blindagem ou o primeiro atributo)
+function forgeMain(it) {
+  if (it.slot === 'weapon') return `${fmt(it.wMin)}–${fmt(it.wMax)} ${L('de dano', 'damage')}`;
+  if (it.armor) return `${fmt(it.armor)} ${L('de blindagem', 'armor')}`;
+  const k = Object.keys(it.affixes)[0];
+  return k ? AFFIXES[k].fmt(it.affixes[k]) : '';
+}
+
+function renderForge() {
+  const c = G.char;
+  $('forge-credits').textContent = fmt(c.credits);
+  let html = '';
+  for (const slot of SLOTS) {
+    const it = c.equip[slot];
+    if (!it) continue;
+    const R = RARITY[it.rarity];
+    const lv = it.plus | 0;
+    const max = forgeMax(it);
+    const pips = Array.from({ length: max }, (_, i) => `<i class="${i < lv ? 'on' : ''}${isMilestone(i + 1) ? ' ms' : ''}"></i>`).join('');
+    let next;
+    let btn;
+    if (lv >= max) {
+      next = `<span class="fr-max">★ ${L('Aprimoramento máximo', 'Fully upgraded')}</span>`;
+      btn = `<button class="btn small ghost" disabled>${L('Máximo', 'Maxed')}</button>`;
+    } else {
+      const sim = JSON.parse(JSON.stringify(it));
+      forgeItem(sim);
+      const cost = forgeCost(it);
+      next = `${forgeMain(it)} → <b>${forgeMain(sim)}</b> · ${L('atributos', 'stats')} +2,5%`;
+      if (isMilestone(lv + 1)) next += ` · <span class="fr-ms">★ ${L('marco: atributo novo', 'milestone: new stat')}</span>`;
+      btn = `<button class="btn small" data-nav data-forge="${slot}" ${c.credits < cost ? 'disabled' : ''}>⚒ ${fmt(cost)}¢</button>`;
+    }
+    html += `<div class="forge-row">
+      <div class="cell r${it.rarity}">${slotIconSvg(slot)}</div>
+      <div class="fr-info">
+        <div class="fr-name" style="color:${R.color}">${itemName(it)}</div>
+        <div class="fr-pips">${pips}<span>+${lv}/${max}</span></div>
+        <div class="fr-next">${next}</div>
+      </div>
+      ${btn}
+    </div>`;
+  }
+  $('forge-items').innerHTML = html;
+  $('forge-items').querySelectorAll('[data-forge]').forEach((b) => (b.onclick = () => doForge(b.dataset.forge)));
+}
+
+function doForge(slot) {
+  const c = G.char;
+  const it = c.equip[slot];
+  if (!it || (it.plus | 0) >= forgeMax(it)) return sfx.deny();
+  const cost = forgeCost(it);
+  if (c.credits < cost) return sfx.deny();
+  c.credits -= cost;
+  const gained = forgeItem(it);
+  const ms = isMilestone(it.plus);
+  sfx.forge(ms);
+  achAdd('forges');
+  if (it.plus >= forgeMax(it)) achAdd('forgeMax');
+  refreshStats();
+  const p = G.player;
+  if (p) burst(p.x, 1, p.z, 0xffb04d, ms ? 30 : 14, 4, 0.05, 0.5, { up: 1.5 });
+  toast(`⚒ <span style="color:${RARITY[it.rarity].color}">${itemName(it)}</span>${gained ? `<br><small>★ ${AFFIXES[gained].fmt(it.affixes[gained])}</small>` : ''}`, ms ? 'up' : 'item');
+  saveGame();
+  renderForge();
+  // mantém o foco do controle no mesmo botão
+  const again = $('forge-items').querySelector(`[data-forge="${slot}"]`) || $('forge-items').querySelectorAll('[data-forge]')[0] || $('forge-close');
+  if (G.lastInput === 'pad' && again) setFocus(again);
 }
 
 // ------------------------------------------------------------------

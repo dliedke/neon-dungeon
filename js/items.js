@@ -19,7 +19,9 @@ export const RARITY = [
   { name: L('Modificado', 'Modded'), color: '#4d9bff', hex: 0x3d8bff, n: [1, 2], mult: 1.08 },
   { name: L('Raro', 'Rare'), color: '#ffd23d', hex: 0xffd23d, n: [3, 4], mult: 1.16 },
   { name: L('Protótipo', 'Prototype'), color: '#ff7a1a', hex: 0xff7a1a, n: [4, 4], mult: 1.26 },
+  { name: L('Mítico', 'Mythic'), color: '#c56bff', hex: 0xb04dff, n: [5, 5], mult: 1.42 },
 ];
+export const MYTHIC = 4;
 
 const BASES = {
   head: [L('Implante Ocular', 'Ocular Implant'), L('Visor Tático', 'Tactical Visor'), L('Chip Cortical', 'Cortical Chip'), L('Capacete Neural', 'Neural Helmet')],
@@ -58,6 +60,16 @@ export const LEGENDARIES = {
   overload: { name: L('Sobrecarga', 'Overload'), desc: L('Habilidades custam 30% menos energia.', 'Skills cost 30% less energy.') },
 };
 
+// Poderes dos itens míticos (bem mais fortes que os dos protótipos; a lógica fica em mythic.js)
+export const MYTHICS = {
+  orbital: { name: L('Laser Orbital', 'Orbital Laser'), desc: L('A cada 3s um laser do céu atinge o inimigo mais forte por perto (300% de dano em área).', 'Every 3s a laser from the sky strikes the strongest nearby enemy (300% area damage).') },
+  blades: { name: L('Lâminas Fantasmas', 'Phantom Blades'), desc: L('Três lâminas de neon giram ao seu redor e cortam quem chegar perto.', 'Three neon blades spin around you, cutting anyone who gets close.') },
+  reaper: { name: L('Ceifador', 'Reaper'), desc: L('Seus golpes executam inimigos e elites abaixo de 15% de vida. Chefes recebem +25% de dano.', 'Your hits execute enemies and elites below 15% health. Bosses take +25% damage.') },
+  singularity: { name: L('Singularidade', 'Singularity'), desc: L('Críticos podem abrir um buraco negro que puxa os inimigos e explode (250% de dano).', 'Critical hits can open a black hole that pulls enemies in and explodes (250% damage).') },
+  phoenix: { name: L('Protocolo Fênix', 'Phoenix Protocol'), desc: L('Ao receber um golpe fatal, renasce com metade da vida numa explosão de fogo (a cada 90s).', 'When struck by a fatal blow, you are reborn with half health in a burst of fire (every 90s).') },
+  avatar: { name: L('Avatar Neon', 'Neon Avatar'), desc: L('A cada 15 abates vira um avatar de neon por 8s: +50% de dano, mais velocidade e golpes com raios.', 'Every 15 kills you become a neon avatar for 8s: +50% damage, more speed and hits that throw lightning.') },
+};
+
 export function rollRarity(bonus = 0) {
   const w = [62, 28 + bonus * 0.5, 8 + bonus * 0.35, 1.6 + bonus * 0.15];
   return weightedPick([0, 1, 2, 3], (i) => w[i]);
@@ -86,6 +98,11 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
     it.affixes[k] = AFFIXES[k].roll(ilvl);
   }
   if (rarity === 3) it.leg = pick(Object.keys(LEGENDARIES));
+  if (rarity === MYTHIC) {
+    // mítico: atributos no topo da faixa e um poder único
+    it.myth = pick(Object.keys(MYTHICS));
+    for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.3);
+  }
   it.si = Math.floor(Math.random() * 64);
   return it;
 }
@@ -93,11 +110,55 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
 // Nome do item no idioma atual (saves antigos guardavam o nome pronto)
 export function itemName(it) {
   if (it.bi === undefined) return it.name || '?';
-  const base = it.slot === 'weapon' ? CLASSES[it.cls].weaponNames[it.bi] : BASES[it.slot][it.bi];
+  const plus = it.plus ? ` +${it.plus}` : '';
+  const base = (it.slot === 'weapon' ? CLASSES[it.cls].weaponNames[it.bi] : BASES[it.slot][it.bi]) + plus;
+  if (it.myth) return `✦ ${base} «${MYTHICS[it.myth].name}»`;
   if (it.rarity === 3) return `${base} «${LEGENDARIES[it.leg].name}»`;
   if (it.rarity === 2) return `${base} ${SUFFIX[it.si % SUFFIX.length]}`;
   if (it.rarity === 1) return `${base} ${MOD_SUFFIX[it.si % MOD_SUFFIX.length]}`;
   return base;
+}
+
+// ---------------- Ferreiro: aprimora itens (+1, +2...) por créditos ----------------
+// Cada nível: +4% de dano/blindagem base e +2,5% nos atributos. A cada 4 níveis, um marco:
+// ganha um atributo novo (ou reforça um dos que já tem).
+export const FORGE_MAX = [4, 6, 8, 10, 12];
+export const forgeMax = (it) => FORGE_MAX[it.rarity] ?? 4;
+export const isMilestone = (lv) => lv > 0 && lv % 4 === 0;
+// valores pequenos ficam com uma casa decimal para o aprimoramento sempre aparecer
+const fround = (v) => (Math.abs(v) < 20 ? Math.round(v * 10) / 10 : Math.round(v));
+export function forgeCost(it) {
+  return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4][it.rarity] * Math.pow(1.32, it.plus | 0));
+}
+export function forgeItem(it) {
+  if (!it.base) it.base = { wMin: it.wMin, wMax: it.wMax, armor: it.armor, affixes: { ...it.affixes } };
+  it.plus = (it.plus | 0) + 1;
+  let gained = null;
+  if (isMilestone(it.plus)) {
+    const b = it.base.affixes;
+    const pool = Object.keys(AFFIXES).filter((k) => (!AFFIXES[k].slots || AFFIXES[k].slots.includes(it.slot)) && !(k in b));
+    if (pool.length && Object.keys(b).length < 6) {
+      gained = pick(pool);
+      b[gained] = AFFIXES[gained].roll(it.ilvl);
+    } else if (Object.keys(b).length) {
+      gained = pick(Object.keys(b));
+      b[gained] = fround(b[gained] * 1.25);
+    }
+  }
+  applyForge(it);
+  return gained;
+}
+function applyForge(it) {
+  const b = it.base;
+  const k = 1 + 0.04 * it.plus;
+  const ka = 1 + 0.025 * it.plus;
+  if (b.wMin) {
+    it.wMin = Math.round(b.wMin * k);
+    it.wMax = Math.max(it.wMin + 1, Math.round(b.wMax * k));
+  }
+  if (b.armor) it.armor = Math.round(b.armor * k);
+  it.affixes = {};
+  for (const [a, v] of Object.entries(b.affixes)) it.affixes[a] = fround(v * ka);
 }
 
 // O item é melhor do que o equipado no mesmo espaço?
@@ -122,11 +183,12 @@ export function itemScore(it) {
   if (it.armor) s += it.armor * 0.5;
   for (const [k, v] of Object.entries(it.affixes)) s += (AFFIXES[k]?.w || 0) * v;
   if (it.leg) s += 20;
+  if (it.myth) s += 45;
   return s;
 }
 
 export function recycleValue(it) {
-  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15][it.rarity]);
+  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40][it.rarity] * (1 + 0.15 * (it.plus | 0)));
 }
 
 export function itemStatLines(it) {
@@ -135,6 +197,7 @@ export function itemStatLines(it) {
   if (it.armor) lines.push(`<div class="it-main">${fmt(it.armor)} <span>${L('de blindagem', 'armor')}</span></div>`);
   for (const [k, v] of Object.entries(it.affixes)) lines.push(`<div class="it-aff">${AFFIXES[k].fmt(v)}</div>`);
   if (it.leg) lines.push(`<div class="it-leg"><b>${LEGENDARIES[it.leg].name}:</b> ${LEGENDARIES[it.leg].desc}</div>`);
+  if (it.myth) lines.push(`<div class="it-myth"><b>✦ ${MYTHICS[it.myth].name}:</b> ${MYTHICS[it.myth].desc}</div>`);
   return lines.join('');
 }
 
@@ -142,7 +205,7 @@ export function itemCardHtml(it, extra = '') {
   const R = RARITY[it.rarity];
   return `<div class="item-card r${it.rarity}">
     <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
-    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}</div>
+    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}</span>` : ''}</div>
     ${itemStatLines(it)}
     ${extra}
   </div>`;
@@ -173,6 +236,10 @@ export function itemDiffHtml(it, cur) {
     // recarga aparece como "-X%": mais é melhor, mostra como redução
     if (k === 'cdr') add(-((it.affixes.cdr || 0) - (cur.affixes.cdr || 0)), L(n[0], n[1]), true);
     else add((it.affixes[k] || 0) - (cur.affixes[k] || 0), L(n[0], n[1]));
+  }
+  if (it.myth !== cur.myth) {
+    if (cur.myth) rows.push(`<div class="down">▼ ✦ ${MYTHICS[cur.myth].name}</div>`);
+    if (it.myth) rows.push(`<div class="up">▲ ✦ ${MYTHICS[it.myth].name}</div>`);
   }
   if (it.leg !== cur.leg) {
     if (cur.leg) rows.push(`<div class="down">▼ ${LEGENDARIES[cur.leg].name}</div>`);

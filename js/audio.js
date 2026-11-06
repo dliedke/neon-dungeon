@@ -184,6 +184,35 @@ export const sfx = {
   legendary() {
     [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.3, vol: 0.1, delay: i * 0.07 }));
   },
+  // item mítico caindo: impacto grave, subida brilhante, arpejo e um acorde de sino que fica no ar
+  mythic() {
+    if (throttle('mythic', 600)) return;
+    tone({ type: 'sine', f: 90, f2: 38, dur: 0.9, vol: 0.4 });
+    noise({ dur: 0.35, vol: 0.2, type: 'lowpass', f: 600, f2: 90 });
+    noise({ dur: 0.7, vol: 0.07, type: 'bandpass', f: 500, f2: 7000, q: 1.2, delay: 0.1 });
+    [392, 523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.45, vol: 0.075, delay: 0.22 + i * 0.05 }));
+    [523, 659, 784, 1047, 1568].forEach((f) => tone({ type: 'sine', f, dur: 2.2, vol: 0.06, delay: 0.62, a: 0.03 }));
+    [262, 392].forEach((f) => tone({ type: 'triangle', f, dur: 2, vol: 0.05, delay: 0.62, a: 0.08, lp: 1500 }));
+    [2637, 3136, 3951, 4186, 3520].forEach((f, i) => tone({ type: 'sine', f, dur: 0.3, vol: 0.025, delay: 0.95 + i * 0.11 }));
+  },
+  // batidinha distante do ferreiro trabalhando
+  forgeTick() {
+    if (throttle('forgeTick', 300)) return;
+    tone({ type: 'triangle', f: 2600, dur: 0.18, vol: 0.025 });
+    noise({ dur: 0.04, vol: 0.05, type: 'highpass', f: 4000 });
+  },
+  // martelo na bigorna do ferreiro (big: marco de aprimoramento)
+  forge(big) {
+    if (throttle('forge', 120)) return;
+    [0, 0.16].forEach((d, i) => {
+      tone({ type: 'square', f: 1850 - i * 200, f2: 1500, dur: 0.12, vol: 0.06, delay: d, lp: 6000 });
+      tone({ type: 'triangle', f: 2780 - i * 300, dur: 0.35, vol: 0.05, delay: d });
+      noise({ dur: 0.09, vol: 0.25, type: 'highpass', f: 2500, delay: d });
+      tone({ type: 'sine', f: 160, f2: 70, dur: 0.12, vol: 0.2, delay: d });
+    });
+    noise({ dur: 0.5, vol: 0.05, type: 'bandpass', f: 1200, f2: 400, delay: 0.3 }); // chiado do metal
+    if (big) [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.35, vol: 0.09, delay: 0.38 + i * 0.07 }));
+  },
   // fanfarra da vitória final
   victory() {
     [523, 659, 784, 1047, 784, 1047, 1319, 1568].forEach((f, i) => tone({ type: 'square', f, dur: i === 7 ? 1.2 : 0.26, vol: 0.08, delay: i * 0.16, lp: 3600 }));

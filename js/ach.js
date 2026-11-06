@@ -145,6 +145,11 @@ export function achList() {
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));
   add('legend10', '🧡', 2, L('Colecionador de Protótipos', 'Prototype Collector'), L('Encontre 10 itens lendários', 'Find 10 legendary items'), () => total('legendaries'), 10);
+  add('myth1', '🟣', 2, L('Toque Mítico', 'Mythic Touch'), L('Encontre um item mítico', 'Find a mythic item'), () => total('mythics'));
+  add('myth5', '💜', 3, L('Caçador de Míticos', 'Mythic Hunter'), L('Encontre 5 itens míticos', 'Find 5 mythic items'), () => total('mythics'), 5);
+  add('forge1', '⚒️', 0, L('Aprendiz de Ferreiro', 'Apprentice Smith'), L('Aprimore um item no ferreiro', 'Upgrade an item at the blacksmith'), () => total('forges'));
+  add('forge50', '🔨', 2, L('Mestre Forjador', 'Master Forger'), L('Aprimore itens 50 vezes no ferreiro', 'Upgrade items 50 times at the blacksmith'), () => total('forges'), 50);
+  add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));
 
   // mundo
   add('biomes5', '🗺️', 0, L('Explorador', 'Explorer'), L('Visite 5 biomas diferentes', 'Visit 5 different biomes'), () => count('biomes'), 5);

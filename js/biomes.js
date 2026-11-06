@@ -2,14 +2,14 @@
 import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
 import { rr, ri, pick, chance, shuffle } from './utils.js';
-import { isWalkableTile, isWalkable, randomFloorInRoom, tileAt } from './dungeon.js';
+import { isWalkableTile, isWalkable, randomFloorInRoom, tileAt, isFinalFloor } from './dungeon.js';
 import { damagePlayer, hitEnemy, damageEnemy, enemiesInRadius } from './combat.js';
 import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
 import { makeItem, itemScore, isUpgrade, SLOTS } from './items.js';
-import { openShop } from './ui.js';
+import { openShop, openForge } from './ui.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
@@ -305,6 +305,18 @@ export function placeFeatures(d, theme) {
     }
   }
   if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = makeShopStock(d.floor);
+  placeSmith(d, rooms);
+}
+
+// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...) e às vezes nos outros
+export const smithFloor = (f) => f >= 2 && !isFinalFloor(f) && (f % 3 === 1 || chance(0.3));
+function placeSmith(d, rooms) {
+  if (!G.char || !smithFloor(d.floor)) return;
+  const ok = rooms.filter((r) => r !== d.exitRoom && !r.safe && r.w >= 6 && r.h >= 6);
+  const r = pick(ok.length ? ok : rooms.filter((r) => r !== d.exitRoom && !r.safe));
+  if (!r) return;
+  r.safe = true;
+  d.props.push({ type: 'smith', x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5, near: false, t: 0 });
 }
 
 // A loja sempre oferece itens MELHORES que os equipados (em espaços diferentes),
@@ -643,6 +655,50 @@ export function buildFeatures(d, theme, group) {
         p.sign = sign;
         break;
       }
+      case 'smith': {
+        // ferreiro de avental com martelo, bigorna e uma fornalha acesa
+        const m = humanoid({ body: 0x6a4a34, dark: 0x1e1410, accent: 0xff7a1a });
+        const apron = new THREE.Mesh(box(0.4, 0.5, 0.06), new THREE.MeshLambertMaterial({ color: 0x2a1a12 }));
+        apron.position.set(0, -0.05, 0.17);
+        m.torso.add(apron);
+        const hammer = new THREE.Group();
+        const handle = new THREE.Mesh(box(0.05, 0.42, 0.05), new THREE.MeshLambertMaterial({ color: 0x5a3a20 }));
+        handle.position.y = -0.2;
+        const headM = new THREE.Mesh(box(0.2, 0.12, 0.12), new THREE.MeshLambertMaterial({ color: 0x8a8f9a }));
+        headM.position.y = -0.42;
+        hammer.add(handle, headM);
+        m.handR.add(hammer);
+        g.add(m.root);
+        const anvil = new THREE.Group();
+        const aMat = new THREE.MeshLambertMaterial({ color: 0x3a3e4a });
+        const aBase = new THREE.Mesh(box(0.3, 0.35, 0.3), aMat);
+        aBase.position.y = 0.175;
+        const aTop = new THREE.Mesh(box(0.62, 0.16, 0.3), aMat);
+        aTop.position.y = 0.43;
+        const hot = new THREE.Mesh(box(0.3, 0.05, 0.08), glowMat(0xff7a1a, 2.6));
+        hot.position.y = 0.53;
+        anvil.add(aBase, aTop, hot);
+        anvil.position.set(0, 0, 0.62);
+        g.add(anvil);
+        const furnace = new THREE.Mesh(box(0.7, 0.9, 0.6), new THREE.MeshLambertMaterial({ color: 0x2a2a30 }));
+        furnace.position.set(-0.95, 0.45, -0.1);
+        const mouth = new THREE.Mesh(box(0.42, 0.3, 0.05), glowMat(0xff5a1a, 3).clone());
+        mouth.position.set(0, -0.1, 0.31);
+        furnace.add(mouth);
+        g.add(furnace);
+        const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.45), new THREE.MeshBasicMaterial({ map: shopSign(L('FERREIRO', 'FORGE'), '#ff7a1a', 40), transparent: true, depthWrite: false, color: new THREE.Color(gk(1.6), gk(1.6), gk(1.6)) }));
+        sign.position.y = 2.3;
+        g.add(sign);
+        const pad = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff7a1a).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.6, depthWrite: false }));
+        pad.scale.setScalar(1.5);
+        pad.position.y = 0.03;
+        g.add(pad);
+        p.model = m;
+        p.sign = sign;
+        p.anvil = anvil;
+        p.mouth = mouth;
+        break;
+      }
     }
     group.add(g);
     p.group = g;
@@ -822,19 +878,19 @@ function meshAt(geo, mat, x, y, z) {
   return m;
 }
 
-function shopSign() {
+function shopSign(text = L('LOJA', 'SHOP'), color = '#ffd23d', size = 50) {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 96;
   const g = c.getContext('2d');
-  g.strokeStyle = '#ffd23d';
+  g.strokeStyle = color;
   g.lineWidth = 5;
   g.strokeRect(6, 6, 244, 84);
-  g.fillStyle = '#ffd23d';
-  g.font = 'bold 50px Orbitron, Arial, sans-serif';
+  g.fillStyle = color;
+  g.font = `bold ${size}px Orbitron, Arial, sans-serif`;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(L('LOJA', 'SHOP'), 128, 52);
+  g.fillText(text, 128, 52, 232);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -915,6 +971,27 @@ export function updateBiome(dt, camera) {
           } else if (dist > 2.8) pr.near = false;
         }
         break;
+      case 'smith': {
+        if (camera) pr.sign.quaternion.copy(camera.quaternion);
+        // martela a bigorna no ritmo; faíscas a cada batida
+        pr.t += dt;
+        const ph = (pr.t * 1.4) % 1;
+        pr.model.armR.rotation.x = ph < 0.7 ? -2.2 * (ph / 0.7) : -2.2 + 2.2 * ((ph - 0.7) / 0.3);
+        if (ph < pr.lastPh) {
+          burst(pr.x, 0.6, pr.z + 0.62, 0xffb04d, 8, 3, 0.04, 0.35, { up: 1.5 });
+          if (p && Math.hypot(p.x - pr.x, p.z - pr.z) < 7) sfx.forgeTick();
+        }
+        pr.lastPh = ph;
+        pr.mouth.material.color.set(0xff5a1a).multiplyScalar(gk(2.4 + Math.sin(pr.t * 7) * 0.6));
+        if (p && p.alive) {
+          const dist = Math.hypot(p.x - pr.x, p.z - pr.z);
+          if (dist < 1.6 && !pr.near && G.mode === 'play') {
+            pr.near = true;
+            openForge();
+          } else if (dist > 3) pr.near = false;
+        }
+        break;
+      }
     }
   }
 }

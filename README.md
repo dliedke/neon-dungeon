@@ -140,9 +140,9 @@ Thieves, shrines and rifts show up on the minimap once explored.
 
 ## Medals
 
-**94 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**99 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
-legendaries, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
+legendaries, mythics, the blacksmith, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
 ## Bosses
@@ -160,8 +160,16 @@ Medals and their counters sync with the Google cloud save; progress from every d
 ## Loot and progression
 
 - **Loot:**
-  - 4 rarities and 13 stat types.
+  - 5 rarities and 13 stat types.
   - 6 legendary effects.
+  - **Mythic items** (from floor 3 onwards): very rare purple drops with a light beam, their own sound and a big announcement. Each one has a special power:
+    **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
+    **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
+    **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
+    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythics.
+  - **Blacksmith:** appears on floors 4, 7, 10… and sometimes on others. For credits he upgrades your equipped items:
+    up to +4/+6/+8/+10/+12 depending on rarity, each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
+    Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
 - **Options:** difficulty (Easy, Normal or Hard), neon glow intensity, graphics quality and volume.
@@ -190,7 +198,7 @@ js/state.js            shared global state (G) and tile constants
 js/utils.js            random, math and formatting helpers
 js/i18n.js             translations (English / Portuguese)
 js/dungeon.js          procedural map layouts, collision and pathfinding
-js/biomes.js           biome hazards, mechanisms and decoration
+js/biomes.js           biome hazards, mechanisms, decoration, merchant and blacksmith
 js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)
@@ -207,6 +215,7 @@ js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
+js/mythic.js           mythic item powers
 vendor/three/          Three.js r160 (MIT)
 web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
 ```

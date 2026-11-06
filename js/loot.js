@@ -2,19 +2,27 @@
 import * as THREE from 'three';
 import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
-import { makeItem, rollRarity, RARITY, itemName, isUpgrade } from './items.js';
+import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText, beamFx } from './fx.js';
 import { sfx } from './audio.js';
-import { toast, invFull } from './ui.js';
+import { toast, invFull, banner } from './ui.js';
 import { MAX_STIMS } from './player.js';
 import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
-import { amod, tierOf } from './run.js';
+import { amod, tierOf, effFloor } from './run.js';
 
 export const INV_SIZE = 30;
 const UP_COLOR = 0x39ff88;
+const MYTH_COLOR = 0xb04dff;
+
+// Chance de um item virar mítico: raro, mas acontece (mais em chefes, fendas, ladrões e nos modos Pesadelo/Inferno)
+function mythChance(o, find) {
+  if (effFloor() < 3) return 0;
+  const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
+  return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
+}
 let labelRoot = null;
 
 export function dropLoot(x, z, o = {}) {
@@ -53,6 +61,7 @@ export function dropLoot(x, z, o = {}) {
     if (o.rift && i === 0) rarity = 3;
     if (o.rift && i === 1) rarity = Math.max(rarity, 2);
     if (rich && rarity < 3 && chance(0.25)) rarity++;
+    if (chance(mythChance(o, find))) rarity = MYTHIC;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
@@ -72,6 +81,8 @@ const orbGeo = new THREE.SphereGeometry(0.16, 12, 10);
 const beamGeo = new THREE.CylinderGeometry(0.035, 0.035, 2.6, 6, 1, true).translate(0, 1.3, 0);
 const upBeamGeo = new THREE.CylinderGeometry(0.09, 0.14, 4.2, 10, 1, true).translate(0, 2.1, 0);
 const upRingGeo = new THREE.RingGeometry(0.42, 0.52, 28).rotateX(-Math.PI / 2);
+const mythBeamGeo = new THREE.CylinderGeometry(0.12, 0.3, 9, 12, 1, true).translate(0, 4.5, 0);
+const mythGemGeo = new THREE.OctahedronGeometry(0.42, 0);
 
 function beamMat(color, opacity) {
   return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.6)), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -96,7 +107,19 @@ export function spawnPickup(type, x, z, data) {
     const R = RARITY[data.item.rarity];
     color = R.hex;
     mesh = new THREE.Mesh(box(0.26, 0.26, 0.26), glowMat(color, data.item.rarity >= 2 ? 2.4 : 1.6));
-    if (data.item.rarity >= 1) {
+    if (data.item.rarity === MYTHIC) {
+      // mítico: coluna de luz alta, dois anéis girando e um losango em volta
+      mesh.scale.setScalar(1.25);
+      const beam = new THREE.Mesh(mythBeamGeo, beamMat(MYTH_COLOR, 0.5));
+      const r1 = new THREE.Mesh(upRingGeo, beamMat(MYTH_COLOR, 0.9));
+      const r2 = new THREE.Mesh(upRingGeo, beamMat(0xffffff, 0.6));
+      r1.position.y = -0.3;
+      r2.position.y = 0.6;
+      r2.scale.setScalar(0.7);
+      const gem = new THREE.Mesh(mythGemGeo, beamMat(MYTH_COLOR, 0.55));
+      g.add(beam, r1, r2, gem);
+      data.mythFx = { beam, r1, r2, gem };
+    } else if (data.item.rarity >= 1) {
       const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.55 : 0.25));
       g.add(beam);
     }
@@ -109,6 +132,7 @@ export function spawnPickup(type, x, z, data) {
   G.world.add(g);
   if (type === 'item') {
     if (data.item.rarity === 3) achAdd('legendaries');
+    if (data.item.rarity === MYTHIC) achAdd('mythics');
     if (!labelRoot) labelRoot = document.getElementById('labels');
     const el = document.createElement('div');
     el.style.display = 'none';
@@ -116,7 +140,16 @@ export function spawnPickup(type, x, z, data) {
     pk.label = el;
     setUpgrade(pk, isUpgrade(data.item, G.char.equip));
     const name = itemName(data.item);
-    if (pk.up) {
+    if (data.item.rarity === MYTHIC) {
+      // o grande momento: som próprio, faixa no meio da tela e explosão de luz
+      sfx.mythic();
+      banner(L('✦ ITEM MÍTICO ✦', '✦ MYTHIC ITEM ✦'), name);
+      toast(`<b style="color:${RARITY[MYTHIC].color}">✦ ${L('MÍTICO', 'MYTHIC')}:</b> ${name}<br><small>${MYTHICS[data.item.myth].desc}</small>`, 'myth');
+      ringFx(x, z, 4, MYTH_COLOR, 0.8, { from: 0.4 });
+      ringFx(x, z, 2.4, 0xffffff, 0.5, { from: 0.2 });
+      burst(x, 1, z, MYTH_COLOR, 60, 7, 0.09, 1, { up: 2 });
+      G.shake = Math.max(G.shake, 0.3);
+    } else if (pk.up) {
       sfx.upgrade();
       toast(`<b style="color:#39ff88">▲ ${L('MELHORIA!', 'UPGRADE!')}</b> <span style="color:${RARITY[data.item.rarity].color}">${name}</span>`, 'up');
       floatText(x, 1.6, z, L('▲ MELHORIA', '▲ UPGRADE'), 'up');
@@ -125,6 +158,7 @@ export function spawnPickup(type, x, z, data) {
       toast(`${L('Protótipo encontrado', 'Prototype found')}: ${name}`, 'leg');
     } else if (data.item.rarity === 2) sfx.rare();
     if (data.item.rarity === 3 && pk.up) sfx.legendary();
+    if (data.item.rarity === MYTHIC && pk.up) toast(`<b style="color:#39ff88">▲ ${L('MELHORIA!', 'UPGRADE!')}</b>`, 'up');
   }
   G.pickups.push(pk);
   return pk;
@@ -330,6 +364,17 @@ export function updatePickups(dt, camera) {
       }
     }
     pk.mesh.rotation.y += dt * (pk.up ? 4 : 2.5);
+    if (pk.mythFx) {
+      const f = pk.mythFx;
+      const k = 0.5 + Math.sin(pk.t * 3) * 0.5;
+      f.beam.material.opacity = 0.3 + k * 0.35;
+      f.r1.scale.setScalar(1 + ((pk.t * 0.8) % 1) * 1.6);
+      f.r1.material.opacity = 0.9 * (1 - ((pk.t * 0.8) % 1));
+      f.r2.rotation.y += dt * 3;
+      f.gem.rotation.y -= dt * 1.5;
+      f.gem.position.y = 0.1 + Math.sin(pk.t * 2) * 0.08;
+      if (Math.random() < dt * 14) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? MYTH_COLOR : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
+    }
     const bob = pk.up ? 0.5 + Math.sin(pk.t * 4) * 0.12 : 0.35 + Math.sin(pk.t * 3) * 0.06;
     pk.group.position.set(pk.x, pk.vy === 0 ? bob : pk.y, pk.z);
     if (pk.upFx) {
@@ -380,6 +425,10 @@ export function updatePickups(dt, camera) {
           sfx.pickup();
           burst(pk.x, 0.5, pk.z, pk.up ? UP_COLOR : pk.color, pk.up ? 20 : 10, 3, 0.06, 0.4);
           const R = RARITY[pk.item.rarity];
+          if (pk.mythFx) {
+            sfx.legendary();
+            ringFx(p.x, p.z, 2.5, MYTH_COLOR, 0.5);
+          }
           const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
           toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
           pk.dead = true;
@@ -398,6 +447,7 @@ export function updatePickups(dt, camera) {
         pk.upFx.beam.material.dispose();
         pk.upFx.ring.material.dispose();
       }
+      if (pk.mythFx) for (const m of Object.values(pk.mythFx)) m.material.dispose();
       pk.label && pk.label.remove();
       G.pickups.splice(i, 1);
     }
@@ -408,7 +458,7 @@ export function updatePickups(dt, camera) {
   for (const pk of G.pickups) {
     if (!pk.label) continue;
     const d = Math.hypot(p.x - pk.x, p.z - pk.z);
-    if (d > (pk.up ? 14 : 10) || pk.vy !== 0) {
+    if (d > (pk.mythFx ? 26 : pk.up ? 14 : 10) || pk.vy !== 0) {
       pk.label.style.display = 'none';
       continue;
     }
