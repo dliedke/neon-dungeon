@@ -23,7 +23,7 @@ import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
 import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
+  toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
 } from './ui.js';
 import { isTouchDevice, clamp } from './utils.js';
 
@@ -421,8 +421,10 @@ function updateExit(dt) {
 }
 
 function handleGlobalInput() {
+  if (Input.pressed('map') && G.mode === 'play') toggleBigMap();
   if (Input.pressed('pause')) {
-    if (G.mode === 'play') openPause();
+    if (G.mode === 'play' && bigMapOpen()) toggleBigMap(false); // Esc fecha o mapa antes de pausar
+    else if (G.mode === 'play') openPause();
     else if (G.mode === 'pause' && !anyOverlayOpen()) closePause();
     else if (G.mode === 'char') closeChar();
     else uiBack();

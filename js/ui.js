@@ -25,6 +25,9 @@ let lastPanel = null;
 // Inicialização
 // ------------------------------------------------------------------
 export function initUI() {
+  $('minimap-wrap').addEventListener('click', () => {
+    if (G.mode === 'play') toggleBigMap();
+  });
   $('btn-char').onclick = () => toggleChar();
   $('btn-pause').onclick = () => openPause();
   $('char-close').onclick = () => closeChar();
@@ -180,6 +183,7 @@ export function initUI() {
 // Menu principal
 // ------------------------------------------------------------------
 export function showMenu() {
+  toggleBigMap(false);
   G.mode = 'menu';
   $('hud').classList.add('hidden');
   $('menu').classList.remove('hidden');
@@ -433,6 +437,7 @@ export function updateHUD(dt) {
   if (mmTimer <= 0) {
     mmTimer = 0.08;
     drawMinimap();
+    if (bigOpen) drawBigMap();
   }
 }
 
@@ -515,7 +520,10 @@ export function levelUpFx(level) {
 // ------------------------------------------------------------------
 let mmCanvas = null;
 let mmCtx = null;
+let mmB = null;
 export function resetMinimap(d) {
+  mmB = null;
+  toggleBigMap(false);
   mmCanvas = document.createElement('canvas');
   mmCanvas.width = d.W;
   mmCanvas.height = d.H;
@@ -529,6 +537,15 @@ export function markMinimap(indices) {
     const t = d.grid[k];
     const i = k % d.W;
     const j = (k / d.W) | 0;
+    if (t !== 0) {
+      if (!mmB) mmB = { x0: i, x1: i, z0: j, z1: j };
+      else {
+        mmB.x0 = Math.min(mmB.x0, i);
+        mmB.x1 = Math.max(mmB.x1, i);
+        mmB.z0 = Math.min(mmB.z0, j);
+        mmB.z1 = Math.max(mmB.z1, j);
+      }
+    }
     if (t === 1) mmCtx.fillStyle = 'rgba(120,140,220,0.55)';
     else if (t === 3) mmCtx.fillStyle = G.dungeon.pitStyle === 'water' ? 'rgba(40,130,230,0.7)' : 'rgba(0,0,0,0.9)';
     else if (t === 2) mmCtx.fillStyle = 'rgba(60,70,120,0.8)';
@@ -563,6 +580,32 @@ function drawMinimap() {
   ctx.translate(-p.x, -p.z);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(mmCanvas, 0, 0);
+  drawMapMarks(ctx, d, p, 22);
+  ctx.restore();
+  // jogador no centro (seta apontando para a direção)
+  drawPlayerArrow(ctx, W / 2, W / 2, 1);
+}
+
+// seta do jogador (aponta para onde ele olha)
+function drawPlayerArrow(ctx, x, y, k) {
+  const p = G.player;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.PI / 4 - p.facing + Math.PI);
+  ctx.scale(k, k);
+  ctx.fillStyle = CLASSES[G.char.cls].css;
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(4.5, 5);
+  ctx.lineTo(0, 2.5);
+  ctx.lineTo(-4.5, 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// saída, inimigos, baús, santuários e itens (em coordenadas do mapa); near = só os inimigos perto do jogador
+function drawMapMarks(ctx, d, p, near) {
   // saída
   const ex = d.exit;
   if (d.explored[Math.floor(ex.z) * d.W + Math.floor(ex.x)]) {
@@ -574,7 +617,7 @@ function drawMinimap() {
   // inimigos próximos
   for (const e of G.enemies) {
     if (!e.alive) continue;
-    if (Math.abs(e.x - p.x) > 22 || Math.abs(e.z - p.z) > 22) continue;
+    if (near && (Math.abs(e.x - p.x) > near || Math.abs(e.z - p.z) > near)) continue;
     if (e.inert) {
       if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
       ctx.fillStyle = '#ff7a1a';
@@ -607,20 +650,70 @@ function drawMinimap() {
     const r = pk.up ? 0.75 : 0.4;
     ctx.fillRect(pk.x - r, pk.z - r, r * 2, r * 2);
   }
-  ctx.restore();
-  // jogador no centro (seta apontando para a direção)
+}
+
+// ------------------------------------------------------------------
+// Mapa inteiro: tudo o que já foi explorado no andar
+// ------------------------------------------------------------------
+let bigOpen = false;
+export function bigMapOpen() {
+  return bigOpen;
+}
+export function toggleBigMap(force) {
+  const open = force ?? !bigOpen;
+  if (open && (!G.dungeon || !mmCanvas || G.mode === 'menu')) return;
+  bigOpen = open;
+  $('bigmap').classList.toggle('hidden', !open);
+  if (!open) return;
+  sfx.click && sfx.click();
+  const cv = $('bigmap-cv');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const px = Math.round(cv.clientWidth * dpr) || 600;
+  cv.width = cv.height = px;
+  $('bigmap-title').textContent = $('floor-label').textContent;
+  $('bigmap-hint').innerHTML = G.lastInput === 'pad' ? padText(L('{RS} fechar', '{RS} close')) : G.isTouch ? L('Toque no minimapa para fechar', 'Tap the minimap to close') : L('M ou clique no minimapa para fechar', 'M or click the minimap to close');
+  drawBigMap();
+}
+
+function drawBigMap() {
+  const cv = $('bigmap-cv');
+  const ctx = cv.getContext('2d');
+  const p = G.player;
+  const d = G.dungeon;
+  if (!d || !mmCanvas || !p) return;
+  const W = cv.width;
+  ctx.clearRect(0, 0, W, W);
+  const b = mmB || { x0: p.x - 8, x1: p.x + 8, z0: p.z - 8, z1: p.z + 8 };
+  const w = b.x1 - b.x0 + 3;
+  const h = b.z1 - b.z0 + 3;
+  const cx = (b.x0 + b.x1 + 1) / 2;
+  const cz = (b.z0 + b.z1 + 1) / 2;
+  // girado 45° como a câmera: a largura ocupada é (w + h) / √2
+  const sc = Math.min((W * 0.94) / ((w + h) / Math.SQRT2), W / 22);
   ctx.save();
   ctx.translate(W / 2, W / 2);
-  ctx.rotate(Math.PI / 4 - p.facing + Math.PI);
-  ctx.fillStyle = CLASSES[G.char.cls].css;
-  ctx.beginPath();
-  ctx.moveTo(0, -6);
-  ctx.lineTo(4.5, 5);
-  ctx.lineTo(0, 2.5);
-  ctx.lineTo(-4.5, 5);
-  ctx.closePath();
-  ctx.fill();
+  ctx.rotate(Math.PI / 4);
+  ctx.scale(sc, sc);
+  ctx.translate(-cx, -cz);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(mmCanvas, 0, 0);
+  drawMapMarks(ctx, d, p, 0);
   ctx.restore();
+  // posição do jogador na tela do mapa
+  const dx = p.x - cx;
+  const dz = p.z - cz;
+  const c = Math.SQRT1_2;
+  const sx = W / 2 + (dx * c - dz * c) * sc;
+  const sy = W / 2 + (dx * c + dz * c) * sc;
+  const k = W / 300;
+  ctx.strokeStyle = CLASSES[G.char.cls].css;
+  ctx.globalAlpha = 0.5 + Math.sin(G.t * 5) * 0.3;
+  ctx.lineWidth = 2 * k;
+  ctx.beginPath();
+  ctx.arc(sx, sy, (9 + Math.sin(G.t * 5) * 2) * k, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  drawPlayerArrow(ctx, sx, sy, k);
 }
 
 // ------------------------------------------------------------------

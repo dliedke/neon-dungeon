@@ -99,6 +99,21 @@ button { font-family: inherit; }
   background: rgba(4, 4, 14, 0.7); box-shadow: 0 0 20px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.08);
 }
 #minimap { width: 100%; height: 100%; display: block; }
+#minimap-wrap { pointer-events: auto; cursor: pointer; }
+/* mapa inteiro (M, clique no minimapa ou analógico direito) */
+#bigmap {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(2, 2, 12, 0.84); pointer-events: none;
+}
+#bigmap-cv { width: min(80vw, 66vh); height: min(80vw, 66vh); }
+@media (max-height: 500px) {
+  #bigmap { justify-content: center; }
+  #bigmap-title, #bigmap-hint { display: none; }
+  #bigmap-cv { width: min(64vw, 86vh); height: min(64vw, 86vh); }
+}
+#bigmap-title { font-family: Orbitron, sans-serif; font-size: 16px; letter-spacing: 3px; color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+#bigmap-hint { font-size: 14px; color: var(--muted); letter-spacing: 1px; }
+#bigmap-hint .glyph { vertical-align: middle; }
 #floor-label {
   font-family: Orbitron, sans-serif; font-size: 12px; letter-spacing: 2px; color: var(--accent);
   text-shadow: 0 0 8px var(--accent); text-align: right;
