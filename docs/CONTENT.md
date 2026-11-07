@@ -86,7 +86,7 @@ Test: pick the class from the menu, use every skill at rank 1 and after leveling
 2. **AI:** reuse an existing `ai` (`melee`, `ranged`, `bomber`, `sniper`, `sentry`, `ninja`, …) or add a `case` in the `switch (e.T.ai)` in `updateEnemies`. Telegraph dangerous attacks (`telegraphFx`, `lineTelegraph`) so players can dodge.
 3. **Model:** add a `case 'newfoe':` in `makeEnemyModel` (`models.js`). Copy a similar enemy: humanoids use `humanoid()` and expose `armL` / `armR`; animals and machines build their own parts. Return the same shape the others return (`root`, `body`, `mats`, `kind`, …). Extra detail goes in `decorate()` using `part()` (merged geometry, few draw calls). Use `glowMat` for neon parts.
 4. **Biome:** to tie it to a biome, add it to that theme's `fauna`.
-5. **Medals:** the bestiary medals pick it up automatically (`BESTIARY()` in `ach.js` excludes bosses, barrels, pylons and thieves).
+5. **Medals:** the bestiary medals pick it up automatically (`BESTIARY()` in `ach.js` excludes bosses, barrels, pylons, the thief and the behemoth).
 6. **Docs:** README "Enemies" table.
 
 Test: `__dbg.spawnEnemy('newfoe', G.player.x + 4, G.player.z)`, also as an elite: `__dbg.spawnEnemy('newfoe', x, z, { elite: true })`.

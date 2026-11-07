@@ -59,6 +59,8 @@ export const ETYPES = {
   mortar: { name: L('Aranha-Morteiro', 'Mortar Walker'), hp: 70, dmg: 14, speed: 1.6, r: 0.5, h: 1.2, xp: 24, minFloor: 7, weight: 2, ai: 'mortar', range: 14, keep: [7, 12], atkCd: 3.8, heavy: true, solo: true, blood: 0xffaa00 },
   // evento raro: foge, solta créditos pelo caminho e some se você demorar
   thief: { name: L('Ladrão de Dados', 'Data Thief'), hp: 65, dmg: 0, speed: 4.6, r: 0.34, h: 1.4, xp: 60, minFloor: 99, weight: 0, ai: 'thief', blood: 0xffd23d },
+  // evento raro: fera colossal e furiosa; muito resistente (dr = blindagem), bate muito forte e paga muitos créditos
+  behemoth: { name: L('Behemoth Furioso', 'Raging Behemoth'), hp: 900, dmg: 34, speed: 2.7, r: 0.85, h: 2.6, xp: 260, minFloor: 99, weight: 0, ai: 'behemoth', range: 3.2, atkCd: 2.2, dr: 0.2, heavy: true, big: true, blood: 0xff3a1a },
   pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
   boss: { name: 'Executor ARC-9', boss: true, hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
   queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
@@ -217,6 +219,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.hp = e.maxHp = 1;
     e.aggro = false;
   }
+  if (T.dr) e.dr = T.dr;
   if (T.ai === 'sniper') {
     e.laser = new THREE.Mesh(laserGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2244).multiplyScalar(gk(2)), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
     e.laser.visible = false;
@@ -232,7 +235,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.lastAtk = null;
   }
   addShadow(model.root, e.r / (eliteKey ? 1.2 : 1));
-  const bar = makeHpBar(e.boss || T.inert ? 0 : 0.8, !!eliteKey);
+  const bar = makeHpBar(e.boss || T.inert ? 0 : T.big ? 1.8 : 0.8, !!eliteKey || !!T.big);
   bar.position.y = T.h + 0.35;
   model.root.add(bar);
   e.bar = bar;
@@ -373,6 +376,12 @@ export function updateEnemies(dt, cam) {
     let speed = e.speed * (e.slowT > 0 ? 0.5 : 1);
     if (e.stun > 0) {
       e.stun -= edt;
+      // atordoado no meio de um golpe avisado: cancela o golpe junto com o aviso no chão
+      if (e.bm) {
+        e.bm = null;
+        if (e.tele) e.tele.cancelled = true;
+        e.atkT = Math.max(e.atkT, 0.8);
+      }
       if (Math.random() < 0.3) burst(e.x, e.height, e.z, 0x39ff14, 1, 1.5, 0.04, 0.3, { grav: 0 });
     } else if (e.aggro && p.alive) {
       const ux = dx / (dist || 1);
@@ -1174,6 +1183,13 @@ export function updateEnemies(dt, cam) {
           speed = r.speed;
           break;
         }
+        case 'behemoth': {
+          const r = updateBehemoth(e, edt, dist, ux, uz, chase, speed);
+          mvx = r.x;
+          mvz = r.z;
+          speed = r.speed;
+          break;
+        }
       }
     }
 
@@ -1328,6 +1344,19 @@ export function updateEnemies(dt, cam) {
     } else if (m.kind === 'boss') {
       m.ring.rotation.z += dt * (e.phase2 ? 3 : 1.2);
       m.body.position.y = Math.sin(G.t * 2) * 0.05;
+    } else if (m.kind === 'beast') {
+      // patas em diagonal, cabeça baixa na investida e o corpo empinando antes da pancada
+      const sw = e.moving ? Math.sin(e.phase * 1.2) * (e.bm === 'charge' ? 0.8 : 0.5) : 0;
+      m.legs.forEach((l, k) => (l.rotation.x = k === 0 || k === 3 ? sw : -sw));
+      const rear = e.bm === 'slam' ? -0.42 * Math.min(1, 1.3 - e.bt / e.slamDur) : e.bm === 'roar' ? -0.22 : 0;
+      m.body.rotation.x += (rear - m.body.rotation.x) * Math.min(1, dt * (rear ? 6 : 14));
+      const headK = e.bm === 'wind' || e.bm === 'charge' ? 0.45 : e.bm === 'roar' ? -0.35 : Math.sin(G.t * 2.2 + e.phase) * 0.05;
+      m.headM.rotation.x += (headK - m.headM.rotation.x) * Math.min(1, dt * 10);
+      if (m.tail) m.tail.rotation.y = Math.sin(G.t * 3 + e.phase) * 0.35;
+      // brilho das placas: pulsa mais forte quando está furioso
+      const gl = e.enraged ? 2.6 + Math.sin(G.t * 9) * 0.8 : 1.5 + Math.sin(G.t * 2.5) * 0.25;
+      m.rageMat.color.setHex(0xff3a1a).multiplyScalar(gk(gl));
+      if (e.enraged && Math.random() < dt * 14) burst(e.x + rr(-0.5, 0.5), e.height * 0.85, e.z + rr(-0.5, 0.5), 0xff3a1a, 1, 1, 0.08, 0.5, { grav: -3 });
     }
     // flash ao tomar dano
     const fl = e.flash > 0 ? 1 : 0;
@@ -1341,7 +1370,7 @@ export function updateEnemies(dt, cam) {
     // barra de vida
     if (e.bar) {
       const show = !e.boss && e.hpShow > 0 && e.hp < e.maxHp;
-      e.bar.visible = show || (!!e.elite && e.aggro);
+      e.bar.visible = show || ((!!e.elite || !!e.T.big) && e.aggro);
       if (e.bar.visible) {
         e.bar.quaternion.copy(cam.quaternion);
         e.bar.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -e.facing));
@@ -1354,6 +1383,165 @@ export function updateEnemies(dt, cam) {
   // limpa mortos
   for (let i = G.enemies.length - 1; i >= 0; i--) if (!G.enemies[i].alive) G.enemies.splice(i, 1);
   if (anyAggro) p.inCombat = Math.max(p.inCombat || 0, 2);
+}
+
+// ---------------- Behemoth Furioso ----------------
+// Fera rara: pancada no chão em área e investida em linha reta (que o deixa tonto se acertar a parede).
+// Abaixo de metade da vida fica furioso: mais rápido, bate mais forte e emenda dois golpes.
+// Todo golpe tem aviso no chão, para dar para desviar.
+const BEAST_COLOR = 0xff3a1a;
+function beastRoar(e, rage) {
+  const p = G.player;
+  e.bm = 'roar';
+  e.bt = rage ? 1.0 : 0.8;
+  sfx.roar();
+  G.shake = Math.max(G.shake, rage ? 0.5 : 0.3);
+  ringFx(e.x, e.z, rage ? 5 : 3.5, BEAST_COLOR, 0.5, { from: 0.6 });
+  burst(e.x, e.height * 0.8, e.z, BEAST_COLOR, rage ? 40 : 20, 5, 0.08, 0.6, { up: 1 });
+  // o rugido da fúria empurra quem estiver perto (sem dano)
+  const dx = p.x - e.x;
+  const dz = p.z - e.z;
+  const l = Math.hypot(dx, dz) || 1;
+  if (rage && p.alive && l < 5) {
+    p.kx = (p.kx || 0) + (dx / l) * 10;
+    p.kz = (p.kz || 0) + (dz / l) * 10;
+  }
+}
+function beastSlam(e, R) {
+  const p = G.player;
+  const dx = p.x - e.x;
+  const dz = p.z - e.z;
+  const l = Math.hypot(dx, dz) || 1;
+  if (p.alive && l < R + p.r) {
+    meleeHit(e, e.dmg);
+    p.kx = (p.kx || 0) + (dx / l) * 7;
+    p.kz = (p.kz || 0) + (dz / l) * 7;
+  }
+  ringFx(e.x, e.z, R, BEAST_COLOR, 0.4, { from: 0.4 });
+  burst(e.x, 0.3, e.z, 0xffaa55, 30, 7, 0.09, 0.55, { up: 0.5 });
+  sfx.explode();
+  G.shake = Math.max(G.shake, 0.45);
+}
+function beastTelegraph(e, R, t) {
+  e.bm = 'slam';
+  e.slamR = R;
+  e.bt = e.slamDur = t;
+  e.tele = telegraphFx(e.x, e.z, R, t, BEAST_COLOR);
+  sfx.telegraph();
+}
+function updateBehemoth(e, dt, dist, ux, uz, chase, baseSpeed) {
+  const p = G.player;
+  const d = G.dungeon;
+  const out = { x: 0, z: 0, speed: baseSpeed * (e.enraged ? 1.35 : 1) };
+  e.faceX = ux;
+  e.faceZ = uz;
+  // primeiro contato: rugido de aviso
+  if (!e.roared) {
+    e.roared = true;
+    beastRoar(e, false);
+    toast(L('🦏 Um <b>Behemoth Furioso</b>! Muito resistente e bate muito forte, mas paga muitos créditos. Saia dos avisos no chão!', '🦏 A <b>Raging Behemoth</b>! Very tough and hits extremely hard, but it pays a lot of credits. Get out of the warnings on the ground!'), 'leg', 'beast');
+    return out;
+  }
+  // fúria: abaixo de metade da vida (cancela o que estava fazendo)
+  if (!e.enraged && e.hp < e.maxHp * 0.5) {
+    e.enraged = true;
+    e.atkCdMult *= 0.6;
+    e.dmg *= 1.15;
+    if (e.tele) e.tele.cancelled = true;
+    beastRoar(e, true);
+    e.atkT = Math.min(e.atkT, 0.4);
+    toast(L('O Behemoth ficou <b>FURIOSO</b>!', 'The Behemoth is <b>ENRAGED</b>!'), 'warn', 'beast');
+    return out;
+  }
+  switch (e.bm) {
+    case 'roar':
+      out.speed = 0;
+      e.bt -= dt;
+      if (e.bt <= 0) e.bm = null;
+      return out;
+    case 'slam':
+      out.speed = 0;
+      e.bt -= dt;
+      if (e.bt <= 0) {
+        beastSlam(e, e.slamR);
+        e.bm = null;
+        e.atkT = e.T.atkCd * e.atkCdMult;
+        // furioso: emenda uma segunda pancada, maior
+        if (e.enraged && !e.second) {
+          e.second = true;
+          beastTelegraph(e, e.T.range + 1.3, 0.65);
+        } else e.second = false;
+      }
+      return out;
+    case 'wind':
+      out.speed = 0;
+      e.bt -= dt;
+      e.faceX = e.cdx;
+      e.faceZ = e.cdz;
+      if (Math.random() < 0.6) burst(e.x - e.cdx * 0.9, 0.2, e.z - e.cdz * 0.9, 0x8a6a44, 1, 2.5, 0.08, 0.35); // cava o chão
+      if (e.bt <= 0) {
+        e.bm = 'charge';
+        e.bt = 1.2;
+        e.hitDone = false;
+        sfx.dash();
+      }
+      return out;
+    case 'charge': {
+      e.faceX = e.cdx;
+      e.faceZ = e.cdz;
+      out.x = e.cdx;
+      out.z = e.cdz;
+      out.speed = e.enraged ? 15 : 13;
+      e.bt -= dt;
+      if (Math.random() < 0.7) burst(e.x, 0.3, e.z, BEAST_COLOR, 1, 1.5, 0.08, 0.3, { grav: 0 });
+      if (!e.hitDone && p.alive && Math.hypot(p.x - e.x, p.z - e.z) < e.r + p.r + 0.3) {
+        e.hitDone = true;
+        meleeHit(e, e.dmg * 1.3);
+        p.kx = (p.kx || 0) + e.cdx * 12;
+        p.kz = (p.kz || 0) + e.cdz * 12;
+        G.shake = Math.max(G.shake, 0.45);
+      }
+      const wall = !isWalkable(d, e.x + e.cdx * (e.r + 0.25), e.z + e.cdz * (e.r + 0.25));
+      if (wall || e.bt <= 0) {
+        e.bm = null;
+        e.charges = (e.charges || 1) - 1;
+        if (wall) {
+          // bateu na parede: fica tonto (a hora de bater nele)
+          e.charges = 0;
+          e.stun = 1.6;
+          G.shake = Math.max(G.shake, 0.5);
+          sfx.explode();
+          burst(e.x + e.cdx * e.r, 1.2, e.z + e.cdz * e.r, 0xffaa55, 26, 6, 0.09, 0.5);
+          floatText(e.x, e.height + 0.5, e.z, L('ATORDOADO', 'STUNNED'), 'shield');
+        }
+        // furioso: segunda investida logo em seguida
+        e.atkT = e.charges > 0 ? 0.2 : e.T.atkCd * e.atkCdMult;
+      }
+      return out;
+    }
+  }
+  // andando: chega perto e escolhe o golpe
+  const c = chase();
+  if (c) {
+    out.x = c.x;
+    out.z = c.z;
+  }
+  if (e.atkT <= 0) {
+    if (dist < e.T.range + p.r - 0.4) {
+      e.second = false;
+      e.charges = 0;
+      beastTelegraph(e, e.T.range, e.enraged ? 0.75 : 0.95);
+    } else if (e.los && dist > 4 && dist < 13) {
+      e.bm = 'wind';
+      e.bt = e.enraged ? 0.6 : 0.8;
+      e.cdx = ux;
+      e.cdz = uz;
+      if (!(e.charges > 0)) e.charges = e.enraged ? 2 : 1;
+      lineTelegraph(e.x, e.z, Math.atan2(uz, ux), Math.min(18, dist + 5), 2.2, e.bt, BEAST_COLOR);
+      sfx.telegraph();
+    }
+  }
+  return out;
 }
 
 // ---------------- Chefe ----------------
@@ -1594,6 +1782,7 @@ function chooseBossAttack(e, dist) {
 }
 
 const BOSS_HP_K = 1.3;
+const BEAST_CHANCE = 0.3; // chance de um Behemoth Furioso por andar (fora os de chefe)
 
 // ---------------- Povoamento do andar ----------------
 // ponto aleatório da sala longe do mercador e do ferreiro (null se não achar)
@@ -1688,6 +1877,12 @@ export function populateFloor(d, floor, boss) {
   if (floor >= 2 && !final && far.length && chance(boss ? 0.15 : 0.35)) {
     const pt = randomFloorInRoom(d, pick(far), 1);
     spawnEnemy('thief', pt.x, pt.z);
+  }
+  // Behemoth Furioso: aparece de vez em quando (não nos andares de chefe), numa sala grande longe do início e da saída
+  const beastRooms = far.filter((r) => !r.safe && r.w >= 7 && r.h >= 7 && r !== d.exitRoom);
+  if ((floor >= 3 || tierOf().off) && !final && !boss && beastRooms.length && chance(BEAST_CHANCE)) {
+    const pt = spotAwayFromNpc(d, pick(beastRooms), 2.5);
+    if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 5 && Math.hypot(pt.x - d.start.x, pt.z - d.start.z) > 16) spawnEnemy('behemoth', pt.x, pt.z);
   }
   // Santuários Neon: 2 ou 3 por andar, de tipos diferentes e em salas diferentes
   if (!final) {

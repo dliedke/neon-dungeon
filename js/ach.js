@@ -59,6 +59,7 @@ export function achKill(e) {
   achMark('types', e.type);
   if (e.elite) achAdd('elites');
   if (e.type === 'thief') achAdd('thieves');
+  if (e.type === 'behemoth') achAdd('beasts');
   if (e.boss) {
     achAdd('bosses');
     achMark('bossTypes', e.type);
@@ -70,7 +71,7 @@ export function achKill(e) {
 // ---------- definições ----------
 const chars = () => Object.values(G.save.slots || {});
 const maxOf = (f) => chars().reduce((m, c) => Math.max(m, f(c) || 0), 0);
-const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief'].includes(k));
+const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief', 'behemoth'].includes(k));
 
 // tier: 0 bronze, 1 prata, 2 ouro, 3 platina
 const TIERS = [
@@ -161,6 +162,8 @@ export function achList() {
   add('thief1', '💰', 1, L('Pega Ladrão!', 'Stop, Thief!'), L('Derrote um Ladrão de Dados', 'Take down a Data Thief'), () => total('thieves'));
   add('thief10', '🤑', 2, L('Caçador de Recompensas', 'Bounty Hunter'), L('Derrote 10 Ladrões de Dados', 'Take down 10 Data Thieves'), () => total('thieves'), 10);
   add('thiefEsc', '💨', 0, L('Quase…', 'So Close…'), L('Deixe um Ladrão de Dados escapar', 'Let a Data Thief get away'), () => total('thiefEscapes'));
+  add('beast1', '🦏', 1, L('Domador de Feras', 'Beast Tamer'), L('Derrote um Behemoth Furioso', 'Take down a Raging Behemoth'), () => total('beasts'));
+  add('beast10', '🐲', 2, L('Caçador de Colossos', 'Colossus Hunter'), L('Derrote 10 Behemoths Furiosos', 'Take down 10 Raging Behemoths'), () => total('beasts'), 10);
   add('shrine1', '🔮', 0, L('Abençoado', 'Blessed'), L('Use um Santuário Neon', 'Use a Neon Shrine'), () => total('shrines'));
   add('shrineAll', '💎', 1, L('Peregrino', 'Pilgrim'), L(`Use os ${Object.keys(SHRINES).length} tipos de santuário`, `Use all ${Object.keys(SHRINES).length} kinds of shrine`), () => Object.keys(SHRINES).filter((k) => has('shrineKinds', k)).length, Object.keys(SHRINES).length);
   add('pet1', '🐾', 0, L('Amigo dos Bichos', 'Animal Friend'), L('Faça um bichinho seguir você', 'Get a critter to follow you'), () => total('pets'));

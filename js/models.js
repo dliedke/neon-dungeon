@@ -1270,6 +1270,88 @@ export function makeEnemyModel(type, eliteColor) {
       m = { root, body, legs, headM: head, mats: [mFur, mDark], kind: 'quad' };
       break;
     }
+    case 'behemoth': {
+      // fera colossal: corpo de rinoceronte blindado com placas incandescentes.
+      // body gira em torno das patas traseiras (pivô em z=-0.8) para empinar antes da pancada.
+      const PI = Math.PI;
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      body.position.z = -0.8;
+      root.add(body);
+      const inner = new THREE.Group();
+      inner.position.z = 0.8;
+      body.add(inner);
+      const mFur = lambert(0x4a3a36);
+      const mDark = lambert(0x1c1618);
+      const mPlate = lambert(0x6a6e7a);
+      // material próprio de cada fera: o brilho pulsa conforme a fúria
+      const rageMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff3a1a).multiplyScalar(gk(1.5)) });
+      part(inner, 'e_bm_torso', mFur, (b) => {
+        b(1.1, 0.95, 1.6, 0, 1.3, 0);
+        b(1.2, 0.62, 0.85, 0, 1.82, 0.32); // corcova dos ombros
+        b(0.95, 0.5, 0.6, 0, 1.15, -0.7); // ancas
+        b(0.8, 0.4, 0.3, 0, 0.98, 0.72); // peito
+      });
+      part(inner, 'e_bm_plates', mPlate, (b) => {
+        for (let i = 0; i < 4; i++) b(0.96 - i * 0.06, 0.12, 0.34, 0, 2.16 - i * 0.16, 0.5 - i * 0.36, 0.18, 0, 0);
+        for (const sx of [-1, 1]) {
+          b(0.08, 0.6, 1.2, sx * 0.58, 1.32, 0.05); // placas laterais
+          b(0.1, 0.4, 0.5, sx * 0.62, 1.82, 0.36, 0, 0, sx * 0.25); // ombreiras
+        }
+      });
+      part(inner, 'e_bm_glow', rageMat, (b, a) => {
+        for (let i = 0; i < 5; i++) a(cone(0.07, 0.34 - i * 0.03, 4), 0, 2.28 - i * 0.15, 0.56 - i * 0.3, -0.35, 0, 0); // espinhos da espinha
+        for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) b(0.04, 0.42, 0.06, sx * 0.63, 1.32, 0.42 - i * 0.38); // frestas de magma
+      });
+      // cabeça baixa e pesada, com chifre frontal e dois chifres laterais
+      const head = new THREE.Group();
+      head.position.set(0, 1.5, 0.88);
+      inner.add(head);
+      part(head, 'e_bm_head', mFur, (b) => {
+        b(0.72, 0.62, 0.72, 0, -0.05, 0.28);
+        b(0.52, 0.42, 0.42, 0, -0.2, 0.76); // focinho
+      });
+      part(head, 'e_bm_jaw', mDark, (b, a) => {
+        b(0.58, 0.14, 0.5, 0, -0.42, 0.6); // mandíbula
+        b(0.78, 0.2, 0.2, 0, 0.3, 0.2); // testa blindada
+        for (const sx of [-1, 1]) a(cone(0.06, 0.2, 4), sx * 0.2, -0.3, 0.86, -0.2, 0, 0); // presas
+      });
+      part(head, 'e_bm_horns', mPlate, (b, a) => {
+        a(cone(0.15, 0.7, 6), 0, 0.05, 1.08, PI / 2 - 0.55, 0, 0); // chifre do focinho
+        a(cone(0.08, 0.32, 5), 0, 0.12, 0.72, PI / 2 - 0.9, 0, 0);
+        for (const sx of [-1, 1]) a(cone(0.1, 0.6, 5), sx * 0.46, 0.32, 0.22, 0.5, 0, -sx * 1.05); // chifres laterais
+      });
+      part(head, 'e_bm_eyes', glowMat(0xff3a1a, 3), (b) => {
+        for (const sx of [-1, 1]) b(0.14, 0.07, 0.04, sx * 0.24, 0.1, 0.65, 0, 0, sx * 0.25);
+      });
+      // cauda com ponta incandescente
+      const tail = new THREE.Group();
+      tail.position.set(0, 1.35, -0.98);
+      inner.add(tail);
+      part(tail, 'e_bm_tail', mFur, (b) => {
+        b(0.18, 0.18, 0.45, 0, -0.08, -0.2, 0.5, 0, 0);
+        b(0.12, 0.12, 0.4, 0, -0.32, -0.5, 0.9, 0, 0);
+      });
+      tail.add(mesh(oct(0.12), rageMat, 0, -0.5, -0.66));
+      // patas: [FD, FE, TD, TE]; coxa e canela na cor do corpo, casco blindado escuro
+      const legs = [];
+      for (const [x, z] of [[0.42, 0.55], [-0.42, 0.55], [0.4, -0.6], [-0.4, -0.6]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 1.0, z);
+        part(lg, 'e_bm_leg', mFur, (b) => {
+          b(0.38, 0.55, 0.42, 0, -0.22, 0);
+          b(0.3, 0.42, 0.32, 0, -0.66, 0);
+        });
+        part(lg, 'e_bm_hoof', mDark, (b) => {
+          b(0.4, 0.16, 0.46, 0, -0.92, 0.03);
+          b(0.34, 0.14, 0.12, 0, -0.45, 0.18); // joelheira
+        });
+        inner.add(lg);
+        legs.push(lg);
+      }
+      m = { root, body, legs, headM: head, tail, rageMat, mats: [mFur, mDark, mPlate], kind: 'beast' };
+      break;
+    }
     case 'salamander': {
       const root = new THREE.Group();
       const body = new THREE.Group();

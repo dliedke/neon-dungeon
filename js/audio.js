@@ -262,6 +262,14 @@ export const sfx = {
     tone({ type: 'sawtooth', f: 58.3, dur: 1.4, vol: 0.2, lp: 420, a: 0.05 });
     noise({ dur: 1.2, vol: 0.12, type: 'lowpass', f: 300 });
   },
+  // rugido do Behemoth: rosnado grave que sobe e desce, com um bafo de vapor
+  roar() {
+    if (throttle('roar', 400)) return;
+    tone({ type: 'sawtooth', f: 70, f2: 150, dur: 0.35, vol: 0.26, lp: 700, a: 0.04 });
+    tone({ type: 'sawtooth', f: 150, f2: 52, dur: 1.0, vol: 0.3, lp: 900, delay: 0.3 });
+    tone({ type: 'square', f: 76, f2: 40, dur: 1.1, vol: 0.14, lp: 500, delay: 0.3 });
+    noise({ dur: 1.1, vol: 0.3, type: 'bandpass', f: 500, f2: 180, q: 0.8, delay: 0.1 });
+  },
   telegraph() {
     if (throttle('tele', 120)) return;
     tone({ type: 'square', f: 280, f2: 560, dur: 0.25, vol: 0.04 });

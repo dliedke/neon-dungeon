@@ -787,8 +787,8 @@ function drawMapMarks(ctx, d, p, near) {
       continue;
     }
     if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
-    ctx.fillStyle = e.boss ? '#ff2244' : e.elite || e.type === 'thief' ? '#ffd23d' : '#ff4466';
-    const r = e.boss ? 1.3 : e.elite || e.type === 'thief' ? 0.7 : 0.45;
+    ctx.fillStyle = e.boss ? '#ff2244' : e.T.big ? '#ff7a1a' : e.elite || e.type === 'thief' ? '#ffd23d' : '#ff4466';
+    const r = e.boss ? 1.3 : e.T.big ? 1.0 : e.elite || e.type === 'thief' ? 0.7 : 0.45;
     ctx.fillRect(e.x - r, e.z - r, r * 2, r * 2);
   }
   // ferreiro, mercador e baú (depois de explorados)

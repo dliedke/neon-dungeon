@@ -20,7 +20,7 @@ const MYTH_COLOR = 0xb04dff;
 // Chance de um item virar mítico: raro, mas acontece (mais em chefes, fendas, ladrões e nos modos Pesadelo/Inferno)
 function mythChance(o, find) {
   if (effFloor() < 3) return 0;
-  const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
+  const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief || o.beast ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
   return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }
 let labelRoot = null;
@@ -29,7 +29,7 @@ export function dropLoot(x, z, o = {}) {
   const p = G.player;
   const find = 1 + (p.stats.findPct || 0) / 100;
   const T = tierOf();
-  const ilvl = G.floor + T.off + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract ? 1 : 0);
+  const ilvl = G.floor + T.off + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0);
   let items = 0;
   let bonus = G.floor * 1.5 + amod('loot', 0) + T.loot;
   const rich = p.buffs.fortune > 0; // Santuário da Fortuna
@@ -40,9 +40,9 @@ export function dropLoot(x, z, o = {}) {
   } else if (o.contract) {
     items = 2;
     bonus += 30;
-  } else if (o.thief) {
+  } else if (o.thief || o.beast) {
     items = 3;
-    bonus += 35;
+    bonus += o.beast ? 40 : 35;
   } else if (o.boss) {
     items = 4;
     bonus += 40;
@@ -57,7 +57,7 @@ export function dropLoot(x, z, o = {}) {
   }
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);
-    if ((o.boss || o.chest || o.thief || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.contract ? 2 : 1);
+    if ((o.boss || o.chest || o.thief || o.beast || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.beast || o.contract ? 2 : 1);
     if (o.rift && i === 0) rarity = 3;
     if (o.rift && i === 1) rarity = Math.max(rarity, 2);
     if (rich && rarity < 3 && chance(0.25)) rarity++;
@@ -65,14 +65,23 @@ export function dropLoot(x, z, o = {}) {
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
-  if (chance(o.boss || o.chest || o.thief || o.rift || o.contract ? 1 : o.elite ? 0.9 : 0.4)) {
-    const n = o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
-    for (let k = 0; k < n; k++) spawnPickup('credits', x, z, { amount: Math.round(rr(3, 7) * (1 + G.floor * 0.5) * (rich ? 2 : 1) * amod('credits') * T.credits) });
+  // devolve o total de créditos que caiu (o Behemoth mostra no aviso)
+  let credits = 0;
+  if (chance(o.boss || o.chest || o.thief || o.beast || o.rift || o.contract ? 1 : o.elite ? 0.9 : 0.4)) {
+    // Behemoth: chuva de moedas, cada uma valendo 2,5x
+    const n = o.beast ? 20 : o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
+    const big = o.beast ? 3.5 : 1;
+    for (let k = 0; k < n; k++) {
+      const amount = Math.round(rr(3, 7) * (1 + G.floor * 0.5) * big * (rich ? 2 : 1) * amod('credits') * T.credits);
+      credits += amount;
+      spawnPickup('credits', x, z, { amount });
+    }
   }
-  if (o.thief || o.rift) spawnPickup('stim', x, z, {});
+  if (o.thief || o.beast || o.rift) spawnPickup('stim', x, z, {});
   if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
   // orbes de vida: ajudam a se recuperar no meio da luta
-  if (!o.chest && chance(o.boss || o.rift ? 1 : o.elite ? 0.6 : Math.min(0.6, 0.13 * amod('orbs')))) spawnPickup('orb', x, z, {});
+  if (!o.chest && chance(o.boss || o.beast || o.rift ? 1 : o.elite ? 0.6 : Math.min(0.6, 0.13 * amod('orbs')))) spawnPickup('orb', x, z, {});
+  return credits;
 }
 
 const coinGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.04, 6);

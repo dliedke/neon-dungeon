@@ -128,6 +128,8 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 - **Data Thief:** a rare golden runner carrying a backpack of stolen data. It flees from you, drops credits as it runs and teleports away after about 14 seconds.
   Catch it for a jackpot: guaranteed rare-or-better items, a pile of credits and a stim.
+- **Raging Behemoth:** from floor 3 on, about one floor in five hides a huge armored beast in a far room. It is very tough (it shrugs off 20% of all damage), roars when it spots you and hits extremely hard: a ground slam and a straight-line charge, both telegraphed on the floor. If the charge hits a wall it is stunned for a moment. Below half health it becomes enraged: faster, stronger, double slams and double charges.
+  Kill it for a big payout: a pile of credits (about the price of a legendary in the shop), 3 items (the first is rare or better), a stim and an orb.
 - **Neon Shrines:** glowing pillars that grant a 30-second buff when you walk over them:
   **Fury** (+50% damage), **Haste** (+35% move speed, +30% attack speed), **Fortune** (more loot and double credits) or **Aegis** (half damage taken).
 
@@ -143,7 +145,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**104 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**106 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
 legendaries, mythics, the blacksmith, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

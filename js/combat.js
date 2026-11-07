@@ -2,7 +2,7 @@ import { formMods, timeFactor, shieldCatch } from './powers.js';
 // Dano, projéteis, explosões, torres e temporizadores.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr, chance } from './utils.js';
+import { rr, chance, fmt } from './utils.js';
 import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
 import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
@@ -125,10 +125,13 @@ export function applyStatus(e, o) {
   }
   if (o.slow) e.slowT = Math.max(e.slowT || 0, o.slow * (e.boss ? 0.5 : 1));
   if (o.freeze && !e.boss) {
-    e.stun = Math.max(e.stun, o.freeze * (e.heavy ? 0.5 : 1));
+    e.stun = Math.max(e.stun, o.freeze * stunK(e));
     e.frozenT = e.stun;
   }
 }
+
+// quanto do atordoamento pega: pesados resistem; o Behemoth resiste muito e não é interrompido no meio de um golpe
+const stunK = (e) => (e.T.big ? (e.bm ? 0 : 0.35) : e.heavy ? 0.5 : 1);
 
 let shieldHintShown = false;
 export function damageEnemy(e, amount, crit, o = {}) {
@@ -189,7 +192,7 @@ export function damageEnemy(e, amount, crit, o = {}) {
     e.kx += (dx / l) * k;
     e.kz += (dz / l) * k;
   }
-  if (o.stun && !e.boss) e.stun = Math.max(e.stun, o.stun * (e.heavy ? 0.5 : 1));
+  if (o.stun && !e.boss) e.stun = Math.max(e.stun, o.stun * stunK(e));
   if (!o.dot) burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 7 : 4, 3, 0.05, 0.3);
   if (e.hp <= 0) killEnemy(e);
   return amount;
@@ -214,10 +217,14 @@ export function killEnemy(e) {
     });
   } else if (!e.selfDestruct && !e.decoy) {
     gainXp(e.xp);
-    dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss, thief: e.type === 'thief' });
+    const credits = dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss, thief: e.type === 'thief', beast: !!e.T.big });
     if (e.type === 'thief') {
       banner(L('JACKPOT!', 'JACKPOT!'), L('Ladrão de Dados derrubado', 'Data Thief taken down'));
       sfx.legendary();
+    } else if (e.T.big) {
+      banner(L('FERA ABATIDA!', 'BEAST SLAIN!'), L(`Behemoth Furioso derrubado · ${fmt(credits)}¢ no chão`, `Raging Behemoth taken down · ${fmt(credits)}¢ on the ground`));
+      sfx.legendary();
+      G.shake = Math.max(G.shake, 0.6);
     }
     G.char.kills = (G.char.kills || 0) + 1;
     runKill(e);
