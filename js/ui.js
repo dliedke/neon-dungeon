@@ -1889,7 +1889,7 @@ function renderStashDetail() {
   const el = $('stash-detail');
   const it = stashFind(stashSel);
   if (!it) {
-    el.innerHTML = `<div class="empty-detail">${L('Os itens guardados aqui ficam para <b>todos os seus personagens</b>.<br><br>Clique duas vezes (ou {A} no controle) para guardar ou pegar.', 'Items stored here are shared by <b>all your characters</b>.<br><br>Double-click (or {A} on a gamepad) to store or take.').replace(/\{A\}/g, glyph('a'))}</div>`;
+    el.innerHTML = `<div class="empty-detail">${L('Os itens guardados aqui ficam para <b>todos os seus personagens</b>.<br><br>Clique duas vezes (ou {A} no controle) para guardar ou pegar.<br><br><b>Equipar</b> veste o item direto do baú, e o que você usava vai para o lugar dele.', 'Items stored here are shared by <b>all your characters</b>.<br><br>Double-click (or {A} on a gamepad) to store or take.<br><br><b>Equip</b> wears the item straight from the stash, and what you had on takes its place.').replace(/\{A\}/g, glyph('a'))}</div>`;
     return;
   }
   const c = G.char;
@@ -1897,13 +1897,53 @@ function renderStashDetail() {
   let btn;
   if (stashSel.where === 'sinv') btn = `<button class="btn small" data-nav data-sact="put" ${stashList().length >= STASH_SIZE ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
   else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
-  else btn = `<button class="btn small" data-nav data-sact="take" ${c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+  else {
+    // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
+    const old = c.equip[it.slot];
+    const tip = old ? L('Troca com o item equipado, que vai para o baú', 'Swaps with the equipped item, which goes to the stash') : '';
+    btn = `<button class="btn small" data-nav data-sact="equip" title="${tip}">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}</button>`;
+    btn += `<button class="btn small" data-nav data-sact="take" ${c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+  }
   const bf = betterFor(it);
   const note = (lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '') + (bf.length ? `<div class="it-cmp better-for">▲ ${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => `<b style="color:${CLASSES[k].css}">${CLASSES[k].name}</b>`).join(', ')}</div>` : '');
   const cur = lock ? null : c.equip[it.slot];
   // o botão vem antes do cartão: no celular deitado ele fica sempre à vista
   el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '');
-  el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => stashMove(stashSel.where, it.uid)));
+  el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => (b.dataset.sact === 'equip' ? stashEquip(it.uid) : stashMove(stashSel.where, it.uid))));
+}
+
+// Equipa um item do baú; o que estava equipado ocupa a mesma casa no baú
+function stashEquip(uid) {
+  const c = G.char;
+  const st = stashList();
+  const idx = st.findIndex((i) => i.uid === uid);
+  if (idx < 0) return;
+  const it = st[idx];
+  if (otherClassWeapon(it)) {
+    sfx.deny();
+    toast(onlyClassMsg(it), 'warn');
+    return;
+  }
+  const old = c.equip[it.slot];
+  delete it.st;
+  if (!G.save.stashOut) G.save.stashOut = {};
+  G.save.stashOut[uid] = Date.now();
+  c.equip[it.slot] = it;
+  if (old) {
+    old.st = Date.now();
+    st.splice(idx, 1, old);
+  } else st.splice(idx, 1);
+  refreshStats();
+  sfx.pickup();
+  const name = (x) => `<span style="color:${RARITY[x.rarity].color}">${itemName(x)}</span>`;
+  toast(`${L('Equipado', 'Equipped')}: ${name(it)}` + (old ? `<br><small>📦 ${name(old)} ${L('foi para o baú', 'went to the stash')}</small>` : ''), 'item');
+  // seleciona o item trocado, para dar para desfazer na hora
+  stashSel = old ? { where: 'stash', uid: old.uid } : null;
+  saveGame();
+  renderStash();
+  const cell = document.querySelectorAll('#stash-grid > .cell')[idx];
+  if (G.lastInput === 'pad' && cell) restoreFocus(cell);
+  else clearFocus();
 }
 
 // where: de onde o item sai ('stash' = do baú para o inventário, 'sinv' = do inventário para o baú)
