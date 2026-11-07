@@ -444,6 +444,9 @@ body.pad .cell.empty { pointer-events: auto; }
 .cell .up.other { color: #4dc3ff; font-size: 12px; text-shadow: 0 0 6px #4dc3ff, 0 0 2px #000; }
 .stash-ups { color: #39ff88; text-shadow: 0 0 6px rgba(57, 255, 136, 0.6); margin-right: 8px; }
 .it-cmp.better-for { color: #9fe9ff; }
+/* legenda dos botões do baú (o que cada um faz) */
+.sact-hint { flex-basis: 100%; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.sact-hint b { color: #e8e6ff; font-weight: 700; }
 .cell .fav { position: absolute; left: 3px; top: 1px; color: #ffd23d; font-size: 14px; line-height: 1; text-shadow: 0 0 6px #ffd23d, 0 0 2px #000; pointer-events: none; }
 /* itens melhores que o equipado: brilho verde pulsante */
 .cell.better { animation: betterPulse 1.4s ease-in-out infinite; }
@@ -689,7 +692,7 @@ body.pad .pad-hints { display: block; }
   .stash-grid, #stash-inv { grid-template-columns: repeat(6, 1fr); gap: 4px; max-height: calc(100vh - 150px); }
   .stash-detail-col { grid-column: auto; position: sticky; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; }
   #stash-detail .detail-actions { margin: 0 0 6px; }
-  #panel-stash .shop-sub { display: none; }
+  #panel-stash .shop-sub, .sact-hint { display: none; }
   #stash-detail .item-card { padding: 8px; }
   #stash-detail .it-name { font-size: 15px; }
 }

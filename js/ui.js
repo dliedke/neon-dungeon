@@ -1895,15 +1895,22 @@ function renderStashDetail() {
   const c = G.char;
   const lock = otherClassWeapon(it);
   let btn;
-  if (stashSel.where === 'sinv') btn = `<button class="btn small" data-nav data-sact="put" ${stashList().length >= STASH_SIZE ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
-  else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
+  let hint = ''; // legenda do que cada botão faz
+  if (stashSel.where === 'sinv') {
+    const full = stashList().length >= STASH_SIZE;
+    btn = `<button class="btn small" data-nav data-sact="put" ${full ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
+    hint = `<b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L('o baú está cheio (100 itens).', 'the stash is full (100 items).') : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}`;
+  } else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else {
     // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
     const old = c.equip[it.slot];
-    const tip = old ? L('Troca com o item equipado, que vai para o baú', 'Swaps with the equipped item, which goes to the stash') : '';
-    btn = `<button class="btn small" data-nav data-sact="equip" title="${tip}">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}</button>`;
-    btn += `<button class="btn small" data-nav data-sact="take" ${c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+    const full = c.inv.length >= INV_SIZE;
+    btn = `<button class="btn small" data-nav data-sact="equip">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}</button>`;
+    btn += `<button class="btn small" data-nav data-sact="take" ${full ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+    hint = `<div><b>${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}:</b> ${old ? L(`veste este item agora; o seu <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> vai para o lugar dele no baú.`, `wears this item now; your <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> goes into its place in the stash.`) : L('veste este item agora.', 'wears this item now.')}</div>`;
+    hint += `<div><b>${L('Pegar', 'Take')}:</b> ${full ? L(`seu inventário está cheio (${INV_SIZE}/${INV_SIZE}); use Equipar ou libere espaço.`, `your inventory is full (${INV_SIZE}/${INV_SIZE}); use Equip or free up space.`) : L('leva o item para o seu inventário.', 'moves the item to your inventory.')}</div>`;
   }
+  if (hint) btn += `<div class="sact-hint">${hint}</div>`;
   const bf = betterFor(it);
   const note = (lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '') + (bf.length ? `<div class="it-cmp better-for">▲ ${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => `<b style="color:${CLASSES[k].css}">${CLASSES[k].name}</b>`).join(', ')}</div>` : '');
   const cur = lock ? null : c.equip[it.slot];
