@@ -296,6 +296,9 @@ export function setupFloorEvents(d, floor, boss, rooms) {
   combo.n = 0;
   combo.t = 0;
   G.contract = null;
+  // andar limpo: conta os inimigos do começo (a batalha final não vale)
+  const n0 = enemiesLeft();
+  G.clear = isFinalFloor(floor) || !n0 ? null : { start: n0, left: n0, done: false, t: 0 };
   if (floor < 2 || isFinalFloor(floor)) return;
   // Fenda de Desafio em uma sala longe do início (não aparece em andar de chefe)
   if (!boss && rooms.length && chance(floor < 4 ? 0.35 : 0.5)) {
@@ -409,9 +412,50 @@ export function runFloorDone() {
   if (G.anomaly) achMark('anomaliesDone', G.anomaly);
 }
 
+// ------------------------------------------------------------------
+// Andar limpo: derrotar todos os inimigos do andar dá créditos e conta para medalhas
+// (não contam barris, chamarizes, pilares do OMEGA nem o Ladrão de Dados, que pode fugir)
+// ------------------------------------------------------------------
+function enemiesLeft() {
+  let n = 0;
+  for (const e of G.enemies) if (e.alive && !e.inert && !e.decoy && e.type !== 'thief' && e.type !== 'pylon') n++;
+  return n;
+}
+export function clearBonus(floor = G.floor) {
+  return Math.round((150 + floor * 40) * (1 + (G.char ? G.char.tier | 0 : 0) * 0.5));
+}
+function updateClear(dt) {
+  const K = G.clear;
+  if (!K || K.done || G.final || !G.player || !G.player.alive) return;
+  K.t -= dt;
+  if (K.t > 0) return;
+  K.t = 0.25;
+  K.left = enemiesLeft();
+  // fenda aberta ainda manda ondas: só conta quando ela fechar
+  if (K.left > 0 || G.pickups.some((pk) => pk.type === 'rift' && pk.state === 'active')) return;
+  K.done = true;
+  // em andar de chefe espera o aviso do chefe passar
+  after(isBossFloor(G.floor) ? 2.6 : 0.4, () => {
+    if (G.clear !== K || !G.player || !G.char) return;
+    const p = G.player;
+    const cr = clearBonus();
+    G.char.credits += cr;
+    achAdd('clears');
+    achAdd('credits', cr);
+    if (K.start >= 30) achMark('flags', 'clearBig');
+    banner(L('ANDAR LIMPO!', 'FLOOR CLEARED!'), L(`Nenhum inimigo restante · +${cr}¢`, `No enemies left · +${cr}¢`));
+    sfx.legendary();
+    ringFx(p.x, p.z, 4, 0x39ff88, 0.7);
+    burst(p.x, 1.2, p.z, 0x39ff88, 46, 7, 0.08, 0.9, { up: 1.6 });
+    floatText(p.x, 2.4, p.z, `+${cr}¢`, 'up');
+    saveGame();
+  });
+}
+
 let implantDelay = 0;
 export function updateRun(dt) {
   updateRifts(dt);
+  updateClear(dt);
   if (combo.t > 0) {
     combo.t -= dt;
     if (combo.t <= 0) combo.n = 0;
@@ -449,6 +493,9 @@ export function runHud() {
     const st = C.done ? 'done' : C.failed ? 'fail' : '';
     h += `<div class="ri-con ${st}">📜 ${C.text}<b>${C.done ? ' ✔' : C.failed ? ' ✖' : ` ${Math.min(C.cur, C.goal)}/${C.goal}${time}`}</b></div>`;
   }
+  const K = G.clear;
+  if (K && K.done) h += `<div class="ri-con ri-clear done">🧹 ${L('Andar limpo', 'Floor cleared')}<b> ✔</b></div>`;
+  else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${clearBonus()}¢</b></div>`;
   if (hudCache.info !== h) {
     hudCache.info = h;
     $('run-info').innerHTML = h;

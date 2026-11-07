@@ -236,6 +236,7 @@ function buildFloor(floor, withEnemies = true) {
   G.theme = theme;
   // anomalia do andar: sorteada antes de povoar (muda quantidade e força dos inimigos)
   G.contract = null;
+  G.clear = null;
   if (withEnemies) rollAnomaly(floor);
   else G.anomaly = null;
   const d = generateDungeon(floor);

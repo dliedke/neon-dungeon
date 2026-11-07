@@ -409,6 +409,16 @@ export function refreshKeyLabels() {
   const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb'), glyph('rb'), glyph('lt')] : ['LMB', '1', '2', '3', '4', '5', '6'];
   labels.forEach((l, k) => ($('sk' + k).querySelector('.key').innerHTML = l));
   $('skstim').querySelector('.key').innerHTML = pad ? glyph('ls') : 'F';
+  mmHint();
+}
+
+// Selo de lupa no minimapa: mostra o botão que abre o mapa inteiro e pulsa até o jogador abrir uma vez
+function mmHint() {
+  const k = $('mm-key');
+  if (!k) return;
+  k.innerHTML = G.lastInput === 'pad' ? glyph('rs') : G.lastInput === 'touch' || G.isTouch ? '' : 'M';
+  $('mm-hint').classList.toggle('fresh', !G.settings.mapSeen);
+  $('minimap-wrap').title = L('Abrir o mapa inteiro', 'Open the full map');
 }
 
 // Textos com ícones de controle (dicas do inventário e tela de controles)
@@ -735,9 +745,16 @@ function drawMapMarks(ctx, d, p, near) {
     ctx.arc(ex.x, ex.z, 1.4, 0, Math.PI * 2);
     ctx.fill();
   }
-  // inimigos próximos
+  // inimigos próximos (quando faltam poucos para limpar o andar, aparecem todos, mesmo longe ou no escuro)
+  const hunt = G.clear && !G.clear.done && G.clear.left <= 5;
   for (const e of G.enemies) {
     if (!e.alive || e.type === 'thief') continue;
+    if (hunt && !e.inert && !e.decoy && e.type !== 'pylon') {
+      const k = 1 + Math.sin(G.t * 7) * 0.3;
+      ctx.fillStyle = e.boss ? '#ff2244' : '#ff4466';
+      ctx.fillRect(e.x - 0.7 * k, e.z - 0.7 * k, 1.4 * k, 1.4 * k);
+      continue;
+    }
     if (near && (Math.abs(e.x - p.x) > near || Math.abs(e.z - p.z) > near)) continue;
     if (e.inert) {
       if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
@@ -811,8 +828,13 @@ function drawMapMarks(ctx, d, p, near) {
 function drawThiefArrows(ctx, W, sc) {
   const p = G.player;
   const c = Math.SQRT1_2;
+  // quando faltam poucos inimigos para limpar o andar, setas vermelhas apontam para eles
+  const hunt = G.clear && !G.clear.done && G.clear.left <= 5;
   for (const e of G.enemies) {
-    if (!e.alive || e.type !== 'thief') continue;
+    if (!e.alive) continue;
+    const thief = e.type === 'thief';
+    if (!thief && !(hunt && !e.inert && !e.decoy && e.type !== 'pylon')) continue;
+    const col = thief ? '#ffd23d' : '#ff4466';
     const dx = e.x - p.x;
     const dz = e.z - p.z;
     const sx = (dx * c - dz * c) * sc;
@@ -825,9 +847,10 @@ function drawThiefArrows(ctx, W, sc) {
     ctx.translate(W / 2 + Math.cos(a) * R, W / 2 + Math.sin(a) * R);
     ctx.rotate(a);
     ctx.globalAlpha = 0.75 + Math.sin(G.t * 8) * 0.25;
-    ctx.fillStyle = '#ffd23d';
-    ctx.shadowColor = '#ffd23d';
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
     ctx.shadowBlur = 8;
+    if (!thief) ctx.scale(0.75, 0.75);
     ctx.beginPath();
     ctx.moveTo(8, 0);
     ctx.lineTo(-5, -6.5);
@@ -852,6 +875,11 @@ export function toggleBigMap(force) {
   bigOpen = open;
   $('bigmap').classList.toggle('hidden', !open);
   if (!open) return;
+  if (!G.settings.mapSeen) {
+    G.settings.mapSeen = true;
+    saveSettings();
+    mmHint();
+  }
   sfx.click && sfx.click();
   const cv = $('bigmap-cv');
   const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -1094,7 +1122,7 @@ export function renderChar() {
 let treeSel = 1;
 const TIERS = [
   { label: [1, 1], idx: [0, 1] },
-  { label: [2, 4], idx: [2, 9, 3] },
+  { label: [2, 4], idx: [2, 9, 12, 3] },
   { label: [5, 9], idx: [4, 5, 10, 6] },
   { label: [12, 15], idx: [7, 11, 8] },
 ];

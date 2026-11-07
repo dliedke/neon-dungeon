@@ -292,6 +292,9 @@ function computeAim(p) {
     pdx = w.x / l;
     pdz = w.z / l;
   }
+  // direção livre (cursor, analógico direito ou para onde anda), usada pelo Teleporte
+  const mouse = G.lastInput === 'kb' && G.mouseWorld.ok;
+  p.pref = { dx: pdx, dz: pdz, x: mouse ? G.mouseWorld.x : null, z: mouse ? G.mouseWorld.z : null };
   // alvo: o clicado, o que está sob o cursor, ou o melhor inimigo visível
   let t = (p.target && p.target.alive && p.target) || (G.lastInput === 'kb' && G.hoverEnemy && G.hoverEnemy.alive && G.hoverEnemy) || null;
   if (!t) t = assistTarget(p, pdx, pdz, -1);

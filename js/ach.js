@@ -170,6 +170,11 @@ export function achList() {
   add('contract1', '📜', 0, L('Freelancer', 'Freelancer'), L('Cumpra um contrato', 'Complete a contract'), () => total('contracts'));
   add('contract10', '🖋️', 1, L('Mercenário', 'Mercenary'), L('Cumpra 10 contratos', 'Complete 10 contracts'), () => total('contracts'), 10);
   add('contract50', '🎩', 2, L('Lenda dos Contratos', 'Contract Legend'), L('Cumpra 50 contratos', 'Complete 50 contracts'), () => total('contracts'), 50);
+  add('clear1', '🧹', 0, L('Faxina Completa', 'Clean Sweep'), L('Limpe um andar inteiro: nenhum inimigo restante', 'Clear a whole floor: no enemies left'), () => total('clears'));
+  add('clear10', '🧽', 1, L('Pente-Fino', 'Fine-Tooth Comb'), L('Limpe 10 andares inteiros', 'Clear 10 whole floors'), () => total('clears'), 10);
+  add('clear50', '🏙️', 2, L('Zelador do Submundo', 'Underworld Janitor'), L('Limpe 50 andares inteiros', 'Clear 50 whole floors'), () => total('clears'), 50);
+  add('clear150', '✨', 3, L('Nem Um Parafuso Solto', 'Not a Bolt Left'), L('Limpe 150 andares inteiros', 'Clear 150 whole floors'), () => total('clears'), 150);
+  add('clearBig', '🧨', 2, L('Arrastão', 'Dragnet'), L('Limpe um andar que começou com 30 inimigos ou mais', 'Clear a floor that started with 30 or more enemies'), () => (has('flags', 'clearBig') ? 1 : 0));
   add('rift1', '🌀', 0, L('Fenda Fechada', 'Rift Closed'), L('Feche uma Fenda de Desafio', 'Close a Challenge Rift'), () => total('rifts'));
   add('rift10', '🌌', 2, L('Caçador de Fendas', 'Rift Hunter'), L('Feche 10 Fendas de Desafio', 'Close 10 Challenge Rifts'), () => total('rifts'), 10);
   add('combo25', '🔥', 1, L('Imparável', 'Unstoppable'), L('Faça um combo de 25 abates', 'Reach a 25-kill combo'), () => (has('flags', 'combo25') ? 1 : 0));

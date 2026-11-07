@@ -43,104 +43,154 @@ function part(g, w, h, d, c, x, y, z) {
   return m;
 }
 
-// modelos low-poly olhando para +z
-function makePetModel(kind, accent) {
+// modelos low-poly olhando para +z (olhos, focinho e orelhas são filhos da cabeça e viram junto)
+export function makePetModel(kind, accent) {
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
   const m = { root, body, legs: [], kind };
   const eye = mat(0x111111);
+  const shine = mat(0xffffff);
+  const pink = mat(0xf09aa8);
   const collar = glowMat(accent, 2.2);
-  const legs = (c, w, h, xs, zs) => {
+  // olho com brilhinho
+  const eyes = (g, x, y, z, s = 0.035, c = eye) => {
+    for (const sx of [-1, 1]) {
+      const e = part(g, s, s * 1.15, 0.02, c, sx * x, y, z);
+      if (c === eye) part(e, s * 0.4, s * 0.4, 0.005, shine, -s * 0.2, s * 0.25, 0.011);
+    }
+  };
+  // coleira com plaquinha
+  const collarRing = (w, y, z, d = 0.04) => {
+    part(body, w, 0.04, d, collar, 0, y, z);
+    part(body, 0.035, 0.04, 0.012, glowMat(0xffd23d, 1.8), 0, y - 0.035, z + d / 2 + 0.005);
+  };
+  const legs = (c, w, h, xs, zs, paw) => {
     for (const x of xs) for (const z of zs) {
       const l = part(body, w, h, w, c, x, h / 2, z);
+      if (paw) part(l, w * 1.1, 0.03, w * 1.25, paw, 0, -h / 2 + 0.015, 0.01);
       m.legs.push(l);
     }
   };
   if (kind === 'rabbit') {
     part(body, 0.26, 0.24, 0.34, 0xe8e2da, 0, 0.2, 0);
+    part(body, 0.18, 0.15, 0.04, 0xffffff, 0, 0.18, 0.16); // barriga
     m.head = part(body, 0.2, 0.2, 0.2, 0xe8e2da, 0, 0.36, 0.17);
-    m.earL = part(body, 0.05, 0.22, 0.04, 0xf0c8c8, -0.05, 0.54, 0.14);
-    m.earR = part(body, 0.05, 0.22, 0.04, 0xf0c8c8, 0.05, 0.54, 0.14);
-    part(body, 0.1, 0.1, 0.08, 0xffffff, 0, 0.24, -0.2);
-    part(body, 0.03, 0.04, 0.02, eye, -0.06, 0.39, 0.27);
-    part(body, 0.03, 0.04, 0.02, eye, 0.06, 0.39, 0.27);
-    part(body, 0.22, 0.04, 0.04, collar, 0, 0.29, 0.1);
-    legs(0xd8d0c6, 0.07, 0.1, [-0.08, 0.08], [-0.1, 0.1]);
+    part(m.head, 0.1, 0.06, 0.03, 0xffffff, 0, -0.04, 0.1); // focinho
+    part(m.head, 0.04, 0.03, 0.02, pink, 0, -0.01, 0.115);
+    eyes(m.head, 0.06, 0.03, 0.1);
+    part(m.head, 0.04, 0.025, 0.01, mat(0xf4c0c8), -0.075, -0.03, 0.101);
+    part(m.head, 0.04, 0.025, 0.01, mat(0xf4c0c8), 0.075, -0.03, 0.101);
+    m.earL = part(m.head, 0.06, 0.22, 0.04, 0xe8e2da, -0.05, 0.18, -0.03);
+    m.earR = part(m.head, 0.06, 0.22, 0.04, 0xe8e2da, 0.05, 0.18, -0.03);
+    for (const ear of [m.earL, m.earR]) part(ear, 0.03, 0.16, 0.01, pink, 0, 0, 0.021);
+    part(body, 0.11, 0.11, 0.09, 0xffffff, 0, 0.25, -0.2); // pompom
+    collarRing(0.22, 0.29, 0.1);
+    legs(0xd8d0c6, 0.07, 0.1, [-0.08, 0.08], [-0.1, 0.1], 0xffffff);
   } else if (kind === 'dog' || kind === 'fox') {
-    const c = kind === 'dog' ? 0xb07840 : 0xe8661c;
-    const c2 = kind === 'dog' ? 0x6a4422 : 0xffffff;
+    const fox = kind === 'fox';
+    const c = fox ? 0xe8661c : 0xb07840;
+    const c2 = fox ? 0xffffff : 0x6a4422;
     part(body, 0.26, 0.24, 0.46, c, 0, 0.32, 0);
+    part(body, 0.2, 0.16, 0.04, fox ? 0xffffff : 0xd8a870, 0, 0.3, 0.23); // peito
+    if (!fox) part(body, 0.12, 0.02, 0.16, c2, 0.05, 0.445, -0.08); // mancha
     m.head = part(body, 0.24, 0.22, 0.22, c, 0, 0.48, 0.28);
-    part(body, 0.12, 0.1, 0.12, c2, 0, 0.43, 0.42);
-    part(body, 0.05, 0.05, 0.03, eye, 0, 0.47, 0.48);
-    part(body, 0.03, 0.04, 0.02, eye, -0.07, 0.52, 0.39);
-    part(body, 0.03, 0.04, 0.02, eye, 0.07, 0.52, 0.39);
-    if (kind === 'dog') {
-      m.earL = part(body, 0.06, 0.16, 0.08, c2, -0.13, 0.48, 0.26);
-      m.earR = part(body, 0.06, 0.16, 0.08, c2, 0.13, 0.48, 0.26);
+    part(m.head, 0.12, 0.1, 0.12, c2, 0, -0.05, 0.14); // focinho
+    part(m.head, 0.05, 0.04, 0.03, eye, 0, -0.01, 0.2); // nariz
+    if (!fox) part(m.head, 0.05, 0.02, 0.05, pink, 0, -0.1, 0.17); // linguinha
+    eyes(m.head, 0.07, 0.04, 0.111);
+    if (fox) {
+      m.earL = part(m.head, 0.07, 0.12, 0.05, c, -0.08, 0.16, -0.02);
+      m.earR = part(m.head, 0.07, 0.12, 0.05, c, 0.08, 0.16, -0.02);
+      for (const ear of [m.earL, m.earR]) {
+        part(ear, 0.071, 0.04, 0.051, 0x2a1810, 0, 0.045, 0);
+        part(ear, 0.035, 0.07, 0.01, 0xffffff, 0, -0.01, 0.026);
+      }
     } else {
-      m.earL = part(body, 0.07, 0.12, 0.05, c, -0.08, 0.64, 0.26);
-      m.earR = part(body, 0.07, 0.12, 0.05, c, 0.08, 0.64, 0.26);
+      m.earL = part(m.head, 0.06, 0.16, 0.08, c2, -0.13, 0, -0.02);
+      m.earR = part(m.head, 0.06, 0.16, 0.08, c2, 0.13, 0, -0.02);
     }
     m.tail = new THREE.Group();
     m.tail.position.set(0, 0.4, -0.23);
     body.add(m.tail);
-    part(m.tail, 0.07, 0.07, kind === 'fox' ? 0.3 : 0.22, kind === 'fox' ? c : c, 0, 0.04, -0.12).rotation.x = 0.6;
-    if (kind === 'fox') part(m.tail, 0.08, 0.08, 0.08, 0xffffff, 0, 0.12, -0.26);
-    part(body, 0.27, 0.05, 0.05, collar, 0, 0.42, 0.18);
-    legs(c, 0.08, 0.22, [-0.09, 0.09], [-0.16, 0.16]);
+    if (fox) {
+      part(m.tail, 0.1, 0.1, 0.3, c, 0, 0.04, -0.12).rotation.x = 0.6;
+      part(m.tail, 0.11, 0.11, 0.1, 0xffffff, 0, 0.13, -0.26);
+    } else part(m.tail, 0.07, 0.07, 0.22, c, 0, 0.04, -0.12).rotation.x = 0.6;
+    collarRing(0.27, 0.42, 0.18, 0.05);
+    legs(fox ? 0x3a2418 : c, 0.08, 0.22, [-0.09, 0.09], [-0.16, 0.16], fox ? 0x2a1810 : 0xe8d8c0);
   } else if (kind === 'cat') {
     const c = pick([0x3a3a40, 0xd88a3a, 0xc8c8c8]);
+    const dk = new THREE.Color(c).multiplyScalar(0.6).getHex();
     part(body, 0.2, 0.18, 0.38, c, 0, 0.26, 0);
+    for (const z of [0.1, -0.02, -0.14]) part(body, 0.21, 0.02, 0.05, dk, 0, 0.35, z); // listras
     m.head = part(body, 0.2, 0.18, 0.18, c, 0, 0.4, 0.22);
-    m.earL = part(body, 0.06, 0.08, 0.04, c, -0.06, 0.52, 0.2);
-    m.earR = part(body, 0.06, 0.08, 0.04, c, 0.06, 0.52, 0.2);
-    part(body, 0.04, 0.04, 0.02, glowMat(0x9aff3a, 1.6), -0.05, 0.42, 0.315);
-    part(body, 0.04, 0.04, 0.02, glowMat(0x9aff3a, 1.6), 0.05, 0.42, 0.315);
+    part(m.head, 0.1, 0.06, 0.03, 0xf0ece4, 0, -0.04, 0.09); // focinho
+    part(m.head, 0.03, 0.02, 0.01, pink, 0, -0.015, 0.106);
+    eyes(m.head, 0.05, 0.02, 0.095, 0.04, glowMat(0x9aff3a, 1.6));
+    for (const sx of [-1, 1]) part(m.head, 0.1, 0.006, 0.006, 0xffffff, sx * 0.09, -0.04, 0.09).rotation.z = sx * 0.15; // bigodes
+    m.earL = part(m.head, 0.06, 0.09, 0.04, c, -0.06, 0.12, -0.02);
+    m.earR = part(m.head, 0.06, 0.09, 0.04, c, 0.06, 0.12, -0.02);
+    m.earL.rotation.z = 0.25;
+    m.earR.rotation.z = -0.25;
+    for (const ear of [m.earL, m.earR]) part(ear, 0.03, 0.05, 0.01, pink, 0, -0.01, 0.021);
     m.tail = new THREE.Group();
     m.tail.position.set(0, 0.3, -0.19);
     body.add(m.tail);
-    part(m.tail, 0.05, 0.32, 0.05, c, 0, 0.15, -0.02);
-    part(body, 0.21, 0.04, 0.04, collar, 0, 0.34, 0.14);
-    legs(c, 0.06, 0.18, [-0.07, 0.07], [-0.13, 0.13]);
+    part(m.tail, 0.05, 0.24, 0.05, c, 0, 0.11, -0.02);
+    part(m.tail, 0.05, 0.12, 0.05, dk, 0, 0.27, 0.02).rotation.x = 0.5;
+    collarRing(0.21, 0.34, 0.14);
+    legs(c, 0.06, 0.18, [-0.07, 0.07], [-0.13, 0.13], 0xf0ece4);
   } else if (kind === 'bird') {
     const c = pick([0x3aa8ff, 0xffd23d, 0xff5a5a, 0x7affc8]);
+    const dk = new THREE.Color(c).multiplyScalar(0.55).getHex();
     part(body, 0.16, 0.16, 0.24, c, 0, 0, 0);
+    part(body, 0.12, 0.11, 0.04, 0xfff4e0, 0, -0.02, 0.11); // peito
     m.head = part(body, 0.14, 0.14, 0.14, c, 0, 0.1, 0.13);
-    part(body, 0.05, 0.04, 0.08, 0xffa020, 0, 0.09, 0.23);
-    part(body, 0.03, 0.03, 0.02, eye, -0.05, 0.13, 0.2);
-    part(body, 0.03, 0.03, 0.02, eye, 0.05, 0.13, 0.2);
-    part(body, 0.1, 0.03, 0.12, c, 0, 0.02, -0.17);
+    part(m.head, 0.05, 0.04, 0.08, 0xffa020, 0, -0.01, 0.1); // bico
+    eyes(m.head, 0.05, 0.03, 0.07, 0.03);
+    for (let i = 0; i < 3; i++) part(m.head, 0.03, 0.07, 0.03, dk, 0, 0.09, 0.02 - i * 0.04).rotation.x = -0.5 - i * 0.2; // topete
+    for (const sx of [-1, 1]) part(body, 0.05, 0.03, 0.18, dk, sx * 0.03, 0.02, -0.18).rotation.y = sx * 0.25; // cauda
+    for (const sx of [-1, 1]) part(body, 0.025, 0.06, 0.04, 0xffa020, sx * 0.04, -0.1, 0.02); // pezinhos
     m.wingL = new THREE.Group();
     m.wingL.position.set(-0.08, 0.04, 0);
     body.add(m.wingL);
     part(m.wingL, 0.22, 0.03, 0.14, c, -0.11, 0, 0);
+    part(m.wingL, 0.08, 0.031, 0.14, dk, -0.19, 0, -0.01);
     m.wingR = new THREE.Group();
     m.wingR.position.set(0.08, 0.04, 0);
     body.add(m.wingR);
     part(m.wingR, 0.22, 0.03, 0.14, c, 0.11, 0, 0);
+    part(m.wingR, 0.08, 0.031, 0.14, dk, 0.19, 0, -0.01);
     part(body, 0.17, 0.03, 0.03, collar, 0, 0.05, 0.08);
   } else if (kind === 'penguin') {
     part(body, 0.24, 0.34, 0.2, 0x1a1a24, 0, 0.24, 0);
     part(body, 0.16, 0.26, 0.04, 0xf4f4f4, 0, 0.22, 0.1);
     m.head = part(body, 0.18, 0.16, 0.16, 0x1a1a24, 0, 0.48, 0.01);
-    part(body, 0.06, 0.04, 0.08, 0xffa020, 0, 0.47, 0.12);
-    part(body, 0.03, 0.03, 0.02, 0xffffff, -0.05, 0.51, 0.09);
-    part(body, 0.03, 0.03, 0.02, 0xffffff, 0.05, 0.51, 0.09);
+    part(m.head, 0.12, 0.08, 0.02, 0xf4f4f4, 0, -0.01, 0.08); // rosto
+    part(m.head, 0.06, 0.04, 0.08, 0xffa020, 0, -0.01, 0.11);
+    eyes(m.head, 0.045, 0.03, 0.091, 0.03);
+    for (const sx of [-1, 1]) part(m.head, 0.03, 0.02, 0.01, mat(0xf4a0b0), sx * 0.06, -0.03, 0.091); // bochechas
+    part(m.head, 0.03, 0.06, 0.03, 0x1a1a24, 0, 0.1, 0); // topete
     m.wingL = part(body, 0.04, 0.2, 0.1, 0x1a1a24, -0.14, 0.26, 0);
     m.wingR = part(body, 0.04, 0.2, 0.1, 0x1a1a24, 0.14, 0.26, 0);
-    part(body, 0.25, 0.04, 0.21, collar, 0, 0.39, 0);
+    // cachecol
+    part(body, 0.25, 0.05, 0.21, collar, 0, 0.39, 0);
+    part(body, 0.05, 0.12, 0.02, collar, 0.07, 0.33, 0.11);
     legs(0xffa020, 0.08, 0.06, [-0.06, 0.06], [0.03]);
   } else {
     // tartaruga robô
     part(body, 0.34, 0.14, 0.4, 0x4a6a5a, 0, 0.16, 0);
     part(body, 0.26, 0.08, 0.32, 0x5a8a6a, 0, 0.26, 0);
     part(body, 0.2, 0.03, 0.24, collar, 0, 0.305, 0);
+    for (const sx of [-1, 1]) for (const z of [-0.1, 0.1]) part(body, 0.04, 0.035, 0.04, 0x2a3a32, sx * 0.07, 0.33, z); // parafusos
+    for (const sx of [-1, 1]) part(body, 0.02, 0.1, 0.36, glowMat(accent, 1.6), sx * 0.17, 0.16, 0); // faixa lateral
     m.head = part(body, 0.14, 0.12, 0.14, 0x7aa088, 0, 0.18, 0.26);
-    part(body, 0.03, 0.03, 0.02, glowMat(accent, 2), -0.04, 0.2, 0.33);
-    part(body, 0.03, 0.03, 0.02, glowMat(accent, 2), 0.04, 0.2, 0.33);
-    legs(0x7aa088, 0.08, 0.1, [-0.14, 0.14], [-0.13, 0.13]);
+    eyes(m.head, 0.04, 0.02, 0.071, 0.03, glowMat(accent, 2));
+    part(m.head, 0.015, 0.1, 0.015, 0x2a3a32, 0.03, 0.1, -0.02); // antena
+    part(m.head, 0.035, 0.035, 0.035, glowMat(accent, 2.4), 0.03, 0.16, -0.02);
+    part(body, 0.06, 0.05, 0.08, 0x7aa088, 0, 0.14, -0.22); // rabinho
+    legs(0x7aa088, 0.08, 0.1, [-0.14, 0.14], [-0.13, 0.13], 0x2a3a32);
   }
   root.scale.setScalar(1.25);
   m.shadow = addShadow(root, kind === 'bird' ? 0.14 : 0.2);

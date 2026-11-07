@@ -432,6 +432,13 @@ const PASSIVES = {
 };
 for (const [id, list] of Object.entries(PASSIVES)) CLASSES[id].skills.push(...list);
 
+// Teleporte para todas as classes (o Netrunner já tem o Salto de Rede). Fica no fim da lista
+// para não mudar a posição dos poderes nos saves antigos.
+for (const id of Object.keys(CLASSES)) {
+  if (id === 'netrunner') continue;
+  CLASSES[id].skills.push({ id: 'warp', req: 3, name: L('Teleporte', 'Teleport'), icon: 'blink', cost: 15, cd: 5, desc: (r) => L(`Teletransporta até 8m para onde você mira, fica invulnerável por um instante e solta um pulso de ${pct(0.8 * rankMult(r))} ao redor do destino.`, `Teleports up to 8m toward your aim, briefly invulnerable, and releases a ${pct(0.8 * rankMult(r))} pulse around the destination.`) });
+}
+
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
   const out = {};
@@ -573,7 +580,6 @@ export const SKILL_FN = {
     return true;
   },
   blink(p, r) {
-    const d = G.dungeon;
     let t = targetPoint(p, 7);
     if (p.aimEnemy) {
       const e = p.aimEnemy;
@@ -581,38 +587,60 @@ export const SKILL_FN = {
       const stop = Math.max(0, Math.min(7, l - 1.6));
       t = { x: p.x + p.aim.dx * stop, z: p.z + p.aim.dz * stop };
     }
-    let tx = t.x;
-    let tz = t.z;
-    const dx = tx - p.x;
-    const dz = tz - p.z;
-    const steps = 30;
-    let ok = false;
-    for (let s = 0; s <= steps; s++) {
-      const k = 1 - s / steps;
-      const x = p.x + dx * k;
-      const z = p.z + dz * k;
-      if (isWalkable(d, x, z) && isWalkable(d, x + 0.3, z) && isWalkable(d, x - 0.3, z) && isWalkable(d, x, z + 0.3) && isWalkable(d, x, z - 0.3)) {
-        tx = x;
-        tz = z;
-        ok = true;
-        break;
-      }
+    return teleport(p, t, CLASSES.netrunner.accent, 1.0 * rankMult(r), 1.9);
+  },
+  // Teleporte genérico (todas as classes): vai até o ponto mirado, sem parar antes do inimigo
+  warp(p, r) {
+    // vai para o cursor (até 8m); no controle/toque, 8m na direção do analógico ou do movimento.
+    // Não usa a mira automática: assim o teleporte também serve para fugir.
+    const f = p.pref || { dx: p.aim.dx, dz: p.aim.dz };
+    let t = { x: p.x + f.dx * 8, z: p.z + f.dz * 8 };
+    if (f.x != null) {
+      const l = Math.hypot(f.x - p.x, f.z - p.z);
+      if (l >= 2.5) t = { x: p.x + ((f.x - p.x) / l) * Math.min(8, l), z: p.z + ((f.z - p.z) / l) * Math.min(8, l) };
     }
-    if (!ok) return false;
-    burst(p.x, 0.8, p.z, CLASSES.netrunner.accent, 20, 4, 0.07, 0.4);
-    ghostFx(p.model, CLASSES.netrunner.accent);
-    p.x = tx;
-    p.z = tz;
-    p.path = null;
-    p.invuln = Math.max(p.invuln, 0.25);
-    const hits = enemiesInRadius(tx, tz, 1.9);
-    for (const e of hits) hitEnemy(e, 1.0 * rankMult(r), { knock: 3 });
-    ringFx(tx, tz, 1.9, CLASSES.netrunner.accent, 0.3);
-    burst(tx, 0.8, tz, CLASSES.netrunner.accent, 20, 5, 0.07, 0.4);
-    sfx.zap();
-    return true;
+    p.aim.dx = f.dx;
+    p.aim.dz = f.dz;
+    const c = CLASSES[G.char.cls].accent;
+    return teleport(p, t, c, 0.8 * rankMult(r), 2.2, true);
   },
 };
+
+// Teletransporta o jogador até o ponto livre mais distante na linha até t (com efeitos e dano no destino)
+function teleport(p, t, color, mult, radius, big) {
+  const d = G.dungeon;
+  let tx = t.x;
+  let tz = t.z;
+  const dx = tx - p.x;
+  const dz = tz - p.z;
+  const steps = 30;
+  let ok = false;
+  for (let s = 0; s <= steps; s++) {
+    const k = 1 - s / steps;
+    const x = p.x + dx * k;
+    const z = p.z + dz * k;
+    if (isWalkable(d, x, z) && isWalkable(d, x + 0.3, z) && isWalkable(d, x - 0.3, z) && isWalkable(d, x, z + 0.3) && isWalkable(d, x, z - 0.3)) {
+      tx = x;
+      tz = z;
+      ok = true;
+      break;
+    }
+  }
+  if (!ok || (big && Math.hypot(tx - p.x, tz - p.z) < 0.6)) return false;
+  burst(p.x, 0.8, p.z, color, big ? 30 : 20, 4, 0.07, 0.4);
+  ghostFx(p.model, color);
+  if (big) ringFx(p.x, p.z, 1.3, color, 0.3, { from: 0.9 });
+  p.x = tx;
+  p.z = tz;
+  p.path = null;
+  p.invuln = Math.max(p.invuln, big ? 0.4 : 0.25);
+  const hits = enemiesInRadius(tx, tz, radius);
+  for (const e of hits) hitEnemy(e, mult, { knock: 3 });
+  ringFx(tx, tz, radius, color, 0.3);
+  burst(tx, 0.8, tz, color, big ? 30 : 20, 5, 0.07, 0.4, big ? { up: 1 } : undefined);
+  sfx.zap();
+  return true;
+}
 
 // ---------------- Classes novas ----------------
 Object.assign(SKILL_FN, {

@@ -39,7 +39,7 @@ If two devices disagree, each class keeps the most advanced character and the be
 
 ### Skill tree
 
-Every class has a **skill tree with 9 active powers and 3 passive powers**. You start with only the basic attack and one skill;
+Every class has a **skill tree with 10 active powers and 3 passive powers** (the Netrunner has 9 plus its own Net Jump). You start with only the basic attack and one skill;
 new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn.
 Points also upgrade each power up to rank 10. Pick which **6 powers** go on your 1–6 buttons
 (X / Y / B / LB / RB / LT on a gamepad).
@@ -52,6 +52,8 @@ Some of the wilder powers: summoned demons (Oni, Digital Daemon, Ifrit), a steel
 orbiting blades, black holes, orbital lasers, lightning storms, time warps that slow enemies and their bullets,
 plasma shields that reflect shots, Mind Hack (enemies fight for you), Omnislash, Demon Form, Mech Suit,
 meteor showers, arrow hurricanes, a pandemic and a nuclear strike.
+
+Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 
 ## Controls
 
@@ -134,13 +136,14 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 - **Contracts:** an optional objective per floor (kill elites, kill fast, reach a combo, clear the floor, kill without getting hit, catch the Data Thief, close the rift...).
   Completing one pays credits and good items.
 - **Challenge Rifts:** stand on the rift to open it and survive 3 waves; the last one includes an elite. The reward is a guaranteed Prototype item and more.
+- **Floor cleared:** kill every enemy on a floor (the final battle doesn't count) for a credit bonus that grows with the floor and difficulty, plus its own medals. When 10 or fewer remain, the HUD shows how many are left.
 - **Kill combo:** chain kills quickly to build a combo. It adds bonus experience and pays credits every 10 kills.
 
-Thieves, shrines and rifts show up on the minimap once explored.
+Thieves, shrines and rifts show up on the minimap once explored. Click or tap the minimap (or press M) to open the full map.
 
 ## Medals
 
-**99 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**104 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
 legendaries, mythics, the blacksmith, credits, deaths and more. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
