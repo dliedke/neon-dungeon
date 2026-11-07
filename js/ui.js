@@ -1836,6 +1836,8 @@ function betterFor(it) {
     const ch = cls === cur ? G.char : G.save.slots[cls];
     if (!ch || !ch.equip) continue;
     if (it.slot === 'weapon' && it.cls && it.cls !== cls) continue;
+    // outros personagens só contam se já têm algo naquele espaço: espaço vazio (personagem novo) marcaria quase tudo
+    if (cls !== cur && !ch.equip[it.slot]) continue;
     if (isUpgrade(it, ch.equip)) out.push(cls);
   }
   return out;
