@@ -1,0 +1,276 @@
+# Architecture
+
+How Neon Dungeon works inside. For conventions and the deploy routine see [AGENTS.md](../AGENTS.md). For step-by-step recipes see [CONTENT.md](CONTENT.md).
+
+## Big picture
+
+- A single page (`index.html`) holds all HUD and menu markup. The 3D scene renders into `<canvas id="game">` beneath it.
+- `index.html` has an importmap that maps `three` to `vendor/three/`. Everything else is plain ES modules in `js/`, loaded from `js/main.js`.
+- There is no server code. Saves live in localStorage and, optionally, in the player's own Google Drive (`sync.js`).
+- Everything is generated in code: maps, 3D models, particles, icons (inline SVG), sound effects and music.
+
+### Module dependencies
+
+Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `ui` ↔ `player` …). ES modules allow that as long as no imported binding is used while modules are still evaluating. So:
+
+- Module top level may only define things: constants, tables, functions.
+- Calls into other modules happen inside functions that run after `boot()`.
+- Tables that need data from other modules are built lazily on first use (e.g. `achList()` in `ach.js`).
+- Translated names are fine at top level (`L()` from `i18n.js` has no dependencies).
+
+`music.js` is the only leaf module: it imports nothing and gets the `AudioContext` and an output node as arguments.
+
+## Global state (`state.js`)
+
+`G` is the single shared object. The important fields:
+
+| Field | Meaning |
+|---|---|
+| `mode` | Current screen. See [Modes](#modes). |
+| `t` | Game clock in seconds (only advances while frames run). |
+| `scene`, `camera`, `renderer`, `composer`, `bloom` | Three.js objects. |
+| `world` | `THREE.Group` holding everything that belongs to the current floor. `clearWorld()` drops it. |
+| `dungeon`, `theme`, `floor` | Current map object, biome definition and floor number. |
+| `player` | Runtime player entity (position, hp/en, cooldowns `cds[]`, `stats`, `buffs`, model). |
+| `char` | The persistent character (what is saved). See [Saves](#saves-and-cloud-sync). |
+| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach }`. |
+| `settings` | Options (`music`, `sfx`, `track`, `quality`, `shake`, `difficulty`, `glow`, `sv`). |
+| `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
+| `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |
+| `anomaly`, `contract`, `clear` | Per-floor run events (`run.js`). |
+| `lastInput`, `padType`, `isTouch` | Which input method is in use (`kb` / `pad` / `touch`) and which gamepad family. |
+| `mouseWorld`, `hoverEnemy`, `camFocus` | Mouse ray on the ground, hovered enemy, camera target. |
+
+`TILE` (`WALL`, `FLOOR`, `OBST`, `PIT`) are the map cell values. `gk(k)` scales emissive intensities above 1 by `GLOW`, so the bloom strength can be tuned globally.
+
+## Boot and the frame loop (`main.js`)
+
+`boot()`:
+
+1. If we're coming back from Google sign-in (`syncReadRedirect`), or the saved login expired, handle that first.
+2. `translateDom()` applies the `DICT` to `index.html`. Then `loadSave()` reads localStorage.
+3. `initRenderer()` creates the WebGL renderer and `EffectComposer` (RenderPass → UnrealBloomPass → OutputPass), a 38° perspective camera, hemisphere + directional lights. Quality and glow come from settings (`applyQuality`).
+4. `initFx`, `initInput(canvas)`, `initUI`, `applyVolumes`.
+5. `buildFloor(1, false)` builds an empty floor to show behind the main menu, then `showMenu()` and `frame()`.
+6. Hooks: save and pause on tab hide, periodic sync token refresh, `setSyncHooks`, debug handles (`window.__G`, `__classes`, `__dbg`).
+
+`frame()` runs on every `requestAnimationFrame`:
+
+```
+dt = min(clock delta, 0.05)
+Input.update(dt) → handleGlobalInput() → uiPadUpdate() → updateOrientation() → updateMouseWorld()
+if mode is play or dying: logic(dt)
+HUD, camera, wall fading (updateWalls), fx, floating texts
+render (composer when bloom is on)
+Input.endFrame()
+```
+
+`logic(dt)` is the game simulation, in this order: `updatePlayer` → flow field (every 0.25 s) → `updateEnemies` → `updateProjectiles` → `updateTurrets` → `updateTimers` → `updateHazards` → `updateBarriers` → `updateBiome` → `updatePowers` → `updateDecoy` → `updatePickups` → `updatePets` → `updateMythic` → `updateRun` → `updateExit`. Medal checks run every 1 s and autosave every 20 s.
+
+Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time (paused with the game), unlike `setTimeout`.
+
+### Modes
+
+`G.mode` is one of:
+
+| Mode | Meaning |
+|---|---|
+| `boot` | Before `boot()` finishes. |
+| `menu` | Class select / main menu. |
+| `play` | In game. Logic runs. |
+| `dying` | Death animation. Logic still runs. |
+| `dead` | Death screen. |
+| `pause`, `char`, `shop`, `forge`, `implant` | Overlays. Logic is paused. |
+| `loading` | Elevator fade between floors. |
+| `ending` | Ending screen after the final battle. |
+
+## Floors
+
+### Lifecycle
+
+- `startGame(cls, fresh)` loads or creates the character (`newCharacter`), runs `sanitizeChar`, creates the player and calls `startFloor(c.floor)`.
+- `buildFloor(floor)`:
+  1. `clearWorld()`.
+  2. `themeFor(floor)` picks the biome. `rollAnomaly(floor)` may roll a floor anomaly.
+  3. `generateDungeon(floor)` builds the map. `placeFeatures` adds biome tiles and props.
+  4. `buildDungeonMeshes` and `buildFeatures` build the meshes. Fog and lights come from `theme.light`; the `dark` anomaly dims them.
+  5. `resetMinimap`, `populateFloor` (enemies, chests, shrines, boss, rift, contract) and `spawnPets`.
+- `startFloor(floor)` also stores `c.floor` / `c.maxFloor`, places the player at `d.start`, reveals the minimap around it and announces the floor.
+- `updateExit` watches the elevator. It stays locked while a boss is alive. Using it calls `nextFloor()`: fade out, `runFloorDone()` (contract and clear rewards), `startFloor(floor + 1)`, heal 25 % HP and give +1 stim if the player has fewer than 3.
+- Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`.
+- After winning, `startTier(tier)` restarts from floor 1 in Nightmare or Inferno (New Game+), keeping level, items and implants. `replayFinal()` replays floor 30.
+
+### Biomes (`dungeon.js` `THEMES`)
+
+`THEMES` is an array of 13 biomes: neon, forest, factory, snow, meadow, sewer, mountain, space, cryo, desert, volcano, data, market. Each entry has:
+
+- `id`, `name`, and the colors `a` (main accent), `b` (second accent), `floor`, `wall`, `fog` and optional `cap` (wall tops).
+- `layout`: which generator to use.
+- `features`: a list of biome feature keys handled in `biomes.js`.
+- `hint`: the tip shown on arrival.
+- Optional: `light` (otherwise `NEON_LIGHT`), `ground` (floor texture style), `walls: 'natural'` and `wallH`, `natural`, `sky`, and `fauna` (enemy types that spawn more often there).
+
+`themeFor(floor)` uses `data` for the final floor. Otherwise it is `THEMES[(floor - 1 + floor((floor - 1) / n)) % n]`, so the biome order shifts each lap.
+
+### Map generation
+
+`generateDungeon(floor)` retries `tryGenerate` until it gets a connected map. Width is `min(46 + floor * 3, 92)` (+6 for markets). Layouts:
+
+| `layout` | Generator |
+|---|---|
+| `rooms` | `genRooms`: rectangular rooms and corridors. |
+| `sewer` | `genRooms` with wide corridors and small rooms. |
+| `market` | `genRooms` with 5 big plazas and wide streets. |
+| `cave` | `genCave`: cellular-automata caves. |
+| `meadow` | `genCave(0.64)`: open fields. |
+| `grid` | `genGrid`: data-center blocks. |
+
+The map object is `d = { W, H, grid: Uint8Array, rooms, floor, layout, start, exitRoom, exit, props, meshes }`. `biomes.js` adds `d.feat` (a `FEAT` value per tile: sludge, ice, conveyors, thorns, radiation, lava, snow, plus decorative obstacles 9+). The exit goes in the room farthest from the start (BFS).
+
+Navigation helpers:
+
+- `computeFlow` builds a flow field toward the player every 0.25 s. Enemies follow `flowDir`.
+- `findPath` is 8-direction A* with line-of-sight smoothing (click-to-move).
+- `resolveCircle` handles collision against walls. `lineOfSight` / `blocksSight` handle vision (pits don't block sight or shots).
+- `revealAround` reveals the minimap fog.
+
+`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`) and the blacksmith (always on the floor after a boss).
+
+## Entities
+
+### Player (`player.js`)
+
+- `newCharacter(cls)` creates the saved character.
+- `createPlayer()` creates the runtime entity and model. `refreshStats()` recomputes `p.stats = computeStats(G.char)` after anything changes (gear, level, skills, implants).
+- `computeStats` adds up: class `base` + level scaling + equipped items (armor, weapon damage, affixes, `legs` / `myths` sets) + passive skills (`passiveMods`) + implants (`implantMods`) − difficulty, then applies the caps (crit 75 %, CDR 40 %, life steal 20 %, dodge 25 %, damage reduction 30 %).
+- `updatePlayer(dt)` handles movement (keys, stick, click-to-move path, touch joystick), the primary attack (`SKILL_FN[skills[0].id]`), skill slots `s1`..`s6` (`tryUseSkill`: checks rank, cooldown and energy, then calls `SKILL_FN[id](p, rank)`; returning `false` means "couldn't use, refund"), stims, regen, buffs and statuses.
+- `gainXp`, `spendPoint`, `assignSlot`, `skillReq`, `skillCost`, `skillCd`.
+
+### Classes and skills (`classes.js`, `powers.js`)
+
+- `CLASSES[id]` holds `name`, `title`, `desc`, colors (`css`, `accent`), `melee`, `range`, `base` stats, `weaponNames` and `skills`.
+- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`). The Netrunner has its own teleport, so it has 12 skills instead of 13.
+- `skills[0]` is the primary attack (free, no cooldown). `skills[1]` starts unlocked.
+- The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed.
+- Skill logic lives in `SKILL_FN`, keyed by skill `id`, extended by `Object.assign(SKILL_FN, {...})` blocks. Big reusable powers (summons, orbitals, black holes, storms, transformations) are in `powers.js`.
+- `ICONS` holds inline-SVG path strings on a 32×32 viewBox.
+
+### Enemies and bosses (`enemies.js`)
+
+- `ETYPES[type]`: `name`, `hp`, `dmg`, `speed`, `r` (radius), `h` (height), `xp`, `minFloor`, `weight` (spawn weight), `ai`, `range`, `atkCd`, `blood` (particle color). Optional: `fly`, `keep: [min, max]` (preferred distance), `proj: { speed, color, size }`, `burst`, `solo`, `boss`, `heavy` (no knockback), `inert`, `static`, `blink`, `shield`.
+- `floorScale(f)` and `DIFFICULTY` scale HP and damage. Tiers add an effective floor offset (`TIERS[t].off`).
+- `pickEnemyType` picks by weight from types with `minFloor <= floor`, strongly favoring `theme.fauna`. In natural biomes (`natural: true`) the other types drop to 20 % weight.
+- `spawnEnemy(type, x, z, { elite, decoy, anomaly })` builds the model (`makeEnemyModel`) and applies elite affixes (`ELITE`) and anomaly modifiers.
+- Elites get 1, 2 or 3 affixes depending on the effective floor (2 from 14, 3 from 26).
+- `populateFloor(d, floor, boss)` spends a budget across rooms, adds chests, shrines and barrels, sets up floor events and spawns the boss.
+- `updateEnemies(dt)` moves each enemy along the flow field (or straight when it has line of sight), handles statuses and dispatches on `e.T.ai` (`melee`, `ranged`, `bomber`, `sentry`, `sniper`, `ninja`, …).
+- Bosses: `BOSS_ORDER = ['boss', 'queen', 'scrap', 'reaper', 'gunship', 'hacker', 'omega']`. The boss on floor `f` is `BOSS_ORDER[(round(f / 3) - 1) % 7]`, getting tougher each lap (`II`, `III`…). Each has its own update function (`updateBoss`, `updateQueen`, `updateScrap`, `updateReaper`, `updateGunship`, `updateHackerBoss`, `updateOmega` + `updatePylon`). `startBoss` shows the bar and the `BOSS_SUB` subtitle.
+- Kills go through `killEnemy` (`combat.js`) → `onEnemyKilled` (XP, loot, medals, `runKill`, mythic on-kill).
+
+### Combat (`combat.js`)
+
+Hit pipeline for player damage:
+
+```
+hitEnemy(e, mult, opts)
+  → playerDamageRoll(mult)           weapon roll × dmgPct × buffs (fury, avatar, forms) + crit
+  → passives (eliteDmg, lowHpDmg, chillDmg) × mythDmgMult(e)
+  → damageEnemy(e, amount, crit)     armor/shield, floating number, hit flash, death → killEnemy
+  → life steal, energy on hit, applyStatus (burn, chill, freeze, stun…)
+  → legendary procs ('arc' chain lightning) → mythOnHit
+```
+
+- `damagePlayer(amount)` applies armor, dodge, damage reduction, shields and the phoenix save (`mythSave`).
+- Area helpers: `enemiesInRadius`, `enemiesInCone`, `nearestEnemy`, `explosion`, `chainFrom`.
+- Other entities: projectiles (`spawnProjectile`, `lob`), ground hazards, turrets, barriers and the decoy.
+
+## Items and loot (`items.js`, `loot.js`, `mythic.js`)
+
+- Slots: `weapon`, `head`, `chest`, `hands`, `feet`, `chip`.
+- Rarities (`RARITY`, index 0–4): Common, Modded, Rare, Prototype, Mythic. Each sets the affix count `n` and the stat multiplier `mult`.
+- `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`).
+- Optional item fields: `plus` (forge level) with `base` (the pre-forge stats that `forgeItem` scales from; every 4th level adds or boosts an affix), and `fav` (favorite, protected from recycling).
+- `itemScore` ranks items. `isUpgrade` (more than 3 % better than equipped) drives the ▲ marker and the shop stock.
+- `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (50).
+- `mythic.js` runs the mythic powers each frame and hooks into hits, kills and death.
+
+## Run events (`run.js`)
+
+- **Anomalies** (`ANOMALIES`): one optional modifier per normal floor. Code reads it with `amod(key, default)`. Keys include `count`, `elite`, `hp`, `dmg`, `speed`, `xp`, `credits`, `loot`, `orbs`, `pdmg`, `taken`, `cd`, `regen`, `killHeal`, `explode`, `giant` and `dark`.
+- **Contracts**: optional floor goals (`rollContract`), paid out in `runFloorDone`.
+- **Challenge rifts**: `spawnRift`, a timed arena with a reward.
+- **Kill combo** (`runKill`) and the **floor-clear bonus** (`clearBonus = (150 + floor × 40) × (1 + tier × 0.5)`).
+- **Implants** (`IMPLANTS`): pick one of three after each boss. `bossReward()` keys them by `floor + 100 × tier`, so each tier grants its own. `implantMods(c)` feeds `computeStats`.
+- **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset, loot, credits and elite bonuses.
+
+## Saves and cloud sync
+
+```
+localStorage['neon-dungeon-save-v1']     = { v: 1, slots: { blade: char, gunner: char, … }, stats, ach }
+localStorage['neon-dungeon-settings-v1'] = G.settings
+localStorage['neon-dungeon:device']      = random device id (medal counters)
+```
+
+- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints`, `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`.
+- `saveGame()` writes it (autosave every 20 s, on tab hide and after important actions like equipping or leveling) and marks the cloud dirty (`syncDirty`).
+- `sanitizeChar(c)` runs on load and is the single place where old saves are upgraded. Backfill every new field there.
+- `sync.js` signs in with the Google OAuth implicit flow (public Client ID only) and stores one JSON file in the hidden `appDataFolder` of the user's own Drive (scope `drive.appdata`). `mergeProgress(local, cloud)`:
+  - For each class, `mergeChar` keeps the more advanced character by `progressOf` = `[tier, level, maxFloor, kills, xp]`.
+  - For each equip slot, it keeps the better item (`itemScore`).
+  - `wins`, `playTime`, `deaths` and `bestTier` take the max.
+  - Medal counters are per device and summed (`stats.dev`); sets (`stats.sets`) and unlocks (`ach`) are unioned.
+  - A "New character" reset (`resetAt`) wins over an older character.
+- The character in play is never replaced mid-run; merged slots apply when the player returns to the menu.
+
+## Input (`input.js`, `padglyphs.js`)
+
+- `Input.update(dt)` merges four sources (`kb`, `mouse`, `touch`, `pad`) into named actions: `primary`, `s1`..`s6`, `stim`, `inv`, `skills`, `pause`, `map`. Read them with `Input.pressed(action)` (edge) or `Input.held[action]`.
+- `Input.move` and `Input.aimStick` are analog vectors. `Input.mouse` has the cursor and `lmbPressed`.
+- Menu navigation uses `Input.nav(name)` for `up`, `down`, `left`, `right`, `a`, `b`, `x`, `y`, `lb`, `rb`, `rt`, with key repeat. A `latch` makes sure quick taps that press and release within one frame are still seen.
+- `G.lastInput` switches between `kb`, `pad` and `touch`. The body classes and the HUD labels follow it (`refreshKeyLabels`, `refreshPadLabels`).
+- `padglyphs.js` detects Xbox / PlayStation (ps4/ps5) / Nintendo from the gamepad id. `padText('{A} Confirm')` renders the right glyphs.
+- Touch: a virtual joystick on the canvas and skill buttons bound with `bindTouchButton(el, action)`.
+
+## UI (`ui.js`, `index.html`, `css/style.css`)
+
+- All panels already exist in `index.html` and are shown and hidden with classes. `ui.js` fills them (`renderChar`, `renderClassCards`, `openShop`, `openForge`, `openAch`, …).
+- **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
+- Feedback: `toast(html, cls, key)` (a `key` replaces the previous toast with the same key), `banner(title, sub)`, `confirmDialog(title, text, onYes)`, `floatText`.
+- HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()`, `mythHud()`.
+- Layout must work from phone landscape (around 640×360) up to desktop. The `max-width: 760px` and `max-height: 520px` media queries handle small screens.
+
+## i18n (`i18n.js`)
+
+- `LANG` is `pt` or `en`, from `?lang=` or `navigator.language`.
+- `L(pt, en)` picks the string. Because `LANG` is fixed at load, tables can call `L()` at module top level.
+- `DICT` holds the keys for `index.html` (`data-i18n`, `data-i18n-html`, `data-i18n-title`). `t(key, vars)` reads them from JS.
+
+## Audio (`audio.js`, `music.js`)
+
+- `initAudio()` creates the `AudioContext` on the first user gesture, with `sfxBus` and `musBus` gains (`applyVolumes`).
+- `sfx.name()` functions build each sound from `tone({ type, f, f2, dur, vol })` and `noise({ dur, vol, type, f, f2, q })`. `throttle(key, ms)` stops floods of the same sound.
+- `music.js` `SONGS` describes each song as data: `bpm`, chord progressions `prog`, drum and bass step patterns, `arp`, `lead` timbre, `mel` melodies (eighth notes, `-` hold, `.` rest) and `secs` (arrangement sections with active layers). `createMusic(ctx, dest, opts)` schedules it. Drums and bass come in during fights.
+- `applyTrack()` follows `G.settings.track` (`'shuffle'` or a song index).
+
+## Medals (`ach.js`)
+
+- `achAdd(counter, n)` adds to a per-device counter. `achMark(set, key)` adds to a set. `achKill(e)` records a kill.
+- `achList()` builds the medal list lazily: `{ id, icon, tier, name, desc, cur(), goal }`.
+- `achCheck()` runs every second and unlocks medals whose `cur() >= goal`, showing `medalPopup`. Unlock times are stored in `G.save.ach[id]`.
+
+## Testing tips
+
+There are no automated tests. The cheapest reliable check is a scripted headless browser:
+
+1. Serve the repo: `npx http-server -p 8123 -s -c-1 .`
+2. Start Edge: `msedge --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --remote-debugging-port=9333 about:blank`
+3. From Node 22+, `fetch('http://127.0.0.1:9333/json')`, open the page's `webSocketDebuggerUrl` with the built-in `WebSocket`, and send CDP commands: `Page.navigate`, `Emulation.setDeviceMetricsOverride` (screen size, `mobile: true` for touch), `Runtime.evaluate` (with `awaitPromise` and `returnByValue`) and `Page.captureScreenshot`.
+4. Inside `Runtime.evaluate`, import modules directly: `const m = await import('/js/main.js'); m.startGame('blade', true);`, then use `window.__G` and `window.__dbg` (`makeItem`, `spawnEnemy`, `nextFloor`, `sim`).
+
+Gotchas:
+
+- Headless Chrome/Edge throttles `requestAnimationFrame` to about 1 fps, so input that depends on frames seems to be ignored. Step frames by hand: `Input.update(1/60); ui.uiPadUpdate(); Input.endFrame();`.
+- To fake a gamepad, replace `navigator.getGamepads` with a function that returns an object with `id`, `mapping: 'standard'`, `axes` and 17 `buttons` (`{ pressed, value }`), then dispatch a `gamepadconnected` event. Standard button indices: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 View, 9 Start, 12–15 D-pad.
+- Use `__dbg.sim(seconds)` to run game logic quickly without rendering (balance checks, spawn tests).
+- Listen to `Runtime.exceptionThrown` and `Runtime.consoleAPICalled` to catch errors.
+- Clean up: saves made by tests stay in that browser profile's localStorage. Use a temporary `--user-data-dir`.

@@ -192,12 +192,18 @@ Then open http://localhost:8000. To force a language, add `?lang=en` or `?lang=p
 
 You can also open `neon-dungeon.sln` in Visual Studio and press F5. It runs the folder on IIS Express at port 8000, using `web.config`.
 
+Developer docs:
+
+- [AGENTS.md](AGENTS.md): conventions, gotchas and the deploy routine, for contributors and AI coding agents.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the game works inside (game loop, floors, combat, items, saves, cloud sync, input, UI, audio).
+- [docs/CONTENT.md](docs/CONTENT.md): step-by-step recipes for adding classes, skills, enemies, bosses, biomes, items, medals, songs and more.
+
 ```
 index.html             page and HUD
 manifest.webmanifest   PWA manifest (install to home screen)
 css/style.css          UI styles
 img/                   app icons and the link preview image (og-image.png)
-docs/screenshots/      reference screenshots (not used by the game)
+docs/                  developer docs and reference screenshots (not used by the game)
 js/main.js             rendering, camera, game loop, floors and saves
 js/state.js            shared global state (G) and tile constants
 js/utils.js            random, math and formatting helpers
@@ -222,6 +228,7 @@ js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
 js/mythic.js           mythic item powers
+js/pets.js             decorative pets that wander each biome
 vendor/three/          Three.js r160 (MIT)
 web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
 ```
