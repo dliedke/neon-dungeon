@@ -53,13 +53,17 @@ export const ANOMALIES = {
 // ------------------------------------------------------------------
 export const TIERS = [
   { off: 0, hp: 1, dmg: 1, loot: 0, credits: 1, elite: 0, icon: '', css: '#00f0ff', name: L('Normal', 'Normal') },
-  { off: 30, hp: 1.25, dmg: 1.25, loot: 15, credits: 2, elite: 0.08, icon: '☠️', css: '#ff4466', name: L('Pesadelo', 'Nightmare') },
-  { off: 60, hp: 1.5, dmg: 1.5, loot: 30, credits: 3, elite: 0.15, icon: '🔥', css: '#ff7a1a', name: L('Inferno', 'Inferno') },
+  { off: 30, hp: 1.25, dmg: 1.5, loot: 15, credits: 2, elite: 0.08, icon: '☠️', css: '#ff4466', name: L('Pesadelo', 'Nightmare') },
+  { off: 60, hp: 1.5, dmg: 1.75, loot: 30, credits: 3, elite: 0.15, icon: '🔥', css: '#ff7a1a', name: L('Inferno', 'Inferno') },
 ];
 export const MAX_TIER = TIERS.length - 1;
 export const tierOf = (c = G.char) => TIERS[Math.min(MAX_TIER, (c && c.tier) | 0)];
 // andar "efetivo" dos inimigos e dos itens
 export const effFloor = (f = G.floor) => f + tierOf().off;
+// blindagem: fração do dano que passa. Depois do andar efetivo 30 (Pesadelo/Inferno) os inimigos
+// perfuram blindagem: a constante cresce no mesmo ritmo da blindagem dos itens, senão ela chega a ~90%
+export const armorK = (f = G.floor) => 100 + 22 * Math.max(0, (effFloor(f) || 0) - 30);
+export const armorTaken = (armor, f) => armorK(f) / (armorK(f) + armor);
 
 // valor de uma regra da anomalia atual (ou o padrão, sem anomalia)
 export function amod(k, d = 1) {

@@ -14,7 +14,7 @@ import { hurtFlash, toast, banner } from './ui.js';
 import { mythDmgMult, mythOnHit, mythOnKill, mythSave } from './mythic.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
-import { amod, runKill, runHurt } from './run.js';
+import { amod, runKill, runHurt, armorTaken } from './run.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -289,7 +289,7 @@ export function damagePlayer(amount) {
     floatText(p.x, 1.8, p.z, L('ESQUIVA', 'DODGE'), 'shield');
     return;
   }
-  amount *= 100 / (100 + p.stats.armor);
+  amount *= armorTaken(p.stats.armor);
   amount *= amod('taken');
   if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
   if (p.buffs.titan > 0) amount *= 0.4;

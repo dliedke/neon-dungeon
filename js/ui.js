@@ -16,7 +16,7 @@ import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
-import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER } from './run.js';
+import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
 
@@ -1125,7 +1125,7 @@ export function renderChar() {
       [L('Bônus de dano', 'Damage bonus'), `+${fmt(s.dmgPct)}%`],
       [L('Crítico', 'Critical'), `${s.crit.toFixed(0)}% · +${fmt(s.critDmg)}%`],
       [L('Vel. de ataque', 'Attack speed'), `${s.atkRate.toFixed(2)}/s`],
-      [L('Blindagem', 'Armor'), `${fmt(s.armor)} (-${Math.round((s.armor / (100 + s.armor)) * 100)}%)`],
+      [L('Blindagem', 'Armor'), `${fmt(s.armor)} (-${Math.round((1 - armorTaken(s.armor)) * 100)}%)`],
       [L('Movimento', 'Movement'), `${s.speed.toFixed(1)}`],
       [L('Regeneração', 'Regeneration'), `${s.hpRegen.toFixed(1)}/s · ${s.enRegen.toFixed(1)} en/s`],
     ];

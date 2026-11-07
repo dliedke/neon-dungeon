@@ -13,7 +13,7 @@ On **floor 30**, the final battle pits you against all 7 bosses in waves: two at
 Items marked with **▲** and a green glow are better than what you have equipped.
 
 After you win, the same character can descend again from floor 1 in **Nightmare ☠️** and then **Inferno 🔥** mode (New Game+).
-You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 31, Inferno floor 1 as floor 61) and enemies also get extra health and damage (×1.25 in Nightmare, ×1.5 in Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
+You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 31, Inferno floor 1 as floor 61) and enemies also get extra health (×1.25 in Nightmare, ×1.5 in Inferno) and damage (×1.5 and ×1.75). Deep enemies also pierce armor: past the 30th effective floor, the same armor blocks less and less (e.g. 658 armor blocks 87% on floor 30, about 67% on Nightmare floor 10 and about 50% in Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
 Each mode grants its own set of implants and has its own medal.
 
 ## Classes
