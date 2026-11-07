@@ -309,6 +309,9 @@ export function placeFeatures(d, theme) {
   placeSmith(d, rooms);
 }
 
+// Mercador ou ferreiro a menos de `rad` do ponto (fendas, santuários e cofres não podem ficar em cima deles)
+export const npcNear = (d, x, z, rad) => (d.props || []).some((p) => (p.type === 'smith' || p.type === 'merchant') && Math.hypot(p.x - x, p.z - z) < rad);
+
 // Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...) e às vezes nos outros
 export const smithFloor = (f) => f >= 2 && !isFinalFloor(f) && (f % 3 === 1 || chance(0.3));
 function placeSmith(d, rooms) {

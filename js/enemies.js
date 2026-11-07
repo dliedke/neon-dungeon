@@ -9,7 +9,7 @@ import { burst, ringFx, telegraphFx, lineTelegraph, floatText, slashFx } from '.
 import { sfx } from './audio.js';
 import { toast, bossBar, banner } from './ui.js';
 import { L } from './i18n.js';
-import { groundEffect } from './biomes.js';
+import { groundEffect, npcNear } from './biomes.js';
 import { achAdd, achMark } from './ach.js';
 import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
@@ -1594,6 +1594,15 @@ function chooseBossAttack(e, dist) {
 const BOSS_HP_K = 1.3;
 
 // ---------------- Povoamento do andar ----------------
+// ponto aleatório da sala longe do mercador e do ferreiro (null se não achar)
+function spotAwayFromNpc(d, r, margin) {
+  for (let t = 0; t < 12; t++) {
+    const pt = randomFloorInRoom(d, r, margin);
+    if (!npcNear(d, pt.x, pt.z, 2.5)) return pt;
+  }
+  return null;
+}
+
 export function populateFloor(d, floor, boss) {
   const D = diff();
   const eliteChance = floor <= 1 && !tierOf().off ? 0 : Math.min(0.6, (Math.min(0.3, 0.04 + floor * 0.025) + tierOf().elite) * amod('elite'));
@@ -1684,14 +1693,14 @@ export function populateFloor(d, floor, boss) {
     const rooms = (far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice().sort(() => Math.random() - 0.5);
     const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 3 : 2);
     for (let k = 0; k < n; k++) {
-      const pt = randomFloorInRoom(d, rooms[k], 2);
-      if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, kinds[k]);
+      const pt = spotAwayFromNpc(d, rooms[k], 2);
+      if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, kinds[k]);
     }
   }
   const nChests = Math.min(chestRooms.length, floor < 3 ? 1 : 2);
   for (let k = 0; k < nChests; k++) {
-    const pt = randomFloorInRoom(d, chestRooms[k], 1);
-    spawnChest(pt.x, pt.z);
+    const pt = spotAwayFromNpc(d, chestRooms[k], 1);
+    if (pt) spawnChest(pt.x, pt.z);
   }
   // Fenda de Desafio e contrato do andar
   setupFloorEvents(d, floor, boss, far.length ? far : d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));

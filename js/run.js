@@ -15,6 +15,7 @@ import { dropLoot, spawnPickup } from './loot.js';
 import { after, explosion, damagePlayer, healPlayer } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
 import { isWalkable, isBossFloor, isFinalFloor } from './dungeon.js';
+import { npcNear } from './biomes.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { Input } from './input.js';
@@ -301,12 +302,14 @@ export function setupFloorEvents(d, floor, boss, rooms) {
   G.clear = isFinalFloor(floor) || !n0 ? null : { start: n0, left: n0, done: false, t: 0 };
   if (floor < 2 || isFinalFloor(floor)) return;
   // Fenda de Desafio em uma sala longe do início (não aparece em andar de chefe)
-  if (!boss && rooms.length && chance(floor < 4 ? 0.35 : 0.5)) {
+  // nunca na sala do mercador/ferreiro (sala segura) nem perto deles
+  const free = rooms.filter((r) => !r.safe);
+  if (!boss && free.length && chance(floor < 4 ? 0.35 : 0.5)) {
     for (let k = 0; k < 6; k++) {
-      const r = pick(rooms);
+      const r = pick(free);
       const x = r.x + r.w / 2;
       const z = r.y + r.h / 2;
-      if (isWalkable(d, x, z) && Math.hypot(x - d.exit.x, z - d.exit.z) > 4 && !G.pickups.some((o) => Math.hypot(o.x - x, o.z - z) < 2.5)) {
+      if (isWalkable(d, x, z) && Math.hypot(x - d.exit.x, z - d.exit.z) > 4 && !G.pickups.some((o) => Math.hypot(o.x - x, o.z - z) < 2.5) && !npcNear(d, x, z, 4)) {
         spawnRift(x, z);
         break;
       }
