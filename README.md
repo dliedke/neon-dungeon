@@ -63,7 +63,7 @@ Every class can also learn **Teleport** (from level 3): it blinks up to 8m towar
 - **Gamepad:**
   - Left stick to move; A or RT to attack.
   - X / Y / B / LB / RB / LT for powers 1–6, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.
-  - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y recycles all (equipment tab) or switches tabs, LB/RB switch tabs and B goes back.
+  - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y recycles all (equipment tab) or switches tabs, RT favorites the item, LB/RB switch tabs and B goes back.
   - The game detects Xbox, PlayStation 4/5 and Nintendo Switch Pro controllers and shows the matching button icons.
 - **Mobile:**
   - Drag on the left side of the screen to move.
@@ -170,6 +170,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
     Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythics.
+  - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
   - **Blacksmith:** appears on floors 4, 7, 10… and sometimes on others. For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12 depending on rarity, each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.

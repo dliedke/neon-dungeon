@@ -1076,7 +1076,7 @@ export function renderChar() {
       const it = c.equip[slot];
       const sel = selected && selected.where === 'equip' && selected.slot === slot ? ' sel' : '';
       return `<div class="eslot">${it
-        ? `<div class="cell r${it.rarity}${sel}" data-nav data-eslot="${slot}" data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}</div>`
+        ? `<div class="cell r${it.rarity}${sel}" data-nav data-eslot="${slot}" data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}${favMark(it)}</div>`
         : `<div class="cell empty" data-nav data-eslot="${slot}">${slotIconSvg(slot)}</div>`}${SLOT_NAMES[slot]}</div>`;
     }).join('');
     // inventário (sempre ordenado: melhores itens primeiro)
@@ -1091,7 +1091,7 @@ export function renderChar() {
       const better = isUpgrade(it, c.equip);
       const up = better ? '<span class="up">▲</span>' : '';
       const sel = selected && selected.where === 'inv' && selected.uid === it.uid ? ' sel' : '';
-      html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}</div>`;
+      html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}${favMark(it)}</div>`;
     }
     $('inv-grid').innerHTML = html;
     $('inv-count').textContent = `${L('Inventário', 'Inventory')} ${c.inv.length}/${INV_SIZE}`;
@@ -1099,7 +1099,7 @@ export function renderChar() {
     const price = stimPrice();
     $('btn-buy-stim').textContent = `${L('Comprar Stim', 'Buy Stim')} (${price}¢) · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
-    $('btn-recycle-all').disabled = !c.inv.length;
+    $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
     // atributos
     const s = p.stats;
     const rows = [
@@ -1276,11 +1276,16 @@ function renderDetail() {
     return;
   }
   const c = G.char;
+  // favorito: protegido contra reciclagem (um a um e em lote)
+  const fav = `<button class="btn small ghost fav-btn${it.fav ? ' on' : ''}" data-nav data-act="fav">${it.fav ? L('★ Desfavoritar', '★ Unfavorite') : L('☆ Favoritar', '☆ Favorite')}</button>`;
   let actions = '';
   if (selected.where === 'inv') {
-    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}</button><button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)</button></div>`;
+    const rec = it.fav
+      ? `<button class="btn small danger" disabled>🔒 ${L('Favorito', 'Favorite')}</button>`
+      : `<button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)</button>`;
+    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}</button>${fav}${rec}</div>`;
   } else {
-    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}</button></div>`;
+    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}</button>${fav}</div>`;
   }
   const cur = selected.where === 'inv' ? c.equip[it.slot] : null;
   if (cur) {
@@ -1291,7 +1296,10 @@ function renderDetail() {
     const a = b.dataset.act;
     if (a === 'equip') equipItem(it.uid);
     else if (a === 'recycle') recycleItem(it.uid);
-    else unequip(selected.slot);
+    else if (a === 'fav') {
+      toggleFav(it);
+      restoreFocus('[data-act="fav"]');
+    } else unequip(selected.slot);
   }));
 }
 
@@ -1362,6 +1370,11 @@ function recycleItem(uid) {
   const idx = c.inv.findIndex((i) => i.uid === uid);
   if (idx < 0) return;
   const it = c.inv[idx];
+  if (it.fav) {
+    sfx.deny();
+    toast(L('Item favorito (★) não pode ser reciclado. Desfavorite antes.', 'Favorite items (★) can\'t be recycled. Unfavorite it first.'), 'warn');
+    return;
+  }
   const v = recycleValue(it);
   c.inv.splice(idx, 1);
   c.credits += v;
@@ -1372,20 +1385,37 @@ function recycleItem(uid) {
   focusInvCell(idx);
 }
 
+// Marca/desmarca o item como favorito (vale para o inventário e para o equipado)
+function toggleFav(it) {
+  if (!it) return;
+  if (it.fav) delete it.fav;
+  else it.fav = true;
+  sfx.click();
+  toast(it.fav ? L('★ Favoritado: não pode ser reciclado.', '★ Favorited: it can\'t be recycled.') : L('Item desfavoritado.', 'Item unfavorited.'));
+  renderChar();
+  saveGame();
+}
+
+function favMark(it) {
+  return it.fav ? '<span class="fav">★</span>' : '';
+}
+
+// itens míticos e favoritos nunca são reciclados em lote
+const canBulkRecycle = (it) => !it.myth && !it.fav;
+
 // Recicla todo o inventário (o que está equipado não é tocado)
 function recycleAll() {
   const c = G.char;
-  // itens míticos nunca são reciclados em lote (só um a um)
-  const list = c.inv.filter((it) => !it.myth);
+  const list = c.inv.filter(canBulkRecycle);
   if (!list.length) return;
   const n = list.length;
   const kept = c.inv.length - n;
   const total = list.reduce((s, it) => s + recycleValue(it), 0);
   const ups = list.filter((it) => isUpgrade(it, c.equip)).length;
   const warn = ups ? L(` Atenção: ${ups} ${ups > 1 ? 'são melhores' : 'é melhor'} que o equipado (▲).`, ` Warning: ${ups} ${ups > 1 ? 'are' : 'is'} better than what you have equipped (▲).`) : '';
-  const keep = kept ? L(` Os míticos ficam.`, ` Mythic items are kept.`) : '';
+  const keep = kept ? L(` Os míticos e favoritos (★) ficam.`, ` Mythic and favorite (★) items are kept.`) : '';
   confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + keep + warn, () => {
-    c.inv = c.inv.filter((it) => it.myth);
+    c.inv = c.inv.filter((it) => !canBulkRecycle(it));
     c.credits += total;
     sfx.coin();
     toast(L(`Inventário reciclado: +${fmt(total)}¢`, `Inventory recycled: +${fmt(total)}¢`));
@@ -1511,6 +1541,15 @@ export function uiPadUpdate() {
     } else focused.click();
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
+  if (Input.nav('rt') && focused && focused.matches('.cell[data-uid]')) {
+    // {RT}: favoritar/desfavoritar o item sob o seletor
+    const sel = focused.dataset.where === 'equip' ? `#equip-slots [data-eslot="${focused.dataset.slot}"]` : null;
+    const idx = [...document.querySelectorAll('#inv-grid > .cell')].indexOf(focused);
+    selectCell(focused);
+    toggleFav(findItem(selected));
+    if (sel) restoreFocus(sel);
+    else focusInvCell(idx);
+  }
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
   else if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');

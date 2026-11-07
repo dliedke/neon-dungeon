@@ -205,7 +205,7 @@ export function itemCardHtml(it, extra = '') {
   const R = RARITY[it.rarity];
   return `<div class="item-card r${it.rarity}">
     <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
-    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}</span>` : ''}</div>
+    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
     ${itemStatLines(it)}
     ${extra}
   </div>`;

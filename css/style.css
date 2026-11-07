@@ -323,6 +323,8 @@ body.touch #skillbar { display: none; }
 }
 .panel.narrow { max-width: 420px; text-align: center; }
 .panel.wide { max-width: 1100px; }
+/* inventário de 50 casas (10 x 5): painel do personagem mais largo para as casas não ficarem miúdas */
+#panel-char .panel.wide { max-width: 1320px; }
 .panel h2 { font-family: Orbitron, sans-serif; letter-spacing: 4px; margin: 4px 0 16px; color: var(--accent); text-shadow: 0 0 12px var(--accent); }
 .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
 .stack.row { flex-direction: row; justify-content: center; }
@@ -413,6 +415,7 @@ body.pad .cell.empty { pointer-events: auto; }
 .cell.r4 { color: var(--r4); border-color: var(--r4); background: rgba(176, 77, 255, 0.16); box-shadow: inset 0 0 16px rgba(197, 107, 255, 0.5), 0 0 8px rgba(197, 107, 255, 0.5); }
 .cell.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cell .up { position: absolute; right: 2px; top: 0; color: #39ff88; font-size: 14px; text-shadow: 0 0 6px #39ff88, 0 0 2px #000; }
+.cell .fav { position: absolute; left: 3px; top: 1px; color: #ffd23d; font-size: 14px; line-height: 1; text-shadow: 0 0 6px #ffd23d, 0 0 2px #000; pointer-events: none; }
 /* itens melhores que o equipado: brilho verde pulsante */
 .cell.better { animation: betterPulse 1.4s ease-in-out infinite; }
 .cell.better svg { filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor); }
@@ -426,7 +429,7 @@ body.pad .cell.empty { pointer-events: auto; }
 #stat-list .leg.myth { color: var(--r4); }
 .inv-head { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 8px; }
 .cr-line b { color: var(--yellow); }
-#inv-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+#inv-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
 .inv-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .item-card { border: 1px solid var(--line); padding: 12px; background: rgba(0, 0, 0, 0.35); }
 .item-card.r1 { border-color: rgba(77, 155, 255, 0.5); }
@@ -443,6 +446,8 @@ body.pad .cell.empty { pointer-events: auto; }
 .it-myth { color: #e0b8ff; font-size: 14px; margin-top: 6px; padding: 6px 8px; border-left: 3px solid var(--r4); background: rgba(176, 77, 255, 0.12); }
 .it-myth b { color: var(--r4); }
 .it-plus { color: #ffb04d; }
+.it-fav { color: #ffd23d; }
+.fav-btn.on { color: #ffd23d; border-color: rgba(255, 210, 61, 0.6); }
 .it-cmp { margin-top: 10px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 .it-cmp + .item-card { margin-top: 4px; opacity: 0.8; }
 .detail-actions { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
@@ -564,7 +569,7 @@ body.pad .pad-hints { display: block; }
   #class-cards .ccard { flex-basis: 100%; }
   .ccard .cdesc { min-height: 0; }
   .tab-body { grid-template-columns: 1fr; }
-  #inv-grid { grid-template-columns: repeat(6, 1fr); }
+  #inv-grid { grid-template-columns: repeat(5, 1fr); }
   .logo-sub { letter-spacing: 0.3em; }
 }
 @media (max-height: 520px), (max-width: 640px) {
@@ -592,7 +597,7 @@ body.pad .pad-hints { display: block; }
   .detail-col { grid-column: auto; position: sticky; top: 0; align-self: start; }
   #equip-slots { grid-template-columns: repeat(6, 1fr); gap: 5px; }
   .eslot { font-size: 9px; }
-  #inv-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  #inv-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
   /* coluna estreita: equipado embaixo; o resumo ▲▼ já fica no topo */
   .cmp-wrap { display: block; }
   .cmp-new + .cmp-cur { margin-top: 8px; }

@@ -20,7 +20,7 @@ const DICT = {
   buyStim: ['Comprar Stim', 'Buy Stim'],
   recycleAll: ['Reciclar tudo', 'Recycle all'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
-  padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {LB} {RB} Switch tab · {B} Close'],
+  padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {RT} Favoritar · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {RT} Favorite · {LB} {RB} Switch tab · {B} Close'],
   padHintsTree: ['{A} Desbloquear/Evoluir · {X} Trocar de botão · {LB} {RB} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {X} Change button · {LB} {RB} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
   implantTitle: ['ESCOLHA UM IMPLANTE', 'CHOOSE AN IMPLANT'],

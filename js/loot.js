@@ -13,7 +13,7 @@ import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
 
-export const INV_SIZE = 30;
+export const INV_SIZE = 50;
 const UP_COLOR = 0x39ff88;
 const MYTH_COLOR = 0xb04dff;
 
