@@ -7,7 +7,7 @@ import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, MYTHICS, itemCardHtml, itemDiff
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY } from './enemies.js';
-import { sfx, applyVolumes, initAudio } from './audio.js';
+import { sfx, applyVolumes, initAudio, trackNames, applyTrack } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
 import { fmt, fmtPlay } from './utils.js';
 import { L, t } from './i18n.js';
@@ -113,6 +113,19 @@ export function initUI() {
   $('opt-music').oninput = (e) => {
     s.music = +e.target.value;
     applyVolumes();
+    saveSettings();
+  };
+  // trilha: aleatória ou uma música fixa (troca no próximo compasso)
+  const updT = () => {
+    const names = trackNames();
+    $('opt-track').textContent = Number.isInteger(s.track) && names[s.track] ? '♪ ' + names[s.track] : L('Aleatória', 'Shuffle');
+  };
+  updT();
+  $('opt-track').onclick = () => {
+    const n = trackNames().length;
+    s.track = !Number.isInteger(s.track) ? 0 : s.track + 1 >= n ? 'shuffle' : s.track + 1;
+    updT();
+    applyTrack();
     saveSettings();
   };
   $('opt-sfx').oninput = (e) => {

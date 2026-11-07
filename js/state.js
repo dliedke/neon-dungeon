@@ -32,7 +32,7 @@ export const G = {
   final: null, // estado da batalha final do último andar  floor: 1,
   save: null,
   char: null,
-  settings: { music: 0.45, sfx: 0.75, quality: 'auto', shake: true, difficulty: 'normal', glow: 'strong', sv: 3 },
+  settings: { music: 0.45, sfx: 0.75, track: 'shuffle', quality: 'auto', shake: true, difficulty: 'normal', glow: 'strong', sv: 3 },
   shake: 0,
   isTouch: false,
   lastInput: 'kb', // kb | pad | touch

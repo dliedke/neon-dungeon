@@ -175,7 +175,8 @@ Medals and their counters sync with the Google cloud save; progress from every d
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
-- **Options:** difficulty (Easy, Normal or Hard), neon glow intensity, graphics quality and volume.
+- **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
+- **Options:** difficulty (Easy, Normal or Hard), neon glow intensity, graphics quality, soundtrack and volume.
 
 ## Development
 
@@ -213,7 +214,8 @@ js/fx.js               particles and visual effects
 js/models.js           low-poly models built from primitives
 js/input.js            keyboard, mouse, gamepad and touch input
 js/padglyphs.js        gamepad model detection and button icons
-js/audio.js            synthesized sound effects and music
+js/audio.js            synthesized sound effects and music playback
+js/music.js            the 5 soundtrack songs and the synth/sequencer that plays them
 js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters

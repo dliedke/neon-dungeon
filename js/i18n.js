@@ -29,6 +29,7 @@ const DICT = {
   saveQuit: ['Salvar e sair', 'Save & quit'],
   optionsTitle: ['OPÇÕES', 'OPTIONS'],
   music: ['Música', 'Music'],
+  track: ['Trilha', 'Soundtrack'],
   sfx: ['Efeitos', 'Sound effects'],
   difficulty: ['Dificuldade', 'Difficulty'],
   graphics: ['Gráficos', 'Graphics'],

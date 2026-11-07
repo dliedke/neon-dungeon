@@ -1,5 +1,8 @@
 // Efeitos sonoros e trilha synthwave gerados em tempo real com WebAudio.
 import { G } from './state.js';
+import { createMusic, SONGS } from './music.js';
+import { L } from './i18n.js';
+import { toast } from './ui.js';
 
 let ctx = null;
 let master, sfxBus, musBus, noiseBuf;
@@ -272,51 +275,42 @@ export const sfx = {
 };
 
 // ---------------- Música ----------------
-const BPM = 102;
-const S16 = 60 / BPM / 4;
-const PROG = [
-  [57, 60, 64], // Am
-  [53, 57, 60], // F
-  [48, 52, 55], // C
-  [55, 59, 62], // G
-];
-const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
-let nextTime = 0;
-let step = 0;
+// 5 músicas em js/music.js; tocam em ordem aleatória (ou a escolhida nas opções)
+let music = null;
+
+function trackChoice() {
+  const t = G.settings.track;
+  return Number.isInteger(t) && t >= 0 && t < SONGS.length ? t : null;
+}
 
 function startMusic() {
-  nextTime = ctx.currentTime + 0.15;
+  music = createMusic(ctx, musBus, {
+    intensity: () => (G.mode !== 'play' ? 0 : G.boss ? 2 : G.player && G.player.inCombat > 0 ? 1 : 0),
+    onSong: (i, song, t) => {
+      setTimeout(() => {
+        if (G.mode === 'play' && G.settings.music > 0.001) toast('♪ ' + L(song.name[0], song.name[1]), 'music', 'music');
+      }, Math.max(0, (t - ctx.currentTime) * 1000));
+    },
+  });
+  music.choose(trackChoice());
+  music.reset(ctx.currentTime + 0.15);
   setInterval(schedule, 25);
 }
 
 function schedule() {
-  if (!ctx) return;
+  if (!ctx || !music) return;
   if (G.settings.music <= 0.001 || ctx.state !== 'running') {
-    nextTime = ctx.currentTime + 0.1;
+    music.reset(ctx.currentTime + 0.1);
     return;
   }
-  while (nextTime < ctx.currentTime + 0.12) {
-    playStep(step, nextTime);
-    nextTime += S16;
-    step++;
-  }
+  music.tick(ctx.currentTime + 0.15);
 }
 
-function playStep(s, t) {
-  const bar = Math.floor(s / 16) % 4;
-  const st = s % 16;
-  const ch = PROG[bar];
-  const fight = G.mode === 'play' && (G.boss || (G.player && G.player.inCombat > 0));
-  const bus = musBus;
-  if (st % 4 === 0) tone({ type: 'sine', f: 120, f2: 38, dur: 0.2, vol: 0.55, t, bus });
-  if (st % 4 === 2) noise({ t, dur: 0.03, vol: 0.07, type: 'highpass', f: 7000, bus });
-  if (fight && st % 2 === 1) noise({ t, dur: 0.02, vol: 0.035, type: 'highpass', f: 9000, bus });
-  if (st === 4 || st === 12) noise({ t, dur: 0.14, vol: 0.16, type: 'bandpass', f: 1800, bus });
-  if (st % 2 === 0) {
-    const n = ch[0] - 24 + (st % 4 === 2 ? 12 : 0);
-    tone({ type: 'sawtooth', f: mtof(n), dur: S16 * 1.7, vol: 0.15, lp: fight ? 900 : 520, t, bus });
-  }
-  const arpN = ch[st % 3] + 12 + (Math.floor(st / 3) % 2 ? 12 : 0);
-  tone({ type: 'square', f: mtof(arpN), dur: S16 * 0.85, vol: fight ? 0.04 : 0.028, lp: 2400, t, bus });
-  if (st === 0) ch.forEach((n) => tone({ type: 'triangle', f: mtof(n), dur: S16 * 15, vol: 0.028, a: 0.5, t, bus }));
+// nomes das músicas para o menu de opções
+export function trackNames() {
+  return SONGS.map((s) => L(s.name[0], s.name[1]));
+}
+// chamada pelas opções depois de mudar G.settings.track
+export function applyTrack() {
+  if (music) music.choose(trackChoice());
 }
