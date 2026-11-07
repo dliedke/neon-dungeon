@@ -1827,13 +1827,31 @@ export function closeStash() {
   Input.reset();
 }
 
+// Para quais personagens o item é melhor que o equipado (o baú é de todos): o atual primeiro.
+// Armas só contam para a classe delas.
+function betterFor(it) {
+  const out = [];
+  const cur = G.char.cls;
+  for (const cls of [cur, ...CLASS_ORDER.filter((k) => k !== cur)]) {
+    const ch = cls === cur ? G.char : G.save.slots[cls];
+    if (!ch || !ch.equip) continue;
+    if (it.slot === 'weapon' && it.cls && it.cls !== cls) continue;
+    if (isUpgrade(it, ch.equip)) out.push(cls);
+  }
+  return out;
+}
+
 function stashCell(it, where) {
   if (!it) return '<div class="cell empty" data-nav></div>';
   const lock = otherClassWeapon(it);
-  const better = !lock && isUpgrade(it, G.char.equip);
+  const bf = betterFor(it);
+  const better = bf[0] === G.char.cls;
   const sel = stashSel && stashSel.uid === it.uid ? ' sel' : '';
   const tag = lock ? `<span class="cls-dot" style="background:${CLASSES[it.cls].css}"></span>` : '';
-  return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}">${slotIconSvg(it.slot)}${better ? '<span class="up">▲</span>' : ''}${favMark(it)}${tag}</div>`;
+  // ▲ verde: melhor para você; ▲ azul: melhor para outro personagem seu
+  const up = better ? '<span class="up">▲</span>' : bf.length ? '<span class="up other">▲</span>' : '';
+  const tip = bf.length ? ` title="${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => CLASSES[k].name).join(', ')}"` : '';
+  return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}</div>`;
 }
 
 function renderStash() {
@@ -1846,7 +1864,9 @@ function renderStash() {
   let b = '';
   for (let i = 0; i < INV_SIZE; i++) b += stashCell(c.inv[i], 'sinv');
   $('stash-inv').innerHTML = b;
-  $('stash-count').textContent = `${st.length}/${STASH_SIZE}`;
+  // quantos itens do baú são melhores que o equipado do personagem atual
+  const ups = st.filter((it) => !otherClassWeapon(it) && isUpgrade(it, c.equip)).length;
+  $('stash-count').innerHTML = (ups ? `<span class="stash-ups">▲ ${ups} ${ups === 1 ? L('melhor', 'upgrade') : L('melhores', 'upgrades')}</span> ` : '') + `${st.length}/${STASH_SIZE}`;
   $('stash-inv-count').textContent = `${c.inv.length}/${INV_SIZE}`;
   renderStashDetail();
 }
@@ -1876,7 +1896,8 @@ function renderStashDetail() {
   if (stashSel.where === 'sinv') btn = `<button class="btn small" data-nav data-sact="put" ${stashList().length >= STASH_SIZE ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
   else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else btn = `<button class="btn small" data-nav data-sact="take" ${c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
-  const note = lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '';
+  const bf = betterFor(it);
+  const note = (lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '') + (bf.length ? `<div class="it-cmp better-for">▲ ${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => `<b style="color:${CLASSES[k].css}">${CLASSES[k].name}</b>`).join(', ')}</div>` : '');
   const cur = lock ? null : c.equip[it.slot];
   // o botão vem antes do cartão: no celular deitado ele fica sempre à vista
   el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '');

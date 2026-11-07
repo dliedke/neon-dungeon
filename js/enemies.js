@@ -152,7 +152,7 @@ export const DIFFICULTY = {
   normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 2.0, bossDmg: 1.4, bossTempo: 1.65, pHp: 1, pArmor: 1, pRegen: 1 },
   hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 2.8, bossDmg: 1.75, bossTempo: 2.15, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
   brutal: { name: L('Brutal', 'Brutal'), hp: 2.6, dmg: 2.3, count: 1.25, bossHp: 3.3, bossDmg: 2.0, bossTempo: 2.4, pHp: 0.8, pArmor: 0.6, pRegen: 0.35 },
-  insane: { name: L('Insano', 'Insane'), hp: 3.6, dmg: 3.0, count: 1.3, bossHp: 3.8, bossDmg: 2.3, bossTempo: 2.7, pHp: 0.75, pArmor: 0.5, pRegen: 0.25 },
+  insane: { name: L('Insano', 'Insane'), hp: 3.2, dmg: 2.65, count: 1.3, bossHp: 3.6, bossDmg: 2.15, bossTempo: 2.6, pHp: 0.78, pArmor: 0.55, pRegen: 0.3 },
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard', 'brutal', 'insane'];
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
