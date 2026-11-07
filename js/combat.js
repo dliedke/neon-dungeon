@@ -103,7 +103,7 @@ export function hitEnemy(e, mult, o = {}) {
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
-  if (ls > 0 && dealt > 0) healPlayer((dealt * ls) / 100, false);
+  if (ls > 0 && dealt > 0) healPlayer(capHeal('ls', (dealt * ls) / 100, (p.stats.maxHp * ls * 0.75) / 100), false);
   if (o.energy) p.en = Math.min(p.stats.maxEn, p.en + o.energy);
   applyStatus(e, o);
   if (!o.noProc && p.stats.legs.has('arc') && chance(0.15)) {
@@ -228,9 +228,9 @@ export function killEnemy(e) {
     }
     G.char.kills = (G.char.kills || 0) + 1;
     runKill(e);
-    if (p.stats.legs.has('nano')) healPlayer(p.stats.maxHp * 0.04);
+    if (p.stats.legs.has('nano')) healPlayer(capHeal('nano', p.stats.maxHp * 0.04, p.stats.maxHp * 0.06));
     if (p.stats.myths.size) mythOnKill();
-    if (p.stats.killHeal) healPlayer((p.stats.maxHp * p.stats.killHeal) / 100, false);
+    if (p.stats.killHeal) healPlayer(capHeal('kill', (p.stats.maxHp * p.stats.killHeal) / 100, (p.stats.maxHp * p.stats.killHeal * 1.5) / 100), false);
     if (p.stats.killEn) p.en = Math.min(p.stats.maxEn, p.en + p.stats.killEn);
     if (p.stats.legs.has('core')) {
       const x = e.x;
@@ -322,6 +322,19 @@ export function damagePlayer(amount) {
     p.hp = 0;
     playerDie();
   }
+}
+
+// Cura que escala com o dano causado ou com abates tem teto por segundo: sem isso um personagem forte
+// (milhares de dano por golpe) se curava inteiro a cada ataque e nunca perdia vida.
+// Cada fonte tem um balde que enche perSec por segundo (guarda no máximo 1s de cura).
+const healBuckets = {};
+export function capHeal(k, amount, perSec) {
+  const B = healBuckets[k] || (healBuckets[k] = { v: perSec, t: G.t });
+  B.v = Math.min(perSec, B.v + Math.max(0, G.t - B.t) * perSec);
+  B.t = G.t;
+  const a = Math.max(0, Math.min(amount, B.v));
+  B.v -= a;
+  return a;
 }
 
 export function healPlayer(a, show = true) {

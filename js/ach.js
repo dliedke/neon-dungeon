@@ -4,7 +4,7 @@
 // Conjuntos (biomas vistos, tipos abatidos, chefes...) ficam em stats.sets e se unem.
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { ETYPES, BOSS_ORDER } from './enemies.js';
+import { ETYPES, BOSS_ORDER, diffRank } from './enemies.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
@@ -64,7 +64,7 @@ export function achKill(e) {
     achAdd('bosses');
     achMark('bossTypes', e.type);
     if (e.fightT0 != null && G.t - e.fightT0 < 60) achMark('flags', 'fastBoss');
-    if (G.settings.difficulty === 'hard') achMark('flags', 'hardBoss');
+    if (diffRank() >= 2) achMark('flags', 'hardBoss');
   }
 }
 
@@ -110,13 +110,13 @@ export function achList() {
   add('bosses10', '👑', 2, L('Matador de Chefes', 'Boss Slayer'), L('Derrote 10 chefes', 'Defeat 10 bosses'), () => total('bosses'), 10);
   add('bosses25', '🏆', 3, L('Rei do Submundo', 'King of the Underworld'), L('Derrote 25 chefes', 'Defeat 25 bosses'), () => total('bosses'), 25);
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
-  add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil', 'Defeat a boss on Hard'), () => (has('flags', 'hardBoss') ? 1 : 0));
+  add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 30)
   const NB = BOSS_ORDER.length;
   add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 30`, `Win the final battle against all ${NB} bosses on floor 30`), () => total('wins'));
   add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 30', 'Win the final battle without dying on floor 30'), () => (has('flags', 'winNoDeath') ? 1 : 0));
-  add('winHard', '😈', 3, L('Lenda Implacável', 'Relentless Legend'), L('Vença a batalha final no Difícil', 'Win the final battle on Hard'), () => (has('flags', 'winHard') ? 1 : 0));
+  add('winHard', '😈', 3, L('Lenda Implacável', 'Relentless Legend'), L('Vença a batalha final no Difícil ou acima', 'Win the final battle on Hard or above'), () => (has('flags', 'winHard') ? 1 : 0));
   add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
   add('winNightmare', '☠️', 3, L('Despertar do Pesadelo', 'Nightmare Survivor'), L('Vença o jogo no modo Pesadelo', 'Beat the game in Nightmare mode'), () => (has('flags', 'winNightmare') ? 1 : 0));

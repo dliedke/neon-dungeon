@@ -134,7 +134,7 @@ Navigation helpers:
 - `resolveCircle` handles collision against walls. `lineOfSight` / `blocksSight` handle vision (pits don't block sight or shots).
 - `revealAround` reveals the minimap fog.
 
-`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`), the blacksmith (always on the floor after a boss) and the shared stash (`placeStash`, a few steps from the start of every floor). `npcNear(d, x, z, r)` keeps rifts, shrines and chests away from all three.
+`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`), the blacksmith (always on the floor after a boss) and the shared stash (`placeStash`, a few steps from the start of every floor). `npcNear(d, x, z, r)` keeps rifts, shrines and chests away from all three. None of them opens by proximity: `updateNpcInteract` shows the `#interact` prompt above the closest one in range, and the `interact` input action (Enter, pad {A} when no enemy is close, or tapping/clicking the prompt) opens it. Clicking the NPC with the mouse (`G.hoverNpc`, computed in `updateMouseWorld`) sets `p.npcGo` and walks there; it opens on arrival.
 
 ## Entities
 
@@ -158,7 +158,7 @@ Navigation helpers:
 ### Enemies and bosses (`enemies.js`)
 
 - `ETYPES[type]`: `name`, `hp`, `dmg`, `speed`, `r` (radius), `h` (height), `xp`, `minFloor`, `weight` (spawn weight), `ai`, `range`, `atkCd`, `blood` (particle color). Optional: `fly`, `keep: [min, max]` (preferred distance), `proj: { speed, color, size }`, `burst`, `solo`, `boss`, `heavy` (no knockback), `inert`, `static`, `blink`, `shield`.
-- `floorScale(f)` and `DIFFICULTY` scale HP and damage. Tiers add an effective floor offset (`TIERS[t].off`) and multiply HP and damage (`TIERS[t].hp` / `.dmg`).
+- `floorScale(f)` and `DIFFICULTY` scale HP and damage. `DIFF_ORDER` has 5 levels (easy → insane). `setDifficulty(key)` changes it live and rescales living enemies. `rewardK('cr' | 'loot')` gives the reward multipliers used by `dropLoot`. They ramp up 1 level per 15 s after raising the difficulty (`tickReward`) and drop instantly when lowering it. Tiers add an effective floor offset (`TIERS[t].off`) and multiply HP and damage (`TIERS[t].hp` / `.dmg`).
 - `pickEnemyType` picks by weight from types with `minFloor <= floor`, strongly favoring `theme.fauna`. In natural biomes (`natural: true`) the other types drop to 20 % weight.
 - `spawnEnemy(type, x, z, { elite, decoy, anomaly })` builds the model (`makeEnemyModel`) and applies elite affixes (`ELITE`) and anomaly modifiers.
 - Elites get 1, 2 or 3 affixes depending on the effective floor (2 from 14, 3 from 26).
@@ -176,7 +176,7 @@ hitEnemy(e, mult, opts)
   → playerDamageRoll(mult)           weapon roll × dmgPct × buffs (fury, avatar, forms) + crit
   → passives (eliteDmg, lowHpDmg, chillDmg) × mythDmgMult(e)
   → damageEnemy(e, amount, crit)     armor/shield, floating number, hit flash, death → killEnemy
-  → life steal, energy on hit, applyStatus (burn, chill, freeze, stun…)
+  → life steal (capped per second by `capHeal`, like kill heals), energy on hit, applyStatus (burn, chill, freeze, stun…)
   → legendary procs ('arc' chain lightning) → mythOnHit
 ```
 

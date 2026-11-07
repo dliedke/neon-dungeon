@@ -10,6 +10,8 @@ import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
 import { makeItem, itemScore, isUpgrade, SLOTS } from './items.js';
 import { openShop, openForge, openStash } from './ui.js';
+import { Input } from './input.js';
+import { padText } from './padglyphs.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
@@ -1098,11 +1100,7 @@ export function updateBiome(dt, camera) {
         if (camera) pr.sign.quaternion.copy(camera.quaternion);
         if (p && p.alive) {
           const dist = Math.hypot(p.x - pr.x, p.z - pr.z);
-          pr.model.root.rotation.y = Math.atan2(p.x - pr.x, p.z - pr.z);
-          if (dist < 1.5 && !pr.near && G.mode === 'play') {
-            pr.near = true;
-            openShop(d.shop);
-          } else if (dist > 2.8) pr.near = false;
+          if (dist < 9) pr.model.root.rotation.y = Math.atan2(p.x - pr.x, p.z - pr.z);
         }
         break;
       case 'smith': {
@@ -1117,13 +1115,6 @@ export function updateBiome(dt, camera) {
         }
         pr.lastPh = ph;
         pr.mouth.material.color.set(0xff5a1a).multiplyScalar(gk(2.4 + Math.sin(pr.t * 7) * 0.6));
-        if (p && p.alive) {
-          const dist = Math.hypot(p.x - pr.x, p.z - pr.z);
-          if (dist < 1.6 && !pr.near && G.mode === 'play') {
-            pr.near = true;
-            openForge();
-          } else if (dist > 3) pr.near = false;
-        }
         break;
       }
       case 'stash': {
@@ -1134,14 +1125,102 @@ export function updateBiome(dt, camera) {
         const dist = p && p.alive ? Math.hypot(p.x - pr.x, p.z - pr.z) : 99;
         pr.open += ((dist < 3 || G.mode === 'stash' ? 1 : 0) - pr.open) * Math.min(1, dt * 6);
         pr.lid.rotation.x = -pr.open * 1.1;
-        if (dist < 1.2 && !pr.near && G.mode === 'play') {
-          pr.near = true;
-          openStash();
-        } else if (dist > 2.4) pr.near = false;
         break;
       }
     }
   }
+  updateNpcInteract(d, p, camera);
+}
+
+// ---------------- mercador, ferreiro e baú: abrem só quando o jogador pede ----------------
+// Mouse: clicar neles (de longe o personagem anda até lá). Controle: {A} perto. Toque: o botão que aparece em cima.
+// Teclado: Enter perto. O botão flutuante também funciona com clique.
+const NPC_RANGE = { merchant: 2.3, smith: 2.5, stash: 2.1 };
+const npcV = new THREE.Vector3();
+let promptEl = null;
+let promptHtml = '';
+
+export function openNpc(pr) {
+  const p = G.player;
+  if (p) {
+    p.npcGo = null;
+    p.path = null;
+  }
+  if (pr.type === 'merchant') openShop(G.dungeon.shop);
+  else if (pr.type === 'smith') openForge();
+  else if (pr.type === 'stash') openStash();
+}
+
+// mercador/ferreiro/baú sob o cursor (em pixels na tela), para o clique do mouse
+export function npcUnderCursor(mx, my, camera) {
+  const d = G.dungeon;
+  if (!d || !d.props) return null;
+  let best = null;
+  let bd = 46;
+  for (const pr of d.props) {
+    if (!NPC_RANGE[pr.type]) continue;
+    npcV.set(pr.x, pr.type === 'stash' ? 0.5 : 0.9, pr.z).project(camera);
+    const dd = Math.hypot(((npcV.x + 1) / 2) * innerWidth - mx, ((1 - npcV.y) / 2) * innerHeight - my);
+    if (dd < bd) {
+      bd = dd;
+      best = pr;
+    }
+  }
+  return best;
+}
+
+function npcLabel(pr) {
+  if (pr.type === 'merchant') return L('Abrir loja', 'Open shop');
+  if (pr.type === 'smith') return L('Falar com o ferreiro', 'Talk to the blacksmith');
+  return L('Abrir baú', 'Open stash');
+}
+
+function updateNpcInteract(d, p, camera) {
+  if (!promptEl) {
+    promptEl = document.getElementById('interact');
+    if (!promptEl) return;
+  }
+  let near = null;
+  let nd = 1e9;
+  if (p && p.alive && G.mode === 'play') {
+    for (const pr of d.props) {
+      const R = NPC_RANGE[pr.type];
+      if (!R) continue;
+      const dist = Math.hypot(p.x - pr.x, p.z - pr.z);
+      // clicado de longe: abre assim que chegar
+      if (p.npcGo === pr && dist < R) {
+        openNpc(pr);
+        promptEl.classList.add('hidden');
+        return;
+      }
+      if (dist < R && dist < nd) {
+        nd = dist;
+        near = pr;
+      }
+    }
+  }
+  G.npcNear = near;
+  if (!near) {
+    promptEl.classList.add('hidden');
+    return;
+  }
+  // no controle o {A} também ataca: com inimigo perto, não abre nada sem querer
+  const e = p.aimEnemy;
+  const busy = G.lastInput === 'pad' && e && e.alive && Math.hypot(e.x - p.x, e.z - p.z) < 7;
+  if (Input.pressed('interact') && !busy) {
+    openNpc(near);
+    promptEl.classList.add('hidden');
+    return;
+  }
+  const how = G.lastInput === 'pad' ? padText('{A}') : G.lastInput === 'touch' ? '👆' : '🖱️ ' + L('Clique / Enter', 'Click / Enter');
+  const html = `${how} <b>${npcLabel(near)}</b>`;
+  if (html !== promptHtml) {
+    promptHtml = html;
+    promptEl.innerHTML = html;
+  }
+  npcV.set(near.x, near.type === 'stash' ? 1.5 : 2.6, near.z).project(camera);
+  promptEl.style.transform = `translate(${((npcV.x + 1) / 2) * innerWidth}px, ${((1 - npcV.y) / 2) * innerHeight}px) translate(-50%, -100%)`;
+  promptEl.classList.remove('hidden');
 }
 
 // Vaga-lumes, borboletas e tempestade de areia

@@ -40,6 +40,8 @@ export const G = {
   padType: null, // xbox | ps4 | ps5 | nintendo (null = nenhum controle detectado)
   mouseWorld: { x: 0, z: 0, ok: false },
   hoverEnemy: null,
+  hoverNpc: null, // mercador/ferreiro/baú sob o cursor
+  npcNear: null, // mercador/ferreiro/baú perto o bastante para abrir
   camFocus: { x: 0, z: 0 },
 };
 

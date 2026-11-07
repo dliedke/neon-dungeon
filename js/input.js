@@ -10,8 +10,9 @@ const KB = {
   Space: 'primary', KeyF: 'stim', KeyG: 'stim',
   KeyI: 'inv', Tab: 'inv', KeyC: 'inv', KeyK: 'skills', KeyM: 'map',
   Escape: 'pause', KeyP: 'pause',
+  Enter: 'interact', NumpadEnter: 'interact',
 };
-const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 'stim', 'inv', 'skills', 'pause', 'map'];
+const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 'stim', 'inv', 'skills', 'pause', 'map', 'interact'];
 const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb', 'rt'];
 
 const src = { kb: {}, mouse: {}, touch: {}, pad: {} };
@@ -255,6 +256,8 @@ function update(dt) {
     src.pad.map = b(11);
     src.pad.pause = b(9);
     src.pad.inv = b(8);
+    // A também conversa com o mercador/ferreiro e abre o baú quando está perto deles
+    src.pad.interact = b(0);
     padNav.up = b(12) || padMove.y > 0.6;
     padNav.down = b(13) || padMove.y < -0.6;
     padNav.left = b(14) || padMove.x < -0.6;

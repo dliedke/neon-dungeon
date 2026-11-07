@@ -12,6 +12,7 @@ import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
+import { rewardK } from './enemies.js';
 
 export const INV_SIZE = 50;
 const UP_COLOR = 0x39ff88;
@@ -21,7 +22,7 @@ const MYTH_COLOR = 0xb04dff;
 function mythChance(o, find) {
   if (effFloor() < 3) return 0;
   const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief || o.beast ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
-  return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
+  return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1) * rewardK('loot');
 }
 let labelRoot = null;
 
@@ -31,7 +32,9 @@ export function dropLoot(x, z, o = {}) {
   const T = tierOf();
   const ilvl = G.floor + T.off + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0);
   let items = 0;
-  let bonus = G.floor * 1.5 + amod('loot', 0) + T.loot;
+  // dificuldade: mais itens, raridade melhor e mais créditos (ver rewardK em enemies.js)
+  const lk = rewardK('loot');
+  let bonus = G.floor * 1.5 + amod('loot', 0) + T.loot + 20 * (lk - 1);
   const rich = p.buffs.fortune > 0; // Santuário da Fortuna
   if (o.rift) {
     // Fenda de Desafio: cofre lendário
@@ -52,9 +55,11 @@ export function dropLoot(x, z, o = {}) {
   } else if (o.elite) {
     items = 2;
     bonus += 18;
-  } else if (chance(0.14 * find * (rich ? 2.5 : 1))) {
+  } else if (chance(0.14 * find * (rich ? 2.5 : 1) * Math.sqrt(lk))) {
     items = 1;
   }
+  // Brutal/Insano: chefes, feras, elites e baús dão um item a mais
+  if (items && !o.rift && lk >= 2 && (o.boss || o.beast || o.thief || o.elite || o.chest || o.contract)) items++;
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);
     if ((o.boss || o.chest || o.thief || o.beast || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.beast || o.contract ? 2 : 1);
@@ -72,7 +77,7 @@ export function dropLoot(x, z, o = {}) {
     const n = o.beast ? 20 : o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
     const big = o.beast ? 3.5 : 1;
     for (let k = 0; k < n; k++) {
-      const amount = Math.round(rr(3, 7) * (1 + G.floor * 0.5) * big * (rich ? 2 : 1) * amod('credits') * T.credits);
+      const amount = Math.round(rr(3, 7) * (1 + G.floor * 0.5) * big * (rich ? 2 : 1) * amod('credits') * T.credits * rewardK('cr'));
       credits += amount;
       spawnPickup('credits', x, z, { amount });
     }

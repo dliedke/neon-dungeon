@@ -6,7 +6,7 @@ import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
-import { DIFFICULTY } from './enemies.js';
+import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack } from './audio.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
 import { fmt, fmtPlay } from './utils.js';
@@ -164,17 +164,18 @@ export function initUI() {
     applyQuality();
     saveSettings();
   };
-  const diffOrder = ['easy', 'normal', 'hard'];
-  const updD = () => ($('opt-diff').textContent = DIFFICULTY[s.difficulty]?.name || 'Normal');
-  updD();
+  updDiffUi();
   $('opt-diff').onclick = () => {
-    s.difficulty = diffOrder[(diffOrder.indexOf(s.difficulty) + 1) % diffOrder.length];
-    updD();
-    saveSettings();
-    // vida/blindagem do jogador mudam na hora; os inimigos, no próximo andar
-    if (G.player && G.char) refreshStats();
-    if (G.mode !== 'menu') toast(L('Seus atributos já mudaram. Os inimigos mudam a partir do próximo andar.', 'Your stats changed now. Enemies change from the next floor.'));
+    const i = DIFF_ORDER.indexOf(s.difficulty);
+    applyDiff(DIFF_ORDER[(i + 1) % DIFF_ORDER.length]);
   };
+  // controle deslizante de dificuldade no HUD (muda a qualquer hora)
+  const dr = $('diff-range');
+  dr.max = String(DIFF_ORDER.length - 1);
+  dr.addEventListener('input', () => applyDiff(DIFF_ORDER[+dr.value]));
+  // solta o foco para as setas/espaço voltarem a controlar o personagem
+  dr.addEventListener('change', () => dr.blur());
+  dr.addEventListener('pointerup', () => dr.blur());
   const updS = () => ($('opt-shake').textContent = s.shake ? L('Ligado', 'On') : L('Desligado', 'Off'));
   updS();
   $('opt-shake').onclick = () => {
@@ -198,6 +199,7 @@ export function initUI() {
   bindTouchButton($('tb-s5'), 's5');
   bindTouchButton($('tb-s6'), 's6');
   bindTouchButton($('tb-stim'), 'stim');
+  bindTouchButton($('interact'), 'interact');
   $('tb-stim').querySelector('.icon').innerHTML = iconSvg('stim');
   $('skstim').querySelector('.icon').innerHTML = iconSvg('stim');
 
@@ -522,6 +524,8 @@ export function updateHUD(dt) {
   setText('en-text', `${Math.floor(p.en)} / ${s.maxEn}`);
   setText('lvl', String(c.level));
   setText('credits-val', fmt(c.credits));
+  // recompensa atual da dificuldade (sobe aos poucos depois de aumentar)
+  setText('diff-rew', `¢×${rewardK('cr').toFixed(1)} · ★×${rewardK('loot').toFixed(1)}${rewardRamping() ? ' ▲' : ''}`);
   setText('stim-count', String(c.stims));
   setText('tstim-count', String(c.stims));
 
@@ -633,6 +637,29 @@ export function hurtFlash(frac) {
 }
 
 const toastKeys = {};
+// Dificuldade: opções (botão) e HUD (controle deslizante) usam a mesma função
+const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff7a1a', '#ff3a64'];
+function updDiffUi() {
+  const k = G.settings.difficulty;
+  const i = Math.max(0, DIFF_ORDER.indexOf(k));
+  const name = DIFFICULTY[k]?.name || 'Normal';
+  $('opt-diff').textContent = name;
+  $('diff-range').value = String(i);
+  $('diff-name').textContent = name;
+  $('diff-ctl').style.setProperty('--dc', DIFF_COLORS[i]);
+}
+function applyDiff(key) {
+  if (!setDifficulty(key)) return;
+  saveSettings();
+  updDiffUi();
+  // vida/blindagem do jogador e os inimigos vivos mudam na hora
+  if (G.player && G.char) refreshStats();
+  if (G.mode !== 'menu') {
+    const D = DIFFICULTY[key];
+    toast(L(`Dificuldade: <b>${D.name}</b>. Os inimigos já mudaram; ao aumentar, a recompensa sobe aos poucos.`, `Difficulty: <b>${D.name}</b>. Enemies changed now; when raising it, rewards ramp up gradually.`), '', 'diff');
+  }
+}
+
 export function toast(html, cls = '', key = null) {
   if (key) {
     const n = performance.now();

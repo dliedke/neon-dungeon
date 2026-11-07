@@ -12,7 +12,7 @@ import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
 import { spawnEnemy, pickEnemyType, ETYPES } from './enemies.js';
 import { dropLoot, spawnPickup } from './loot.js';
-import { after, explosion, damagePlayer, healPlayer } from './combat.js';
+import { after, explosion, damagePlayer, healPlayer, capHeal } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
 import { isWalkable, isBossFloor, isFinalFloor } from './dungeon.js';
 import { npcNear } from './biomes.js';
@@ -355,7 +355,7 @@ export function runKill(e) {
   for (const m of [25, 50, 100]) if (combo.n >= m) achMark('flags', 'combo' + m);
   // anomalias
   const kh = amod('killHeal', 0);
-  if (kh) healPlayer((p.stats.maxHp * kh) / 100, false);
+  if (kh) healPlayer(capHeal('moon', (p.stats.maxHp * kh) / 100, (p.stats.maxHp * kh * 1.5) / 100), false);
   if (amod('explode', false) && !e.boss && !e.explodeOnDeath && !e.rift) {
     const x = e.x;
     const z = e.z;

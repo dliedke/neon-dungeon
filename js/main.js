@@ -10,12 +10,12 @@ import { initAudio, applyVolumes, sfx } from './audio.js';
 import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
-import { populateFloor, updateEnemies, spawnEnemy } from './enemies.js';
+import { populateFloor, updateEnemies, spawnEnemy, tickReward } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
-import { placeFeatures, buildFeatures, updateBiome } from './biomes.js';
+import { placeFeatures, buildFeatures, updateBiome, npcUnderCursor } from './biomes.js';
 import { updateMythic, resetMythic } from './mythic.js';
 import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
@@ -187,6 +187,7 @@ function updateMouseWorld() {
   }
   // inimigo sob o cursor: projeta e compara em pixels
   G.hoverEnemy = null;
+  G.hoverNpc = null;
   if (G.lastInput !== 'kb' || G.mode !== 'play') return;
   let best = 42;
   const v = new THREE.Vector3();
@@ -201,7 +202,9 @@ function updateMouseWorld() {
       G.hoverEnemy = e;
     }
   }
-  canvas.style.cursor = G.hoverEnemy ? 'crosshair' : 'default';
+  // mercador, ferreiro ou baú sob o cursor: clicar abre (ou anda até lá)
+  if (!G.hoverEnemy) G.hoverNpc = npcUnderCursor(m.x, m.y, camera);
+  canvas.style.cursor = G.hoverEnemy ? 'crosshair' : G.hoverNpc ? 'pointer' : 'default';
 }
 
 // ------------------------------------------------------------------
@@ -507,6 +510,7 @@ function logic(dt) {
   updatePets(dt);
   updateMythic(dt);
   updateRun(dt);
+  tickReward(dt);
   updateExit(dt);
   achT -= dt;
   if (achT <= 0) {

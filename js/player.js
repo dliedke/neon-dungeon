@@ -7,7 +7,7 @@ import { starterWeapon, SLOTS } from './items.js';
 import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
 import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
-import { groundEffect } from './biomes.js';
+import { groundEffect, openNpc } from './biomes.js';
 import { formMods } from './powers.js';
 import { DIFFICULTY } from './enemies.js';
 import { achAdd } from './ach.js';
@@ -439,15 +439,28 @@ export function updatePlayer(dt) {
   let wantAttack = Input.held.primary;
   if (G.lastInput === 'kb' && G.mouseWorld.ok) {
     if (mouse.lmbPressed) {
+      p.npcGo = null;
       if (G.hoverEnemy && G.hoverEnemy.alive) {
         p.target = G.hoverEnemy;
         p.path = null;
+      } else if (G.hoverNpc && !mouse.shift) {
+        // clicou no mercador/ferreiro/baú: abre se estiver perto, senão anda até ele e abre ao chegar
+        const n = G.hoverNpc;
+        if (G.npcNear === n) openNpc(n);
+        else {
+          const dx = p.x - n.x;
+          const dz = p.z - n.z;
+          const l = Math.hypot(dx, dz) || 1;
+          setMoveTarget(p, n.x + (dx / l) * 1.1, n.z + (dz / l) * 1.1);
+          p.npcGo = n;
+          ringFx(n.x, n.z, 1, C.accent, 0.3, { from: 0.3 });
+        }
       } else if (!mouse.shift) {
         setMoveTarget(p, G.mouseWorld.x, G.mouseWorld.z);
         p.pathT = 0.15;
         ringFx(G.mouseWorld.x, G.mouseWorld.z, 0.45, C.accent, 0.3, { from: 0.15 });
       }
-    } else if (mouse.lmb && !p.target && !mouse.shift) {
+    } else if (mouse.lmb && !p.target && !p.npcGo && !mouse.shift) {
       p.pathT -= dt;
       if (p.pathT <= 0) {
         p.pathT = 0.15;
@@ -471,6 +484,7 @@ export function updatePlayer(dt) {
   if (mag > 0.12) {
     p.path = null;
     p.target = null;
+    p.npcGo = null;
     const w = screenToWorld(mv.x, mv.y);
     const l = Math.hypot(w.x, w.z);
     vx = (w.x / l) * Math.min(1, mag);

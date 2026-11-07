@@ -73,6 +73,8 @@ Every class can also learn **Teleport** (from level 3): it blinks up to 8m towar
 
 Attacks and skills **aim automatically** at the nearest enemy.
 
+The merchant, the blacksmith and the shared stash only open when you ask: **click** them (your character walks there if they are far), press **Enter** or **A** next to them, or **tap** the button that pops up above them on mobile.
+
 ## Biomes
 
 Every floor changes biome (13 in total), each with its own map layout, lighting and hazards:
@@ -178,10 +180,14 @@ Medals and their counters sync with the Google cloud save; progress from every d
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
   - **Shared stash:** a chest a few steps from the start of every floor holds up to 100 items shared by all your characters (and synced to the cloud).
-    Walk onto it to store or take items. Weapons can only be taken by their own class.
+    Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
-- **Options:** difficulty (Easy, Normal or Hard), neon glow intensity, graphics quality, soundtrack and volume.
+- **Difficulty:** a small slider in the HUD (also in the options) with 5 levels: Easy, Normal, Hard, Brutal and Insane. It changes instantly, enemies on the floor included.
+  The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).
+  When you raise it the reward bonus ramps up over a few seconds, so it can't be flipped up just to open a chest.
+- **Healing that scales with damage** (life steal, heal on kill) has a per-second cap, so a strong character still has to watch their health.
+- **Options:** difficulty, neon glow intensity, graphics quality, soundtrack and volume.
 
 ## Development
 

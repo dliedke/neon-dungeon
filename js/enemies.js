@@ -151,8 +151,47 @@ export const DIFFICULTY = {
   easy: { name: L('Fácil', 'Easy'), hp: 0.55, dmg: 0.5, count: 1.0, bossHp: 1.0, bossDmg: 0.8, bossTempo: 1.05, pHp: 1.3, pArmor: 1.3, pRegen: 1.6 },
   normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 2.0, bossDmg: 1.4, bossTempo: 1.65, pHp: 1, pArmor: 1, pRegen: 1 },
   hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 2.8, bossDmg: 1.75, bossTempo: 2.15, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
+  brutal: { name: L('Brutal', 'Brutal'), hp: 2.6, dmg: 2.3, count: 1.25, bossHp: 3.3, bossDmg: 2.0, bossTempo: 2.4, pHp: 0.8, pArmor: 0.6, pRegen: 0.35 },
+  insane: { name: L('Insano', 'Insane'), hp: 3.6, dmg: 3.0, count: 1.3, bossHp: 3.8, bossDmg: 2.3, bossTempo: 2.7, pHp: 0.75, pArmor: 0.5, pRegen: 0.25 },
 };
+export const DIFF_ORDER = ['easy', 'normal', 'hard', 'brutal', 'insane'];
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
+export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty));
+
+// Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
+// Ao subir a dificuldade a recompensa sobe aos poucos (1 nível a cada 15s): assim não dá para
+// subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
+const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5], loot: [0.75, 1, 1.5, 2.2, 3.2] };
+let rewardLvl = -1;
+export function tickReward(dt) {
+  const r = diffRank();
+  if (rewardLvl < 0) rewardLvl = Math.min(r, 1);
+  rewardLvl = r < rewardLvl ? r : Math.min(r, rewardLvl + dt / 15);
+}
+export function rewardK(kind) {
+  const t = REWARD[kind];
+  const lv = Math.max(0, rewardLvl < 0 ? Math.min(diffRank(), 1) : rewardLvl);
+  const i = Math.min(t.length - 2, Math.floor(lv));
+  return t[i] + (t[i + 1] - t[i]) * (lv - i);
+}
+export const rewardRamping = () => rewardLvl >= 0 && rewardLvl < diffRank();
+
+// Troca de dificuldade no meio do andar: os inimigos vivos mudam na hora (vida proporcional e dano)
+export function setDifficulty(key) {
+  const A = diff();
+  if (!DIFFICULTY[key] || key === G.settings.difficulty) return false;
+  G.settings.difficulty = key;
+  const B = diff();
+  for (const e of G.enemies || []) {
+    if (!e.alive || e.inert || e.decoy || !(e.maxHp > 1)) continue;
+    const kh = (B.hp / A.hp) * (e.boss ? B.bossHp / A.bossHp : 1);
+    const kd = (B.dmg / A.dmg) * (e.boss ? B.bossDmg / A.bossDmg : 1);
+    e.maxHp *= kh;
+    e.hp *= kh;
+    e.dmg *= kd;
+  }
+  return true;
+}
 
 export function floorScale(f) {
   const D = diff();
@@ -2041,7 +2080,7 @@ function finalVictory() {
   achAdd('wins');
   achMark('winClasses', ch.cls);
   if (!F.deaths) achMark('flags', 'winNoDeath');
-  if (G.settings.difficulty === 'hard') achMark('flags', 'winHard');
+  if (diffRank() >= 2) achMark('flags', 'winHard');
   if (F.time < 600) achMark('flags', 'winFast');
   if (ch.tier >= 1) achMark('flags', 'winNightmare');
   if (ch.tier >= 2) achMark('flags', 'winInferno');

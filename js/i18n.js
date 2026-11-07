@@ -32,6 +32,7 @@ const DICT = {
   track: ['Trilha', 'Soundtrack'],
   sfx: ['Efeitos', 'Sound effects'],
   difficulty: ['Dificuldade', 'Difficulty'],
+  diffTitle: ['Dificuldade: quanto mais difícil, mais créditos e itens melhores (¢ créditos, ★ itens). Muda na hora.', 'Difficulty: the harder, the more credits and better items (¢ credits, ★ items). Changes instantly.'],
   graphics: ['Gráficos', 'Graphics'],
   glow: ['Brilho neon', 'Neon glow'],
   rotateTitle: ['GIRE O CELULAR', 'ROTATE YOUR PHONE'],
