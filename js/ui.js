@@ -105,6 +105,17 @@ export function initUI() {
   };
   $('shop-close').onclick = () => closeShop();
   $('forge-close').onclick = () => closeForge();
+  $('stash-close').onclick = () => closeStash();
+  for (const id of ['stash-grid', 'stash-inv']) {
+    $(id).addEventListener('click', (e) => {
+      const cell = e.target.closest('.cell[data-uid]');
+      if (cell) stashSelect(cell);
+    });
+    $(id).addEventListener('dblclick', (e) => {
+      const cell = e.target.closest('.cell[data-uid]');
+      if (cell) stashMove(cell.dataset.swhere, cell.dataset.uid);
+    });
+  }
 
   // opções
   const s = G.settings;
@@ -780,10 +791,15 @@ function drawMapMarks(ctx, d, p, near) {
     const r = e.boss ? 1.3 : e.elite || e.type === 'thief' ? 0.7 : 0.45;
     ctx.fillRect(e.x - r, e.z - r, r * 2, r * 2);
   }
-  // ferreiro e mercador (depois de explorados)
+  // ferreiro, mercador e baú (depois de explorados)
   for (const pr of d.props) {
-    if (pr.type !== 'smith' && pr.type !== 'merchant') continue;
+    if (pr.type !== 'smith' && pr.type !== 'merchant' && pr.type !== 'stash') continue;
     if (!d.explored[Math.floor(pr.z) * d.W + Math.floor(pr.x)]) continue;
+    if (pr.type === 'stash') {
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(pr.x - 0.9, pr.z - 0.6, 1.8, 1.2);
+      continue;
+    }
     ctx.fillStyle = pr.type === 'smith' ? '#ff7a1a' : '#ffd23d';
     ctx.fillRect(pr.x - 1.2, pr.z - 0.5, 2.4, 0.8);
     ctx.fillRect(pr.x - 0.4, pr.z + 0.3, 0.8, 0.9);
@@ -1442,7 +1458,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1462,7 +1478,8 @@ function setFocus(el) {
   if (!el) return;
   el.classList.add('gp-focus');
   el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  if (el.matches('.cell[data-uid]') && G.lastInput === 'pad') selectCell(el);
+  if (el.matches('.cell[data-swhere]') && G.lastInput === 'pad') stashSelect(el);
+  else if (el.matches('.cell[data-uid]') && G.lastInput === 'pad') selectCell(el);
   if (el.matches('[data-node]') && G.lastInput === 'pad' && +el.dataset.node !== treeSel) {
     treeSel = +el.dataset.node;
     renderTree();
@@ -1535,13 +1552,15 @@ export function uiPadUpdate() {
   if (Input.nav('a') && focused) {
     if (focused.matches('[data-node]')) {
       treeSpend(+focused.dataset.node);
+    } else if (focused.matches('.cell[data-swhere]')) {
+      stashMove(focused.dataset.swhere, focused.dataset.uid); // baú: guarda ou pega
     } else if (focused.matches('.cell[data-uid]')) {
       if (focused.dataset.where === 'inv') equipItem(focused.dataset.uid);
       else unequip(focused.dataset.slot);
     } else focused.click();
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
-  if (Input.nav('rt') && focused && focused.matches('.cell[data-uid]')) {
+  if (Input.nav('rt') && focused && focused.matches('.cell[data-where]')) {
     // {RT}: favoritar/desfavoritar o item sob o seletor
     const sel = focused.dataset.where === 'equip' ? `#equip-slots [data-eslot="${focused.dataset.slot}"]` : null;
     const idx = [...document.querySelectorAll('#inv-grid > .cell')].indexOf(focused);
@@ -1580,6 +1599,9 @@ export function uiBack(root = activePanel()) {
       break;
     case 'panel-forge':
       closeForge();
+      break;
+    case 'panel-stash':
+      closeStash();
       break;
     case 'panel-pause':
       closePause();
@@ -1745,6 +1767,133 @@ function doForge(slot) {
   // mantém o foco do controle no mesmo botão
   const again = $('forge-items').querySelector(`[data-forge="${slot}"]`) || $('forge-items').querySelectorAll('[data-forge]')[0] || $('forge-close');
   if (G.lastInput === 'pad' && again) setFocus(again);
+}
+
+// ------------------------------------------------------------------
+// Baú compartilhado: até 100 itens para todos os personagens (fica no save, fora do personagem).
+// Cada item guardado leva `st` (quando entrou) e cada retirada fica em save.stashOut[uid],
+// para a sincronização na nuvem não duplicar nem perder itens (ver mergeStash em sync.js).
+// ------------------------------------------------------------------
+export const STASH_SIZE = 100;
+let stashSel = null; // { where: 'stash'|'sinv', uid }
+const stashList = () => G.save.stash || (G.save.stash = []);
+// arma de outra classe: pode ser guardada, mas só a classe dela pode pegar
+const otherClassWeapon = (it) => it.slot === 'weapon' && it.cls && it.cls !== G.char.cls;
+const onlyClassMsg = (it) => L(`Só quem é ${CLASSES[it.cls].name} pode pegar esta arma.`, `Only a ${CLASSES[it.cls].name} can take this weapon.`);
+
+export function openStash() {
+  if (G.mode !== 'play') return;
+  G.mode = 'stash';
+  G.save.stashSeen = true;
+  stashSel = null;
+  $('panel-stash').classList.remove('hidden');
+  clearFocus();
+  sfx.pickup();
+  renderStash();
+}
+
+export function closeStash() {
+  $('panel-stash').classList.add('hidden');
+  if (G.mode === 'stash') G.mode = 'play';
+  stashSel = null;
+  saveGame();
+  Input.reset();
+}
+
+function stashCell(it, where) {
+  if (!it) return '<div class="cell empty" data-nav></div>';
+  const lock = otherClassWeapon(it);
+  const better = !lock && isUpgrade(it, G.char.equip);
+  const sel = stashSel && stashSel.uid === it.uid ? ' sel' : '';
+  const tag = lock ? `<span class="cls-dot" style="background:${CLASSES[it.cls].css}"></span>` : '';
+  return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}">${slotIconSvg(it.slot)}${better ? '<span class="up">▲</span>' : ''}${favMark(it)}${tag}</div>`;
+}
+
+function renderStash() {
+  const c = G.char;
+  const st = stashList();
+  sortInventory(c.inv, c.equip);
+  let a = '';
+  for (let i = 0; i < Math.max(STASH_SIZE, st.length); i++) a += stashCell(st[i], 'stash');
+  $('stash-grid').innerHTML = a;
+  let b = '';
+  for (let i = 0; i < INV_SIZE; i++) b += stashCell(c.inv[i], 'sinv');
+  $('stash-inv').innerHTML = b;
+  $('stash-count').textContent = `${st.length}/${STASH_SIZE}`;
+  $('stash-inv-count').textContent = `${c.inv.length}/${INV_SIZE}`;
+  renderStashDetail();
+}
+
+function stashFind(sel) {
+  if (!sel) return null;
+  return (sel.where === 'stash' ? stashList() : G.char.inv).find((i) => i.uid === sel.uid) || null;
+}
+
+function stashSelect(cell) {
+  stashSel = { where: cell.dataset.swhere, uid: cell.dataset.uid };
+  document.querySelectorAll('#panel-stash .cell.sel').forEach((x) => x.classList.remove('sel'));
+  cell.classList.add('sel');
+  renderStashDetail();
+}
+
+function renderStashDetail() {
+  const el = $('stash-detail');
+  const it = stashFind(stashSel);
+  if (!it) {
+    el.innerHTML = `<div class="empty-detail">${L('Os itens guardados aqui ficam para <b>todos os seus personagens</b>.<br><br>Clique duas vezes (ou {A} no controle) para guardar ou pegar.', 'Items stored here are shared by <b>all your characters</b>.<br><br>Double-click (or {A} on a gamepad) to store or take.').replace(/\{A\}/g, glyph('a'))}</div>`;
+    return;
+  }
+  const c = G.char;
+  const lock = otherClassWeapon(it);
+  let btn;
+  if (stashSel.where === 'sinv') btn = `<button class="btn small" data-nav data-sact="put" ${stashList().length >= STASH_SIZE ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
+  else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
+  else btn = `<button class="btn small" data-nav data-sact="take" ${c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+  const note = lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '';
+  const cur = lock ? null : c.equip[it.slot];
+  // o botão vem antes do cartão: no celular deitado ele fica sempre à vista
+  el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '');
+  el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => stashMove(stashSel.where, it.uid)));
+}
+
+// where: de onde o item sai ('stash' = do baú para o inventário, 'sinv' = do inventário para o baú)
+function stashMove(where, uid) {
+  const c = G.char;
+  const st = stashList();
+  const from = where === 'stash' ? st : c.inv;
+  const idx = from.findIndex((i) => i.uid === uid);
+  if (idx < 0) return;
+  const it = from[idx];
+  if (where === 'stash') {
+    if (otherClassWeapon(it)) {
+      sfx.deny();
+      toast(onlyClassMsg(it), 'warn');
+      return;
+    }
+    if (c.inv.length >= INV_SIZE) return invFull();
+    st.splice(idx, 1);
+    delete it.st;
+    if (!G.save.stashOut) G.save.stashOut = {};
+    G.save.stashOut[uid] = Date.now();
+    c.inv.push(it);
+  } else {
+    if (st.length >= STASH_SIZE) {
+      sfx.deny();
+      toast(L('O baú está cheio (100 itens).', 'The stash is full (100 items).'), 'warn');
+      return;
+    }
+    c.inv.splice(idx, 1);
+    it.st = Date.now();
+    st.push(it);
+  }
+  sfx.pickup();
+  stashSel = null;
+  saveGame();
+  renderStash();
+  // controle: o seletor fica na mesma casa
+  const cells = document.querySelectorAll(where === 'stash' ? '#stash-grid > .cell' : '#stash-inv > .cell');
+  if (G.lastInput === 'pad' && cells.length) restoreFocus(cells[Math.min(idx, cells.length - 1)]);
+  else clearFocus();
 }
 
 // ------------------------------------------------------------------

@@ -33,7 +33,7 @@ Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `
 | `dungeon`, `theme`, `floor` | Current map object, biome definition and floor number. |
 | `player` | Runtime player entity (position, hp/en, cooldowns `cds[]`, `stats`, `buffs`, model). |
 | `char` | The persistent character (what is saved). See [Saves](#saves-and-cloud-sync). |
-| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach }`. |
+| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 100 items, all classes). |
 | `settings` | Options (`music`, `sfx`, `track`, `quality`, `shake`, `difficulty`, `glow`, `sv`). |
 | `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
 | `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |
@@ -134,7 +134,7 @@ Navigation helpers:
 - `resolveCircle` handles collision against walls. `lineOfSight` / `blocksSight` handle vision (pits don't block sight or shots).
 - `revealAround` reveals the minimap fog.
 
-`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`) and the blacksmith (always on the floor after a boss).
+`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`), the blacksmith (always on the floor after a boss) and the shared stash (`placeStash`, a few steps from the start of every floor). `npcNear(d, x, z, r)` keeps rifts, shrines and chests away from all three.
 
 ## Entities
 
@@ -158,7 +158,7 @@ Navigation helpers:
 ### Enemies and bosses (`enemies.js`)
 
 - `ETYPES[type]`: `name`, `hp`, `dmg`, `speed`, `r` (radius), `h` (height), `xp`, `minFloor`, `weight` (spawn weight), `ai`, `range`, `atkCd`, `blood` (particle color). Optional: `fly`, `keep: [min, max]` (preferred distance), `proj: { speed, color, size }`, `burst`, `solo`, `boss`, `heavy` (no knockback), `inert`, `static`, `blink`, `shield`.
-- `floorScale(f)` and `DIFFICULTY` scale HP and damage. Tiers add an effective floor offset (`TIERS[t].off`).
+- `floorScale(f)` and `DIFFICULTY` scale HP and damage. Tiers add an effective floor offset (`TIERS[t].off`) and multiply HP and damage (`TIERS[t].hp` / `.dmg`).
 - `pickEnemyType` picks by weight from types with `minFloor <= floor`, strongly favoring `theme.fauna`. In natural biomes (`natural: true`) the other types drop to 20 % weight.
 - `spawnEnemy(type, x, z, { elite, decoy, anomaly })` builds the model (`makeEnemyModel`) and applies elite affixes (`ELITE`) and anomaly modifiers.
 - Elites get 1, 2 or 3 affixes depending on the effective floor (2 from 14, 3 from 26).
@@ -201,12 +201,12 @@ hitEnemy(e, mult, opts)
 - **Challenge rifts**: `spawnRift`, a timed arena with a reward.
 - **Kill combo** (`runKill`) and the **floor-clear bonus** (`clearBonus = (150 + floor × 40) × (1 + tier × 0.5)`).
 - **Implants** (`IMPLANTS`): pick one of three after each boss. `bossReward()` keys them by `floor + 100 × tier`, so each tier grants its own. `implantMods(c)` feeds `computeStats`.
-- **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset, loot, credits and elite bonuses.
+- **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset (30 / 60, so each mode continues where the previous one ended), enemy HP and damage multipliers, and loot, credits and elite bonuses.
 
 ## Saves and cloud sync
 
 ```
-localStorage['neon-dungeon-save-v1']     = { v: 1, slots: { blade: char, gunner: char, … }, stats, ach }
+localStorage['neon-dungeon-save-v1']     = { v: 1, slots: { blade: char, gunner: char, … }, stats, ach, stash, stashOut }
 localStorage['neon-dungeon-settings-v1'] = G.settings
 localStorage['neon-dungeon:device']      = random device id (medal counters)
 ```
@@ -220,6 +220,7 @@ localStorage['neon-dungeon:device']      = random device id (medal counters)
   - `wins`, `playTime`, `deaths` and `bestTier` take the max.
   - Medal counters are per device and summed (`stats.dev`); sets (`stats.sets`) and unlocks (`ach`) are unioned.
   - A "New character" reset (`resetAt`) wins over an older character.
+  - Shared stash (`mergeStash`): every stored item carries `st` (when it went in) and every withdrawal is logged in `stashOut[uid]` (when it came out). Items are unioned by uid and an item stays only if it went in after its last withdrawal, so nothing is lost and nothing is duplicated. The merge never trims the stash, even above 100.
 - The character in play is never replaced mid-run; merged slots apply when the player returns to the menu.
 
 ## Input (`input.js`, `padglyphs.js`)
@@ -234,7 +235,7 @@ localStorage['neon-dungeon:device']      = random device id (medal counters)
 ## UI (`ui.js`, `index.html`, `css/style.css`)
 
 - All panels already exist in `index.html` and are shown and hidden with classes. `ui.js` fills them (`renderChar`, `renderClassCards`, `openShop`, `openForge`, `openAch`, …).
-- **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
+- **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the stash `{A}` stores or takes the item. In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
 - Feedback: `toast(html, cls, key)` (a `key` replaces the previous toast with the same key), `banner(title, sub)`, `confirmDialog(title, text, onYes)`, `floatText`.
 - HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()`, `mythHud()`.
 - Layout must work from phone landscape (around 640×360) up to desktop. The `max-width: 760px` and `max-height: 520px` media queries handle small screens.

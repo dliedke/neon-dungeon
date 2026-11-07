@@ -13,7 +13,7 @@ On **floor 30**, the final battle pits you against all 7 bosses in waves: two at
 Items marked with **▲** and a green glow are better than what you have equipped.
 
 After you win, the same character can descend again from floor 1 in **Nightmare ☠️** and then **Inferno 🔥** mode (New Game+).
-You keep your level, items and implants. Enemies are far stronger, elites are more common and have more affixes, and items and credits are better.
+You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 31, Inferno floor 1 as floor 61) and enemies also get extra health and damage (×1.25 in Nightmare, ×1.5 in Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
 Each mode grants its own set of implants and has its own medal.
 
 ## Classes
@@ -175,6 +175,8 @@ Medals and their counters sync with the Google cloud save; progress from every d
     up to +4/+6/+8/+10/+12 depending on rarity, each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
+  - **Shared stash:** a chest a few steps from the start of every floor holds up to 100 items shared by all your characters (and synced to the cloud).
+    Walk onto it to store or take items. Weapons can only be taken by their own class.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
 - **Options:** difficulty (Easy, Normal or Hard), neon glow intensity, graphics quality, soundtrack and volume.

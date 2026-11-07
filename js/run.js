@@ -46,12 +46,15 @@ export const ANOMALIES = {
 // Modos depois de vencer (Novo Jogo+ por personagem): Pesadelo e Inferno.
 // O personagem desce de novo do andar 1 com tudo o que tem, e os inimigos agem
 // como se estivessem `off` andares mais fundo (mais vida, dano e elites com mais afixos).
-// Em troca: itens de nível maior, raridade melhor e mais créditos.
+// Cada modo continua de onde o anterior parou (Pesadelo 1 = andar 31, Inferno 1 = andar 61)
+// e ainda multiplica a vida (`hp`) e o dano (`dmg`) dos inimigos, porque depois de vencer
+// o personagem já está no nível máximo, com os implantes e os itens do fim do jogo.
+// Em troca: itens de nível maior, raridade melhor e mais créditos (o ferreiro cobra pelo nível do item).
 // ------------------------------------------------------------------
 export const TIERS = [
-  { off: 0, loot: 0, credits: 1, elite: 0, icon: '', css: '#00f0ff', name: L('Normal', 'Normal') },
-  { off: 14, loot: 15, credits: 1.4, elite: 0.06, icon: '☠️', css: '#ff4466', name: L('Pesadelo', 'Nightmare') },
-  { off: 26, loot: 30, credits: 1.8, elite: 0.12, icon: '🔥', css: '#ff7a1a', name: L('Inferno', 'Inferno') },
+  { off: 0, hp: 1, dmg: 1, loot: 0, credits: 1, elite: 0, icon: '', css: '#00f0ff', name: L('Normal', 'Normal') },
+  { off: 30, hp: 1.25, dmg: 1.25, loot: 15, credits: 2, elite: 0.08, icon: '☠️', css: '#ff4466', name: L('Pesadelo', 'Nightmare') },
+  { off: 60, hp: 1.5, dmg: 1.5, loot: 30, credits: 3, elite: 0.15, icon: '🔥', css: '#ff7a1a', name: L('Inferno', 'Inferno') },
 ];
 export const MAX_TIER = TIERS.length - 1;
 export const tierOf = (c = G.char) => TIERS[Math.min(MAX_TIER, (c && c.tier) | 0)];

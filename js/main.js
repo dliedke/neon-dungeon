@@ -61,6 +61,9 @@ function loadSave() {
     save = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   } catch (_) {}
   if (!save || !save.slots) save = { v: 1, slots: {} };
+  // baú compartilhado entre os personagens (saves antigos não têm)
+  if (!Array.isArray(save.stash)) save.stash = [];
+  if (!save.stashOut || typeof save.stashOut !== 'object') save.stashOut = {};
   ensureAch(save);
   G.save = save;
   try {
@@ -275,6 +278,7 @@ export function startFloor(floor) {
   c.maxFloor = Math.max(c.maxFloor || 1, floor);
   achMark('biomes', G.theme.id);
   if (d.props.some((p) => p.type === 'smith')) setTimeout(() => G.floor === floor && G.mode === 'play' && toast(L('⚒ Há um <b>ferreiro</b> neste andar: ele aprimora seu equipamento por créditos.', '⚒ There is a <b>blacksmith</b> on this floor: he upgrades your gear for credits.'), 'item'), 3400);
+  if (!G.save.stashSeen && d.props.some((p) => p.type === 'stash')) setTimeout(() => G.floor === floor && G.mode === 'play' && !G.save.stashSeen && toast(L('📦 Perto do início de cada andar há um <b>baú compartilhado</b>: o que você guardar nele fica para todos os seus personagens.', '📦 Near the start of every floor there is a <b>shared stash</b>: whatever you store in it is available to all your characters.'), 'item'), 1500);
   placePlayer(d.start.x, d.start.z);
   G.camFocus.x = d.start.x;
   G.camFocus.z = d.start.z;

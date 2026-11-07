@@ -9,7 +9,7 @@ import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
 import { makeItem, itemScore, isUpgrade, SLOTS } from './items.js';
-import { openShop, openForge } from './ui.js';
+import { openShop, openForge, openStash } from './ui.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
@@ -307,10 +307,41 @@ export function placeFeatures(d, theme) {
   }
   if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = makeShopStock(d.floor);
   placeSmith(d, rooms);
+  placeStash(d);
 }
 
 // Mercador ou ferreiro a menos de `rad` do ponto (fendas, santuários e cofres não podem ficar em cima deles)
-export const npcNear = (d, x, z, rad) => (d.props || []).some((p) => (p.type === 'smith' || p.type === 'merchant') && Math.hypot(p.x - x, p.z - z) < rad);
+export const npcNear = (d, x, z, rad) => (d.props || []).some((p) => (p.type === 'smith' || p.type === 'merchant' || p.type === 'stash') && Math.hypot(p.x - x, p.z - z) < rad);
+
+// Baú compartilhado: em todo andar, a uns 3 passos do início, num lugar livre e alcançável
+function placeStash(d) {
+  if (!G.char) return;
+  const { W, H, grid, feat } = d;
+  const seen = reachMap(d);
+  const sx = Math.floor(d.start.x);
+  const sz = Math.floor(d.start.z);
+  const opts = [];
+  for (let j = sz - 4; j <= sz + 4; j++)
+    for (let i = sx - 4; i <= sx + 4; i++) {
+      if (i < 2 || j < 2 || i >= W - 2 || j >= H - 2 || !seen[j * W + i]) continue;
+      const x = i + 0.5;
+      const z = j + 0.5;
+      const dist = Math.hypot(x - d.start.x, z - d.start.z);
+      if (dist < 2.4 || dist > 3.8 || inArena(d, x, z) || Math.hypot(x - d.exit.x, z - d.exit.z) < 5) continue;
+      let free = true;
+      for (let dy = -1; dy <= 1 && free; dy++)
+        for (let dx = -1; dx <= 1 && free; dx++) {
+          const k = (j + dy) * W + i + dx;
+          if (grid[k] !== TILE.FLOOR || feat[k]) free = false;
+        }
+      if (!free || npcNear(d, x, z, 3) || d.props.some((p) => Math.hypot(p.x - x, p.z - z) < 1.6)) continue;
+      opts.push({ x, z });
+    }
+  if (!opts.length) return;
+  const pt = pick(opts);
+  d.props.push({ type: 'stash', x: pt.x, z: pt.z, near: false, open: 0 });
+}
+
 
 // Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...) e às vezes nos outros
 export const smithFloor = (f) => f >= 2 && !isFinalFloor(f) && (f % 3 === 1 || chance(0.3));
@@ -757,6 +788,51 @@ export function buildFeatures(d, theme, group) {
         p.mouth = mouth;
         break;
       }
+      case 'stash': {
+        // baú de metal com frisos neon, tampa que abre e um cubo holográfico girando em cima
+        const chest = new THREE.Group(); // só o baú gira (a placa fica sempre de frente para a câmera)
+        const metal = new THREE.MeshLambertMaterial({ color: 0x2a3444 });
+        const base = new THREE.Mesh(box(0.95, 0.5, 0.6), metal);
+        base.position.y = 0.25;
+        chest.add(base);
+        const trim = glowMat(0x00f0ff, 2.2);
+        for (const sx of [-0.44, 0.44]) {
+          const t = new THREE.Mesh(box(0.06, 0.52, 0.62), trim);
+          t.position.set(sx, 0.26, 0);
+          chest.add(t);
+        }
+        const band = new THREE.Mesh(box(0.97, 0.05, 0.62), trim);
+        band.position.y = 0.32;
+        chest.add(band);
+        const lock = new THREE.Mesh(box(0.14, 0.14, 0.04), glowMat(0xffd23d, 2.4));
+        lock.position.set(0, 0.42, 0.31);
+        chest.add(lock);
+        // a tampa gira na dobradiça de trás
+        const lid = new THREE.Group();
+        lid.position.set(0, 0.5, -0.3);
+        const lidM = new THREE.Mesh(box(0.97, 0.14, 0.62), metal);
+        lidM.position.set(0, 0.07, 0.3);
+        const lidT = new THREE.Mesh(box(0.99, 0.04, 0.12), trim);
+        lidT.position.set(0, 0.07, 0.56);
+        lid.add(lidM, lidT);
+        chest.add(lid);
+        const holo = new THREE.Mesh(box(0.26, 0.26, 0.26), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x00f0ff).multiplyScalar(gk(1.8)), transparent: true, opacity: 0.55, depthWrite: false }));
+        holo.position.y = 1.05;
+        chest.add(holo);
+        const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.45), new THREE.MeshBasicMaterial({ map: shopSign(L('BAÚ', 'STASH'), '#00f0ff', 48), transparent: true, depthWrite: false, color: new THREE.Color(gk(1.6), gk(1.6), gk(1.6)) }));
+        sign.position.y = 1.75;
+        g.add(sign);
+        const pad = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: new THREE.Color(0x00f0ff).multiplyScalar(gk(1.5)), transparent: true, opacity: 0.6, depthWrite: false }));
+        pad.scale.setScalar(1.1);
+        pad.position.y = 0.03;
+        g.add(pad);
+        chest.rotation.y = Math.atan2(d.start.x - p.x, d.start.z - p.z); // de frente para quem chega
+        g.add(chest);
+        p.lid = lid;
+        p.holo = holo;
+        p.sign = sign;
+        break;
+      }
     }
     group.add(g);
     p.group = g;
@@ -1048,6 +1124,20 @@ export function updateBiome(dt, camera) {
             openForge();
           } else if (dist > 3) pr.near = false;
         }
+        break;
+      }
+      case 'stash': {
+        if (camera) pr.sign.quaternion.copy(camera.quaternion);
+        pr.holo.rotation.y += dt * 1.6;
+        pr.holo.position.y = 1.05 + Math.sin(G.t * 2.4) * 0.06;
+        // a tampa abre quando o jogador chega perto
+        const dist = p && p.alive ? Math.hypot(p.x - pr.x, p.z - pr.z) : 99;
+        pr.open += ((dist < 3 || G.mode === 'stash' ? 1 : 0) - pr.open) * Math.min(1, dt * 6);
+        pr.lid.rotation.x = -pr.open * 1.1;
+        if (dist < 1.2 && !pr.near && G.mode === 'play') {
+          pr.near = true;
+          openStash();
+        } else if (dist > 2.4) pr.near = false;
         break;
       }
     }

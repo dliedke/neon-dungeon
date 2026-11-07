@@ -78,6 +78,27 @@ function mergeChar(a, b) {
   return win;
 }
 
+// Baú compartilhado: cada item guardado tem `st` (quando entrou) e cada retirada fica em
+// stashOut[uid] = quando saiu. Um item só fica se entrou depois da última retirada dele:
+// o que foi guardado em qualquer aparelho aparece, e o que já foi pego não volta (nem duplica).
+// Nunca corta itens, mesmo passando de 100 (aí só não dá para guardar mais até tirar alguns).
+const STASH_OUT_MAX = 500;
+function mergeStash(a, b) {
+  const out = { ...(b.stashOut || {}) };
+  for (const [u, t] of Object.entries(a.stashOut || {})) if (!(out[u] >= t)) out[u] = t;
+  const byUid = new Map();
+  for (const it of [...(a.stash || []), ...(b.stash || [])]) {
+    if (!it || !it.uid) continue;
+    const cur = byUid.get(it.uid);
+    if (!cur || (it.st || 0) > (cur.st || 0)) byUid.set(it.uid, it);
+  }
+  const stash = [...byUid.values()].filter((it) => !(out[it.uid] >= (it.st || 0)));
+  // guarda só as retiradas mais recentes
+  const keys = Object.keys(out);
+  if (keys.length > STASH_OUT_MAX) keys.sort((x, y) => out[y] - out[x]).slice(STASH_OUT_MAX).forEach((k) => delete out[k]);
+  return { stash, stashOut: out };
+}
+
 // local (a) + nuvem (b)
 export function mergeProgress(a, b) {
   if (!b || !b.slots) return a;
@@ -85,12 +106,12 @@ export function mergeProgress(a, b) {
   for (const cls of new Set([...Object.keys(a.slots || {}), ...Object.keys(b.slots || {})])) {
     slots[cls] = mergeChar(a.slots[cls], b.slots[cls]);
   }
-  return { v: 1, slots, stats: mergeStats(a.stats, b.stats), ach: mergeAch(a.ach, b.ach) };
+  return { v: 1, slots, stats: mergeStats(a.stats, b.stats), ach: mergeAch(a.ach, b.ach), ...mergeStash(a, b) };
 }
 
 function snapshot() {
   ensureAch(G.save);
-  return { v: 1, slots: G.save.slots, stats: G.save.stats, ach: G.save.ach };
+  return { v: 1, slots: G.save.slots, stats: G.save.stats, ach: G.save.ach, stash: G.save.stash || [], stashOut: G.save.stashOut || {} };
 }
 
 // a nuvem recebe sempre a mescla completa; aqui só não se troca o personagem em jogo
@@ -109,6 +130,12 @@ function syncMerge(cloud) {
   if (canon(merged.stats) !== canon(local.stats) || canon(merged.ach) !== canon(local.ach)) {
     G.save.stats = merged.stats;
     G.save.ach = merged.ach;
+    changed = true;
+  }
+  // baú compartilhado (com o painel aberto ele só é trocado quando fechar e sincronizar de novo)
+  if (G.mode !== 'stash' && (canon(merged.stash) !== canon(local.stash) || canon(merged.stashOut) !== canon(local.stashOut))) {
+    G.save.stash = merged.stash;
+    G.save.stashOut = merged.stashOut;
     changed = true;
   }
   if (changed) {

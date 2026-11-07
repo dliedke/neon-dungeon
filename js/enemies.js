@@ -159,7 +159,9 @@ export function floorScale(f) {
   const deep = Math.max(0, f - 3);
   const hp = (1 + (f - 1) * 0.35 + Math.pow(f - 1, 2) * 0.025) * (1 + 0.11 * deep);
   const dmg = (1 + (f - 1) * 0.18) * (1 + 0.025 * deep);
-  return { hp: hp * D.hp, dmg: dmg * D.dmg };
+  // Pesadelo e Inferno: além do andar mais fundo, inimigos com mais vida e dano
+  const M = tierOf();
+  return { hp: hp * D.hp * M.hp, dmg: dmg * D.dmg * M.dmg };
 }
 
 // Cada bioma favorece sua fauna; nos naturais quase não aparecem robôs
