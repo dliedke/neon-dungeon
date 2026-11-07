@@ -595,7 +595,7 @@ function openImplants() {
     </button>`;
   }).join('');
   $('implant-cards').querySelectorAll('[data-imp]').forEach((b) => (b.onclick = () => chooseImplant(+b.dataset.imp)));
-  $('implant-pad').textContent = G.lastInput === 'pad' ? padText(L('{A} Escolher', '{A} Choose')) : '';
+  $('implant-pad').innerHTML = G.lastInput === 'pad' ? padText(L('{A} Escolher', '{A} Choose')) : '';
   $('panel-implant').classList.remove('hidden');
   sfx.rare();
 }
