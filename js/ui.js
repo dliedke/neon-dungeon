@@ -1380,7 +1380,7 @@ function renderDetail() {
   const cur = selected.where === 'inv' ? c.equip[it.slot] : null;
   if (cur) {
     // selecionado e equipado lado a lado (no celular fica tudo visível sem rolar)
-    el.innerHTML = `<div class="cmp-wrap"><div class="cmp-new">${itemCardHtml(it, itemDiffHtml(it, cur))}${actions}</div><div class="cmp-cur"><div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(cur)}</div></div>`;
+    el.innerHTML = `<div class="cmp-wrap"><div class="cmp-new">${itemCardHtml(it, itemDiffHtml(it, cur), { base: true })}${actions}</div><div class="cmp-cur"><div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(cur, '', { base: true })}</div></div>`;
   } else el.innerHTML = itemCardHtml(it) + actions;
   el.querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => {
     const a = b.dataset.act;
@@ -2002,7 +2002,7 @@ function renderStashDetail() {
   const note = (lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '') + (bf.length ? `<div class="it-cmp better-for">▲ ${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => `<b style="color:${CLASSES[k].css}">${CLASSES[k].name}</b>`).join(', ')}</div>` : '');
   const cur = lock ? null : c.equip[it.slot];
   // o botão vem antes do cartão: no celular deitado ele fica sempre à vista
-  el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '');
+  el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '', { base: !!cur });
   el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => (b.dataset.sact === 'equip' ? stashEquip(it.uid) : stashMove(stashSel.where, it.uid))));
 }
 

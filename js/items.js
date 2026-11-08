@@ -242,12 +242,14 @@ export function itemStatLines(it) {
   return lines.join('');
 }
 
-export function itemCardHtml(it, extra = '') {
+// o.base: mostra os atributos sem o aprimoramento do ferreiro (usado na comparação com o equipado)
+export function itemCardHtml(it, extra = '', o = {}) {
   const R = RARITY[it.rarity];
+  const nb = o.base && it.plus && it.base;
   return `<div class="item-card r${it.rarity}">
     <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
-    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
-    ${itemStatLines(it)}
+    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}${nb ? ` · ${L('valores sem aprimoramento', 'values without upgrades')}` : ''}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
+    ${itemStatLines(nb ? unforged(it) : it)}
     ${extra}
   </div>`;
 }
