@@ -325,8 +325,11 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
   background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 0, 50, 0.55));
   transition: opacity 0.35s;
 }
-#hurt.low { opacity: 0.5 !important; animation: lowhp 1s infinite; }
-@keyframes lowhp { 50% { opacity: 0.2; } }
+/* vida baixa (<= 40%): a borda da tela pisca em vermelho; com vida crítica (<= 20%) pisca mais rápido.
+   Sem !important: a animação já vence o opacity em linha do hurtFlash. */
+#hurt.low { animation: lowhp 1.1s ease-in-out infinite; background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 40, 0.62)); }
+#hurt.low.crit { animation-duration: 0.6s; }
+@keyframes lowhp { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.15; } }
 
 #fade { position: fixed; inset: 0; background: #000; pointer-events: none; opacity: 0; transition: opacity 0.4s; z-index: 30; }
 #fade.on { opacity: 1; }
@@ -824,6 +827,12 @@ body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3
 .td-tip .pg { font-size: 14px; }
 
 body.pad .btn.gp-focus:disabled { opacity: 0.55; }
+/* ícone do botão do controle dentro de um botão da tela (só com controle conectado) */
+.btn .kg { display: none; margin-left: 7px; vertical-align: middle; }
+body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
+.btn .kg .pg { font-size: 13px; letter-spacing: 0; }
+.inv-head { align-items: center; gap: 8px; }
+#stash-put-myth { padding: 3px 10px; font-size: 12px; background: transparent; color: #c56bff; border-color: rgba(197, 107, 255, 0.7); }
 
 /* nuvem (Google Drive) */
 #sync-box { text-align: center; font-size: 14px; line-height: 1.5; color: var(--text); }

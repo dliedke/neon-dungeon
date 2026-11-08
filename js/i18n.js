@@ -21,6 +21,7 @@ const DICT = {
   recycleAll: ['Reciclar tudo', 'Recycle all'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
   padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {RT} Favoritar · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {RT} Favorite · {LB} {RB} Switch tab · {B} Close'],
+  padHintsStash: ['{A} Guardar/Pegar · {X} Equipar · {Y} Guardar todos os míticos · {B} Fechar', '{A} Store/Take · {X} Equip · {Y} Store all mythics · {B} Close'],
   padHintsTree: ['{A} Desbloquear/Evoluir · {X} Trocar de botão · {LB} {RB} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {X} Change button · {LB} {RB} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
   implantTitle: ['ESCOLHA UM IMPLANTE', 'CHOOSE AN IMPLANT'],

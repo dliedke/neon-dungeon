@@ -3,7 +3,7 @@ import { G } from './state.js';
 import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
-import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
+import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
@@ -106,6 +106,7 @@ export function initUI() {
   $('shop-close').onclick = () => closeShop();
   $('forge-close').onclick = () => closeForge();
   $('stash-close').onclick = () => closeStash();
+  $('stash-put-myth').onclick = () => stashPutMythics();
   for (const id of ['stash-grid', 'stash-inv']) {
     $(id).addEventListener('click', (e) => {
       const cell = e.target.closest('.cell[data-uid]');
@@ -529,8 +530,11 @@ export function updateHUD(dt) {
   setText('stim-count', String(c.stims));
   setText('tstim-count', String(c.stims));
 
-  const lowHp = p.alive && p.hp / s.maxHp < 0.28;
-  $('hurt').classList.toggle('low', lowHp);
+  // vida baixa: a tela pisca em vermelho para lembrar do stim
+  const hpFrac = p.hp / s.maxHp;
+  const hurtEl = $('hurt');
+  hurtEl.classList.toggle('low', p.alive && hpFrac <= 0.4);
+  hurtEl.classList.toggle('crit', p.alive && hpFrac <= 0.2);
 
   // habilidades
   const bar = barSkills();
@@ -1621,6 +1625,10 @@ export function uiPadUpdate() {
     } else focused.click();
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
+  if (root.id === 'panel-stash') {
+    if (Input.nav('x') && focused && focused.matches('.cell[data-swhere="stash"]')) stashEquip(focused.dataset.uid); // {X}: equipar do baú
+    if (Input.nav('y')) stashPutMythics(); // {Y}: guardar todos os míticos
+  }
   if (Input.nav('rt') && focused && focused.matches('.cell[data-where]')) {
     // {RT}: favoritar/desfavoritar o item sob o seletor
     const sel = focused.dataset.where === 'equip' ? `#equip-slots [data-eslot="${focused.dataset.slot}"]` : null;
@@ -1905,7 +1913,42 @@ function renderStash() {
   const ups = st.filter((it) => !otherClassWeapon(it) && isUpgrade(it, c.equip)).length;
   $('stash-count').innerHTML = (ups ? `<span class="stash-ups">▲ ${ups} ${ups === 1 ? L('melhor', 'upgrade') : L('melhores', 'upgrades')}</span> ` : '') + `${st.length}/${STASH_SIZE}`;
   $('stash-inv-count').textContent = `${c.inv.length}/${INV_SIZE}`;
+  const nm = c.inv.filter((it) => it.rarity === MYTHIC).length;
+  const pm = $('stash-put-myth');
+  pm.innerHTML = `✦ ${G.isTouch ? L('Guardar míticos', 'Store mythics') : L('Guardar todos os míticos', 'Store all mythics')}${nm ? ` (${nm})` : ''}${padKey('y')}`;
+  pm.disabled = !nm || st.length >= STASH_SIZE;
+  pm.title = L('Manda todos os itens míticos do inventário para o baú', 'Sends every mythic item in your inventory to the stash');
   renderStashDetail();
+}
+
+// Ícone do botão do controle dentro de um botão da tela (só aparece com controle conectado: body.pad / body.padc)
+const padKey = (k) => `<span class="kg">${glyph(k)}</span>`;
+
+// Guarda todos os míticos do inventário no baú (até encher)
+function stashPutMythics() {
+  const c = G.char;
+  const st = stashList();
+  const mys = c.inv.filter((it) => it.rarity === MYTHIC);
+  if (!mys.length) return sfx.deny();
+  const room = STASH_SIZE - st.length;
+  if (room <= 0) {
+    sfx.deny();
+    toast(L('O baú está cheio (100 itens).', 'The stash is full (100 items).'), 'warn');
+    return;
+  }
+  const moving = mys.slice(0, room);
+  const now = Date.now();
+  for (const it of moving) {
+    c.inv.splice(c.inv.indexOf(it), 1);
+    it.st = now;
+    st.push(it);
+  }
+  sfx.pickup();
+  const left = mys.length - moving.length;
+  toast(`📦 ${L(`${moving.length} ${moving.length === 1 ? 'mítico guardado' : 'míticos guardados'} no baú`, `${moving.length} ${moving.length === 1 ? 'mythic' : 'mythics'} stored in the stash`)}` + (left ? `<br><small>${L(`O baú encheu: ${left} ficaram no inventário.`, `The stash is full: ${left} stayed in your inventory.`)}</small>` : ''), 'item');
+  if (stashSel && stashSel.where === 'sinv' && moving.some((it) => it.uid === stashSel.uid)) stashSel = null;
+  saveGame();
+  renderStash();
 }
 
 function stashFind(sel) {
@@ -1933,15 +1976,15 @@ function renderStashDetail() {
   let hint = ''; // legenda do que cada botão faz
   if (stashSel.where === 'sinv') {
     const full = stashList().length >= STASH_SIZE;
-    btn = `<button class="btn small" data-nav data-sact="put" ${full ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}</button>`;
+    btn = `<button class="btn small" data-nav data-sact="put" ${full ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}${padKey('a')}</button>`;
     hint = `<b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L('o baú está cheio (100 itens).', 'the stash is full (100 items).') : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}`;
   } else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else {
     // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
     const old = c.equip[it.slot];
     const full = c.inv.length >= INV_SIZE;
-    btn = `<button class="btn small" data-nav data-sact="equip">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}</button>`;
-    btn += `<button class="btn small" data-nav data-sact="take" ${full ? 'disabled' : ''}>${L('Pegar', 'Take')}</button>`;
+    btn = `<button class="btn small" data-nav data-sact="equip">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}${padKey('x')}</button>`;
+    btn += `<button class="btn small" data-nav data-sact="take" ${full ? 'disabled' : ''}>${L('Pegar', 'Take')}${padKey('a')}</button>`;
     hint = `<div><b>${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}:</b> ${old ? L(`veste este item agora; o seu <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> vai para o lugar dele no baú.`, `wears this item now; your <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> goes into its place in the stash.`) : L('veste este item agora.', 'wears this item now.')}</div>`;
     hint += `<div><b>${L('Pegar', 'Take')}:</b> ${full ? L(`seu inventário está cheio (${INV_SIZE}/${INV_SIZE}); use Equipar ou libere espaço.`, `your inventory is full (${INV_SIZE}/${INV_SIZE}); use Equip or free up space.`) : L('leva o item para o seu inventário.', 'moves the item to your inventory.')}</div>`;
   }

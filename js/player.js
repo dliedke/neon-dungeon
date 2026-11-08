@@ -221,7 +221,7 @@ export function useStim() {
 let stimHintCd = 8;
 function stimHint(p, c, dt) {
   stimHintCd -= dt;
-  if (stimHintCd > 0 || !p.alive || c.stims <= 0 || p.hp > p.stats.maxHp * 0.35 || achTotal('stims') >= 15) return;
+  if (stimHintCd > 0 || !p.alive || c.stims <= 0 || p.hp > p.stats.maxHp * 0.4 || achTotal('stims') >= 15) return;
   stimHintCd = 40;
   const how = G.isTouch ? L('Toque no botão verde de <b>Stim</b>', 'Tap the green <b>Stim</b> button') : G.lastInput === 'pad' ? padText(L('Aperte {LS} para usar um <b>Stim</b>', 'Press {LS} to use a <b>Stim</b>')) : L('Aperte <b>F</b> para usar um <b>Stim</b>', 'Press <b>F</b> to use a <b>Stim</b>');
   toast(L(`💉 Vida baixa! ${how}: cura 60% da vida na hora.`, `💉 Low health! ${how}: instantly heals 60% of your health.`), 'warn', 'stimhint');

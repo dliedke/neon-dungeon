@@ -142,12 +142,15 @@ export function initInput(canvas) {
     if (e.pointerType === 'mouse') Input.mouse.onCanvas = false;
   });
 
+  // padc: há um controle conectado (mostra os ícones dos botões do controle nos botões da tela, mesmo usando o mouse)
   window.addEventListener('gamepadconnected', () => {
     Input.padConnected = true;
+    document.body.classList.add('padc');
     setPadMode();
   });
   window.addEventListener('gamepaddisconnected', () => {
     Input.padConnected = false;
+    if (!(navigator.getGamepads ? [...navigator.getGamepads()] : []).some((p) => p && p.connected)) document.body.classList.remove('padc');
   });
 }
 

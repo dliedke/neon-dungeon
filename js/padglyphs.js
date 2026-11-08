@@ -4,6 +4,8 @@ import { G } from './state.js';
 // O navegador informa o nome e os IDs do fabricante (Sony 054c, Microsoft 045e, Nintendo 057e)
 export function detectPadType(id = '') {
   const s = id.toLowerCase();
+  // "Xbox Wireless Controller" (Bluetooth) também tem "wireless controller", como o DualShock 4: testa Xbox antes
+  if (/xbox|xinput|045e/.test(s)) return 'xbox';
   if (/054c|dualsense|dualshock|playstation|ps4|ps5|wireless controller/.test(s)) return /0ce6|0df2|dualsense|ps5/.test(s) ? 'ps5' : 'ps4';
   if (/057e|pro controller|nintendo|joy-con|switch/.test(s)) return 'nintendo';
   return 'xbox';
