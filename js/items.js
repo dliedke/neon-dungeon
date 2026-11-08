@@ -20,8 +20,11 @@ export const RARITY = [
   { name: L('Raro', 'Rare'), color: '#ffd23d', hex: 0xffd23d, n: [3, 4], mult: 1.16 },
   { name: L('Protótipo', 'Prototype'), color: '#ff7a1a', hex: 0xff7a1a, n: [4, 4], mult: 1.26 },
   { name: L('Mítico', 'Mythic'), color: '#c56bff', hex: 0xb04dff, n: [5, 5], mult: 1.42 },
+  { name: L('Divino', 'Divine'), color: '#ffe680', hex: 0xffd84d, n: [6, 6], mult: 1.65 },
 ];
 export const MYTHIC = 4;
+// acima do mítico: só cai nas dificuldades mais altas (ver divChance em loot.js)
+export const DIVINE = 5;
 
 const BASES = {
   head: [L('Implante Ocular', 'Ocular Implant'), L('Visor Tático', 'Tactical Visor'), L('Chip Cortical', 'Cortical Chip'), L('Capacete Neural', 'Neural Helmet')],
@@ -70,6 +73,18 @@ export const MYTHICS = {
   avatar: { name: L('Avatar Neon', 'Neon Avatar'), desc: L('A cada 15 abates vira um avatar de neon por 8s: +50% de dano, mais velocidade e golpes com raios.', 'Every 15 kills you become a neon avatar for 8s: +50% damage, more speed and hits that throw lightning.') },
 };
 
+// Poderes divinos: um por espaço de equipamento (a lógica fica em mythic.js). O item divino também tem um poder mítico.
+export const DIVINES = {
+  zeus: { slot: 'weapon', name: L('Raio de Zeus', 'Bolt of Zeus'), desc: L('Acertos têm 20% de chance de lançar um raio que salta para até 6 inimigos (150% de dano).', 'Hits have a 20% chance to cast lightning that jumps to up to 6 enemies (150% damage).') },
+  olympus: { slot: 'head', name: L('Visão do Olimpo', 'Olympian Sight'), desc: L('+12% de chance de crítico e +60% de dano crítico.', '+12% critical chance and +60% critical damage.') },
+  aegisDiv: { slot: 'chest', name: L('Égide Divina', 'Divine Aegis'), desc: L('A cada 8s um escudo de trovão bloqueia um golpe inteiro e solta uma onda de choque (200% de dano).', 'Every 8s a thunder shield blocks one whole hit and releases a shockwave (200% damage).') },
+  titan: { slot: 'hands', name: L('Punhos de Titã', 'Titan Fists'), desc: L('A cada 5 golpes um trovão cai sobre o alvo (300% de dano em área).', 'Every 5 hits a thunderbolt strikes the target (300% area damage).') },
+  hermes: { slot: 'feet', name: L('Sandálias de Hermes', 'Sandals of Hermes'), desc: L('+20% de velocidade de movimento e +8% de esquiva.', '+20% movement speed and +8% dodge.') },
+  ambrosia: { slot: 'chip', name: L('Ambrosia', 'Ambrosia'), desc: L('Ao cair abaixo de 30% de vida (ou levar um golpe fatal), cura 50% da vida e fica invulnerável por 2s (a cada 60s).', 'When you drop below 30% health (or take a fatal blow), heal 50% of your health and become invulnerable for 2s (every 60s).') },
+};
+export const DIV_SET = { name: L('Ira dos Deuses', 'Wrath of the Gods'), desc: L('Com os 6 itens divinos: a cada 6s, 5 raios caem sobre inimigos próximos (250% de dano cada).', 'With all 6 divine items: every 6s, 5 lightning bolts strike nearby enemies (250% damage each).') };
+const DIV_OF_SLOT = Object.fromEntries(Object.entries(DIVINES).map(([k, d]) => [d.slot, k]));
+
 export function rollRarity(bonus = 0) {
   const w = [62, 28 + bonus * 0.5, 8 + bonus * 0.35, 1.6 + bonus * 0.15];
   return weightedPick([0, 1, 2, 3], (i) => w[i]);
@@ -103,6 +118,12 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
     it.myth = pick(Object.keys(MYTHICS));
     for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.3);
   }
+  if (rarity === DIVINE) {
+    // divino: 6 atributos ainda mais altos, um poder mítico e o poder divino do espaço
+    it.myth = pick(Object.keys(MYTHICS));
+    it.div = DIV_OF_SLOT[slot];
+    for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.45);
+  }
   it.si = Math.floor(rnd() * 64);
   return it;
 }
@@ -112,6 +133,7 @@ export function itemName(it) {
   if (it.bi === undefined) return it.name || '?';
   const plus = it.plus ? ` +${it.plus}` : '';
   const base = (it.slot === 'weapon' ? CLASSES[it.cls].weaponNames[it.bi] : BASES[it.slot][it.bi]) + plus;
+  if (it.div) return `⚡ ${base} «${DIVINES[it.div].name}»`;
   if (it.myth) return `✦ ${base} «${MYTHICS[it.myth].name}»`;
   if (it.rarity === 3) return `${base} «${LEGENDARIES[it.leg].name}»`;
   if (it.rarity === 2) return `${base} ${SUFFIX[it.si % SUFFIX.length]}`;
@@ -122,13 +144,13 @@ export function itemName(it) {
 // ---------------- Ferreiro: aprimora itens (+1, +2...) por créditos ----------------
 // Cada nível: +4% de dano/blindagem base e +2,5% nos atributos. A cada 4 níveis, um marco:
 // ganha um atributo novo (ou reforça um dos que já tem).
-export const FORGE_MAX = [4, 6, 8, 10, 12];
+export const FORGE_MAX = [4, 6, 8, 10, 12, 15];
 export const forgeMax = (it) => FORGE_MAX[it.rarity] ?? 4;
 export const isMilestone = (lv) => lv > 0 && lv % 4 === 0;
 // valores pequenos ficam com uma casa decimal para o aprimoramento sempre aparecer
 const fround = (v) => (Math.abs(v) < 20 ? Math.round(v * 10) / 10 : Math.round(v));
 export function forgeCost(it) {
-  return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4][it.rarity] * Math.pow(1.32, it.plus | 0));
+  return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4, 6][it.rarity] * Math.pow(1.32, it.plus | 0));
 }
 export function forgeItem(it) {
   if (!it.base) it.base = { wMin: it.wMin, wMax: it.wMax, armor: it.armor, affixes: { ...it.affixes } };
@@ -184,11 +206,12 @@ export function itemScore(it) {
   for (const [k, v] of Object.entries(it.affixes)) s += (AFFIXES[k]?.w || 0) * v;
   if (it.leg) s += 20;
   if (it.myth) s += 45;
+  if (it.div) s += 80;
   return s;
 }
 
 export function recycleValue(it) {
-  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40][it.rarity] * (1 + 0.15 * (it.plus | 0)));
+  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100][it.rarity] * (1 + 0.15 * (it.plus | 0)));
 }
 
 export function itemStatLines(it) {
@@ -197,6 +220,7 @@ export function itemStatLines(it) {
   if (it.armor) lines.push(`<div class="it-main">${fmt(it.armor)} <span>${L('de blindagem', 'armor')}</span></div>`);
   for (const [k, v] of Object.entries(it.affixes)) lines.push(`<div class="it-aff">${AFFIXES[k].fmt(v)}</div>`);
   if (it.leg) lines.push(`<div class="it-leg"><b>${LEGENDARIES[it.leg].name}:</b> ${LEGENDARIES[it.leg].desc}</div>`);
+  if (it.div) lines.push(`<div class="it-div"><b>⚡ ${DIVINES[it.div].name}:</b> ${DIVINES[it.div].desc}</div>`);
   if (it.myth) lines.push(`<div class="it-myth"><b>✦ ${MYTHICS[it.myth].name}:</b> ${MYTHICS[it.myth].desc}</div>`);
   return lines.join('');
 }
@@ -236,6 +260,10 @@ export function itemDiffHtml(it, cur) {
     // recarga aparece como "-X%": mais é melhor, mostra como redução
     if (k === 'cdr') add(-((it.affixes.cdr || 0) - (cur.affixes.cdr || 0)), L(n[0], n[1]), true);
     else add((it.affixes[k] || 0) - (cur.affixes[k] || 0), L(n[0], n[1]));
+  }
+  if (it.div !== cur.div) {
+    if (cur.div) rows.push(`<div class="down">▼ ⚡ ${DIVINES[cur.div].name}</div>`);
+    if (it.div) rows.push(`<div class="up">▲ ⚡ ${DIVINES[it.div].name}</div>`);
   }
   if (it.myth !== cur.myth) {
     if (cur.myth) rows.push(`<div class="down">▼ ✦ ${MYTHICS[cur.myth].name}</div>`);

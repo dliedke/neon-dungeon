@@ -3,7 +3,7 @@ import { G } from './state.js';
 import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
-import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
+import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
@@ -1201,6 +1201,8 @@ export function renderChar() {
     if (s.xpPct) rows.push([L('Experiência', 'Experience'), `+${s.xpPct}%`]);
     if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${Math.round(s.findPct)}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+    for (const l of s.divs) sh += `<div class="leg div">⚡ ${DIVINES[l].name}</div>`;
+    if (s.divs.size >= 6) sh += `<div class="leg div">⚡ ${DIV_SET.name}</div>`;
     for (const l of s.myths) sh += `<div class="leg myth">✦ ${MYTHICS[l].name}</div>`;
     for (const l of s.legs) sh += `<div class="leg">◆ ${LEGENDARIES[l].name}</div>`;
     const imp = implantSummary(G.char);
@@ -1920,11 +1922,11 @@ function renderStash() {
   const ups = st.filter((it) => !otherClassWeapon(it) && isUpgrade(it, c.equip)).length;
   $('stash-count').innerHTML = (ups ? `<span class="stash-ups">▲ ${ups} ${ups === 1 ? L('melhor', 'upgrade') : L('melhores', 'upgrades')}</span> ` : '') + `${st.length}/${STASH_SIZE}`;
   $('stash-inv-count').textContent = `${c.inv.length}/${INV_SIZE}`;
-  const nm = c.inv.filter((it) => it.rarity === MYTHIC).length;
+  const nm = c.inv.filter((it) => it.rarity >= MYTHIC).length;
   const pm = $('stash-put-myth');
   pm.innerHTML = `✦ ${G.isTouch ? L('Guardar míticos', 'Store mythics') : L('Guardar todos os míticos', 'Store all mythics')}${nm ? ` (${nm})` : ''}${padKey('y')}`;
   pm.disabled = !nm || st.length >= STASH_SIZE;
-  pm.title = L('Manda todos os itens míticos do inventário para o baú', 'Sends every mythic item in your inventory to the stash');
+  pm.title = L('Manda todos os itens míticos (e divinos) do inventário para o baú', 'Sends every mythic (and divine) item in your inventory to the stash');
   renderStashDetail();
 }
 
@@ -1935,7 +1937,7 @@ const padKey = (k) => `<span class="kg">${glyph(k)}</span>`;
 function stashPutMythics() {
   const c = G.char;
   const st = stashList();
-  const mys = c.inv.filter((it) => it.rarity === MYTHIC);
+  const mys = c.inv.filter((it) => it.rarity >= MYTHIC);
   if (!mys.length) return sfx.deny();
   const room = STASH_SIZE - st.length;
   if (room <= 0) {

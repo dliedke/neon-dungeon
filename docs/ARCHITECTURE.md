@@ -190,12 +190,13 @@ hitEnemy(e, mult, opts)
 ## Items and loot (`items.js`, `loot.js`, `mythic.js`)
 
 - Slots: `weapon`, `head`, `chest`, `hands`, `feet`, `chip`.
-- Rarities (`RARITY`, index 0–4): Common, Modded, Rare, Prototype, Mythic. Each sets the affix count `n` and the stat multiplier `mult`.
-- `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`).
+- Rarities (`RARITY`, index 0–5): Common, Modded, Rare, Prototype, Mythic (`MYTHIC`), Divine (`DIVINE`). Each sets the affix count `n` and the stat multiplier `mult`.
+- `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`). Divine items get a random `myth` plus `div`, the divine power of their slot (`DIVINES`, one per slot; `DIV_SET` is the 6-piece bonus). `computeStats` collects them in `p.stats.divs`.
 - Optional item fields: `plus` (forge level) with `base` (the pre-forge stats that `forgeItem` scales from; every 4th level adds or boosts an affix), and `fav` (favorite, protected from recycling).
 - `itemScore` ranks items. `isUpgrade` (more than 3 % better than equipped) drives the ▲ marker and the shop stock.
 - `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (50).
-- `mythic.js` runs the mythic powers each frame and hooks into hits, kills and death.
+- Divine drops: `divChance` in `loot.js` (0 below Apocalypse, except Chaos+ in Nightmare/Inferno; needs effective floor 10).
+- `mythic.js` runs the mythic and divine powers each frame and hooks into hits (`mythOnHit`, `divOnHit`), kills, damage taken (`divBlock` before armor, `divAmbrosia` after the hit) and death.
 
 ## Run events (`run.js`)
 

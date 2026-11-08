@@ -62,6 +62,7 @@ export function computeStats(c) {
     dodge: 0, dmgRed: 0, killHeal: 0, killEn: 0, eliteDmg: 0, lowHpDmg: 0, burnPct: 0, chillDmg: 0, costRed: 0,
     legs: new Set(),
     myths: new Set(),
+    divs: new Set(),
   };
   for (const slot of SLOTS) {
     const it = c.equip[slot];
@@ -79,6 +80,16 @@ export function computeStats(c) {
     }
     if (it.leg) s.legs.add(it.leg);
     if (it.myth) s.myths.add(it.myth);
+    if (it.div) s.divs.add(it.div);
+  }
+  // poderes divinos que são só atributos
+  if (s.divs.has('olympus')) {
+    s.crit += 12;
+    s.critDmg += 60;
+  }
+  if (s.divs.has('hermes')) {
+    s.moveSpd = (s.moveSpd || 0) + 20;
+    s.dodge += 8;
   }
   // poderes passivos da árvore
   const pm = { ...passiveMods(c) };

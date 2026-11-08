@@ -167,9 +167,9 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**123 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**126 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
-legendaries, mythics, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
+legendaries, mythics, divine items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
 ## Bosses
@@ -187,21 +187,29 @@ Medals and their counters sync with the Google cloud save; progress from every d
 ## Loot and progression
 
 - **Loot:**
-  - 5 rarities and 13 stat types.
+  - 6 rarities and 13 stat types.
   - 6 legendary effects.
   - **Mythic items** (from floor 3 onwards): very rare purple drops with a light beam, their own sound and a big announcement. Each one has a special power:
     **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
     Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythics.
+  - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, only on Apocalypse and Death difficulty
+    (or on Chaos and above in Nightmare/Inferno), from floor 10 onwards. They are much rarer than mythics: bosses are the best source
+    (about 6% per boss on Death, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
+    and the divine power of its slot:
+    **Bolt of Zeus** (weapon: hits can cast lightning that jumps to 6 enemies), **Olympian Sight** (implant: +12% crit chance, +60% crit damage),
+    **Divine Aegis** (torso: every 8 s a thunder shield blocks one whole hit and releases a shockwave), **Titan Fists** (hands: every 5th hit calls a thunderbolt),
+    **Sandals of Hermes** (feet: +20% movement speed, +8% dodge) and **Ambrosia** (chip: below 30% health, or on a fatal blow, heals 50% and grants 2 s of invulnerability, every 60 s).
+    Wearing all 6 unlocks **Wrath of the Gods**: every 6 s, 5 lightning bolts strike nearby enemies.
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
   - **Blacksmith:** appears on floors 4, 7, 10… and sometimes on others. For credits he upgrades your equipped items:
-    up to +4/+6/+8/+10/+12 depending on rarity, each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
+    up to +4/+6/+8/+10/+12/+15 depending on rarity, each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
   - **Shared stash:** a chest a few steps from the start of every floor holds up to 100 items shared by all your characters (and synced to the cloud).
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
-    **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory). **Store all mythics** sends every mythic in your inventory to the stash at once.
+    **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory). **Store all mythics** sends every mythic (and divine) item in your inventory to the stash at once.
     With a gamepad connected, the buttons show which controller button does each action (A store/take, X equip, Y store all mythics, B close).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** levels up to **200** (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 10 per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).

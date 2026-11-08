@@ -11,12 +11,19 @@ import { L } from './i18n.js';
 
 const MC = 0xb04dff; // cor mítica
 const has = (k) => G.player && G.player.stats.myths && G.player.stats.myths.has(k);
+const DC = 0xffd84d; // cor divina
+const hasDiv = (k) => G.player && G.player.stats.divs && G.player.stats.divs.has(k);
 
 let orbT = 2;
 let bladeT = 0;
 let singCd = 0;
 let avKills = 0;
 export let phoenixCd = 0;
+let zeusCd = 0;
+let titanN = 0;
+let aegisCd = 0;
+let ambCd = 0;
+let stormT = 3;
 
 // estado novo a cada personagem
 export function resetMythic() {
@@ -24,6 +31,11 @@ export function resetMythic() {
   singCd = 0;
   avKills = 0;
   phoenixCd = 0;
+  zeusCd = 0;
+  titanN = 0;
+  aegisCd = 0;
+  ambCd = 0;
+  stormT = 3;
 }
 
 // ---------- Lâminas Fantasmas: 3 lâminas presas ao modelo do jogador ----------
@@ -189,6 +201,7 @@ export function updateMythic(dt) {
   updateBlades(p, dt);
   if (!p.alive) return;
   updateOrbital(p, dt);
+  updateDivine(p, dt);
   if (p.buffs.avatar > 0 && Math.random() < dt * 30) burst(p.x + rr(-0.4, 0.4), rr(0.2, 1.6), p.z + rr(-0.4, 0.4), MC, 1, 1, 0.07, 0.5, { grav: -3 });
 }
 
@@ -197,6 +210,84 @@ export function mythHud() {
   const p = G.player;
   const out = [];
   if (p.buffs.avatar > 0) out.push(`${L('Avatar Neon', 'Neon Avatar')} ${p.buffs.avatar.toFixed(0)}s`);
+  if (hasDiv('aegisDiv')) out.push(aegisCd > 0 ? `${L('Égide', 'Aegis')} ${Math.ceil(aegisCd)}s` : L('Égide pronta', 'Aegis ready'));
+  if (hasDiv('ambrosia')) out.push(ambCd > 0 ? `Ambrosia ${Math.ceil(ambCd)}s` : L('Ambrosia pronta', 'Ambrosia ready'));
   if (has('phoenix')) out.push(phoenixCd > 0 ? `${L('Fênix', 'Phoenix')} ${Math.ceil(phoenixCd)}s` : `${L('Fênix pronta', 'Phoenix ready')}`);
   return out;
+}
+
+// ================= Itens divinos =================
+// raio que cai do céu num ponto (Punhos de Titã e Ira dos Deuses)
+function thunderbolt(x, z, r, mult) {
+  beamFx(x + rr(-0.3, 0.3), 13, z + rr(-0.3, 0.3), x, 0, z, DC, 0.25, 3);
+  beamFx(x, 13, z, x, 0, z, 0xffffff, 0.15, 2);
+  explosion(x, z, r, mult, { color: DC, noProc: true, knock: 2 });
+}
+
+// depois de um golpe do jogador
+export function divOnHit(e, o) {
+  if (o.noProc || !e.alive) return;
+  if (hasDiv('zeus') && zeusCd <= 0 && chance(0.2)) {
+    zeusCd = 0.25;
+    after(0.05, () => chainFrom(e, 6, 1.5, 6.5, DC, true));
+  }
+  if (hasDiv('titan') && ++titanN >= 5) {
+    titanN = 0;
+    const x = e.x;
+    const z = e.z;
+    after(0.08, () => thunderbolt(x, z, 2.2, 3));
+    sfx.zap();
+  }
+}
+
+// antes do dano no jogador: a Égide bloqueia o golpe inteiro? (true = bloqueou)
+export function divBlock() {
+  const p = G.player;
+  if (!hasDiv('aegisDiv') || aegisCd > 0) return false;
+  aegisCd = 8;
+  floatText(p.x, 1.9, p.z, L('ÉGIDE', 'AEGIS'), 'shield');
+  ringFx(p.x, p.z, 3.5, DC, 0.45);
+  explosion(p.x, p.z, 3.5, 2, { color: DC, noProc: true, knock: 5 });
+  sfx.zap();
+  return true;
+}
+
+// depois do dano: Ambrosia cura abaixo de 30% de vida (também salva de golpe fatal)
+export function divAmbrosia() {
+  const p = G.player;
+  if (!hasDiv('ambrosia') || ambCd > 0 || p.hp >= p.stats.maxHp * 0.3) return false;
+  ambCd = 60;
+  p.hp = Math.max(0, p.hp) + p.stats.maxHp * 0.5;
+  p.invuln = Math.max(p.invuln, 2);
+  floatText(p.x, 2.2, p.z, 'AMBROSIA', 'up');
+  ringFx(p.x, p.z, 3, DC, 0.6);
+  burst(p.x, 1, p.z, DC, 40, 5, 0.08, 0.8, { up: 3 });
+  sfx.levelup();
+  return true;
+}
+
+// Ira dos Deuses (6 itens divinos): raios a cada 6s sobre inimigos próximos
+function updateDivine(p, dt) {
+  zeusCd = Math.max(0, zeusCd - dt);
+  aegisCd = Math.max(0, aegisCd - dt);
+  ambCd = Math.max(0, ambCd - dt);
+  if (p.stats.divs.size < 6 || (stormT -= dt) > 0) return;
+  const list = enemiesInRadius(p.x, p.z, 9).filter((e) => !e.inert && !e.decoy && e.aggro);
+  if (!list.length) {
+    stormT = 0.5;
+    return;
+  }
+  stormT = 6;
+  for (let i = 0; i < 5; i++) {
+    const e = list[i % list.length];
+    const x = e.x + (i >= list.length ? rr(-1.2, 1.2) : 0);
+    const z = e.z + (i >= list.length ? rr(-1.2, 1.2) : 0);
+    telegraphFx(x, z, 1.6, 0.35 + i * 0.12, DC, i < list.length ? e : null);
+    after(0.35 + i * 0.12, () => {
+      const tx = i < list.length && e.alive ? e.x : x;
+      const tz = i < list.length && e.alive ? e.z : z;
+      thunderbolt(tx, tz, 1.6, 2.5);
+      sfx.zap();
+    });
+  }
 }

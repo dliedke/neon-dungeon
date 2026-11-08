@@ -172,6 +172,11 @@ export function achList() {
   add('legend10', '🧡', 2, L('Colecionador de Protótipos', 'Prototype Collector'), L('Encontre 10 itens lendários', 'Find 10 legendary items'), () => total('legendaries'), 10);
   add('myth1', '🟣', 2, L('Toque Mítico', 'Mythic Touch'), L('Encontre um item mítico', 'Find a mythic item'), () => total('mythics'));
   add('myth5', '💜', 3, L('Caçador de Míticos', 'Mythic Hunter'), L('Encontre 5 itens míticos', 'Find 5 mythic items'), () => total('mythics'), 5);
+  // itens divinos (acima do mítico)
+  const divPlus = (c) => Math.max(0, ...[...Object.values(c.equip || {}), ...(c.inv || [])].filter((it) => it && it.rarity >= 5).map((it) => it.plus | 0));
+  add('div1', '⚡', 3, L('Toque Divino', 'Divine Touch'), L('Encontre um item divino', 'Find a divine item'), () => total('divines'));
+  add('div6', '🏛️', 3, L('Panteão', 'Pantheon'), L('Use 6 itens divinos ao mesmo tempo', 'Wear 6 divine items at once'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 5).length), SLOTS.length);
+  add('divForge', '🔱', 3, L('Forja dos Deuses', 'Forge of the Gods'), L('Aprimore um item divino até +15', 'Upgrade a divine item to +15'), () => maxOf(divPlus), 15);
   add('forge1', '⚒️', 0, L('Aprendiz de Ferreiro', 'Apprentice Smith'), L('Aprimore um item no ferreiro', 'Upgrade an item at the blacksmith'), () => total('forges'));
   add('forge50', '🔨', 2, L('Mestre Forjador', 'Master Forger'), L('Aprimore itens 50 vezes no ferreiro', 'Upgrade items 50 times at the blacksmith'), () => total('forges'), 50);
   add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));

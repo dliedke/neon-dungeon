@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G, gk } from './state.js';
 import { rr, chance } from './utils.js';
-import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, itemName, isUpgrade } from './items.js';
+import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText, beamFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -12,17 +12,28 @@ import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
-import { rewardK } from './enemies.js';
+import { rewardK, diffRank } from './enemies.js';
 
 export const INV_SIZE = 50;
 const UP_COLOR = 0x39ff88;
 const MYTH_COLOR = 0xb04dff;
+const DIV_COLOR = 0xffd84d;
 
 // Chance de um item virar mítico: raro, mas acontece (mais em chefes, fendas, ladrões e nos modos Pesadelo/Inferno)
 function mythChance(o, find) {
   if (effFloor() < 3) return 0;
   const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief || o.beast ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
   return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1) * rewardK('loot');
+}
+// Chance de um item virar divino (acima do mítico): só no Apocalipse e na Morte, ou no Pesadelo/Inferno
+// a partir do Caos. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
+function divChance(o, find) {
+  const t = G.char.tier | 0;
+  const dr = diffRank();
+  const k = dr >= 8 ? 1.5 : dr >= 7 ? 1 : t >= 1 && dr >= 6 ? 0.6 : 0;
+  if (!k || effFloor() < 10) return 0;
+  const base = o.boss ? 0.008 : o.rift ? 0.006 : o.thief || o.beast ? 0.005 : o.contract ? 0.003 : o.chest ? 0.0015 : o.elite ? 0.0008 : 0.0001;
+  return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }
 let labelRoot = null;
 
@@ -70,6 +81,7 @@ export function dropLoot(x, z, o = {}) {
     if (o.rift && i === 2 && (o.waves || 3) >= 7) rarity = Math.max(rarity, 3);
     if (rich && rarity < 3 && chance(0.25)) rarity++;
     if (chance(mythChance(o, find))) rarity = MYTHIC;
+    if (chance(divChance(o, find))) rarity = DIVINE;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
@@ -106,6 +118,7 @@ function beamMat(color, opacity) {
 }
 
 export function spawnPickup(type, x, z, data) {
+  let pkColor = MYTH_COLOR;
   const g = new THREE.Group();
   let mesh;
   let color;
@@ -124,18 +137,23 @@ export function spawnPickup(type, x, z, data) {
     const R = RARITY[data.item.rarity];
     color = R.hex;
     mesh = new THREE.Mesh(box(0.26, 0.26, 0.26), glowMat(color, data.item.rarity >= 2 ? 2.4 : 1.6));
-    if (data.item.rarity === MYTHIC) {
-      // mítico: coluna de luz alta, dois anéis girando e um losango em volta
-      mesh.scale.setScalar(1.25);
-      const beam = new THREE.Mesh(mythBeamGeo, beamMat(MYTH_COLOR, 0.5));
-      const r1 = new THREE.Mesh(upRingGeo, beamMat(MYTH_COLOR, 0.9));
+    if (data.item.rarity >= MYTHIC) {
+      // mítico/divino: coluna de luz alta, dois anéis girando e um losango em volta
+      // o divino é dourado e maior
+      const dv = data.item.rarity === DIVINE;
+      const fc = dv ? DIV_COLOR : MYTH_COLOR;
+      mesh.scale.setScalar(dv ? 1.45 : 1.25);
+      const beam = new THREE.Mesh(mythBeamGeo, beamMat(fc, 0.5));
+      if (dv) beam.scale.set(1.5, 1.4, 1.5);
+      const r1 = new THREE.Mesh(upRingGeo, beamMat(fc, 0.9));
       const r2 = new THREE.Mesh(upRingGeo, beamMat(0xffffff, 0.6));
       r1.position.y = -0.3;
       r2.position.y = 0.6;
       r2.scale.setScalar(0.7);
-      const gem = new THREE.Mesh(mythGemGeo, beamMat(MYTH_COLOR, 0.55));
+      const gem = new THREE.Mesh(mythGemGeo, beamMat(fc, 0.55));
       g.add(beam, r1, r2, gem);
       data.mythFx = { beam, r1, r2, gem };
+      pkColor = fc;
     } else if (data.item.rarity >= 1) {
       const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.55 : 0.25));
       g.add(beam);
@@ -144,7 +162,7 @@ export function spawnPickup(type, x, z, data) {
   g.add(mesh);
   const a = rr(0, Math.PI * 2);
   const sp = rr(1.2, 2.6);
-  const pk = { type, x, z, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, y: 0.6, vy: rr(3, 5), mesh, group: g, color, t: 0, upT: 0, ...data };
+  const pk = { fc: pkColor, type, x, z, vx: Math.cos(a) * sp, vz: Math.sin(a) * sp, y: 0.6, vy: rr(3, 5), mesh, group: g, color, t: 0, upT: 0, ...data };
   g.position.set(x, pk.y, z);
   G.world.add(g);
   if (type === 'item') {
@@ -162,6 +180,7 @@ export function spawnPickup(type, x, z, data) {
     }
     if (data.item.rarity === 3) achAdd('legendaries');
     if (data.item.rarity === MYTHIC) achAdd('mythics');
+    if (data.item.rarity === DIVINE) achAdd('divines');
     if (!labelRoot) labelRoot = document.getElementById('labels');
     const el = document.createElement('div');
     el.style.display = 'none';
@@ -170,7 +189,19 @@ export function spawnPickup(type, x, z, data) {
     pk.lid = labelId++;
     setUpgrade(pk, isUpgrade(data.item, G.char.equip));
     const name = itemName(data.item);
-    if (data.item.rarity === MYTHIC) {
+    if (data.item.rarity === DIVINE) {
+      // o maior momento do jogo: trovão, faixa dourada e explosão de luz
+      sfx.mythic();
+      sfx.zap();
+      banner(L('⚡ ITEM DIVINO ⚡', '⚡ DIVINE ITEM ⚡'), name);
+      toast(`<b style="color:${RARITY[DIVINE].color}">⚡ ${L('DIVINO', 'DIVINE')}:</b> ${name}<br><small>${DIVINES[data.item.div].desc}</small>`, 'div');
+      beamFx(x, 16, z, x, 0, z, DIV_COLOR, 0.4, 5);
+      beamFx(x + 0.2, 16, z, x, 0, z, 0xffffff, 0.3, 3);
+      ringFx(x, z, 5.5, DIV_COLOR, 1, { from: 0.4 });
+      ringFx(x, z, 3, 0xffffff, 0.6, { from: 0.2 });
+      burst(x, 1, z, DIV_COLOR, 90, 9, 0.1, 1.2, { up: 3 });
+      G.shake = Math.max(G.shake, 0.45);
+    } else if (data.item.rarity === MYTHIC) {
       // o grande momento: som próprio, faixa no meio da tela e explosão de luz
       sfx.mythic();
       banner(L('✦ ITEM MÍTICO ✦', '✦ MYTHIC ITEM ✦'), name);
@@ -188,7 +219,7 @@ export function spawnPickup(type, x, z, data) {
       toast(`${L('Protótipo encontrado', 'Prototype found')}: ${name}`, 'leg');
     } else if (data.item.rarity === 2) sfx.rare();
     if (data.item.rarity === 3 && pk.up) sfx.legendary();
-    if (data.item.rarity === MYTHIC && pk.up) toast(`<b style="color:#39ff88">▲ ${L('MELHORIA!', 'UPGRADE!')}</b>`, 'up');
+    if (data.item.rarity >= MYTHIC && pk.up) toast(`<b style="color:#39ff88">▲ ${L('MELHORIA!', 'UPGRADE!')}</b>`, 'up');
   }
   G.pickups.push(pk);
   return pk;
@@ -404,7 +435,7 @@ export function updatePickups(dt, camera) {
       f.r2.rotation.y += dt * 3;
       f.gem.rotation.y -= dt * 1.5;
       f.gem.position.y = 0.1 + Math.sin(pk.t * 2) * 0.08;
-      if (Math.random() < dt * 14) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? MYTH_COLOR : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
+      if (Math.random() < dt * 14) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? pk.fc : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
     }
     const bob = pk.up ? 0.5 + Math.sin(pk.t * 4) * 0.12 : 0.35 + Math.sin(pk.t * 3) * 0.06;
     pk.group.position.set(pk.x, pk.vy === 0 ? bob : pk.y, pk.z);
@@ -458,7 +489,7 @@ export function updatePickups(dt, camera) {
           const R = RARITY[pk.item.rarity];
           if (pk.mythFx) {
             sfx.legendary();
-            ringFx(p.x, p.z, 2.5, MYTH_COLOR, 0.5);
+            ringFx(p.x, p.z, 2.5, pk.fc, 0.5);
           }
           const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
           toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${G.isTouch ? L('— toque na mochila para equipar', '— tap the bag to equip') : L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');

@@ -11,7 +11,7 @@ import { dropLoot } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
-import { mythDmgMult, mythOnHit, mythOnKill, mythSave } from './mythic.js';
+import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia } from './mythic.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
@@ -110,6 +110,7 @@ export function hitEnemy(e, mult, o = {}) {
     after(0.05, () => chainFrom(e, 3, 0.8, 5.5, 0x88ccff, true));
   }
   if (ps.myths.size || p.buffs.avatar > 0) mythOnHit(e, r.crit, o);
+  if (ps.divs && ps.divs.size) divOnHit(e, o);
 }
 
 // Efeitos de status causados pelo jogador
@@ -290,6 +291,8 @@ export function damagePlayer(amount) {
     floatText(p.x, 1.8, p.z, L('ESQUIVA', 'DODGE'), 'shield');
     return;
   }
+  // Égide Divina: bloqueia o golpe inteiro
+  if (p.stats.divs && p.stats.divs.size && divBlock()) return;
   amount *= armorTaken(p.stats.armor);
   amount *= amod('taken');
   if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
@@ -319,6 +322,7 @@ export function damagePlayer(amount) {
     p.shieldCd = 10;
     ringFx(p.x, p.z, 1.3, 0x66ccff, 0.4);
   }
+  if (p.stats.divs && p.stats.divs.size && divAmbrosia()) return;
   if (p.hp <= 0) {
     if (mythSave()) return;
     p.hp = 0;
