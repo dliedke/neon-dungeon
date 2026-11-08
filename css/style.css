@@ -140,12 +140,13 @@ button { font-family: inherit; }
 #diff-name { color: var(--dc); font-weight: 700; text-shadow: 0 0 6px var(--dc); }
 #diff-rew { color: #ffd23d; opacity: 0.9; }
 #diff-range { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 2px 0 0; background: transparent; cursor: pointer; touch-action: none; }
-#diff-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64); }
-#diff-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64); }
+#diff-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64, #ff2bd6, #b04dff, #e8e6ff); }
+#diff-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64, #ff2bd6, #b04dff, #e8e6ff); }
 #diff-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border-radius: 50%; background: #fff; border: 2px solid var(--dc); box-shadow: 0 0 8px var(--dc); }
 #diff-range::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid var(--dc); box-shadow: 0 0 8px var(--dc); }
 /* no toque o canto direito é dos botões de poder: vai para baixo das barras de vida */
-body.touch #diff-ctl { position: fixed; top: calc(66px + var(--safe-t)); left: calc(64px + var(--safe-l)); width: 150px; }
+body.touch #diff-ctl { position: fixed; top: calc(66px + var(--safe-t)); left: calc(64px + var(--safe-l)); width: 160px; }
+body.touch #diff-top { gap: 4px; }
 body.touch #diff-range { height: 22px; }
 body.touch #diff-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
 

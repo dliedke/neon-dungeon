@@ -59,7 +59,7 @@ export function dropLoot(x, z, o = {}) {
   } else if (chance(0.14 * find * (rich ? 2.5 : 1) * Math.sqrt(lk))) {
     items = 1;
   }
-  // Brutal/Insano: chefes, feras, elites e baús dão um item a mais
+  // Muito Difícil para cima: chefes, feras, elites e baús dão um item a mais
   if (items && !o.rift && lk >= 2 && (o.boss || o.beast || o.thief || o.elite || o.chest || o.contract)) items++;
   for (let i = 0; i < items; i++) {
     let rarity = rollRarity(bonus);

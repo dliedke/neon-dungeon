@@ -186,7 +186,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
-- **Difficulty:** a small slider in the HUD (also in the options) with 5 levels: Easy, Normal, Hard, Brutal and Insane. It changes instantly, enemies on the floor included.
+- **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items. It changes instantly, enemies on the floor included.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).
   When you raise it the reward bonus ramps up over a few seconds, so it can't be flipped up just to open a chest.
 - **Healing that scales with damage** (life steal, heal on kill) has a per-second cap, so a strong character still has to watch their health.

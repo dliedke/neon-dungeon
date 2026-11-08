@@ -151,17 +151,23 @@ export const DIFFICULTY = {
   easy: { name: L('Fácil', 'Easy'), hp: 0.55, dmg: 0.5, count: 1.0, bossHp: 1.0, bossDmg: 0.8, bossTempo: 1.05, pHp: 1.3, pArmor: 1.3, pRegen: 1.6 },
   normal: { name: 'Normal', hp: 1.15, dmg: 1.12, count: 1.1, bossHp: 2.0, bossDmg: 1.4, bossTempo: 1.65, pHp: 1, pArmor: 1, pRegen: 1 },
   hard: { name: L('Difícil', 'Hard'), hp: 1.8, dmg: 1.7, count: 1.2, bossHp: 2.8, bossDmg: 1.75, bossTempo: 2.15, pHp: 0.85, pArmor: 0.7, pRegen: 0.5 },
-  brutal: { name: L('Brutal', 'Brutal'), hp: 2.6, dmg: 2.3, count: 1.25, bossHp: 3.3, bossDmg: 2.0, bossTempo: 2.4, pHp: 0.8, pArmor: 0.6, pRegen: 0.35 },
-  insane: { name: L('Insano', 'Insane'), hp: 3.2, dmg: 2.65, count: 1.3, bossHp: 3.6, bossDmg: 2.15, bossTempo: 2.6, pHp: 0.78, pArmor: 0.55, pRegen: 0.3 },
+  // as chaves ficam nas opções salvas: o Brutal antigo virou 'vhard' e o Insano antigo virou 'brutal' (ver loadSave)
+  vhard: { name: L('Muito Difícil', 'Very Hard'), hp: 2.6, dmg: 2.3, count: 1.25, bossHp: 3.3, bossDmg: 2.0, bossTempo: 2.4, pHp: 0.8, pArmor: 0.6, pRegen: 0.35 },
+  brutal: { name: L('Brutal', 'Brutal'), hp: 3.2, dmg: 2.65, count: 1.3, bossHp: 3.6, bossDmg: 2.15, bossTempo: 2.6, pHp: 0.78, pArmor: 0.55, pRegen: 0.3 },
+  insane: { name: L('Insano', 'Insane'), hp: 4.0, dmg: 3.1, count: 1.35, bossHp: 4.2, bossDmg: 2.4, bossTempo: 2.75, pHp: 0.75, pArmor: 0.5, pRegen: 0.27 },
+  chaos: { name: L('Caos', 'Chaos'), hp: 5.0, dmg: 3.6, count: 1.4, bossHp: 5.0, bossDmg: 2.7, bossTempo: 2.9, pHp: 0.72, pArmor: 0.45, pRegen: 0.24 },
+  apocalypse: { name: L('Apocalipse', 'Apocalypse'), hp: 6.3, dmg: 4.2, count: 1.45, bossHp: 6.0, bossDmg: 3.0, bossTempo: 3.05, pHp: 0.7, pArmor: 0.4, pRegen: 0.2 },
+  death: { name: L('Morte', 'Death'), hp: 8.0, dmg: 5.0, count: 1.5, bossHp: 7.2, bossDmg: 3.4, bossTempo: 3.2, pHp: 0.66, pArmor: 0.35, pRegen: 0.16 },
 };
-export const DIFF_ORDER = ['easy', 'normal', 'hard', 'brutal', 'insane'];
+export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane', 'chaos', 'apocalypse', 'death'];
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty));
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
 // Ao subir a dificuldade a recompensa sobe aos poucos (1 nível a cada 15s): assim não dá para
 // subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
-const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5], loot: [0.75, 1, 1.5, 2.2, 3.2] };
+// acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
+const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
 let rewardLvl = -1;
 export function tickReward(dt) {
   const r = diffRank();

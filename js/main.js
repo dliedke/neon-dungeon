@@ -74,6 +74,11 @@ function loadSave() {
         s.glow = 'strong';
         s.sv = 3;
       }
+      // v4: entraram Muito Difícil (o Brutal antigo) e Brutal (o Insano antigo); mantém a dificuldade que a pessoa jogava
+      if (!(s.sv >= 4)) {
+        s.difficulty = { brutal: 'vhard', insane: 'brutal' }[s.difficulty] || s.difficulty;
+        s.sv = 4;
+      }
       Object.assign(G.settings, s);
     }
   } catch (_) {}

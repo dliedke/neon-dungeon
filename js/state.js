@@ -33,7 +33,7 @@ export const G = {
   floor: 1,
   save: null,
   char: null,
-  settings: { music: 0.45, sfx: 0.75, track: 'shuffle', quality: 'auto', shake: true, difficulty: 'normal', glow: 'strong', sv: 3 },
+  settings: { music: 0.45, sfx: 0.75, track: 'shuffle', quality: 'auto', shake: true, difficulty: 'normal', glow: 'strong', sv: 4 },
   shake: 0,
   isTouch: false,
   lastInput: 'kb', // kb | pad | touch

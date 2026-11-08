@@ -638,7 +638,7 @@ export function hurtFlash(frac) {
 
 const toastKeys = {};
 // Dificuldade: opções (botão) e HUD (controle deslizante) usam a mesma função
-const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff7a1a', '#ff3a64'];
+const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff9a3d', '#ff6a1a', '#ff3a64', '#ff2bd6', '#b04dff', '#e8e6ff'];
 function updDiffUi() {
   const k = G.settings.difficulty;
   const i = Math.max(0, DIFF_ORDER.indexOf(k));
