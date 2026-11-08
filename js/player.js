@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { Input } from './input.js';
-import { CLASSES, SKILL_FN, passiveMods } from './classes.js';
+import { CLASSES, SKILL_FN, passiveMods, updateAura } from './classes.js';
 import { starterWeapon, SLOTS } from './items.js';
 import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
@@ -19,7 +19,7 @@ import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 
-export const MAX_LEVEL = 50;
+export const MAX_LEVEL = 200;
 // pontos de habilidade por nível (eram 1; spV marca os personagens que já receberam a diferença)
 export const SP_PER_LEVEL = 2;
 export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
@@ -37,7 +37,8 @@ export function newCharacter(cls) {
 export function computeStats(c) {
   const C = CLASSES[c.cls];
   const b = C.base;
-  const L = c.level;
+  // depois do nível 50 cada nível dá metade dos atributos (o nível máximo é 200)
+  const L = c.level <= 50 ? c.level : 50 + (c.level - 50) * 0.5;
   const s = {
     maxHp: b.hp + 20 * (L - 1),
     maxEn: b.en + 2 * (L - 1),
@@ -150,6 +151,7 @@ export function placePlayer(x, z) {
   p.target = null;
   p.dash = null;
   p.whirl = null;
+  p.aura = null;
   p.leap = null;
   p.kx = p.kz = 0;
   if (p.model) p.model.body.position.y = 0;
@@ -236,6 +238,7 @@ export function playerDie() {
   p.alive = false;
   p.dash = null;
   p.whirl = null;
+  p.aura = null;
   sfx.playerDeath();
   burst(p.x, 1, p.z, CLASSES[G.char.cls].accent, 50, 6, 0.08, 1);
   G.mode = 'dying';
@@ -444,8 +447,9 @@ export function updatePlayer(dt) {
 
   // regeneração
   const regen = (s.hpRegen + (p.inCombat > 0 ? 0 : s.maxHp * 0.015)) * amod('regen') + (p.buffs.regen > 0 ? s.maxHp * 0.03 : 0);
-  p.hp = Math.min(s.maxHp, p.hp + regen * dt);
+  p.hp = Math.min(s.maxHp, p.hp + (regen + (p.buffs.mend > 0 ? s.maxHp * (p.mendRate || 0) : 0)) * dt);
   p.en = Math.min(s.maxEn, p.en + s.enRegen * dt);
+  if (p.aura) updateAura(p, dt);
 
   // ---------- mouse: clique para mover / atacar ----------
   const mouse = Input.mouse;
@@ -767,7 +771,7 @@ export function updatePlayer(dt) {
   const flash = p.hurtT > 0 ? 0.8 : 0;
   for (const mt of m.mats) {
     if (flash) mt.emissive.setScalar(flash);
-    else if (p.buffs.titan > 0) mt.emissive.setRGB(0.25, 0.27, 0.32);
+    else if (p.buffs.titan > 0 || p.buffs.guard > 0) mt.emissive.setRGB(0.25, 0.27, 0.32);
     else mt.emissive.setScalar(0);
   }
   m.root.visible = !(p.invuln > 0.5 && Math.floor(G.t * 20) % 2 === 0) || !!p.dash;

@@ -102,7 +102,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.myths.size) r.d *= mythDmgMult(e);
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
-  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
+  const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (p.buffs.leech > 0 ? 10 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
   if (ls > 0 && dealt > 0) healPlayer(capHeal('ls', (dealt * ls) / 100, (p.stats.maxHp * ls * 0.75) / 100), false);
   if (o.energy) p.en = Math.min(p.stats.maxEn, p.en + o.energy);
   applyStatus(e, o);
@@ -285,7 +285,8 @@ export function damagePlayer(amount) {
   const p = G.player;
   if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
   // esquiva (poder passivo)
-  if (p.stats.dodge && Math.random() * 100 < p.stats.dodge) {
+  const dodge = (p.stats.dodge || 0) + (p.buffs.evade > 0 ? p.evadeK || 0 : 0);
+  if (dodge && Math.random() * 100 < dodge) {
     floatText(p.x, 1.8, p.z, L('ESQUIVA', 'DODGE'), 'shield');
     return;
   }
@@ -294,6 +295,7 @@ export function damagePlayer(amount) {
   if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
   if (p.buffs.titan > 0) amount *= 0.4;
   if (p.buffs.aegis > 0) amount *= 0.5;
+  if (p.buffs.guard > 0) amount *= p.guardK ?? 0.5; // defesas dos poderes avançados
   const fmd = formMods(p);
   if (fmd) amount *= fmd.taken;
   amount = Math.max(1, Math.round(amount));

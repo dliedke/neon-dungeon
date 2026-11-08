@@ -146,14 +146,15 @@ Navigation helpers:
 - `createPlayer()` creates the runtime entity and model. `refreshStats()` recomputes `p.stats = computeStats(G.char)` after anything changes (gear, level, skills, implants).
 - `computeStats` adds up: class `base` + level scaling + equipped items (armor, weapon damage, affixes, `legs` / `myths` sets) + passive skills (`passiveMods`) + implants (`implantMods`) − difficulty, then applies the caps (crit 75 %, CDR 40 %, life steal 20 %, dodge 25 %, damage reduction 30 %).
 - `updatePlayer(dt)` handles movement (keys, stick, click-to-move path, touch joystick), the primary attack (`SKILL_FN[skills[0].id]`), skill slots `s1`..`s6` (`tryUseSkill`: checks rank, cooldown and energy, then calls `SKILL_FN[id](p, rank)`; returning `false` means "couldn't use, refund"), stims, regen, buffs and statuses.
-- `gainXp`, `spendPoint`, `assignSlot`, `skillReq`, `skillCost`, `skillCd`.
+- `gainXp`, `spendPoint`, `assignSlot`, `skillReq`, `skillCost`, `skillCd`. `MAX_LEVEL` is 200 (`xpNeeded(lvl) = 45 × lvl^1.5`). In `computeStats`, levels above 50 count half (effective level `50 + (level − 50) × 0.5`), so the stats keep growing without running away.
+- Timed defensive buffs used by the advanced powers: `p.buffs.guard` (damage taken × `p.guardK`, applied in `damagePlayer`), `p.buffs.mend` (heals `p.mendRate` × max HP per second in the regen step), `p.buffs.evade` (+`p.evadeK` dodge %) and `p.buffs.leech` (+10 life steal). `p.aura` (`{ t, tick, r, mult, color, burn, slow }`) is a damage aura around the player, ticked every 0.5 s by `updateAura` (`classes.js`); it is cleared on floor start and death.
 
 ### Classes and skills (`classes.js`, `powers.js`)
 
 - `CLASSES[id]` holds `name`, `title`, `desc`, colors (`css`, `accent`), `melee`, `range`, `base` stats, `weaponNames` and `skills`.
-- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`), then 3 advanced passives (`LATE_PASSIVES`, marked `late: true`, levels 20/28/36). The Netrunner has its own teleport, so it has 15 skills instead of 16.
+- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`), then 3 advanced passives (`LATE_PASSIVES`, marked `late: true`, levels 20/28/36), then 4 advanced powers (`ADV_POWERS`, built with the `adv()` helper and marked `adv: true`, levels 40/50/60/70: attack, defense, attack, defense). The Netrunner has its own teleport, so it has 19 skills instead of 20.
 - `skills[0]` is the primary attack (free, no cooldown). `skills[1]` starts unlocked.
-- The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed.
+- The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed. The last two rows find their skills by the `late` and `adv` flags instead of fixed indices.
 - Skill logic lives in `SKILL_FN`, keyed by skill `id`, extended by `Object.assign(SKILL_FN, {...})` blocks. Big reusable powers (summons, orbitals, black holes, storms, transformations) are in `powers.js`.
 - `ICONS` holds inline-SVG path strings on a 32×32 viewBox.
 

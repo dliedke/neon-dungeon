@@ -150,7 +150,7 @@ export function achList() {
   for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [25, 2, '🪐'], [30, 2, '🧭']]) {
     add(`floor${n}`, ic, t, L(`Andar ${n}`, `Floor ${n}`), L(`Chegue ao andar ${n} com qualquer classe`, `Reach floor ${n} with any class`), () => maxOf((c) => c.maxFloor || c.floor), n);
   }
-  for (const [n, t, ic, pt, en] of [[5, 0, '📈', 'Pegando o Jeito', 'Getting the Hang of It'], [10, 1, '💪', 'Veterano', 'Veteran'], [25, 2, '🦾', 'Cromado até os Ossos', 'Chrome to the Bone'], [50, 3, '🧬', 'Evolução Máxima', 'Maximum Evolution']]) {
+  for (const [n, t, ic, pt, en] of [[5, 0, '📈', 'Pegando o Jeito', 'Getting the Hang of It'], [10, 1, '💪', 'Veterano', 'Veteran'], [25, 2, '🦾', 'Cromado até os Ossos', 'Chrome to the Bone'], [50, 3, '🧬', 'Evolução Avançada', 'Advanced Evolution'], [100, 3, '🧠', 'Pós-Humano', 'Posthuman'], [200, 3, '👑', 'Evolução Máxima', 'Maximum Evolution']]) {
     add(`level${n}`, ic, t, L(pt, en), L(`Chegue ao nível ${n}`, `Reach level ${n}`), () => maxOf((c) => c.level), n);
   }
 
@@ -164,6 +164,7 @@ export function achList() {
   // poderes e equipamento
   add('fullTree', '🌳', 2, L('Árvore Completa', 'Full Tree'), L('Libere os 9 poderes de uma classe', 'Unlock all 9 powers of a class'), () => maxOf((c) => (c.skills || []).slice(0, 9).filter((r) => r > 0).length), 9);
   add('lateTree', '🌌', 2, L('Galhos do Topo', 'Top Branches'), L('Libere os 3 passivos avançados (níveis 20, 28 e 36) de uma classe', 'Unlock the 3 advanced passives (levels 20, 28 and 36) of a class'), () => maxOf((c) => (CLASSES[c.cls]?.skills || []).filter((sk, i) => sk.late && (c.skills || [])[i] > 0).length), 3);
+  add('advTree', '⚜️', 3, L('Arsenal Completo', 'Full Arsenal'), L('Libere os 4 poderes avançados (níveis 40, 50, 60 e 70) de uma classe', 'Unlock the 4 advanced powers (levels 40, 50, 60 and 70) of a class'), () => maxOf((c) => (CLASSES[c.cls]?.skills || []).filter((sk, i) => sk.adv && (c.skills || [])[i] > 0).length), 4);
   add('ranks100', '💎', 3, L('Mestre dos Poderes', 'Master of Powers'), L('Some 100 níveis de poderes num mesmo personagem', 'Reach 100 total power ranks on one character'), () => maxOf((c) => (c.skills || []).reduce((a, r) => a + (r || 0), 0)), 100);
   add('rank10', '🔟', 1, L('Especialista', 'Specialist'), L('Leve um poder ao nível 10', 'Take a power to rank 10'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 10);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);

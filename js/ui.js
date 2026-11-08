@@ -524,6 +524,7 @@ export function updateHUD(dt) {
   setText('hp-text', `${Math.ceil(p.hp)} / ${s.maxHp}`);
   setText('en-text', `${Math.floor(p.en)} / ${s.maxEn}`);
   setText('lvl', String(c.level));
+  if (cache.l3 !== c.level >= 100) $('portrait').classList.toggle('l3', (cache.l3 = c.level >= 100)); // nível com 3 dígitos: fonte menor
   setText('credits-val', fmt(c.credits));
   // recompensa atual da dificuldade (sobe aos poucos depois de aumentar)
   setText('diff-rew', `¢×${rewardK('cr').toFixed(1)} · ★×${rewardK('loot').toFixed(1)}${rewardRamping() ? ' ▲' : ''}`);
@@ -566,6 +567,10 @@ export function updateHUD(dt) {
   if (p.shield > 1) buffs.push(`${L('Escudo', 'Shield')} ${Math.round(p.shield)}`);
   if (p.buffs.regen > 0) buffs.push(L('Regeneração', 'Regen'));
   if (p.buffs.titan > 0) buffs.push(`${L('Titânio', 'Titanium')} ${p.buffs.titan.toFixed(0)}s`);
+  if (p.buffs.guard > 0) buffs.push(`🛡 ${L('Defesa', 'Guard')} -${Math.round((1 - (p.guardK ?? 0.5)) * 100)}% ${p.buffs.guard.toFixed(0)}s`);
+  if (p.buffs.mend > 0) buffs.push(`✚ ${L('Cura', 'Mend')} ${p.buffs.mend.toFixed(0)}s`);
+  if (p.buffs.evade > 0) buffs.push(`${L('Esquiva', 'Evade')} ${Math.round(p.evadeK || 0)}% ${p.buffs.evade.toFixed(0)}s`);
+  if (p.buffs.leech > 0) buffs.push(`${L('Roubo de vida', 'Life steal')} ${p.buffs.leech.toFixed(0)}s`);
   for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
   for (const b of mythHud()) buffs.push(`<span style="color:#c56bff;border-color:#c56bff">✦ ${b}</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
@@ -1218,8 +1223,10 @@ const TIERS = [
   { label: [12, 15], idx: [7, 11, 8] },
   // passivos avançados: a posição muda por classe (o Netrunner não tem o Teleporte), então vêm pela marca late
   { label: [20, 36], late: true },
+  // poderes avançados (2 de ataque e 2 de defesa), também pela marca adv
+  { label: [40, 70], adv: true },
 ];
-const tierIdx = (C, t) => (t.late ? C.skills.map((sk, i) => (sk.late ? i : -1)).filter((i) => i >= 0) : t.idx);
+const tierIdx = (C, t) => (t.late || t.adv ? C.skills.map((sk, i) => ((t.late ? sk.late : sk.adv) ? i : -1)).filter((i) => i >= 0) : t.idx);
 function slotKey(k) {
   if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt'][k]);
   return String(k + 1);
@@ -1268,7 +1275,7 @@ function renderTree() {
     html += `<div class="tier"><div class="tier-label">${lbl}</div><div class="tier-nodes">`;
     for (const i of tierIdx(C, t)) {
       const sk = C.skills[i];
-      if (!sk || (sk.late && !t.late)) continue;
+      if (!sk || (sk.late && !t.late) || (sk.adv && !t.adv)) continue;
       const r = c.skills[i] || 0;
       const req = sk.req || 1;
       const locked = r === 0;
@@ -1295,7 +1302,7 @@ function renderTree() {
   let status = '';
   if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
   else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
-  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? (sk.passive ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? (sk.passive || sk.adv ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
   const canSpend = c.skillPoints > 0 && r < 10 && c.level >= req;
   let actions = `<button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>`;
   if (i > 0 && !locked && !sk.passive) {

@@ -107,6 +107,45 @@ export const ICONS = {
   pRage: '<path d="M3 17h6l3-7 4 14 4-11 2 4h7"/>',
   pChip: '<rect x="9" y="9" width="14" height="14" rx="2"/><path d="M13 4v5M19 4v5M13 23v5M19 23v5M4 13h5M4 19h5M23 13h5M23 19h5"/><circle cx="16" cy="16" r="3"/>',
   pEye: '<path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z"/><circle cx="16" cy="16" r="4"/>',
+  // poderes avançados (níveis 40–70)
+  crescent: '<path d="M5 27C8 13 18 5 28 5c-7 5-11 12-12 22z"/><path d="M4 20c2-5 5-9 9-12" opacity=".5"/>',
+  mirror: '<path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z"/><path d="M11 11l10 10M21 11L11 21" opacity=".6"/>',
+  dragon: '<path d="M3 27L29 5"/><path d="M8 27l5-4M14 22l5-4M20 17l5-4" opacity=".6"/><path d="M23 4l6 1-1 6"/>',
+  lotus: '<path d="M16 27S4 20 4 11a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 9-12 16-12 16z"/><path d="M16 12v8M12 16h8"/>',
+  ricochet: '<path d="M3 25l8-14 8 10 8-14"/><circle cx="28" cy="6" r="2"/>',
+  smoke: '<circle cx="11" cy="19" r="6"/><circle cx="20" cy="13" r="7"/><circle cx="22" cy="23" r="5"/>',
+  leadStorm: '<path d="M3 8h12M3 16h17M3 24h12"/><path d="M18 6l5 2-5 2M23 14l5 2-5 2M18 22l5 2-5 2"/>',
+  reboot: '<path d="M26 16a10 10 0 1 1-3-7"/><path d="M24 3v6h-6"/><path d="M16 12v8M12 16h8"/>',
+  lance: '<path d="M3 16h19"/><path d="M22 11l8 5-8 5z"/><path d="M3 10h8M3 22h8" opacity=".5"/>',
+  firewall: '<rect x="4" y="6" width="24" height="20" rx="1"/><path d="M4 13h24M4 19h24M12 6v7M20 13v6M12 19v7"/>',
+  bomb: '<circle cx="14" cy="19" r="9"/><path d="M20 12l4-4M25 3v3M29 7h-3M27 4l-2 2"/>',
+  backup: '<rect x="6" y="5" width="20" height="22" rx="2"/><path d="M11 5v7h10V5M16 16v7M12 20l4 4 4-4"/>',
+  upper: '<path d="M16 27V11M10 17l6-6 6 6"/><path d="M6 28h20"/><path d="M8 7l3 3M24 7l-3 3M16 2v5"/>',
+  steel: '<path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z"/><path d="M11 15h10M11 19h10M11 11h10"/>',
+  fury: '<path d="M4 9h11M6 16h13M4 23h11"/><circle cx="24" cy="16" r="5"/>',
+  wind: '<path d="M4 11h15a4 4 0 1 0-4-4M4 17h21a4 4 0 1 1-4 4M4 23h9"/>',
+  breath: '<path d="M4 16L28 5v22z"/><path d="M14 12v8M20 10v12" opacity=".6"/>',
+  mantle: '<path d="M16 3c4 5 9 8 9 15a9 9 0 0 1-18 0c0-7 5-10 9-15z"/><path d="M16 14c2 3 4 4 4 7a4 4 0 0 1-8 0c0-3 2-4 4-7z"/>',
+  sun: '<circle cx="16" cy="16" r="6"/><path d="M16 2v5M16 25v5M2 16h5M25 16h5M6 6l3 3M23 23l3 3M6 26l3-3M23 9l3-3"/>',
+  cauter: '<path d="M16 3c3 5 7 7 7 13a7 7 0 0 1-14 0c0-6 4-8 7-13z"/><path d="M16 13v8M12 17h8"/>',
+  iceBlock: '<path d="M16 3l11 6v14l-11 6-11-6V9z"/><path d="M5 9l11 6 11-6M16 15v14"/>',
+  aura: '<circle cx="16" cy="16" r="4"/><circle cx="16" cy="16" r="9" stroke-dasharray="3 3"/><circle cx="16" cy="16" r="13.5" stroke-dasharray="2 4" opacity=".5"/>',
+  cannon: '<rect x="3" y="11" width="18" height="9" rx="2"/><path d="M21 9v13M25 15.5h5"/><circle cx="9" cy="24" r="3"/>',
+  bunker: '<path d="M4 27V16a12 12 0 0 1 24 0v11z"/><path d="M9 19h14"/><path d="M2 27h28"/>',
+  carpet: '<circle cx="7" cy="23" r="3"/><circle cx="16" cy="19" r="3"/><circle cx="25" cy="15" r="3"/><path d="M7 4v12M16 4v8M25 4v4"/>',
+  repair: '<path d="M21 4a6 6 0 0 0-5 8L5 23l4 4 11-11a6 6 0 0 0 8-5l-4 2-3-3 2-4z"/>',
+  volley: '<path d="M4 28L25 7M9 28L28 12M4 23L20 4"/><path d="M19 7h6v6"/>',
+  camo: '<path d="M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z"/><circle cx="16" cy="16" r="3"/><path d="M5 27L27 5"/>',
+  boomArrow: '<path d="M4 28L19 13"/><path d="M13 11h8v8"/><circle cx="24" cy="8" r="5" opacity=".6"/>',
+  herb: '<path d="M6 26C6 12 14 6 27 5c-1 13-7 21-21 21z"/><path d="M6 26L18 14"/>',
+  skyLance: '<path d="M16 2v20"/><path d="M12 22h8l-4 8z"/><path d="M7 5l4 5M25 5l-4 5"/>',
+  bulwark: '<rect x="8" y="3" width="16" height="26" rx="3"/><path d="M16 7v18M11 12h10"/>',
+  ragnarok: '<path d="M10 3L5 14h5l-3 9M22 6l-5 11h5l-3 9"/><path d="M3 29h26"/>',
+  wings: '<path d="M16 13c-4-6-10-7-13-6 1 6 5 10 13 12 8-2 12-6 13-12-3-1-9 0-13 6z"/><path d="M16 19v9M12 24h8"/>',
+  acid: '<path d="M10 4c4 6 6 9 6 12a6 6 0 0 1-12 0c0-3 2-6 6-12z"/><path d="M22 12c3 4 5 7 5 9a5 5 0 0 1-10 0c0-2 2-5 5-9z"/>',
+  cocoon: '<ellipse cx="16" cy="16" rx="8" ry="12"/><path d="M9 11c4 2 10 2 14 0M8 17c5 2 11 2 16 0M9 22c4 2 10 2 14 0"/>',
+  bioBomb: '<circle cx="16" cy="16" r="3"/><path d="M16 13l-4-8a10 10 0 0 1 8 0zM13.4 17.5l-8.5 2a10 10 0 0 0 4 7zM18.6 17.5l8.5 2a10 10 0 0 1-4 7z"/>',
+  hexSkin: '<path d="M16 3l11 6.5v13L16 29 5 22.5v-13z"/><path d="M16 10l5 3v6l-5 3-5-3v-6z"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
@@ -495,6 +534,77 @@ const LATE_PASSIVES = {
   ],
 };
 for (const [id, list] of Object.entries(LATE_PASSIVES)) CLASSES[id].skills.push(...list);
+
+// Poderes avançados (níveis 40, 50, 60 e 70): 2 de ataque e 2 de defesa por classe. Vão no fim da lista,
+// depois dos passivos avançados, para não mudar a posição dos poderes nos saves antigos (adv: andar próprio na árvore).
+const dur = (b, r) => b + 0.3 * r; // duração das defesas
+const healF = (b, r) => b + 0.01 * r; // fração da vida curada
+const s1 = (v) => v.toFixed(1);
+const hp = (f) => `${Math.round(f * 100)}%`;
+const adv = (id, req, name, icon, cost, cd, desc) => ({ id, req, name, icon, cost, cd, desc, adv: true });
+const ADV_POWERS = {
+  blade: [
+    adv('crescent', 40, L('Onda Crescente', 'Crescent Wave'), 'crescent', 40, 8, (r) => L(`Lança 3 ondas cortantes em leque que atravessam todos os inimigos, causando ${pct(2.2 * rankMult(r))} cada.`, `Launches 3 slicing waves in a fan that pass through every enemy, dealing ${pct(2.2 * rankMult(r))} each.`)),
+    adv('mirrorStance', 50, L('Postura do Espelho', 'Mirror Stance'), 'mirror', 35, 20, (r) => L(`Por ${s1(dur(3, r))}s você recebe só 25% do dano. Ao terminar, contra-ataca com um corte giratório de ${pct(2.5 * rankMult(r))} em 3,5m.`, `For ${s1(dur(3, r))}s you take only 25% damage. When it ends, you counter with a spinning slash dealing ${pct(2.5 * rankMult(r))} within 3.5m.`)),
+    adv('dragonSlash', 60, L('Corte do Dragão', 'Dragon Slash'), 'dragon', 60, 14, (r) => L(`Um corte de energia em linha reta de 14m que causa ${pct(4.5 * rankMult(r))} e incendeia tudo no caminho.`, `A 14m straight energy slash that deals ${pct(4.5 * rankMult(r))} and sets everything in its path on fire.`)),
+    adv('zenBreath', 70, L('Respiração Zen', 'Zen Breath'), 'lotus', 45, 30, (r) => L(`Cura ${hp(healF(0.25, r))} da vida na hora, mais 4% por segundo durante 5s, e recupera 30 de energia.`, `Heals ${hp(healF(0.25, r))} of your health instantly, plus 4% per second for 5s, and restores 30 energy.`)),
+  ],
+  gunner: [
+    adv('ricochet', 40, L('Bala Ricochete', 'Ricochet Round'), 'ricochet', 30, 6, (r) => L(`Uma bala que causa ${pct(2.0 * rankMult(r))} e ricocheteia por mais 5 inimigos (${pct(1.2 * rankMult(r))} cada).`, `A bullet that deals ${pct(2.0 * rankMult(r))} and ricochets to 5 more enemies (${pct(1.2 * rankMult(r))} each).`)),
+    adv('smokeBomb', 50, L('Bomba de Fumaça', 'Smoke Bomb'), 'smoke', 30, 18, (r) => L(`Solta uma nuvem de fumaça: por ${s1(dur(4, r))}s você esquiva de 60% dos golpes, e os inimigos dentro da nuvem ficam lentos.`, `Drops a smoke cloud: for ${s1(dur(4, r))}s you dodge 60% of hits, and enemies inside the cloud are slowed.`)),
+    adv('leadStorm', 60, L('Chuva de Chumbo', 'Lead Storm'), 'leadStorm', 55, 14, (r) => L(`Dispara 24 balas teleguiadas em 1,2s, cada uma causando ${pct(0.9 * rankMult(r))}.`, `Fires 24 homing bullets over 1.2s, each dealing ${pct(0.9 * rankMult(r))}.`)),
+    adv('reboot', 70, L('Reinício de Emergência', 'Emergency Reboot'), 'reboot', 45, 30, (r) => L(`Cura ${hp(healF(0.3, r))} da vida na hora e ganha um escudo de 25% da vida.`, `Heals ${hp(healF(0.3, r))} of your health instantly and grants a shield worth 25% of your health.`)),
+  ],
+  netrunner: [
+    adv('dataLance', 40, L('Lança de Dados', 'Data Lance'), 'lance', 35, 7, (r) => L(`Um raio de dados em linha reta de 16m que causa ${pct(4.0 * rankMult(r))} e atordoa por 1,2s.`, `A 16m straight data beam that deals ${pct(4.0 * rankMult(r))} and stuns for 1.2s.`)),
+    adv('firewall', 50, 'Firewall', 'firewall', 40, 20, (r) => L(`Por ${s1(dur(6, r))}s você recebe metade do dano, e uma barreira de dados ao seu redor causa ${pct(0.4 * rankMult(r))} a cada 0,5s e deixa os inimigos lentos.`, `For ${s1(dur(6, r))}s you take half damage, and a data barrier around you deals ${pct(0.4 * rankMult(r))} every 0.5s and slows enemies.`)),
+    adv('logicBomb', 60, L('Bomba Lógica', 'Logic Bomb'), 'bomb', 55, 14, (r) => L(`Arremessa uma bomba que explode causando ${pct(4.5 * rankMult(r))} e atordoando, e reinicia com uma segunda explosão de ${pct(2.0 * rankMult(r))}.`, `Throws a bomb that explodes for ${pct(4.5 * rankMult(r))} and stuns, then reboots for a second blast of ${pct(2.0 * rankMult(r))}.`)),
+    adv('sysBackup', 70, L('Backup de Sistema', 'System Backup'), 'backup', 30, 35, (r) => L(`Restaura ${hp(healF(0.35, r))} da vida e metade da energia, e fica invulnerável por 1,5s.`, `Restores ${hp(healF(0.35, r))} of your health and half your energy, and makes you invulnerable for 1.5s.`)),
+  ],
+  brawler: [
+    adv('uppercut', 40, L('Gancho Sísmico', 'Seismic Uppercut'), 'upper', 35, 7, (r) => L(`Um gancho que causa ${pct(4.0 * rankMult(r))} à frente, arremessa os inimigos longe e os atordoa por 1,2s.`, `An uppercut that deals ${pct(4.0 * rankMult(r))} in front of you, sends enemies flying and stuns them for 1.2s.`)),
+    adv('steelSkin', 50, L('Pele de Aço', 'Steel Skin'), 'steel', 35, 20, (r) => L(`Por ${s1(dur(6, r))}s você recebe só 40% do dano e 10% do dano causado vira vida.`, `For ${s1(dur(6, r))}s you take only 40% damage and 10% of the damage you deal heals you.`)),
+    adv('fistFury', 60, L('Fúria de Punhos', 'Fist Fury'), 'fury', 50, 12, (r) => L(`10 socos em 1s à sua frente (${pct(1.0 * rankMult(r))} cada) e um soco final de ${pct(3.0 * rankMult(r))}.`, `10 punches in 1s in front of you (${pct(1.0 * rankMult(r))} each) and a final punch dealing ${pct(3.0 * rankMult(r))}.`)),
+    adv('secondWind', 70, L('Segundo Fôlego', 'Second Wind'), 'wind', 40, 30, (r) => L(`Cura ${hp(healF(0.25, r))} da vida na hora, mais 5% por segundo durante 4s, e empurra os inimigos próximos.`, `Heals ${hp(healF(0.25, r))} of your health instantly, plus 5% per second for 4s, and knocks nearby enemies back.`)),
+  ],
+  pyro: [
+    adv('dragonBreath', 40, L('Sopro do Dragão', 'Dragon Breath'), 'breath', 40, 7, (r) => L(`Uma onda de fogo em cone de 6m que causa ${pct(3.0 * rankMult(r))} e queima forte.`, `A 6m cone of fire that deals ${pct(3.0 * rankMult(r))} and burns hard.`)),
+    adv('flameMantle', 50, L('Manto de Chamas', 'Flame Mantle'), 'mantle', 40, 20, (r) => L(`Por ${s1(dur(8, r))}s você recebe 40% menos dano e as chamas ao seu redor causam ${pct(0.5 * rankMult(r))} a cada 0,5s.`, `For ${s1(dur(8, r))}s you take 40% less damage and the flames around you deal ${pct(0.5 * rankMult(r))} every 0.5s.`)),
+    adv('sunfall', 60, L('Queda do Sol', 'Sunfall'), 'sun', 60, 16, (r) => L(`Um sol em miniatura cai onde você mira, causando ${pct(6.0 * rankMult(r))} em 5m e deixando o chão em chamas.`, `A miniature sun falls where you aim, dealing ${pct(6.0 * rankMult(r))} within 5m and leaving the ground on fire.`)),
+    adv('cauterize', 70, L('Cauterizar', 'Cauterize'), 'cauter', 40, 30, (r) => L(`Cura ${hp(healF(0.3, r))} da vida, fica invulnerável por 1s e solta uma explosão de fogo ao redor.`, `Heals ${hp(healF(0.3, r))} of your health, makes you invulnerable for 1s and releases a fire blast around you.`)),
+  ],
+  frost: [
+    adv('iceLance', 40, L('Lança de Gelo', 'Ice Lance'), 'lance', 35, 7, (r) => L(`Um raio de gelo em linha reta de 16m que causa ${pct(4.0 * rankMult(r))} e congela.`, `A 16m straight ice beam that deals ${pct(4.0 * rankMult(r))} and freezes.`)),
+    adv('iceBlock', 50, L('Bloco de Gelo', 'Ice Block'), 'iceBlock', 35, 25, (r) => L(`Fica envolto em gelo e invulnerável por ${s1(2 + 0.1 * r)}s, recuperando 8% da vida por segundo, e congela os inimigos próximos.`, `Encases you in ice, invulnerable for ${s1(2 + 0.1 * r)}s while recovering 8% health per second, and freezes nearby enemies.`)),
+    adv('glacialNova', 60, L('Nova Glacial', 'Glacial Nova'), 'snow', 55, 14, (r) => L(`Explosão de gelo que causa ${pct(3.5 * rankMult(r))} em 6m e congela, seguida de uma onda de ${pct(1.5 * rankMult(r))} em 8m.`, `An ice explosion dealing ${pct(3.5 * rankMult(r))} within 6m that freezes, followed by a ${pct(1.5 * rankMult(r))} wave within 8m.`)),
+    adv('winterAura', 70, L('Aura do Inverno', 'Winter Aura'), 'aura', 40, 25, (r) => L(`Por ${s1(dur(8, r))}s você recebe metade do dano, recupera 2% da vida por segundo e o frio ao redor causa ${pct(0.35 * rankMult(r))} a cada 0,5s e deixa os inimigos lentos.`, `For ${s1(dur(8, r))}s you take half damage, recover 2% health per second, and the cold around you deals ${pct(0.35 * rankMult(r))} every 0.5s and slows enemies.`)),
+  ],
+  heavy: [
+    adv('plasmaCannon', 40, L('Canhão de Plasma', 'Plasma Cannon'), 'cannon', 40, 8, (r) => L(`Dispara uma bola de plasma que explode causando ${pct(5.0 * rankMult(r))} em 4m.`, `Fires a plasma ball that explodes for ${pct(5.0 * rankMult(r))} within 4m.`)),
+    adv('bunker', 50, 'Bunker', 'bunker', 35, 20, (r) => L(`Por ${s1(dur(5, r))}s você recebe só 30% do dano e ergue uma barreira à frente.`, `For ${s1(dur(5, r))}s you take only 30% damage and raise a barrier in front of you.`)),
+    adv('carpetBomb', 60, L('Bombardeio', 'Carpet Bombing'), 'carpet', 60, 15, (r) => L(`10 explosões em linha na direção da mira, cada uma causando ${pct(2.6 * rankMult(r))}.`, `10 explosions in a line toward your aim, each dealing ${pct(2.6 * rankMult(r))}.`)),
+    adv('repairDrones', 70, L('Drones de Reparo', 'Repair Drones'), 'repair', 45, 30, (r) => L(`Cura ${hp(healF(0.2, r))} da vida na hora, mais 4% por segundo durante 6s, e ganha um escudo de 20% da vida.`, `Heals ${hp(healF(0.2, r))} of your health instantly, plus 4% per second for 6s, and grants a shield worth 20% of your health.`)),
+  ],
+  hunter: [
+    adv('volley', 40, L('Saraivada', 'Volley'), 'volley', 35, 7, (r) => L(`3 ondas de 9 flechas em leque, cada uma causando ${pct(0.9 * rankMult(r))} e atravessando 2 inimigos.`, `3 waves of 9 arrows in a fan, each dealing ${pct(0.9 * rankMult(r))} and piercing 2 enemies.`)),
+    adv('camo', 50, L('Camuflagem', 'Camouflage'), 'camo', 30, 20, (r) => L(`Por ${s1(dur(4, r))}s você esquiva de 70% dos golpes e deixa uma isca no lugar, que explode causando ${pct(2.0 * rankMult(r))}.`, `For ${s1(dur(4, r))}s you dodge 70% of hits and leave a decoy behind that explodes for ${pct(2.0 * rankMult(r))}.`)),
+    adv('blastArrow', 60, L('Flecha Explosiva', 'Explosive Arrow'), 'boomArrow', 50, 12, (r) => L(`Uma flecha que explode ao acertar, causando ${pct(4.5 * rankMult(r))} em 3,5m e queimando.`, `An arrow that explodes on impact, dealing ${pct(4.5 * rankMult(r))} within 3.5m and burning.`)),
+    adv('herbs', 70, L('Ervas Medicinais', 'Healing Herbs'), 'herb', 40, 30, (r) => L(`Cura ${hp(healF(0.3, r))} da vida na hora, mais 3% por segundo durante 8s, e 10% do dano causado vira vida nesse tempo.`, `Heals ${hp(healF(0.3, r))} of your health instantly, plus 3% per second for 8s, and 10% of the damage you deal heals you meanwhile.`)),
+  ],
+  lancer: [
+    adv('skyLance', 40, L('Lança Celeste', 'Sky Lance'), 'skyLance', 40, 8, (r) => L(`Arremessa uma lança de luz em linha reta de 15m que causa ${pct(4.0 * rankMult(r))} e solta um raio que salta por 3 inimigos.`, `Hurls a 15m straight lance of light that deals ${pct(4.0 * rankMult(r))} and releases lightning that jumps across 3 enemies.`)),
+    adv('odinWall', 50, L('Muralha de Odin', "Odin's Bulwark"), 'bulwark', 35, 20, (r) => L(`Por ${s1(dur(5, r))}s você recebe só 35% do dano e um escudo devolve os tiros inimigos.`, `For ${s1(dur(5, r))}s you take only 35% damage and a shield reflects enemy shots.`)),
+    adv('ragnarok', 60, 'Ragnarök', 'ragnarok', 60, 16, (r) => L(`16 raios caem sobre a área mirada, cada um causando ${pct(2.2 * rankMult(r))}.`, `16 lightning bolts strike the targeted area, each dealing ${pct(2.2 * rankMult(r))}.`)),
+    adv('valkBless', 70, L('Bênção da Valquíria', "Valkyrie's Blessing"), 'wings', 45, 30, (r) => L(`Cura ${hp(healF(0.3, r))} da vida e, por 6s, recupera 3% da vida por segundo e recebe 40% menos dano.`, `Heals ${hp(healF(0.3, r))} of your health and, for 6s, recovers 3% health per second and takes 40% less damage.`)),
+  ],
+  biohacker: [
+    adv('acidSpray', 40, L('Jato Ácido', 'Acid Spray'), 'acid', 35, 7, (r) => L(`Um jato de ácido em cone de 5,5m que causa ${pct(2.6 * rankMult(r))}, corrói e deixa os inimigos lentos.`, `A 5.5m cone of acid that deals ${pct(2.6 * rankMult(r))}, corrodes and slows enemies.`)),
+    adv('cocoon', 50, L('Casulo Regenerativo', 'Regen Cocoon'), 'cocoon', 40, 22, (r) => L(`Por ${s1(dur(5, r))}s você recebe metade do dano e recupera 5% da vida por segundo.`, `For ${s1(dur(5, r))}s you take half damage and recover 5% health per second.`)),
+    adv('bioBomb', 60, L('Bomba Biológica', 'Bio Bomb'), 'bioBomb', 55, 14, (r) => L(`Arremessa uma bomba que causa ${pct(4.0 * rankMult(r))} em 4,5m e deixa uma nuvem tóxica por 6s.`, `Throws a bomb that deals ${pct(4.0 * rankMult(r))} within 4.5m and leaves a toxic cloud for 6s.`)),
+    adv('adaptSkin', 70, L('Pele Adaptativa', 'Adaptive Skin'), 'hexSkin', 40, 28, (r) => L(`Por ${s1(dur(8, r))}s você recebe metade do dano, esquiva de 30% dos golpes e 10% do dano causado vira vida.`, `For ${s1(dur(8, r))}s you take half damage, dodge 30% of hits, and 10% of the damage you deal heals you.`)),
+  ],
+};
+for (const [id, list] of Object.entries(ADV_POWERS)) CLASSES[id].skills.push(...list);
 
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
@@ -1210,6 +1320,435 @@ Object.assign(SKILL_FN, {
     ringFx(p.x, p.z, 12, C_('biohacker'), 0.7, { from: 0.1 });
     G.shake = Math.max(G.shake, 0.3);
     sfx.nova();
+    return true;
+  },
+});
+
+// ---------------- Poderes avançados (níveis 40–70) ----------------
+// Raio em linha reta até a parede (como o Canhão Ferroviário)
+function lineBeam(p, maxLen, width, mult, color, o = {}) {
+  const d = G.dungeon;
+  let len = 0;
+  while (len < maxLen && isWalkable(d, p.x + p.aim.dx * len, p.z + p.aim.dz * len)) len += 0.25;
+  for (const e of G.enemies) {
+    if (!e.alive) continue;
+    const rx = e.x - p.x;
+    const rz = e.z - p.z;
+    const along = rx * p.aim.dx + rz * p.aim.dz;
+    const across = Math.abs(-rx * p.aim.dz + rz * p.aim.dx);
+    if (along > 0 && along < len + e.r && across < width + e.r) hitEnemy(e, mult, { knock: o.knock ?? 3, stun: o.stun, burn: o.burn, freeze: o.freeze, slow: o.slow });
+  }
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(2.4)), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(width * 0.6, width * 0.6, len).translate(0, 0, len / 2), mat);
+  beam.position.set(p.x, 1, p.z);
+  beam.lookAt(p.x + p.aim.dx, 1, p.z + p.aim.dz);
+  tempMesh(beam, 0.4, (e, k) => {
+    mat.opacity = 1 - k;
+    beam.scale.set(1 - k * 0.8, 1 - k * 0.8, 1);
+  }).disposeGeo = true;
+  for (let k = 0; k < len; k += 0.8) burst(p.x + p.aim.dx * k, 1, p.z + p.aim.dz * k, color, 2, 2, 0.07, 0.45);
+  G.shake = Math.max(G.shake, 0.25);
+  p.swing = 1;
+  return len;
+}
+
+// Rajada em cone à frente (sopro, jato, gancho)
+function coneBlast(p, range, arc, mult, color, o = {}) {
+  for (const e of enemiesInCone(p.x, p.z, p.aim.dx, p.aim.dz, range, arc)) {
+    if (lineOfSight(G.dungeon, p.x, p.z, e.x, e.z)) hitEnemy(e, mult, o);
+  }
+  const a0 = angleOf(p.aim.dx, p.aim.dz);
+  slashFx(p.x, p.z, a0, range, arc, color, 0.6);
+  for (let k = 0; k < 28; k++) {
+    const a = a0 + rr(-arc / 2, arc / 2);
+    const sp = rr(range * 1.4, range * 2.4);
+    particle(p.x + p.aim.dx * 0.6, 0.9, p.z + p.aim.dz * 0.6, Math.cos(a) * sp, rr(0, 1), Math.sin(a) * sp, color, rr(0.1, 0.2), rr(0.3, 0.45), -1, 1.5);
+  }
+  p.swing = 1;
+}
+
+// Defesas: menos dano recebido, cura por segundo, esquiva e roubo de vida (contados em player.js/combat.js)
+function guard(p, t, taken, color) {
+  p.guardK = p.buffs.guard > 0 ? Math.min(p.guardK ?? 1, taken) : taken;
+  p.buffs.guard = Math.max(p.buffs.guard || 0, t);
+  ringFx(p.x, p.z, 1.7, color, 0.45);
+  burst(p.x, 1, p.z, color, 24, 4, 0.07, 0.5);
+  sfx.shieldBlock();
+}
+function mend(p, t, rate) {
+  p.mendRate = p.buffs.mend > 0 ? Math.max(p.mendRate || 0, rate) : rate;
+  p.buffs.mend = Math.max(p.buffs.mend || 0, t);
+}
+function evade(p, t, chance) {
+  p.evadeK = p.buffs.evade > 0 ? Math.max(p.evadeK || 0, chance) : chance;
+  p.buffs.evade = Math.max(p.buffs.evade || 0, t);
+}
+const leech = (p, t) => (p.buffs.leech = Math.max(p.buffs.leech || 0, t));
+// aura que causa dano ao redor a cada 0,5s
+function aura(p, t, radius, mult, color, o = {}) {
+  p.aura = { t, tick: 0, r: radius, mult, color, burn: o.burn, slow: o.slow };
+}
+export function updateAura(p, dt) {
+  const a = p.aura;
+  if (!a) return;
+  a.t -= dt;
+  a.tick -= dt;
+  if (a.tick <= 0) {
+    a.tick = 0.5;
+    for (const e of enemiesInRadius(p.x, p.z, a.r)) hitEnemy(e, a.mult, { burn: a.burn, slow: a.slow, noProc: true, quiet: true, knock: 0.3 });
+    ringFx(p.x, p.z, a.r, a.color, 0.4, { from: a.r * 0.5 });
+  }
+  if (Math.random() < dt * 20) burst(p.x + rr(-a.r, a.r) * 0.7, 0.2, p.z + rr(-a.r, a.r) * 0.7, a.color, 1, 1, 0.07, 0.5, { grav: -2 });
+  if (a.t <= 0) p.aura = null;
+}
+function bigHeal(p, frac, color) {
+  healPlayer(p.stats.maxHp * frac);
+  ringFx(p.x, p.z, 2, color, 0.5, { from: 0.4 });
+  burst(p.x, 1, p.z, color, 30, 4, 0.08, 0.7, { up: 1 });
+  sfx.levelup();
+}
+
+Object.assign(SKILL_FN, {
+  // Lâmina
+  crescent(p, r) {
+    const base = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = -1; k <= 1; k++) {
+      const a = base + k * 0.22;
+      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.5, z: p.z + Math.sin(a) * 0.5, dx: Math.cos(a), dz: Math.sin(a), speed: 20, life: 0.6, mult: 2.2 * rankMult(r), color: C_('blade'), size: 0.3, r: 0.6, pierce: 99, knock: 4 });
+    }
+    slashFx(p.x, p.z, base, 2.2, Math.PI * 0.9, C_('blade'), 0.7);
+    sfx.slash();
+    p.swing = 1;
+    return true;
+  },
+  mirrorStance(p, r) {
+    const t = dur(3, r);
+    guard(p, t, 0.25, 0xffffff);
+    after(t, () => {
+      const pl = G.player;
+      if (!pl || !pl.alive) return;
+      for (const e of enemiesInRadius(pl.x, pl.z, 3.5)) hitEnemy(e, 2.5 * rankMult(r), { knock: 5, kx: pl.x, kz: pl.z });
+      slashFx(pl.x, pl.z, 0, 3.5, Math.PI * 2, C_('blade'), 0.7);
+      ringFx(pl.x, pl.z, 3.5, C_('blade'), 0.4, { from: 1 });
+      sfx.slash();
+    });
+    return true;
+  },
+  dragonSlash(p, r) {
+    lineBeam(p, 14, 0.9, 4.5 * rankMult(r), C_('blade'), { knock: 5, burn: 0.5 });
+    slashFx(p.x, p.z, angleOf(p.aim.dx, p.aim.dz), 2.4, Math.PI, C_('blade'), 0.7);
+    sfx.slash();
+    sfx.laser();
+    return true;
+  },
+  zenBreath(p, r) {
+    bigHeal(p, healF(0.25, r), C_('blade'));
+    mend(p, 5, 0.04);
+    p.en = Math.min(p.stats.maxEn, p.en + 30);
+    return true;
+  },
+
+  // Atiradora
+  ricochet(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, dx: p.aim.dx, dz: p.aim.dz, speed: 30, life: 0.6, mult: 2.0 * rankMult(r), color: 0xffee55, size: 0.15, r: 0.26, homing: 6, onHit: (e) => chainFrom(e, 5, 1.2 * rankMult(r), 7, C_('gunner')) });
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  smokeBomb(p, r) {
+    const t = dur(4, r);
+    evade(p, t, 60);
+    p.invuln = Math.max(p.invuln, 0.6);
+    spawnHazard(p.x, p.z, 3.5, t, 0, { faction: 'player', mult: 0.1, slow: 1.5, color: 0x8899aa, opacity: 0.4 });
+    burst(p.x, 0.8, p.z, 0xaabbcc, 40, 4, 0.2, 0.9, { up: 0.6 });
+    sfx.dash();
+    return true;
+  },
+  leadStorm(p, r) {
+    for (let k = 0; k < 24; k++) {
+      after(k * 0.05, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const a = angleOf(pl.aim.dx, pl.aim.dz) + rr(-0.35, 0.35);
+        pl.hand = 1 - pl.hand;
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, dx: Math.cos(a), dz: Math.sin(a), speed: 26, life: 0.6, mult: 0.9 * rankMult(r), color: C_('gunner'), size: 0.1, r: 0.22, homing: 5, quiet: true });
+        pl.swing = 1;
+        if (k % 2) sfx.shoot();
+      });
+    }
+    return true;
+  },
+  reboot(p, r) {
+    bigHeal(p, healF(0.3, r), C_('gunner'));
+    p.shield = Math.max(p.shield, p.stats.maxHp * 0.25);
+    return true;
+  },
+
+  // Netrunner
+  dataLance(p, r) {
+    lineBeam(p, 16, 0.7, 4.0 * rankMult(r), C_('netrunner'), { stun: 1.2 });
+    sfx.laser();
+    return true;
+  },
+  firewall(p, r) {
+    const t = dur(6, r);
+    guard(p, t, 0.5, C_('netrunner'));
+    aura(p, t, 3, 0.4 * rankMult(r), C_('netrunner'), { slow: 1 });
+    return true;
+  },
+  logicBomb(p, r) {
+    const t = targetPoint(p, 10);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.55, color: C_('netrunner'), onLand: (x, z) => {
+      explosion(x, z, 4, 4.5 * rankMult(r), { color: C_('netrunner'), stun: 1.5, knock: 4 });
+      after(0.6, () => explosion(x, z, 2.5, 2.0 * rankMult(r), { color: 0x9d4dff, small: true, noProc: true }));
+    } });
+    p.swing = 1;
+    return true;
+  },
+  sysBackup(p, r) {
+    bigHeal(p, healF(0.35, r), C_('netrunner'));
+    p.en = Math.min(p.stats.maxEn, p.en + p.stats.maxEn * 0.5);
+    p.invuln = Math.max(p.invuln, 1.5);
+    return true;
+  },
+
+  // Punho de Aço
+  uppercut(p, r) {
+    coneBlast(p, 3.6, Math.PI * 0.55, 4.0 * rankMult(r), C_('brawler'), { knock: 9, stun: 1.2 });
+    ringFx(p.x + p.aim.dx * 1.5, p.z + p.aim.dz * 1.5, 1.8, C_('brawler'), 0.35);
+    G.shake = Math.max(G.shake, 0.35);
+    sfx.punchHeavy();
+    return true;
+  },
+  steelSkin(p, r) {
+    const t = dur(6, r);
+    guard(p, t, 0.4, 0xc8d0e0);
+    leech(p, t);
+    return true;
+  },
+  fistFury(p, r) {
+    for (let k = 0; k <= 10; k++) {
+      after(k * 0.1, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const last = k === 10;
+        const range = last ? 2.6 : 2.2;
+        for (const e of enemiesInCone(pl.x, pl.z, pl.aim.dx, pl.aim.dz, range, Math.PI * 0.5)) hitEnemy(e, (last ? 3.0 : 1.0) * rankMult(r), { knock: last ? 8 : 0.6, stun: last ? 0.6 : 0, noProc: !last && k % 3 !== 0, quiet: !last });
+        burst(pl.x + pl.aim.dx * 1.2 + rr(-0.4, 0.4), 0.9 + rr(-0.3, 0.3), pl.z + pl.aim.dz * 1.2 + rr(-0.4, 0.4), C_('brawler'), last ? 16 : 5, 3, 0.06, 0.25);
+        pl.swing = 1;
+        pl.hand = 1 - pl.hand;
+        if (last) {
+          ringFx(pl.x + pl.aim.dx * 1.3, pl.z + pl.aim.dz * 1.3, 1.6, C_('brawler'), 0.3);
+          G.shake = Math.max(G.shake, 0.3);
+          sfx.punchHeavy();
+        } else sfx.punch();
+      });
+    }
+    return true;
+  },
+  secondWind(p, r) {
+    bigHeal(p, healF(0.25, r), C_('brawler'));
+    mend(p, 4, 0.05);
+    for (const e of enemiesInRadius(p.x, p.z, 4)) hitEnemy(e, 1.0 * rankMult(r), { knock: 9, noProc: true });
+    ringFx(p.x, p.z, 4, C_('brawler'), 0.4, { from: 0.5 });
+    return true;
+  },
+
+  // Incendiária
+  dragonBreath(p, r) {
+    coneBlast(p, 6, Math.PI * 0.42, 3.0 * rankMult(r), C_('pyro'), { burn: 0.8, knock: 2 });
+    sfx.flame();
+    sfx.explode();
+    return true;
+  },
+  flameMantle(p, r) {
+    const t = dur(8, r);
+    guard(p, t, 0.6, 0xff6a00);
+    aura(p, t, 2.8, 0.5 * rankMult(r), 0xff6a00, { burn: 0.5 });
+    return true;
+  },
+  sunfall(p, r) {
+    const t = targetPoint(p, 10);
+    ringFx(t.x, t.z, 5, 0xffaa00, 0.9);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.9, color: 0xffaa00, onLand: (x, z) => {
+      explosion(x, z, 5, 6.0 * rankMult(r), { color: 0xff6a00, burn: 1.0, knock: 8 });
+      ringFx(x, z, 6, 0xffee88, 0.6, { from: 1 });
+      spawnHazard(x, z, 4, 6, 0, { faction: 'player', mult: 0.4 * rankMult(r), burn: 0.5, color: 0xff5500, opacity: 0.4 });
+      G.shake = Math.max(G.shake, 0.55);
+    } });
+    p.swing = 1;
+    return true;
+  },
+  cauterize(p, r) {
+    bigHeal(p, healF(0.3, r), 0xff6a00);
+    p.invuln = Math.max(p.invuln, 1);
+    explosion(p.x, p.z, 3.5, 1.5 * rankMult(r), { color: 0xff4422, burn: 0.6, knock: 6, noProc: true });
+    return true;
+  },
+
+  // Geada
+  iceLance(p, r) {
+    lineBeam(p, 16, 0.7, 4.0 * rankMult(r), C_('frost'), { freeze: 1.5, slow: 2 });
+    sfx.cryo();
+    return true;
+  },
+  iceBlock(p, r) {
+    const t = 2 + 0.1 * r;
+    p.invuln = Math.max(p.invuln, t);
+    mend(p, t, 0.08);
+    for (const e of enemiesInRadius(p.x, p.z, 3.5)) hitEnemy(e, 0.5 * rankMult(r), { freeze: 2, noProc: true });
+    ringFx(p.x, p.z, 3.5, 0xddeeff, 0.5, { from: 0.5 });
+    burst(p.x, 1, p.z, 0xddeeff, 40, 4, 0.1, 0.8);
+    sfx.cryo();
+    return true;
+  },
+  glacialNova(p, r) {
+    explosion(p.x, p.z, 6, 3.5 * rankMult(r), { color: C_('frost'), freeze: 2, knock: 4 });
+    const x = p.x;
+    const z = p.z;
+    after(0.4, () => {
+      for (const e of enemiesInRadius(x, z, 8)) hitEnemy(e, 1.5 * rankMult(r), { slow: 3, noProc: true, kx: x, kz: z });
+      ringFx(x, z, 8, 0xddeeff, 0.5, { from: 3 });
+    });
+    sfx.cryo();
+    G.shake = Math.max(G.shake, 0.4);
+    return true;
+  },
+  winterAura(p, r) {
+    const t = dur(8, r);
+    guard(p, t, 0.5, C_('frost'));
+    mend(p, t, 0.02);
+    aura(p, t, 3.5, 0.35 * rankMult(r), 0xddeeff, { slow: 1.5 });
+    sfx.cryo();
+    return true;
+  },
+
+  // Colosso
+  plasmaCannon(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.7, z: p.z + p.aim.dz * 0.7, y: 1.2, dx: p.aim.dx, dz: p.aim.dz, speed: 14, life: 0.9, mult: 1.0 * rankMult(r), color: 0x66eaff, size: 0.4, r: 0.6, homing: 1, blast: { r: 4, mult: 5.0 * rankMult(r) } });
+    sfx.laser();
+    G.shake = Math.max(G.shake, 0.2);
+    p.swing = 1;
+    return true;
+  },
+  bunker(p, r) {
+    const t = dur(5, r);
+    guard(p, t, 0.3, C_('heavy'));
+    spawnBarrier(p.x + p.aim.dx * 1.6, p.z + p.aim.dz * 1.6, -p.aim.dz, p.aim.dx, 2, t);
+    sfx.deploy();
+    return true;
+  },
+  carpetBomb(p, r) {
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    const sx = p.x;
+    const sz = p.z;
+    for (let k = 1; k <= 10; k++) {
+      const x = sx + dx * k * 1.5;
+      const z = sz + dz * k * 1.5;
+      if (!isWalkable(G.dungeon, x, z)) break;
+      after(0.25 + k * 0.08, () => explosion(x, z, 2, 2.6 * rankMult(r), { color: 0xff8800, small: true, noProc: k % 2 === 0 }));
+    }
+    sfx.enemyShot();
+    return true;
+  },
+  repairDrones(p, r) {
+    bigHeal(p, healF(0.2, r), C_('heavy'));
+    mend(p, 6, 0.04);
+    p.shield = Math.max(p.shield, p.stats.maxHp * 0.2);
+    return true;
+  },
+
+  // Caçadora
+  volley(p, r) {
+    for (let w = 0; w < 3; w++) {
+      after(w * 0.15, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const base = angleOf(pl.aim.dx, pl.aim.dz);
+        for (let k = -4; k <= 4; k++) {
+          const a = base + k * 0.12;
+          spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, dx: Math.cos(a), dz: Math.sin(a), speed: 30, life: 0.5, mult: 0.9 * rankMult(r), color: C_('hunter'), size: 0.1, r: 0.22, pierce: 2, quiet: true });
+        }
+        pl.swing = 1;
+        sfx.shoot();
+      });
+    }
+    return true;
+  },
+  camo(p, r) {
+    evade(p, dur(4, r), 70);
+    p.invuln = Math.max(p.invuln, 0.5);
+    spawnDecoy(p.x, p.z, dur(4, r), (x, z) => explosion(x, z, 3, 2.0 * rankMult(r), { color: C_('hunter') }));
+    ghostFx(p.model, C_('hunter'));
+    sfx.dash();
+    return true;
+  },
+  blastArrow(p, r) {
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, dx: p.aim.dx, dz: p.aim.dz, speed: 30, life: 0.6, mult: 1.0 * rankMult(r), color: 0xff6a00, size: 0.16, r: 0.3, homing: 3, blast: { r: 3.5, mult: 4.5 * rankMult(r), burn: 0.6 } });
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  herbs(p, r) {
+    bigHeal(p, healF(0.3, r), 0x6aff8a);
+    mend(p, 8, 0.03);
+    leech(p, 8);
+    return true;
+  },
+
+  // Lanceira
+  skyLance(p, r) {
+    lineBeam(p, 15, 0.8, 4.0 * rankMult(r), C_('lancer'), { knock: 4 });
+    PW.chainLightningFrom(p, 3, 1.0 * rankMult(r), 0x88ccff);
+    sfx.zap();
+    return true;
+  },
+  odinWall(p, r) {
+    const t = dur(5, r);
+    guard(p, t, 0.35, C_('lancer'));
+    PW.plasmaShield(p, t, 0.15, C_('lancer'));
+    return true;
+  },
+  ragnarok(p, r) {
+    const t = PW.aimPoint(p, 10);
+    PW.meteorShower(t.x, t.z, 16, 2.2 * rankMult(r), 0xb36bff, { gap: 0.1 });
+    sfx.zap();
+    return true;
+  },
+  valkBless(p, r) {
+    bigHeal(p, healF(0.3, r), 0xffe08a);
+    mend(p, 6, 0.03);
+    guard(p, 6, 0.6, 0xffe08a);
+    return true;
+  },
+
+  // Biohacker
+  acidSpray(p, r) {
+    coneBlast(p, 5.5, Math.PI * 0.38, 2.6 * rankMult(r), C_('biohacker'), { burn: 0.9, slow: 2, knock: 1 });
+    sfx.flame();
+    return true;
+  },
+  cocoon(p, r) {
+    const t = dur(5, r);
+    guard(p, t, 0.5, C_('biohacker'));
+    mend(p, t, 0.05);
+    return true;
+  },
+  bioBomb(p, r) {
+    const t = targetPoint(p, 10);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.55, color: C_('biohacker'), onLand: (x, z) => {
+      explosion(x, z, 4.5, 4.0 * rankMult(r), { color: C_('biohacker'), burn: 0.8, knock: 4 });
+      spawnHazard(x, z, 4, 6, 0, { faction: 'player', mult: 0.45 * rankMult(r), burn: 0.5, slow: 1.5, color: C_('biohacker'), opacity: 0.35 });
+    } });
+    p.swing = 1;
+    return true;
+  },
+  adaptSkin(p, r) {
+    const t = dur(8, r);
+    guard(p, t, 0.5, C_('biohacker'));
+    evade(p, t, 30);
+    leech(p, t);
     return true;
   },
 });
