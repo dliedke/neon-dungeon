@@ -151,7 +151,7 @@ Navigation helpers:
 ### Classes and skills (`classes.js`, `powers.js`)
 
 - `CLASSES[id]` holds `name`, `title`, `desc`, colors (`css`, `accent`), `melee`, `range`, `base` stats, `weaponNames` and `skills`.
-- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`). The Netrunner has its own teleport, so it has 12 skills instead of 13.
+- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`), then 3 advanced passives (`LATE_PASSIVES`, marked `late: true`, levels 20/28/36). The Netrunner has its own teleport, so it has 15 skills instead of 16.
 - `skills[0]` is the primary attack (free, no cooldown). `skills[1]` starts unlocked.
 - The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed.
 - Skill logic lives in `SKILL_FN`, keyed by skill `id`, extended by `Object.assign(SKILL_FN, {...})` blocks. Big reusable powers (summons, orbitals, black holes, storms, transformations) are in `powers.js`.
@@ -214,7 +214,7 @@ localStorage['neon-dungeon-settings-v1'] = G.settings
 localStorage['neon-dungeon:device']      = random device id (medal counters)
 ```
 
-- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints`, `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`, `here` (floor snapshot or null).
+- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints` (`SP_PER_LEVEL` = 2 per level; `spV` marks saves that already got the retroactive points in `sanitizeChar`), `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`, `here` (floor snapshot or null).
 - `saveGame()` writes it (autosave every 20 s, on tab hide and after important actions like equipping or leveling), with the floor snapshot `here`, and marks the cloud dirty (`syncDirty(delay)`: 3 min while playing, 4 s elsewhere; an earlier scheduled sync is never postponed). Changing floor, hiding the tab and quitting to the menu sync right away.
 - `sanitizeChar(c)` runs on load and is the single place where old saves are upgraded. Backfill every new field there.
 - `sync.js` signs in with the Google OAuth implicit flow (public Client ID only) and stores one JSON file in the hidden `appDataFolder` of the user's own Drive (scope `drive.appdata`). `mergeProgress(local, cloud)`:

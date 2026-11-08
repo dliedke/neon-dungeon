@@ -439,6 +439,63 @@ for (const id of Object.keys(CLASSES)) {
   CLASSES[id].skills.push({ id: 'warp', req: 3, name: L('Teleporte', 'Teleport'), icon: 'blink', cost: 15, cd: 5, desc: (r) => L(`Teletransporta até 8m para onde você mira, fica invulnerável por um instante e solta um pulso de ${pct(0.8 * rankMult(r))} ao redor do destino.`, `Teleports up to 8m toward your aim, briefly invulnerable, and releases a ${pct(0.8 * rankMult(r))} pulse around the destination.`) });
 }
 
+// Passivos avançados (níveis 20, 28 e 36): o último andar da árvore. Vão no fim da lista,
+// depois do Teleporte, para não mudar a posição dos poderes nos saves antigos (late: andar próprio na árvore).
+const late = (...a) => ({ ...passive(...a), late: true });
+const LATE_PASSIVES = {
+  blade: [
+    late('pKensei', 20, 'Kensei', 'pCrown', (r) => ({ dmgPct: 3 * r, atkSpd: 2 * r })),
+    late('pIronWill', 28, L('Vontade de Ferro', 'Iron Will'), 'pPlate', (r) => ({ dmgRed: r1(1.2 * r), hpPct: 3 * r })),
+    late('pZen', 36, L('Zen Cromado', 'Chrome Zen'), 'pGear', (r) => ({ cdr: r1(1.5 * r), critDmg: 8 * r })),
+  ],
+  gunner: [
+    late('pDeadeye', 20, L('Olho Morto', 'Deadeye'), 'pTarget', (r) => ({ critDmg: 8 * r, dmgPct: 2 * r })),
+    late('pAkimbo', 28, 'Akimbo', 'pWind', (r) => ({ atkSpd: 3 * r, lifeSteal: r1(0.5 * r) })),
+    late('pGunLegend', 36, L('Lenda do Gatilho', 'Trigger Legend'), 'pCrown', (r) => ({ dmgPct: 3 * r, eliteDmg: 4 * r })),
+  ],
+  netrunner: [
+    late('pOverflow', 20, L('Estouro de Buffer', 'Buffer Overflow'), 'pChip', (r) => ({ dmgPct: 3 * r, maxEn: 5 * r })),
+    late('pProxy', 28, L('Proxy Blindado', 'Armored Proxy'), 'pPlate', (r) => ({ hpPct: 3 * r, dodge: r1(1.2 * r) })),
+    late('pRoot', 36, L('Acesso Root', 'Root Access'), 'pCrown', (r) => ({ cdr: r1(1.5 * r), eliteDmg: 5 * r })),
+  ],
+  brawler: [
+    late('pPistons', 20, L('Pistões Turbo', 'Turbo Pistons'), 'pGear', (r) => ({ dmgPct: 3 * r, atkSpd: 2 * r })),
+    late('pTitan', 28, L('Titã', 'Titan'), 'pPlate', (r) => ({ hpPct: 4 * r, dmgRed: r1(1.2 * r) })),
+    late('pChampion', 36, L('Campeão Invicto', 'Undefeated Champion'), 'pCrown', (r) => ({ critDmg: 8 * r, killHeal: r1(0.4 * r) })),
+  ],
+  pyro: [
+    late('pNapalm', 20, 'Napalm', 'pDrop', (r) => ({ burnPct: 10 * r, dmgPct: 2 * r })),
+    late('pPhoenixHeart', 28, L('Coração de Fênix', 'Phoenix Heart'), 'pHeart', (r) => ({ hpPct: 3 * r, lifeSteal: r1(0.6 * r) })),
+    late('pSupernova', 36, 'Supernova', 'pRage', (r) => ({ dmgPct: 3 * r, cdr: r1(1.2 * r) })),
+  ],
+  frost: [
+    late('pPermafrost', 20, 'Permafrost', 'pGear', (r) => ({ chillDmg: 5 * r, dmgPct: 2 * r })),
+    late('pIceArmor', 28, L('Armadura de Gelo', 'Ice Armor'), 'pPlate', (r) => ({ armorPct: 5 * r, dmgRed: r1(1.2 * r) })),
+    late('pAbsZero', 36, L('Zero Absoluto', 'Absolute Zero'), 'pTarget', (r) => ({ critDmg: 8 * r, eliteDmg: 4 * r })),
+  ],
+  heavy: [
+    late('pOverdrive', 20, L('Sobrecarga', 'Overdrive'), 'pBattery', (r) => ({ atkSpd: r1(2.5 * r), dmgPct: 2 * r })),
+    late('pFortress', 28, L('Fortaleza Móvel', 'Walking Fortress'), 'pPlate', (r) => ({ dmgRed: r1(1.5 * r), hpPct: 3 * r })),
+    late('pWarMachine', 36, L('Máquina de Guerra', 'War Machine'), 'pSkull', (r) => ({ dmgPct: 3 * r, eliteDmg: 4 * r })),
+  ],
+  hunter: [
+    late('pVenomTip', 20, L('Ponta Venenosa', 'Venom Tip'), 'pDrop', (r) => ({ burnPct: 8 * r, critDmg: 5 * r })),
+    late('pJungleGhost', 28, L('Fantasma da Selva', 'Jungle Ghost'), 'pWind', (r) => ({ dodge: r1(1.2 * r), lifeSteal: r1(0.5 * r) })),
+    late('pTrophy', 36, L('Caçadora de Troféus', 'Trophy Hunter'), 'pCrown', (r) => ({ dmgPct: 3 * r, findPct: 4 * r })),
+  ],
+  lancer: [
+    late('pStormRider', 20, L('Cavaleira da Tempestade', 'Storm Rider'), 'pWind', (r) => ({ atkSpd: r1(2.5 * r), moveSpd: r1(1.5 * r) })),
+    late('pValhalla', 28, L('Valhala', 'Valhalla'), 'pHeart', (r) => ({ hpPct: 3 * r, killHeal: r1(0.4 * r) })),
+    late('pOdin', 36, L('Lança de Odin', "Odin's Spear"), 'pTarget', (r) => ({ critDmg: 8 * r, eliteDmg: 4 * r })),
+  ],
+  biohacker: [
+    late('pMutagen', 20, L('Mutagênico', 'Mutagen'), 'pDrop', (r) => ({ dmgPct: 3 * r, hpRegen: r1(0.8 * r) })),
+    late('pSymbiote', 28, L('Simbionte', 'Symbiote'), 'pHeart', (r) => ({ lifeSteal: r1(0.6 * r), hpPct: 3 * r })),
+    late('pOutbreak', 36, L('Surto', 'Outbreak'), 'pSkull', (r) => ({ burnPct: 10 * r, cdr: r1(1.2 * r) })),
+  ],
+};
+for (const [id, list] of Object.entries(LATE_PASSIVES)) CLASSES[id].skills.push(...list);
+
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
   const out = {};

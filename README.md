@@ -39,12 +39,12 @@ If two devices disagree, each class keeps the most advanced character and the be
 
 ### Skill tree
 
-Every class has a **skill tree with 10 active powers and 3 passive powers** (the Netrunner has 9 plus its own Net Jump). You start with only the basic attack and one skill;
-new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn.
+Every class has a **skill tree with 10 active powers and 6 passive powers** (the Netrunner has 9 actives plus its own Net Jump). You start with only the basic attack and one skill;
+new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn. Every level grants **2 skill points**.
 Points also upgrade each power up to rank 10. Pick which **6 powers** go on your 1–6 buttons
 (X / Y / B / LB / RB / LT on a gamepad).
 
-Passive powers (levels 3, 8 and 14) are always on and don't take a button. They give permanent bonuses that
+Passive powers (levels 3, 8 and 14, plus three advanced passives at levels 20, 28 and 36) are always on and don't take a button. They give permanent bonuses that
 fit the class, such as dodge chance, damage reduction, healing or energy on kills, extra damage to elites and bosses,
 stronger burns or extra damage to slowed and frozen enemies.
 
@@ -148,7 +148,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**112 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**120 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
 legendaries, mythics, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
@@ -184,7 +184,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
     **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
-- **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
+- **Progression:** levels, 2 skill points per level (up to rank 10 per skill), credits, stims and health orbs.
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
 - **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items. It changes instantly, enemies on the floor included.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).

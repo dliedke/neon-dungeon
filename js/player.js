@@ -20,6 +20,8 @@ import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 
 export const MAX_LEVEL = 50;
+// pontos de habilidade por nível (eram 1; spV marca os personagens que já receberam a diferença)
+export const SP_PER_LEVEL = 2;
 export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
 export const stimPrice = () => 30 + G.floor * 6;
 export const MAX_STIMS = 9;
@@ -27,7 +29,7 @@ export const MAX_STIMS = 9;
 export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
-    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null, null, null, null], skillPoints: 0,
+    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null, null, null, null], skillPoints: 0, spV: 2,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
 }
@@ -176,7 +178,7 @@ export function gainXp(n) {
   while (c.level < MAX_LEVEL && c.xp >= xpNeeded(c.level)) {
     c.xp -= xpNeeded(c.level);
     c.level++;
-    c.skillPoints++;
+    c.skillPoints += SP_PER_LEVEL;
     leveled = true;
   }
   if (leveled) {

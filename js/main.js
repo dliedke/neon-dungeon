@@ -12,7 +12,7 @@ import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloo
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy, tickReward } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
-import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats } from './player.js';
+import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
 import { placeFeatures, buildFeatures, updateBiome, npcUnderCursor } from './biomes.js';
@@ -536,6 +536,11 @@ function sanitizeChar(c) {
   c.stims = c.stims ?? 3;
   c.credits = c.credits || 0;
   c.skillPoints = c.skillPoints || 0;
+  // agora são 2 pontos por nível: quem subiu de nível ganhando 1 recebe o que faltou (uma vez só)
+  if (!(c.spV >= 2)) {
+    c.skillPoints += (SP_PER_LEVEL - 1) * Math.max(0, (c.level || 1) - 1);
+    c.spV = 2;
+  }
   c.kills = c.kills || 0;
   c.wins = c.wins || 0;
   c.playTime = c.playTime || 0;

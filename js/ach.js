@@ -75,6 +75,8 @@ export function achKill(e) {
     achMark('bossTypes', e.type);
     if (e.fightT0 != null && G.t - e.fightT0 < 60) achMark('flags', 'fastBoss');
     if (diffRank() >= 2) achMark('flags', 'hardBoss');
+    if (diffRank() >= 6) achMark('flags', 'chaosBoss');
+    if (diffRank() >= 8) achMark('flags', 'deathBoss');
   }
 }
 
@@ -120,6 +122,8 @@ export function achList() {
   add('bosses10', '👑', 2, L('Matador de Chefes', 'Boss Slayer'), L('Derrote 10 chefes', 'Defeat 10 bosses'), () => total('bosses'), 10);
   add('bosses25', '🏆', 3, L('Rei do Submundo', 'King of the Underworld'), L('Derrote 25 chefes', 'Defeat 25 bosses'), () => total('bosses'), 25);
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
+  add('chaosBoss', '🌀', 2, L('Senhor do Caos', 'Lord of Chaos'), L('Derrote um chefe no Caos ou acima', 'Defeat a boss on Chaos or above'), () => (has('flags', 'chaosBoss') ? 1 : 0));
+  add('deathBoss', '⚰️', 3, L('Dança com a Morte', 'Dance with Death'), L('Derrote um chefe no Morte', 'Defeat a boss on Death'), () => (has('flags', 'deathBoss') ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 30)
@@ -127,6 +131,13 @@ export function achList() {
   add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 30`, `Win the final battle against all ${NB} bosses on floor 30`), () => total('wins'));
   add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 30', 'Win the final battle without dying on floor 30'), () => (has('flags', 'winNoDeath') ? 1 : 0));
   add('winHard', '😈', 3, L('Lenda Implacável', 'Relentless Legend'), L('Vença a batalha final no Difícil ou acima', 'Win the final battle on Hard or above'), () => (has('flags', 'winHard') ? 1 : 0));
+  // vitórias nas dificuldades mais altas
+  for (const [id, ic, pt, en, dpt, den] of [
+    ['winInsane', '🤯', 'Insanidade Total', 'Total Insanity', 'no Insano ou acima', 'on Insane or above'],
+    ['winChaos', '🌀', 'Mestre do Caos', 'Master of Chaos', 'no Caos ou acima', 'on Chaos or above'],
+    ['winApocalypse', '☄️', 'Sobrevivente do Apocalipse', 'Apocalypse Survivor', 'no Apocalipse ou acima', 'on Apocalypse or above'],
+    ['winDeath', '💀', 'A Morte Perdeu', 'Death Lost', 'no Morte', 'on Death'],
+  ]) add(id, ic, 3, L(pt, en), L(`Vença a batalha final ${dpt}`, `Win the final battle ${den}`), () => (has('flags', id) ? 1 : 0));
   add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
   add('winNightmare', '☠️', 3, L('Despertar do Pesadelo', 'Nightmare Survivor'), L('Vença o jogo no modo Pesadelo', 'Beat the game in Nightmare mode'), () => (has('flags', 'winNightmare') ? 1 : 0));
@@ -152,6 +163,8 @@ export function achList() {
 
   // poderes e equipamento
   add('fullTree', '🌳', 2, L('Árvore Completa', 'Full Tree'), L('Libere os 9 poderes de uma classe', 'Unlock all 9 powers of a class'), () => maxOf((c) => (c.skills || []).slice(0, 9).filter((r) => r > 0).length), 9);
+  add('lateTree', '🌌', 2, L('Galhos do Topo', 'Top Branches'), L('Libere os 3 passivos avançados (níveis 20, 28 e 36) de uma classe', 'Unlock the 3 advanced passives (levels 20, 28 and 36) of a class'), () => maxOf((c) => (CLASSES[c.cls]?.skills || []).filter((sk, i) => sk.late && (c.skills || [])[i] > 0).length), 3);
+  add('ranks100', '💎', 3, L('Mestre dos Poderes', 'Master of Powers'), L('Some 100 níveis de poderes num mesmo personagem', 'Reach 100 total power ranks on one character'), () => maxOf((c) => (c.skills || []).reduce((a, r) => a + (r || 0), 0)), 100);
   add('rank10', '🔟', 1, L('Especialista', 'Specialist'), L('Leve um poder ao nível 10', 'Take a power to rank 10'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 10);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));

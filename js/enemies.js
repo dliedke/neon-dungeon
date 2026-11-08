@@ -2149,6 +2149,10 @@ function finalVictory() {
   achMark('winClasses', ch.cls);
   if (!F.deaths) achMark('flags', 'winNoDeath');
   if (diffRank() >= 2) achMark('flags', 'winHard');
+  if (diffRank() >= 5) achMark('flags', 'winInsane');
+  if (diffRank() >= 6) achMark('flags', 'winChaos');
+  if (diffRank() >= 7) achMark('flags', 'winApocalypse');
+  if (diffRank() >= 8) achMark('flags', 'winDeath');
   if (F.time < 600) achMark('flags', 'winFast');
   if (ch.tier >= 1) achMark('flags', 'winNightmare');
   if (ch.tier >= 2) achMark('flags', 'winInferno');

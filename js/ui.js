@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, LEGENDARIES, MYTHICS, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
-import { xpNeeded, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
+import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack } from './audio.js';
@@ -693,7 +693,7 @@ export function banner(title, sub = '') {
 }
 
 export function levelUpFx(level) {
-  toast(L(`NÍVEL ${level}! +1 PONTO DE HABILIDADE`, `LEVEL ${level}! +1 SKILL POINT`), 'lvl');
+  toast(L(`NÍVEL ${level}! +${SP_PER_LEVEL} PONTOS DE HABILIDADE`, `LEVEL ${level}! +${SP_PER_LEVEL} SKILL POINTS`), 'lvl');
 }
 
 // ------------------------------------------------------------------
@@ -1212,7 +1212,10 @@ const TIERS = [
   { label: [2, 4], idx: [2, 9, 12, 3] },
   { label: [5, 9], idx: [4, 5, 10, 6] },
   { label: [12, 15], idx: [7, 11, 8] },
+  // passivos avançados: a posição muda por classe (o Netrunner não tem o Teleporte), então vêm pela marca late
+  { label: [20, 36], late: true },
 ];
+const tierIdx = (C, t) => (t.late ? C.skills.map((sk, i) => (sk.late ? i : -1)).filter((i) => i >= 0) : t.idx);
 function slotKey(k) {
   if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt'][k]);
   return String(k + 1);
@@ -1259,9 +1262,9 @@ function renderTree() {
     const lbl = t.label[0] === t.label[1] ? `${L('Nível', 'Level')} ${t.label[0]}` : `${L('Níveis', 'Levels')} ${t.label[0]}–${t.label[1]}`;
     if (ti) html += '<div class="tree-link"></div>';
     html += `<div class="tier"><div class="tier-label">${lbl}</div><div class="tier-nodes">`;
-    for (const i of t.idx) {
+    for (const i of tierIdx(C, t)) {
       const sk = C.skills[i];
-      if (!sk) continue;
+      if (!sk || (sk.late && !t.late)) continue;
       const r = c.skills[i] || 0;
       const req = sk.req || 1;
       const locked = r === 0;
