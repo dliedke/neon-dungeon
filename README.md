@@ -208,14 +208,14 @@ Medals and their counters sync with the Google cloud save; progress from every d
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.
-  - **Shared stash:** a chest a few steps from the start of every floor holds up to 100 items shared by all your characters (and synced to the cloud).
+  - **Shared stash:** a chest a few steps from the start of every floor holds up to 500 items in 5 tabs of 100, shared by all your characters (and synced to the cloud). It is always sorted from best to worst for the current character (upgrades first, then rarity and stats), and LB/RB switch tabs on a gamepad.
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
     **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory). **Store all mythics** sends every mythic (and divine) item in your inventory to the stash at once.
     With a gamepad connected, the buttons show which controller button does each action (A store/take, X equip, Y store all mythics, B close).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** levels up to **200** (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 10 per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
-- **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items, and Chaos, Apocalypse and Death also raise the item level (+10, +20 and +30). It changes instantly, enemies on the floor included.
+- **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items: from Brutal on (or in Nightmare) common items stop dropping, and from Insane on (or in Inferno) modded items stop dropping too, so the worst drop is rare. Chaos, Apocalypse and Death also raise the item level (+10, +20 and +30). It changes instantly, enemies on the floor included.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).
   When you raise it the reward bonus ramps up over a few seconds, so it can't be flipped up just to open a chest.
 - **Healing that scales with damage** (life steal, heal on kill) has a per-second cap, so a strong character still has to watch their health.

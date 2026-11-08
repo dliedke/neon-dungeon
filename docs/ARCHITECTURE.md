@@ -33,7 +33,7 @@ Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `
 | `dungeon`, `theme`, `floor` | Current map object, biome definition and floor number. |
 | `player` | Runtime player entity (position, hp/en, cooldowns `cds[]`, `stats`, `buffs`, model). |
 | `char` | The persistent character (what is saved). See [Saves](#saves-and-cloud-sync). |
-| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 100 items, all classes). |
+| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 500 items, all classes; one flat array, sorted best-first and shown in 5 tabs of 100). |
 | `settings` | Options (`music`, `sfx`, `track`, `quality`, `shake`, `difficulty`, `glow`, `sv`). |
 | `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
 | `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |

@@ -13,7 +13,7 @@ import { fmt, fmtPlay } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
-import { itemName, isUpgrade, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
+import { itemName, isUpgrade, unforged, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
 import { achAdd, achList, achProgress, playTotal, TIERS as MEDAL_TIERS } from './ach.js';
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
@@ -107,6 +107,10 @@ export function initUI() {
   $('forge-close').onclick = () => closeForge();
   $('stash-close').onclick = () => closeStash();
   $('stash-put-myth').onclick = () => stashPutMythics();
+  $('stash-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-stab]');
+    if (b) stashSetTab(+b.dataset.stab);
+  });
   for (const id of ['stash-grid', 'stash-inv']) {
     $(id).addEventListener('click', (e) => {
       const cell = e.target.closest('.cell[data-uid]');
@@ -965,7 +969,7 @@ export function toggleBigMap(force) {
     saveSettings();
     mmHint();
   }
-  sfx.click && sfx.click();
+  sfx.click();
   const cv = $('bigmap-cv');
   const dpr = Math.min(devicePixelRatio || 1, 2);
   const px = Math.round(cv.clientWidth * dpr) || 600;
@@ -1637,6 +1641,8 @@ export function uiPadUpdate() {
   if (root.id === 'panel-stash') {
     if (Input.nav('x') && focused && focused.matches('.cell[data-swhere="stash"]')) stashEquip(focused.dataset.uid); // {X}: equipar do baú
     if (Input.nav('y')) stashPutMythics(); // {Y}: guardar todos os míticos
+    if (Input.nav('lb')) stashSetTab(stashTab - 1); // {LB}/{RB}: aba anterior/próxima
+    if (Input.nav('rb')) stashSetTab(stashTab + 1);
   }
   if (Input.nav('rt') && focused && focused.matches('.cell[data-where]')) {
     // {RT}: favoritar/desfavoritar o item sob o seletor
@@ -1848,12 +1854,16 @@ function doForge(slot) {
 }
 
 // ------------------------------------------------------------------
-// Baú compartilhado: até 100 itens para todos os personagens (fica no save, fora do personagem).
+// Baú compartilhado: até 500 itens para todos os personagens (fica no save, fora do personagem).
+// É uma lista só, sempre ordenada do melhor para o pior e mostrada em 5 abas de 100.
 // Cada item guardado leva `st` (quando entrou) e cada retirada fica em save.stashOut[uid],
 // para a sincronização na nuvem não duplicar nem perder itens (ver mergeStash em sync.js).
 // ------------------------------------------------------------------
-export const STASH_SIZE = 100;
+export const STASH_TAB = 100;
+export const STASH_TABS = 5;
+export const STASH_SIZE = STASH_TAB * STASH_TABS;
 let stashSel = null; // { where: 'stash'|'sinv', uid }
+let stashTab = 0;
 const stashList = () => G.save.stash || (G.save.stash = []);
 // arma de outra classe: pode ser guardada, mas só a classe dela pode pegar
 const otherClassWeapon = (it) => it.slot === 'weapon' && it.cls && it.cls !== G.char.cls;
@@ -1864,6 +1874,7 @@ export function openStash() {
   G.mode = 'stash';
   G.save.stashSeen = true;
   stashSel = null;
+  stashTab = 0;
   $('panel-stash').classList.remove('hidden');
   clearFocus();
   sfx.pickup();
@@ -1908,13 +1919,47 @@ function stashCell(it, where) {
   return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}</div>`;
 }
 
+// Ordena o baú do melhor para o pior para o personagem atual: melhorias primeiro, depois raridade
+// e pontuação (sem o aprimoramento do ferreiro, como na comparação)
+function sortStash() {
+  const c = G.char;
+  const st = stashList();
+  const key = new Map(st.map((it) => [it, { up: !otherClassWeapon(it) && isUpgrade(it, c.equip) ? 1 : 0, s: itemScore(unforged(it)) }]));
+  st.sort((a, b) => key.get(b).up - key.get(a).up || b.rarity - a.rarity || key.get(b).s - key.get(a).s);
+}
+
+// aba onde está o item (para mostrar o que acabou de entrar no baú)
+const stashTabOf = (uid) => {
+  const i = stashList().findIndex((x) => x.uid === uid);
+  return i < 0 ? stashTab : Math.floor(i / STASH_TAB);
+};
+
+function stashSetTab(t) {
+  t = (t + STASH_TABS) % STASH_TABS;
+  if (t === stashTab) return;
+  stashTab = t;
+  sfx.click();
+  renderStash();
+  if (G.lastInput === 'pad') restoreFocus(`[data-stab="${t}"]`);
+}
+
 function renderStash() {
   const c = G.char;
   const st = stashList();
   sortInventory(c.inv, c.equip);
+  sortStash();
+  // itens além das 5 abas (save antigo/sincronização) aparecem na última
+  const from = stashTab * STASH_TAB;
+  const to = stashTab === STASH_TABS - 1 ? Math.max(from + STASH_TAB, st.length) : from + STASH_TAB;
   let a = '';
-  for (let i = 0; i < Math.max(STASH_SIZE, st.length); i++) a += stashCell(st[i], 'stash');
+  for (let i = from; i < to; i++) a += stashCell(st[i], 'stash');
   $('stash-grid').innerHTML = a;
+  let tabs = '';
+  for (let t = 0; t < STASH_TABS; t++) {
+    const n = Math.max(0, Math.min(STASH_TAB, st.length - t * STASH_TAB));
+    tabs += `<button class="btn small stash-tab${t === stashTab ? ' on' : ''}" data-nav data-stab="${t}" title="${L('Aba', 'Tab')} ${t + 1}: ${n}/${STASH_TAB}">${t + 1}<small>${n}</small></button>`;
+  }
+  $('stash-tabs').innerHTML = tabs;
   let b = '';
   for (let i = 0; i < INV_SIZE; i++) b += stashCell(c.inv[i], 'sinv');
   $('stash-inv').innerHTML = b;
@@ -1942,7 +1987,7 @@ function stashPutMythics() {
   const room = STASH_SIZE - st.length;
   if (room <= 0) {
     sfx.deny();
-    toast(L('O baú está cheio (100 itens).', 'The stash is full (100 items).'), 'warn');
+    toast(L(`O baú está cheio (${STASH_SIZE} itens).`, `The stash is full (${STASH_SIZE} items).`), 'warn');
     return;
   }
   const moving = mys.slice(0, room);
@@ -1986,7 +2031,7 @@ function renderStashDetail() {
   if (stashSel.where === 'sinv') {
     const full = stashList().length >= STASH_SIZE;
     btn = `<button class="btn small" data-nav data-sact="put" ${full ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}${padKey('a')}</button>`;
-    hint = `<b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L('o baú está cheio (100 itens).', 'the stash is full (100 items).') : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}`;
+    hint = `<b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L(`o baú está cheio (${STASH_SIZE} itens).`, `the stash is full (${STASH_SIZE} items).`) : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}`;
   } else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else {
     // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
@@ -2034,8 +2079,12 @@ function stashEquip(uid) {
   // seleciona o item trocado, para dar para desfazer na hora
   stashSel = old ? { where: 'stash', uid: old.uid } : null;
   saveGame();
+  if (old) {
+    sortStash();
+    stashTab = stashTabOf(old.uid);
+  }
   renderStash();
-  const cell = document.querySelectorAll('#stash-grid > .cell')[idx];
+  const cell = old ? document.querySelector(`#stash-grid > .cell[data-uid="${old.uid}"]`) : document.querySelectorAll('#stash-grid > .cell')[idx % STASH_TAB];
   if (G.lastInput === 'pad' && cell) restoreFocus(cell);
   else clearFocus();
 }
@@ -2063,7 +2112,7 @@ function stashMove(where, uid) {
   } else {
     if (st.length >= STASH_SIZE) {
       sfx.deny();
-      toast(L('O baú está cheio (100 itens).', 'The stash is full (100 items).'), 'warn');
+      toast(L(`O baú está cheio (${STASH_SIZE} itens).`, `The stash is full (${STASH_SIZE} items).`), 'warn');
       return;
     }
     c.inv.splice(idx, 1);
@@ -2076,7 +2125,8 @@ function stashMove(where, uid) {
   renderStash();
   // controle: o seletor fica na mesma casa
   const cells = document.querySelectorAll(where === 'stash' ? '#stash-grid > .cell' : '#stash-inv > .cell');
-  if (G.lastInput === 'pad' && cells.length) restoreFocus(cells[Math.min(idx, cells.length - 1)]);
+  const ci = where === 'stash' ? idx - stashTab * STASH_TAB : idx;
+  if (G.lastInput === 'pad' && cells.length) restoreFocus(cells[Math.max(0, Math.min(ci, cells.length - 1))]);
   else clearFocus();
 }
 

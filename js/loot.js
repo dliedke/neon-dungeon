@@ -83,10 +83,14 @@ export function dropLoot(x, z, o = {}) {
   } else if (chance(0.14 * find * (rich ? 2.5 : 1) * Math.sqrt(lk))) {
     items = 1;
   }
+  // quando os míticos já caem bastante, não cai mais item fraco: do Brutal (ou no Pesadelo/Inferno) sem
+  // comuns; do Insano para cima (ou no Inferno) sem modificados também (o mínimo vira raro)
+  const rk = rewardRank();
+  const minR = rk >= 5 || T.off >= 60 ? 2 : rk >= 4 || T.off >= 30 ? 1 : 0;
   // Muito Difícil para cima: chefes, feras, elites e baús dão um item a mais
   if (items && !o.rift && lk >= 2 && (o.boss || o.beast || o.thief || o.elite || o.chest || o.contract)) items++;
   for (let i = 0; i < items; i++) {
-    let rarity = rollRarity(bonus);
+    let rarity = Math.max(minR, rollRarity(bonus));
     if ((o.boss || o.chest || o.thief || o.beast || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.beast || o.contract ? 2 : 1);
     if (o.rift && i === 0) rarity = 3;
     if (o.rift && i === 1) rarity = Math.max(rarity, 2);

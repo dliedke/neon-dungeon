@@ -719,6 +719,11 @@ body.pad .pad-hints { display: block; }
   .stash-detail-col { grid-column: auto; position: sticky; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; }
   #stash-detail .detail-actions { margin: 0 0 6px; }
   #panel-stash .shop-sub, .sact-hint { display: none; }
+  .stash-tabs { margin: 0 0 4px; gap: 4px; }
+  #stash-tabs { gap: 3px; }
+  .stash-tab { padding: 2px 6px; min-width: 0; font-size: 12px; }
+  .stash-tab small { display: none; }
+  .stash-sort { font-size: 10px; }
   #stash-detail .item-card { padding: 8px; }
   #stash-detail .it-name { font-size: 15px; }
 }
@@ -854,6 +859,12 @@ body.pad .btn.gp-focus:disabled { opacity: 0.55; }
 body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .btn .kg .pg { font-size: 13px; letter-spacing: 0; }
 .inv-head { align-items: center; gap: 8px; }
+.stash-tabs { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; flex-wrap: wrap; }
+#stash-tabs { display: flex; gap: 4px; }
+.stash-tab { padding: 3px 10px; font-size: 13px; min-width: 40px; background: transparent; color: var(--muted); border-color: rgba(0, 240, 255, 0.3); }
+.stash-tab small { margin-left: 5px; font-size: 10px; opacity: 0.7; }
+.stash-tab.on { color: #00f0ff; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0, 240, 255, 0.45); }
+.stash-sort { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
 #stash-put-myth { padding: 3px 10px; font-size: 12px; background: transparent; color: #c56bff; border-color: rgba(197, 107, 255, 0.7); }
 
 /* nuvem (Google Drive) */
