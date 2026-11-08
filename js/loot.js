@@ -152,6 +152,7 @@ export function spawnPickup(type, x, z, data) {
     el.style.display = 'none';
     labelRoot.appendChild(el);
     pk.label = el;
+    pk.lid = labelId++;
     setUpgrade(pk, isUpgrade(data.item, G.char.equip));
     const name = itemName(data.item);
     if (data.item.rarity === MYTHIC) {
@@ -186,6 +187,7 @@ function setUpgrade(pk, up) {
   const it = pk.item;
   pk.label.className = `ilabel r${it.rarity}${up ? ' up' : ''}`;
   pk.label.innerHTML = (up ? '<b class="uparrow">▲</b> ' : '') + itemName(it);
+  pk.lw = 0; // texto mudou: mede de novo
   if (up && !pk.upFx) {
     const beam = new THREE.Mesh(upBeamGeo, beamMat(UP_COLOR, 0.35));
     const ring = new THREE.Mesh(upRingGeo, beamMat(UP_COLOR, 0.9));
@@ -444,7 +446,7 @@ export function updatePickups(dt, camera) {
             ringFx(p.x, p.z, 2.5, MYTH_COLOR, 0.5);
           }
           const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
-          toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
+          toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${G.isTouch ? L('— toque na mochila para equipar', '— tap the bag to equip') : L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
           pk.dead = true;
         } else if (fullWarn <= 0) {
           fullWarn = 3;
@@ -466,21 +468,70 @@ export function updatePickups(dt, camera) {
       G.pickups.splice(i, 1);
     }
   }
-  // rótulos
+  // rótulos: os que se sobrepõem sobem em pilha e os que cobrem o personagem ficam quase transparentes
   const w = innerWidth;
   const h = innerHeight;
+  pv.set(p.x, 0, p.z).project(camera);
+  const pfx = ((pv.x + 1) / 2) * w;
+  const pfy = ((1 - pv.y) / 2) * h;
+  pv.set(p.x, 2, p.z).project(camera);
+  const phy = ((1 - pv.y) / 2) * h;
+  const phw = Math.max(14, (pfy - phy) * 0.4);
+  shown.length = 0;
   for (const pk of G.pickups) {
     if (!pk.label) continue;
     const d = Math.hypot(p.x - pk.x, p.z - pk.z);
     if (d > (pk.mythFx ? 26 : pk.up ? 14 : 10) || pk.vy !== 0) {
-      pk.label.style.display = 'none';
+      if (pk.lShow) {
+        pk.lShow = false;
+        pk.label.style.display = 'none';
+      }
       continue;
     }
+    if (!pk.lShow) {
+      pk.lShow = true;
+      pk.label.style.display = 'block';
+    }
+    // mede uma vez (e de novo quando o texto ou o modo de toque mudam)
+    if (!pk.lw || pk.lTouch !== G.isTouch) {
+      pk.lw = pk.label.offsetWidth;
+      pk.lh = pk.label.offsetHeight;
+      pk.lTouch = G.isTouch;
+    }
     pv.set(pk.x, pk.up ? 1.05 : 0.85, pk.z).project(camera);
-    pk.label.style.display = 'block';
-    pk.label.style.transform = `translate(${((pv.x + 1) / 2) * w}px, ${((1 - pv.y) / 2) * h}px) translate(-50%, -100%)`;
+    pk.lx = ((pv.x + 1) / 2) * w;
+    pk.ly = ((1 - pv.y) / 2) * h;
+    shown.push(pk);
+  }
+  // ordem fixa (mais perto da câmera primeiro): a pilha não fica trocando de lugar quando a câmera anda
+  shown.sort(byDepth);
+  for (let i = 0; i < shown.length; i++) {
+    const a = shown[i];
+    const x0 = a.lx - a.lw / 2;
+    const x1 = a.lx + a.lw / 2;
+    let y = a.ly;
+    for (let n = 0, moved = true; moved && n < i; n++) {
+      moved = false;
+      for (let j = 0; j < i; j++) {
+        const b = shown[j];
+        if (x0 < b.lx + b.lw / 2 && x1 > b.lx - b.lw / 2 && y > b.ly - b.lh && y - a.lh < b.ly) {
+          y = b.ly - b.lh - 2;
+          moved = true;
+        }
+      }
+    }
+    a.ly = y;
+    const over = x0 < pfx + phw && x1 > pfx - phw && y > phy && y - a.lh < pfy;
+    if (over !== !!a.lFade) {
+      a.lFade = over;
+      a.label.style.opacity = over ? 0.15 : '';
+    }
+    a.label.style.transform = `translate(${Math.round(a.lx - a.lw / 2)}px, ${Math.round(y - a.lh)}px)`;
   }
 }
+const shown = [];
+const byDepth = (a, b) => b.x + b.z - (a.x + a.z) || a.lid - b.lid;
+let labelId = 0;
 
 function isFree(x, z) {
   const d = G.dungeon;

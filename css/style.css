@@ -211,16 +211,17 @@ body.touch #skillbar { display: none; }
 .tbtn.down { border-color: var(--accent); background: rgba(0, 240, 255, 0.18); }
 .tbtn.big { width: 90px; height: 90px; right: calc(22px + var(--safe-r)); bottom: calc(22px + var(--safe-b)); }
 .tbtn.big .icon { inset: 22px; }
-#tb-s1 { right: calc(124px + var(--safe-r)); bottom: calc(18px + var(--safe-b)); }
-#tb-s2 { right: calc(112px + var(--safe-r)); bottom: calc(96px + var(--safe-b)); }
-#tb-s3 { right: calc(36px + var(--safe-r)); bottom: calc(124px + var(--safe-b)); }
-/* poderes 4–6: arco externo ao redor do ataque */
+/* poderes 1–3: colados ao ataque, uns 5px entre os botões, sem tocar no minimapa nem nos créditos em telas baixas */
+#tb-s1 { right: calc(115px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); }
+#tb-s2 { right: calc(153px + var(--safe-r)); bottom: calc(73px + var(--safe-b)); }
+#tb-s3 { right: calc(88px + var(--safe-r)); bottom: calc(98px + var(--safe-b)); }
+/* poderes 4–6: segunda camada, encaixada nos vãos da primeira */
 .tbtn.mid { width: 54px; height: 54px; }
 .tbtn.mid .icon { inset: 12px; }
-#tb-s4 { right: calc(210px + var(--safe-r)); bottom: calc(40px + var(--safe-b)); }
-#tb-s5 { right: calc(187px + var(--safe-r)); bottom: calc(125px + var(--safe-b)); }
-#tb-s6 { right: calc(125px + var(--safe-r)); bottom: calc(187px + var(--safe-b)); }
-.tbtn.small { width: 50px; height: 50px; right: calc(280px + var(--safe-r)); bottom: calc(16px + var(--safe-b)); }
+#tb-s4 { right: calc(184px + var(--safe-r)); bottom: calc(19px + var(--safe-b)); }
+#tb-s5 { right: calc(180px + var(--safe-r)); bottom: calc(139px + var(--safe-b)); }
+#tb-s6 { right: calc(124px + var(--safe-r)); bottom: calc(159px + var(--safe-b)); }
+.tbtn.small { width: 50px; height: 50px; right: calc(243px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); }
 .tbtn.small .icon { inset: 11px; color: #39ff88; }
 
 #exit-prompt {
@@ -264,7 +265,7 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
 @keyframes interactPulse { from { box-shadow: 0 0 6px rgba(0, 240, 255, 0.3); } to { box-shadow: 0 0 16px rgba(0, 240, 255, 0.75); } }
 .ilabel {
   position: absolute; left: 0; top: 0; font-size: 12px; padding: 1px 6px; background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.15); white-space: nowrap; will-change: transform;
+  border: 1px solid rgba(255, 255, 255, 0.15); white-space: nowrap; will-change: transform; transition: opacity 0.2s;
 }
 .ilabel.r0 { color: var(--r0); }
 .ilabel.r1 { color: var(--r1); border-color: rgba(77, 155, 255, 0.5); }
@@ -1006,4 +1007,31 @@ body.pad .btn.gp-focus:disabled { opacity: 0.55; }
   .imp-ico { font-size: 30px; }
   .imp-desc { font-size: 12px; }
   #implant-cards { gap: 10px; flex-wrap: nowrap; }
+}
+
+/* celular deitado: nada de texto cobrindo o personagem no meio da tela */
+@media (max-height: 520px), (max-width: 640px) {
+  /* avisos sobem para a faixa livre do topo (entre as barras e os botões), menores e no máximo 2 */
+  body.touch #toasts {
+    top: calc(8px + var(--safe-t)); left: calc(272px + var(--safe-l)); right: calc(112px + var(--safe-r)); width: auto;
+    transform: none; gap: 3px;
+  }
+  body.touch .toast { font-size: 12px; padding: 3px 9px; line-height: 1.25; }
+  body.touch .toast.leg, body.touch .toast.myth, body.touch .toast.up { font-size: 13px; }
+  body.touch .toast small { font-size: 10px; }
+  body.touch .toast:nth-last-child(n + 3) { display: none; }
+  /* nomes dos itens no chão: menores e cortados quando são muito compridos */
+  body.touch .ilabel { font-size: 10px; padding: 0 4px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+  body.touch .ilabel.up { font-size: 11px; }
+  body.touch .ilabel.r4, body.touch .ilabel.r4.up { font-size: 12px; max-width: 180px; }
+  /* números e avisos que saem do personagem */
+  body.touch .floater { font-size: 12px; }
+  body.touch .floater.crit { font-size: 16px; }
+  body.touch .floater.hurt { font-size: 13px; }
+  body.touch .floater.dot { font-size: 10px; }
+  body.touch .floater.info, body.touch .floater.up { font-size: 12px; }
+  /* faixa de andar/chefe acima do personagem */
+  body.touch #banner { top: 17%; }
+  body.touch #banner-title { font-size: 30px; letter-spacing: 4px; }
+  body.touch #banner-sub { font-size: 12px; letter-spacing: 3px; margin-top: 2px; }
 }
