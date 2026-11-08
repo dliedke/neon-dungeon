@@ -537,7 +537,10 @@ function frame() {
   const playing = G.mode === 'play' || G.mode === 'dying';
   if (playing && G.player) {
     logic(dt);
-    if (G.mode === 'play' && G.char) G.char.playTime = (G.char.playTime || 0) + dt; // tempo total de jogo do personagem
+    if (G.mode === 'play' && G.char) {
+      G.char.playTime = (G.char.playTime || 0) + dt; // tempo total de jogo do personagem
+      achAdd('play', dt); // e da conta toda (medalhas de tempo de jogo)
+    }
   }
   if (G.player && G.mode !== 'menu') {
     updateHUD(dt);

@@ -14,6 +14,7 @@ import { ANOMALIES } from './run.js';
 import { toast, medalPopup } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
+import { fmtPlay } from './utils.js';
 
 const K_DEV = 'neon-dungeon:device';
 let DEV = null;
@@ -52,6 +53,14 @@ const total = (key) => Object.values(G.save.stats.dev).reduce((a, d) => a + (d[k
 const count = (set) => Object.keys(G.save.stats.sets[set] || {}).length;
 const has = (set, key) => !!(G.save.stats.sets[set] || {})[key];
 
+// tempo total de jogo (segundos) da conta: contador por aparelho ('play'). Saves antigos
+// (de antes do contador) usam a soma do tempo dos personagens, o que for maior.
+export function playTotal() {
+  if (!G.save || !G.save.stats) return 0;
+  const chars = Object.values(G.save.slots || {}).reduce((a, c) => a + (c.playTime || 0), 0);
+  return Math.max(total('play'), chars);
+}
+
 // inimigo derrotado pelo jogador
 export function achKill(e) {
   if (e.type === 'barrel') return achAdd('barrels');
@@ -87,7 +96,7 @@ let A = null;
 export function achList() {
   if (A) return A;
   A = [];
-  const add = (id, icon, tier, name, desc, cur, goal = 1) => A.push({ id, icon, tier, name, desc, cur, goal });
+  const add = (id, icon, tier, name, desc, cur, goal = 1, show) => A.push({ id, icon, tier, name, desc, cur, goal, show });
 
   // abates
   for (const [n, t, ic, pt, en] of [
@@ -188,6 +197,15 @@ export function achList() {
   add('implants9', '🤖', 2, L('Ciborgue Completo', 'Full Cyborg'), L('Ganhe os 9 implantes dos chefes com um personagem', 'Earn all 9 boss implants with one character'), () => maxOf((c) => (c.implantFloors || []).length), 9);
   add('chest10', '📦', 0, L('Arrombador', 'Safecracker'), L('Abra 10 cofres', 'Open 10 loot caches'), () => total('chests'), 10);
   add('chest100', '🗃️', 2, L('Saqueador Profissional', 'Professional Looter'), L('Abra 100 cofres', 'Open 100 loot caches'), () => total('chests'), 100);
+
+  // tempo de jogo (conta toda)
+  const hrs = (v) => (v > 0 && v % 3600 === 0 ? `${v / 3600}h` : fmtPlay(v));
+  for (const [h, t, ic, pt, en] of [
+    [1, 0, '⏱️', 'Só Mais Um Andar', 'Just One More Floor'],
+    [3, 1, '☕', 'Maratonista', 'Marathoner'],
+    [5, 2, '🕹️', 'Viciado em Neon', 'Neon Addict'],
+    [8, 3, '🌃', 'Turno da Madrugada', 'Graveyard Shift'],
+  ]) add(`play${h}h`, ic, t, L(pt, en), L(`Jogue por ${h}h no total, somando todos os personagens`, `Play for ${h}h in total, across all characters`), playTotal, h * 3600, hrs);
 
   // economia e outros
   add('credits10k', '💵', 1, L('Pé-de-meia', 'Nest Egg'), L('Ganhe 10.000 créditos no total', 'Earn 10,000 credits in total'), () => total('credits'), 10000);

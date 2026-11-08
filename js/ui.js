@@ -15,7 +15,7 @@ import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
-import { achAdd, achList, achProgress, TIERS as MEDAL_TIERS } from './ach.js';
+import { achAdd, achList, achProgress, playTotal, TIERS as MEDAL_TIERS } from './ach.js';
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
@@ -297,13 +297,13 @@ function openAch() {
     const all = list.filter((a) => a.tier === i);
     return `<span style="color:${t.css}">● ${t.name} ${all.filter((a) => G.save.ach[a.id]).length}/${all.length}</span>`;
   });
-  $('ach-sum').innerHTML = `<div class="ach-bar"><div style="width:${(got / list.length) * 100}%"></div></div><div class="ach-tiers">${perTier.join('')}</div>`;
+  $('ach-sum').innerHTML = `<div class="ach-bar"><div style="width:${(got / list.length) * 100}%"></div></div><div class="ach-tiers">${perTier.join('')}<span class="ach-play">⏱ ${L('Tempo total de jogo', 'Total play time')} <b>${fmtPlay(playTotal())}</b></span></div>`;
   // conquistadas primeiro (mais recentes no topo), depois as mais perto de sair
   const rows = list.map((a) => ({ a, ...achProgress(a) }));
   rows.sort((x, y) => (y.done - x.done) || (x.done ? G.save.ach[y.a.id] - G.save.ach[x.a.id] : y.cur / y.goal - x.cur / x.goal));
   $('ach-grid').innerHTML = rows.map(({ a, cur, goal, done }) => {
     const t = MEDAL_TIERS[a.tier];
-    const bar = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${fmt(cur)}/${fmt(goal)}</span></div>` : '';
+    const bar = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${(a.show || fmt)(cur)}/${(a.show || fmt)(goal)}</span></div>` : '';
     return `<div class="ach ${done ? 'done' : ''}" data-nav data-ach="${a.id}" tabindex="-1" style="--t:${t.css}">
       <div class="ach-ico">${a.icon}</div>
       <div class="ach-txt"><b>${a.name}</b><small>${a.desc}</small>${bar}</div>
@@ -327,7 +327,7 @@ function openMedal(id) {
   const { cur, goal, done } = achProgress(a);
   const t = MEDAL_TIERS[a.tier];
   const when = done && G.save.ach[a.id] > 1 ? new Date(G.save.ach[a.id]).toLocaleDateString(L('pt-BR', 'en-US'), { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-  const prog = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${fmt(cur)}/${fmt(goal)}</span></div>` : '';
+  const prog = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${(a.show || fmt)(cur)}/${(a.show || fmt)(goal)}</span></div>` : '';
   const z = $('ach-zoom');
   z.innerHTML = `<div class="medal-card ${done ? '' : 'locked'}" style="--t:${t.css}">
     ${medalHtml(a, done)}
