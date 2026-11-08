@@ -1188,7 +1188,7 @@ export function renderChar() {
     if (s.lifeSteal) rows.push([L('Roubo de vida', 'Life steal'), `${s.lifeSteal.toFixed(1)}%`]);
     if (s.cdr) rows.push([L('Recarga', 'Cooldown'), `-${s.cdr}%`]);
     if (s.xpPct) rows.push([L('Experiência', 'Experience'), `+${s.xpPct}%`]);
-    if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${s.findPct}%`]);
+    if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${Math.round(s.findPct)}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
     for (const l of s.myths) sh += `<div class="leg myth">✦ ${MYTHICS[l].name}</div>`;
     for (const l of s.legs) sh += `<div class="leg">◆ ${LEGENDARIES[l].name}</div>`;
