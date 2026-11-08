@@ -59,7 +59,7 @@ Every class can also learn **Teleport** (from level 3): it blinks up to 8m towar
 
 - **Keyboard + mouse:**
   - Click to move and attack, or use WASD to move and Space to attack.
-  - 1–6 for powers (Q / E / R also fire the first three), F for a stim, I for the inventory and Esc to pause.
+  - 1–6 for powers (Q / E / R also fire the first three), F for a stim (heals 60% of your health), I for the inventory and Esc to pause.
 - **Gamepad:**
   - Left stick to move; A or RT to attack.
   - X / Y / B / LB / RB / LT for powers 1–6, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.

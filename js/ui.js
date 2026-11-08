@@ -1169,7 +1169,9 @@ export function renderChar() {
     $('inv-count').textContent = `${L('Inventário', 'Inventory')} ${c.inv.length}/${INV_SIZE}`;
     $('inv-credits').textContent = fmt(c.credits);
     const price = stimPrice();
-    $('btn-buy-stim').textContent = `${L('Comprar Stim', 'Buy Stim')} (${price}¢) · ${c.stims}/${MAX_STIMS}`;
+    // no celular deitado o texto longo quebraria em 2 linhas
+    $('btn-buy-stim').textContent = `${G.isTouch ? 'Stim' : L('Comprar Stim', 'Buy Stim')} · ${L('cura 60%', 'heals 60%')} · ${price}¢ · ${c.stims}/${MAX_STIMS}`;
+    $('btn-buy-stim').title = L(`Stim: cura 60% da vida na hora e mais um pouco nos 4s seguintes. Use com F, apertando o analógico esquerdo no controle ou no botão verde no toque. Leve até ${MAX_STIMS}.`, `Stim: instantly heals 60% of your health, plus a bit more over the next 4s. Use it with F, by clicking the left stick on a gamepad or with the green touch button. Carry up to ${MAX_STIMS}.`);
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
     $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
     // atributos

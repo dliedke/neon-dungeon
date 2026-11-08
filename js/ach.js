@@ -49,6 +49,7 @@ export function achMark(set, key) {
   const s = G.save.stats.sets;
   (s[set] = s[set] || {})[key] = 1;
 }
+export const achTotal = (key) => total(key);
 const total = (key) => Object.values(G.save.stats.dev).reduce((a, d) => a + (d[key] || 0), 0);
 const count = (set) => Object.keys(G.save.stats.sets[set] || {}).length;
 const has = (set, key) => !!(G.save.stats.sets[set] || {})[key];

@@ -10,13 +10,14 @@ import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damageP
 import { groundEffect, openNpc } from './biomes.js';
 import { formMods } from './powers.js';
 import { DIFFICULTY } from './enemies.js';
-import { achAdd } from './ach.js';
+import { achAdd, achTotal } from './ach.js';
 import { amod, implantMods } from './run.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
 import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
+import { padText } from './padglyphs.js';
 
 export const MAX_LEVEL = 50;
 export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
@@ -212,6 +213,16 @@ export function useStim() {
   p.buffs.regen = 4;
   burst(p.x, 1, p.z, 0x39ff88, 20, 3, 0.06, 0.6, { up: 1.5, grav: -1 });
   sfx.stim();
+}
+
+// Dica de stim com vida baixa: só até o jogador pegar o jeito (15 stims usados), no máximo 1 a cada 40s
+let stimHintCd = 8;
+function stimHint(p, c, dt) {
+  stimHintCd -= dt;
+  if (stimHintCd > 0 || !p.alive || c.stims <= 0 || p.hp > p.stats.maxHp * 0.35 || achTotal('stims') >= 15) return;
+  stimHintCd = 40;
+  const how = G.isTouch ? L('Toque no botão verde de <b>Stim</b>', 'Tap the green <b>Stim</b> button') : G.lastInput === 'pad' ? padText(L('Aperte {LS} para usar um <b>Stim</b>', 'Press {LS} to use a <b>Stim</b>')) : L('Aperte <b>F</b> para usar um <b>Stim</b>', 'Press <b>F</b> to use a <b>Stim</b>');
+  toast(L(`💉 Vida baixa! ${how}: cura 60% da vida na hora.`, `💉 Low health! ${how}: instantly heals 60% of your health.`), 'warn', 'stimhint');
 }
 
 export function playerDie() {
@@ -568,6 +579,7 @@ export function updatePlayer(dt) {
     tryUseSkill(p, i);
   });
   if (Input.pressed('stim')) useStim();
+  stimHint(p, c, dt);
 
   const fmv = formMods(p);
   let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1) * (p.buffs.haste > 0 ? 1.35 : 1) * (p.buffs.avatar > 0 ? 1.25 : 1);
