@@ -1879,8 +1879,9 @@ function stashCell(it, where) {
   const better = bf[0] === G.char.cls;
   const sel = stashSel && stashSel.uid === it.uid ? ' sel' : '';
   const tag = lock ? `<span class="cls-dot" style="background:${CLASSES[it.cls].css}"></span>` : '';
-  // ▲ verde: melhor para você; ▲ azul: melhor para outro personagem seu
-  const up = better ? '<span class="up">▲</span>' : bf.length ? '<span class="up other">▲</span>' : '';
+  // ▲ só para o personagem atual: personagens mais fracos marcavam quase tudo e confundia.
+  // Quem mais ganha com o item aparece nos detalhes (e no title).
+  const up = better ? '<span class="up">▲</span>' : '';
   const tip = bf.length ? ` title="${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => CLASSES[k].name).join(', ')}"` : '';
   return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}</div>`;
 }

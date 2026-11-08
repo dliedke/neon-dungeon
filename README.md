@@ -183,7 +183,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
   - **Shared stash:** a chest a few steps from the start of every floor holds up to 100 items shared by all your characters (and synced to the cloud).
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
     **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory).
-    A green ▲ marks items better than what your current character has equipped (the header counts them), and a blue ▲ marks items that would be an upgrade for another of your characters.
+    A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** levels, skill points (up to rank 10 per skill), credits, stims and health orbs.
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
 - **Difficulty:** a small slider in the HUD (also in the options) with 5 levels: Easy, Normal, Hard, Brutal and Insane. It changes instantly, enemies on the floor included.
