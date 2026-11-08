@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { rr, chance, pick, shuffle } from './utils.js';
+import { rr, ri, chance, pick, shuffle } from './utils.js';
 import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -170,9 +170,9 @@ function completeContract() {
 }
 
 // ------------------------------------------------------------------
-// Fenda de Desafio: 3 ondas de inimigos em volta dela; no fim, um cofre lendário
+// Fenda de Desafio: de 3 a 10 ondas de inimigos em volta dela; no fim, um cofre lendário
+// (quanto mais ondas, melhor o cofre)
 // ------------------------------------------------------------------
-const RIFT_WAVES = 3;
 const riftRing = new THREE.TorusGeometry(0.75, 0.06, 6, 32);
 const riftCore = new THREE.OctahedronGeometry(0.45, 0);
 const riftBase = new THREE.RingGeometry(0.9, 1.3, 32).rotateX(-Math.PI / 2);
@@ -200,7 +200,9 @@ export function spawnRift(x, z) {
   g.add(fill);
   g.position.set(x, 0, z);
   G.world.add(g);
-  const pk = { type: 'rift', x, z, group: g, ringA, ringB, core, base, fill, t: 0, hold: 0, state: 'idle', wave: 0, foes: [], nextT: 0, vy: 0, y: 0, vx: 0, vz: 0, static: true };
+  // número de ondas sorteado com a semente do andar (continuar o andar mantém o mesmo)
+  const waves = ri(3, 10);
+  const pk = { type: 'rift', x, z, waves, group: g, ringA, ringB, core, base, fill, t: 0, hold: 0, state: 'idle', wave: 0, foes: [], nextT: 0, vy: 0, y: 0, vx: 0, vz: 0, static: true };
   G.pickups.push(pk);
   return pk;
 }
@@ -208,15 +210,19 @@ export function spawnRift(x, z) {
 function riftWave(pk) {
   pk.wave++;
   const f = G.floor;
-  const n = Math.min(11, 4 + Math.floor(f / 3) + pk.wave);
+  // bastante inimigo por onda (bom para combos), crescendo com o andar e com a onda
+  const n = Math.min(22, 6 + Math.floor(f / 2) + pk.wave);
+  const last = pk.wave >= pk.waves;
+  // última onda: uma elite (duas nas fendas de 7 ondas ou mais)
+  const elites = last ? (pk.waves >= 7 ? 2 : 1) : 0;
   pk.foes = [];
   const d = G.dungeon;
   for (let i = 0; i < n; i++) {
     let x = pk.x;
     let z = pk.z;
-    for (let tries = 0; tries < 12; tries++) {
+    for (let tries = 0; tries < 14; tries++) {
       const a = rr(0, Math.PI * 2);
-      const r = rr(2.5, 5.5);
+      const r = rr(2.5, 7);
       if (isWalkable(d, pk.x + Math.cos(a) * r, pk.z + Math.sin(a) * r)) {
         x = pk.x + Math.cos(a) * r;
         z = pk.z + Math.sin(a) * r;
@@ -225,7 +231,7 @@ function riftWave(pk) {
     }
     let type = pickEnemyType(f);
     if (ETYPES[type].solo && i > 0) type = pickEnemyType(f);
-    const e = spawnEnemy(type, x, z, { elite: pk.wave === RIFT_WAVES && i === 0 });
+    const e = spawnEnemy(type, x, z, { elite: i < elites });
     applyAnomalyToEnemy(e);
     e.aggro = true;
     e.alerted = true;
@@ -235,7 +241,8 @@ function riftWave(pk) {
     ringFx(x, z, 1, 0xff2bd6, 0.3);
   }
   sfx.boss();
-  banner(L(`FENDA · ONDA ${pk.wave}/${RIFT_WAVES}`, `RIFT · WAVE ${pk.wave}/${RIFT_WAVES}`), pk.wave === RIFT_WAVES ? L('Última onda: tem uma elite!', 'Final wave: an elite is coming!') : L('Derrote todos', 'Defeat them all'));
+  const sub = !last ? L('Derrote todos', 'Defeat them all') : elites > 1 ? L('Última onda: vêm duas elites!', 'Final wave: two elites are coming!') : L('Última onda: tem uma elite!', 'Final wave: an elite is coming!');
+  banner(L(`FENDA · ONDA ${pk.wave}/${pk.waves}`, `RIFT · WAVE ${pk.wave}/${pk.waves}`), sub);
 }
 
 function closeRift(pk) {
@@ -244,15 +251,15 @@ function closeRift(pk) {
   pk.core.material = glowMat(0x444455, 1);
   pk.base.material.opacity = 0.12;
   achAdd('rifts');
-  banner(L('FENDA FECHADA', 'RIFT CLOSED'), L('Um cofre lendário apareceu', 'A legendary cache appeared'));
+  if (pk.waves >= 10) achMark('flags', 'riftMax');
+  banner(L('FENDA FECHADA', 'RIFT CLOSED'), pk.waves >= 7 ? L(`${pk.waves} ondas! Um cofre lendário reforçado apareceu`, `${pk.waves} waves! A reinforced legendary cache appeared`) : L('Um cofre lendário apareceu', 'A legendary cache appeared'));
   sfx.legendary();
   ringFx(pk.x, pk.z, 4, 0xff2bd6, 0.7);
   burst(pk.x, 1.5, pk.z, 0xff2bd6, 60, 8, 0.09, 0.9, { up: 1.5 });
-  dropLoot(pk.x, pk.z, { rift: true });
+  dropLoot(pk.x, pk.z, { rift: true, waves: pk.waves });
   if (G.contract && G.contract.kind === 'rift') contractProgress(1);
 }
 
-let riftHint = false;
 function updateRifts(dt) {
   const p = G.player;
   for (const pk of G.pickups) {
@@ -269,9 +276,10 @@ function updateRifts(dt) {
     if (pk.state === 'idle') {
       // fica 1,2s em cima para abrir (não abre sem querer só de passar)
       const near = p.alive && Math.hypot(p.x - pk.x, p.z - pk.z) < 1.4;
-      if (near && !riftHint) {
-        riftHint = true;
-        toast(L('🌀 Fique sobre a Fenda para abri-la: 3 ondas de inimigos por um cofre lendário', '🌀 Stand on the Rift to open it: 3 waves of enemies for a legendary cache'), 'leg');
+      // cada fenda avisa uma vez quantas ondas tem
+      if (near && !pk.hinted) {
+        pk.hinted = true;
+        toast(L(`🌀 Fique sobre a Fenda para abri-la: ${pk.waves} ondas de inimigos por um cofre lendário`, `🌀 Stand on the Rift to open it: ${pk.waves} waves of enemies for a legendary cache`), 'leg');
       }
       pk.hold = near ? pk.hold + dt : Math.max(0, pk.hold - dt * 2);
       pk.fill.scale.setScalar(Math.max(0.001, Math.min(1, pk.hold / 1.2)));
@@ -289,7 +297,7 @@ function updateRifts(dt) {
       }
       pk.nextT -= dt;
       if (pk.nextT > 0) continue;
-      if (pk.wave >= RIFT_WAVES) closeRift(pk);
+      if (pk.wave >= pk.waves) closeRift(pk);
       else riftWave(pk);
     }
   }
@@ -316,15 +324,17 @@ export function setupFloorEvents(d, floor, boss, rooms) {
   const n0 = enemiesLeft();
   G.clear = isFinalFloor(floor) || !n0 ? null : { start: n0, left: n0, done: false, t: 0 };
   if (floor < 2 || isFinalFloor(floor)) return;
-  // Fenda de Desafio em uma sala longe do início (não aparece em andar de chefe)
-  // nunca na sala do mercador/ferreiro (sala segura) nem perto deles
+  // Fendas de Desafio em salas longe do início (não aparecem em andar de chefe): quase sempre uma,
+  // às vezes duas (e até três nos andares fundos); nunca na sala do mercador/ferreiro (sala segura) nem perto deles
   const free = rooms.filter((r) => !r.safe);
-  if (!boss && free.length && chance(floor < 4 ? 0.35 : 0.5)) {
-    for (let k = 0; k < 6; k++) {
+  const nRifts = boss || !free.length ? 0 : (chance(floor < 4 ? 0.6 : 0.85) ? 1 : 0) + (floor >= 4 && chance(0.4) ? 1 : 0) + (floor >= 12 && chance(0.25) ? 1 : 0);
+  for (let j = 0; j < nRifts; j++) {
+    for (let k = 0; k < 12; k++) {
       const r = pick(free);
       const x = r.x + r.w / 2;
       const z = r.y + r.h / 2;
-      if (isWalkable(d, x, z) && Math.hypot(x - d.exit.x, z - d.exit.z) > 4 && !G.pickups.some((o) => Math.hypot(o.x - x, o.z - z) < 2.5) && !npcNear(d, x, z, 4)) {
+      // fendas longe uma da outra (as ondas de uma não acordam a outra)
+      if (isWalkable(d, x, z) && Math.hypot(x - d.exit.x, z - d.exit.z) > 4 && !G.pickups.some((o) => Math.hypot(o.x - x, o.z - z) < (o.type === 'rift' ? 10 : 2.5)) && !npcNear(d, x, z, 4)) {
         spawnRift(x, z);
         break;
       }

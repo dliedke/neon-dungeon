@@ -37,9 +37,10 @@ export function dropLoot(x, z, o = {}) {
   let bonus = G.floor * 1.5 + amod('loot', 0) + T.loot + 20 * (lk - 1);
   const rich = p.buffs.fortune > 0; // Santuário da Fortuna
   if (o.rift) {
-    // Fenda de Desafio: cofre lendário
-    items = 3;
-    bonus += 45;
+    // Fenda de Desafio: cofre lendário; cada onda além da 3ª melhora o cofre (10 ondas: 6 itens)
+    const extra = Math.max(0, (o.waves || 3) - 3);
+    items = 3 + Math.floor((extra + 1) / 2.5);
+    bonus += 45 + extra * 4;
   } else if (o.contract) {
     items = 2;
     bonus += 30;
@@ -65,6 +66,8 @@ export function dropLoot(x, z, o = {}) {
     if ((o.boss || o.chest || o.thief || o.beast || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.beast || o.contract ? 2 : 1);
     if (o.rift && i === 0) rarity = 3;
     if (o.rift && i === 1) rarity = Math.max(rarity, 2);
+    // fendas de 7 ondas ou mais garantem um segundo lendário
+    if (o.rift && i === 2 && (o.waves || 3) >= 7) rarity = Math.max(rarity, 3);
     if (rich && rarity < 3 && chance(0.25)) rarity++;
     if (chance(mythChance(o, find))) rarity = MYTHIC;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
@@ -74,7 +77,7 @@ export function dropLoot(x, z, o = {}) {
   let credits = 0;
   if (chance(o.boss || o.chest || o.thief || o.beast || o.rift || o.contract ? 1 : o.elite ? 0.9 : 0.4)) {
     // Behemoth: chuva de moedas, cada uma valendo 2,5x
-    const n = o.beast ? 20 : o.thief || o.rift ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
+    const n = o.beast ? 20 : o.rift ? 9 + (o.waves || 3) : o.thief ? 12 : o.boss ? 5 : o.chest || o.contract ? 4 : o.elite ? 3 : 1;
     const big = o.beast ? 3.5 : 1;
     for (let k = 0; k < n; k++) {
       const amount = Math.round(rr(3, 7) * (1 + G.floor * 0.5) * big * (rich ? 2 : 1) * amod('credits') * T.credits * rewardK('cr'));

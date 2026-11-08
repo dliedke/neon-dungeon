@@ -189,6 +189,8 @@ export function achList() {
   add('clearBig', '🧨', 2, L('Arrastão', 'Dragnet'), L('Limpe um andar que começou com 30 inimigos ou mais', 'Clear a floor that started with 30 or more enemies'), () => (has('flags', 'clearBig') ? 1 : 0));
   add('rift1', '🌀', 0, L('Fenda Fechada', 'Rift Closed'), L('Feche uma Fenda de Desafio', 'Close a Challenge Rift'), () => total('rifts'));
   add('rift10', '🌌', 2, L('Caçador de Fendas', 'Rift Hunter'), L('Feche 10 Fendas de Desafio', 'Close 10 Challenge Rifts'), () => total('rifts'), 10);
+  add('rift50', '🕳️', 3, L('Senhor das Fendas', 'Rift Lord'), L('Feche 50 Fendas de Desafio', 'Close 50 Challenge Rifts'), () => total('rifts'), 50);
+  add('riftMax', '🌠', 2, L('Até a Última Onda', 'To the Last Wave'), L('Feche uma Fenda de 10 ondas', 'Close a 10-wave Rift'), () => (has('flags', 'riftMax') ? 1 : 0));
   add('combo25', '🔥', 1, L('Imparável', 'Unstoppable'), L('Faça um combo de 25 abates', 'Reach a 25-kill combo'), () => (has('flags', 'combo25') ? 1 : 0));
   add('combo50', '🌪️', 2, L('Massacre', 'Massacre'), L('Faça um combo de 50 abates', 'Reach a 50-kill combo'), () => (has('flags', 'combo50') ? 1 : 0));
   add('combo100', '☄️', 3, L('Tempestade Neon', 'Neon Storm'), L('Faça um combo de 100 abates', 'Reach a 100-kill combo'), () => (has('flags', 'combo100') ? 1 : 0));
