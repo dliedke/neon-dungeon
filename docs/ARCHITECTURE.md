@@ -88,13 +88,15 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 
 ### Lifecycle
 
-- `startGame(cls, fresh)` loads or creates the character (`newCharacter`), runs `sanitizeChar`, creates the player and calls `startFloor(c.floor)`.
+- `startGame(cls, fresh)` loads or creates the character (`newCharacter`), runs `sanitizeChar`, creates the player and calls `resumeFloor(c)` (back to where the player left off, see below) or else `startFloor(c.floor)`.
 - `buildFloor(floor)`:
   1. `clearWorld()`.
   2. `themeFor(floor)` picks the biome. `rollAnomaly(floor)` may roll a floor anomaly.
   3. `generateDungeon(floor)` builds the map. `placeFeatures` adds biome tiles and props.
   4. `buildDungeonMeshes` and `buildFeatures` build the meshes. Fog and lights come from `theme.light`; the `dark` anomaly dims them.
   5. `resetMinimap`, `populateFloor` (enemies, chests, shrines, boss, rift, contract) and `spawnPets`.
+- Every floor is built from a seed (`newSeed` / `seedRandom` in `utils.js`), and each step above reseeds from it, so the same seed always rebuilds the same floor. **Game logic must draw from `rnd`/`rr`/`ri`/`pick`/`chance`/`shuffle` (utils.js); visuals, particles and Three.js stay on `Math.random`.** Never use `sort(() => rnd() - 0.5)` (the number of comparator calls varies) and wrap draws that depend on the player's state in `isolateRandom` (like the shop stock). `G.floorRun` keeps the seed, the initial enemies and statics, and a fingerprint (`floorPrint`).
+- Resume: `saveGame` stores `c.here` = `floorSnapshot()` (seed, fingerprint, player position/HP/energy/buffs, HP of each initial enemy, used chests/shrines/rifts, ground loot, explored map as RLE, contract, clear, nest, shop, anomaly). `resumeFloor(c)` rebuilds the floor with the same seed, checks the fingerprint and applies the snapshot; if anything doesn't match (old save, generation changed) it returns false and the floor starts fresh. No snapshot on the final floor or while dead.
 - `startFloor(floor)` also stores `c.floor` / `c.maxFloor`, places the player at `d.start`, reveals the minimap around it and announces the floor.
 - `updateExit` watches the elevator. It stays locked while a boss is alive. Using it calls `nextFloor()`: fade out, `runFloorDone()` (contract and clear rewards), `startFloor(floor + 1)`, heal 25 % HP and give +1 stim if the player has fewer than 3.
 - Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`.
@@ -212,8 +214,8 @@ localStorage['neon-dungeon-settings-v1'] = G.settings
 localStorage['neon-dungeon:device']      = random device id (medal counters)
 ```
 
-- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints`, `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`.
-- `saveGame()` writes it (autosave every 20 s, on tab hide and after important actions like equipping or leveling) and marks the cloud dirty (`syncDirty`).
+- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints`, `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`, `here` (floor snapshot or null).
+- `saveGame()` writes it (autosave every 20 s, on tab hide and after important actions like equipping or leveling), with the floor snapshot `here`, and marks the cloud dirty (`syncDirty(delay)`: 3 min while playing, 4 s elsewhere; an earlier scheduled sync is never postponed). Changing floor, hiding the tab and quitting to the menu sync right away.
 - `sanitizeChar(c)` runs on load and is the single place where old saves are upgraded. Backfill every new field there.
 - `sync.js` signs in with the Google OAuth implicit flow (public Client ID only) and stores one JSON file in the hidden `appDataFolder` of the user's own Drive (scope `drive.appdata`). `mergeProgress(local, cloud)`:
   - For each class, `mergeChar` keeps the more advanced character by `progressOf` = `[tier, level, maxFloor, kills, xp]`.

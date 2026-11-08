@@ -31,9 +31,9 @@ Each mode grants its own set of implants and has its own medal.
 | **Valkyrie** (Volt Lancer) | Long-reach melee with an electric spear | Thrust, Spear Charge, Volt Javelin, Thunderfall |
 | **Biohacker** (Street Chemist) | Mid-range poison, healing and a lab mutant | Toxic Dart, Toxic Cloud, Nano Heal, Plague |
 
-Each class has its own save slot, stored in the browser.
+Each class has its own save slot, stored in the browser. The game autosaves every 20 seconds, and **Continue** puts you back exactly where you left off: same floor layout and position, with the enemies you killed, opened chests, loot on the ground and the explored map all kept.
 
-**Cloud save (optional):** sign in with Google (☁ button on the main menu or in the pause menu) to sync your characters across devices.
+**Cloud save (optional):** sign in with Google (☁ button on the main menu or in the pause menu) to sync your characters across devices (every 3 minutes while playing, and right away when you change floors, leave the tab or quit to the menu).
 The save goes to a hidden app folder in your own Google Drive (`drive.appdata` scope), so there is no server.
 If two devices disagree, each class keeps the most advanced character and the best item for each gear slot.
 

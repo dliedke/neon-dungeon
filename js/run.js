@@ -72,8 +72,14 @@ export function amod(k, d = 1) {
 }
 
 let lastAnomaly = null;
-export function rollAnomaly(floor) {
+export function rollAnomaly(floor, forced) {
   G.anomaly = null;
+  // continuar o jogo: o andar volta com a mesma anomalia de antes
+  if (forced !== undefined) {
+    G.anomaly = forced && ANOMALIES[forced] ? forced : null;
+    if (G.anomaly) lastAnomaly = G.anomaly;
+    return G.anomaly;
+  }
   if (floor < 2 || isBossFloor(floor) || isFinalFloor(floor)) return null;
   if (!chance(floor < 5 ? 0.45 : 0.65)) return null;
   const keys = Object.keys(ANOMALIES).filter((k) => k !== lastAnomaly);

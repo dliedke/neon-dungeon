@@ -1,7 +1,8 @@
 // Partículas, cortes, anéis, raios e números flutuantes.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr } from './utils.js';
+// sorteio só visual: não gasta o sorteio da lógica (que tem semente enquanto o andar é montado)
+const rr = (a, b) => a + Math.random() * (b - a);
 
 const MAX = 900;
 let inst = null;

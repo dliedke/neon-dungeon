@@ -1972,7 +1972,7 @@ export function populateFloor(d, floor, boss) {
       if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 2.5) spawnEnemy('barrel', pt.x, pt.z);
     }
   }
-  const chestRooms = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom).sort(() => Math.random() - 0.5);
+  const chestRooms = shuffle(d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
   // eventos: Ladrão de Dados e Santuário Neon em salas longe do início
   const far = d.rooms.filter((r) => r !== d.rooms[0] && !(boss && r === d.exitRoom) && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
   if (floor >= 2 && !final && far.length && chance(boss ? 0.15 : 0.35)) {
@@ -1987,8 +1987,8 @@ export function populateFloor(d, floor, boss) {
   }
   // Santuários Neon: 2 ou 3 por andar, de tipos diferentes e em salas diferentes
   if (!final) {
-    const kinds = Object.keys(SHRINES).sort(() => Math.random() - 0.5);
-    const rooms = (far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice().sort(() => Math.random() - 0.5);
+    const kinds = shuffle(Object.keys(SHRINES));
+    const rooms = shuffle((far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice());
     const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 3 : 2);
     for (let k = 0; k < n; k++) {
       const pt = spotAwayFromNpc(d, rooms[k], 2);

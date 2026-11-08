@@ -145,6 +145,18 @@ export function spawnPickup(type, x, z, data) {
   g.position.set(x, pk.y, z);
   G.world.add(g);
   if (type === 'item') {
+    if (data.quiet) {
+      // item que já estava no chão ao continuar o jogo: sem som nem medalha de novo
+      if (!labelRoot) labelRoot = document.getElementById('labels');
+      const el = document.createElement('div');
+      el.style.display = 'none';
+      labelRoot.appendChild(el);
+      pk.label = el;
+      pk.lid = labelId++;
+      setUpgrade(pk, isUpgrade(data.item, G.char.equip));
+      G.pickups.push(pk);
+      return pk;
+    }
     if (data.item.rarity === 3) achAdd('legendaries');
     if (data.item.rarity === MYTHIC) achAdd('mythics');
     if (!labelRoot) labelRoot = document.getElementById('labels');

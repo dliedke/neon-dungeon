@@ -1,7 +1,7 @@
 // Elementos de ambiente de cada bioma: perigos, mecanismos e decoração.
 import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
-import { rr, ri, pick, chance, shuffle } from './utils.js';
+import { rr, ri, rnd, pick, chance, shuffle, isolateRandom } from './utils.js';
 import { isWalkableTile, isWalkable, randomFloorInRoom, tileAt, isFinalFloor } from './dungeon.js';
 import { damagePlayer, hitEnemy, damageEnemy, enemiesInRadius } from './combat.js';
 import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
@@ -208,7 +208,7 @@ export function placeFeatures(d, theme) {
         const dens = f === 'trees' ? 0.07 : f === 'pines' ? 0.05 : f === 'boulders' ? (theme.id === 'mountain' ? 0.045 : 0.025) : 0.03;
         for (let j = 3; j < H - 3; j++)
           for (let i = 3; i < W - 3; i++) {
-            if (grid[j * W + i] !== TILE.FLOOR || Math.random() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
+            if (grid[j * W + i] !== TILE.FLOOR || rnd() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
             let free = true;
             for (let dy = -1; dy <= 1 && free; dy++) for (let dx = -1; dx <= 1 && free; dx++) if (grid[(j + dy) * W + i + dx] !== TILE.FLOOR || d.feat[(j + dy) * W + i + dx] >= 9) free = false;
             if (!free) continue;
@@ -307,7 +307,8 @@ export function placeFeatures(d, theme) {
         break;
     }
   }
-  if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = makeShopStock(d.floor);
+  // o estoque depende do equipamento atual: não pode mexer na sequência da semente do andar
+  if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = isolateRandom(() => makeShopStock(d.floor));
   placeSmith(d, rooms);
   placeStash(d);
 }
@@ -426,7 +427,7 @@ function carvePits(d, rooms, shape) {
       for (let j = Math.floor(c.z - rz); j <= c.z + rz; j++)
         for (let i = Math.floor(c.x - rx); i <= c.x + rx; i++) {
           const k = j * W + i;
-          if (((i + 0.5 - c.x) / rx) ** 2 + ((j + 0.5 - c.z) / rz) ** 2 > 1 + Math.random() * 0.2) continue;
+          if (((i + 0.5 - c.x) / rx) ** 2 + ((j + 0.5 - c.z) / rz) ** 2 > 1 + rnd() * 0.2) continue;
           if (grid[k] !== TILE.FLOOR || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
           changed.push(k);
         }

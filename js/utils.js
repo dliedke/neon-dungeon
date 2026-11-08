@@ -1,10 +1,14 @@
 import { LANG } from './i18n.js';
-export const rr = (a, b) => a + Math.random() * (b - a);
-export const ri = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
-export const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+// sorteio da lógica do jogo: normalmente o Math.random, mas com semente enquanto um andar é montado
+// (o visual e o Three.js continuam no Math.random, então caches e texturas não mudam a sequência)
+let rng = Math.random;
+export const rnd = () => rng();
+export const rr = (a, b) => a + rng() * (b - a);
+export const ri = (a, b) => Math.floor(a + rng() * (b - a + 1));
+export const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
-export const chance = (p) => Math.random() < p;
+export const chance = (p) => rng() < p;
 export const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 
 // tempo de jogo: "2h 05min" ou "45min"
@@ -18,7 +22,7 @@ export function fmtPlay(sec) {
 export function weightedPick(list, w) {
   let total = 0;
   for (const x of list) total += w(x);
-  let r = Math.random() * total;
+  let r = rng() * total;
   for (const x of list) {
     r -= w(x);
     if (r <= 0) return x;
@@ -35,7 +39,7 @@ export function angleDiff(a, b) {
 
 export function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -55,3 +59,36 @@ export function uid() {
 }
 
 export const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches;
+
+// ------------------------------------------------------------------
+// Sorteio com semente: o andar é montado com uma semente, então dá para refazer
+// o mesmo andar ao continuar o jogo (o que mudou nele fica salvo à parte)
+// ------------------------------------------------------------------
+let seedState = 0;
+function seededRandom() {
+  // mulberry32
+  let t = (seedState = (seedState + 0x6d2b79f5) | 0);
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+export const newSeed = () => (Math.random() * 2147483647) | 0;
+// liga a semente (null volta ao sorteio normal)
+export function seedRandom(seed) {
+  if (seed == null) {
+    rng = Math.random;
+    return;
+  }
+  seedState = seed | 0;
+  rng = seededRandom;
+}
+// roda fn sem gastar a sequência da semente (o que vem depois sai igual, não importa quanto fn sorteou)
+export function isolateRandom(fn) {
+  if (rng !== seededRandom) return fn();
+  const s = seedState;
+  try {
+    return fn();
+  } finally {
+    seedState = s;
+  }
+}

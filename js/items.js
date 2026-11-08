@@ -1,5 +1,5 @@
 // Geração de itens, atributos, raridades e descrições.
-import { ri, rr, pick, weightedPick, uid, fmt } from './utils.js';
+import { ri, rr, rnd, pick, weightedPick, uid, fmt } from './utils.js';
 import { CLASSES } from './classes.js';
 import { L } from './i18n.js';
 
@@ -82,19 +82,19 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
   if (slot === 'weapon') {
     const C = CLASSES[cls];
     it.cls = cls;
-    it.bi = Math.floor(Math.random() * C.weaponNames.length);
+    it.bi = Math.floor(rnd() * C.weaponNames.length);
     const scale = (1 + 0.14 * (ilvl - 1)) * R.mult * rr(0.92, 1.08);
     it.wMin = Math.max(1, Math.round(C.base.wMin * scale));
     it.wMax = Math.max(it.wMin + 1, Math.round(C.base.wMax * scale));
   } else {
-    it.bi = Math.floor(Math.random() * BASES[slot].length);
+    it.bi = Math.floor(rnd() * BASES[slot].length);
     if (ARMOR_BASE[slot]) it.armor = Math.round(ARMOR_BASE[slot] * (1 + 0.22 * (ilvl - 1)) * R.mult * rr(0.9, 1.1));
   }
   let n = ri(R.n[0], R.n[1]);
   if (slot === 'chip' && n < 1) n = 1;
   const pool = Object.keys(AFFIXES).filter((k) => !AFFIXES[k].slots || AFFIXES[k].slots.includes(slot));
   for (let i = 0; i < n && pool.length; i++) {
-    const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    const k = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
     it.affixes[k] = AFFIXES[k].roll(ilvl);
   }
   if (rarity === 3) it.leg = pick(Object.keys(LEGENDARIES));
@@ -103,7 +103,7 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
     it.myth = pick(Object.keys(MYTHICS));
     for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.3);
   }
-  it.si = Math.floor(Math.random() * 64);
+  it.si = Math.floor(rnd() * 64);
   return it;
 }
 

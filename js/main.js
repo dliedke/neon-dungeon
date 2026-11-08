@@ -8,7 +8,7 @@ import { G, gk } from './state.js';
 import { Input, initInput, setTouchMode } from './input.js';
 import { initAudio, applyVolumes, sfx } from './audio.js';
 import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
-import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight } from './dungeon.js';
+import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight, isWalkable } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy, tickReward } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
@@ -27,7 +27,7 @@ import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
   toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
 } from './ui.js';
-import { isTouchDevice, clamp } from './utils.js';
+import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
@@ -81,11 +81,17 @@ function loadSave() {
 
 // fromSync: gravação feita pela própria sincronização (não reenvia para a nuvem)
 export function saveGame(fromSync) {
-  if (G.char) G.save.slots[G.char.cls] = G.char;
+  if (G.char) {
+    // onde o personagem está no andar (para continuar dali)
+    const h = floorSnapshot();
+    if (h !== undefined) G.char.here = h;
+    G.save.slots[G.char.cls] = G.char;
+  }
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(G.save));
   } catch (_) {}
-  if (!fromSync) syncDirty();
+  // jogando, a nuvem recebe no máximo a cada 3 min (e na hora ao sair da aba, trocar de andar ou voltar ao menu)
+  if (!fromSync) syncDirty(G.mode === 'play' ? 180000 : 4000);
 }
 
 export function saveSettings() {
@@ -235,23 +241,45 @@ function clearWorld() {
   bossBar();
 }
 
-function buildFloor(floor, withEnemies = true) {
+// resume: retrato salvo do andar (c.here) para refazê-lo igual, com a mesma semente
+function buildFloor(floor, withEnemies = true, resume = null) {
   clearWorld();
   G.floor = floor;
   const theme = themeFor(floor);
   G.theme = theme;
-  // anomalia do andar: sorteada antes de povoar (muda quantidade e força dos inimigos)
-  G.contract = null;
-  G.clear = null;
-  if (withEnemies) rollAnomaly(floor);
-  else G.anomaly = null;
-  const d = generateDungeon(floor);
-  G.dungeon = d;
-  placeFeatures(d, theme);
-  const world = buildDungeonMeshes(d, theme);
-  buildFeatures(d, theme, world);
-  G.world = world;
-  scene.add(world);
+  // semente do andar: cada etapa recomeça dela, então o que uma etapa sorteia a mais
+  // (ex.: o estoque do mercador, que depende do equipamento) não muda as outras
+  const seed = withEnemies ? (resume ? resume.seed : newSeed()) : null;
+  const stage = (k) => seed != null && seedRandom((seed + Math.imul(k, 0x9e3779b1)) | 0);
+  G.floorRun = null;
+  let d;
+  try {
+    // anomalia do andar: sorteada antes de povoar (muda quantidade e força dos inimigos)
+    G.contract = null;
+    G.clear = null;
+    stage(1);
+    if (withEnemies) rollAnomaly(floor, resume ? resume.anomaly || null : undefined);
+    else G.anomaly = null;
+    stage(2);
+    d = generateDungeon(floor);
+    G.dungeon = d;
+    stage(3);
+    placeFeatures(d, theme);
+    stage(4);
+    const world = buildDungeonMeshes(d, theme);
+    buildFeatures(d, theme, world);
+    G.world = world;
+    scene.add(world);
+    stage(5);
+    G.nest = null;
+    if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
+    stage(6);
+    if (withEnemies && !isFinalFloor(floor)) spawnPets(d);
+  } finally {
+    seedRandom(null);
+  }
+  // o que o andar tinha no começo: inimigos e objetos fixos (cofres, santuários, fendas), na ordem em que nasceram
+  if (seed != null) G.floorRun = { seed, foes: G.enemies.slice(), statics: G.pickups.filter((pk) => pk.static), fp: floorPrint(d) };
   // iluminação e névoa de cada bioma
   const Lt = theme.light;
   scene.fog = new THREE.Fog(theme.fog, Lt.fogNear, Lt.fogFar);
@@ -269,10 +297,18 @@ function buildFloor(floor, withEnemies = true) {
     dirLight.intensity *= 0.35;
   }
   resetMinimap(d);
-  G.nest = null;
-  if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
-  if (withEnemies && !isFinalFloor(floor)) spawnPets(d);
   return d;
+}
+
+// coloca o personagem no andar (começo ou onde ele estava) e atualiza o mapa e o rótulo
+function enterFloor(d, x, z) {
+  placePlayer(x, z);
+  G.camFocus.x = x;
+  G.camFocus.z = z;
+  markMinimap(revealAround(d, x, z, 8));
+  computeFlow(d, x, z);
+  const T = tierOf(G.char);
+  document.getElementById('floor-label').textContent = `${L('ANDAR', 'FLOOR')} ${G.floor} · ${G.theme.name.toUpperCase()}${T.off ? ` · ${T.icon} ${T.name.toUpperCase()}` : ''}`;
 }
 
 export function startFloor(floor) {
@@ -283,15 +319,8 @@ export function startFloor(floor) {
   achMark('biomes', G.theme.id);
   if (d.props.some((p) => p.type === 'smith')) setTimeout(() => G.floor === floor && G.mode === 'play' && toast(L('⚒ Há um <b>ferreiro</b> neste andar: ele aprimora seu equipamento por créditos.', '⚒ There is a <b>blacksmith</b> on this floor: he upgrades your gear for credits.'), 'item'), 3400);
   if (!G.save.stashSeen && d.props.some((p) => p.type === 'stash')) setTimeout(() => G.floor === floor && G.mode === 'play' && !G.save.stashSeen && toast(L('📦 Perto do início de cada andar há um <b>baú compartilhado</b>: o que você guardar nele fica para todos os seus personagens.', '📦 Near the start of every floor there is a <b>shared stash</b>: whatever you store in it is available to all your characters.'), 'item'), 1500);
-  placePlayer(d.start.x, d.start.z);
-  G.camFocus.x = d.start.x;
-  G.camFocus.z = d.start.z;
-  const newly = revealAround(d, d.start.x, d.start.z, 8);
-  markMinimap(newly);
-  computeFlow(d, d.start.x, d.start.z);
+  enterFloor(d, d.start.x, d.start.z);
   const word = L('ANDAR', 'FLOOR');
-  const T = tierOf(c);
-  document.getElementById('floor-label').textContent = `${word} ${floor} · ${G.theme.name.toUpperCase()}${T.off ? ` · ${T.icon} ${T.name.toUpperCase()}` : ''}`;
   if (isFinalFloor(floor)) {
     banner(L('ANDAR FINAL', 'FINAL FLOOR'), L('Os 7 chefes esperam no coração da corporação', 'All 7 bosses await at the heart of the corporation'));
     setTimeout(() => G.floor === floor && toast(L('Batalha final: os chefes vêm em ondas de 2. Derrote os 7 para vencer o jogo!', 'Final battle: the bosses come in waves of 2. Defeat all 7 to win the game!'), 'warn'), 2800);
@@ -299,6 +328,164 @@ export function startFloor(floor) {
   if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   announceFloor(floor);
   saveGame();
+}
+
+// ------------------------------------------------------------------
+// Continuar de onde parou: o andar é refeito com a mesma semente e o que mudou nele
+// (inimigos mortos, cofres abertos, itens no chão, mapa explorado...) fica no save em c.here
+// ------------------------------------------------------------------
+// impressão digital do andar recém-criado: se o andar refeito não sair igual, começa um andar novo
+function floorPrint(d) {
+  let h = 2166136261;
+  const mix = (v) => (h = Math.imul(h ^ (v | 0), 16777619));
+  const str = (t) => {
+    for (let k = 0; k < t.length; k++) mix(t.charCodeAt(k));
+  };
+  for (let k = 0; k < d.grid.length; k++) mix(d.grid[k]);
+  mix(d.start.x * 100);
+  mix(d.start.z * 100);
+  mix(d.exit.x * 100);
+  mix(d.exit.z * 100);
+  for (const p of d.props) {
+    str(p.type);
+    mix(p.x * 100);
+    mix(p.z * 100);
+  }
+  for (const e of G.enemies) {
+    str(e.type);
+    str(e.elite || '');
+    mix(e.x * 100);
+    mix(e.z * 100);
+    mix(e.maxHp);
+  }
+  for (const pk of G.pickups) {
+    str(pk.type);
+    str(pk.kind || '');
+    mix(pk.x * 100);
+    mix(pk.z * 100);
+  }
+  return (h >>> 0).toString(36);
+}
+
+// retrato do andar atual para o save (undefined = não mexe no retrato que já existe)
+function floorSnapshot() {
+  const R = G.floorRun;
+  const c = G.char;
+  const p = G.player;
+  const d = G.dungeon;
+  if (!R || !c || !p || !d || G.floor !== c.floor) return undefined;
+  if (isFinalFloor(G.floor) || G.final) return null; // a batalha final sempre recomeça do início
+  if (!p.alive) return undefined; // caído: fica o último retrato com ele vivo
+  const r2 = (v) => Math.round(v * 100) / 100;
+  // mapa explorado em trechos: quantos 0, quantos 1, quantos 0...
+  const ex = [];
+  let cur = 0;
+  let run = 0;
+  for (let k = 0; k < d.explored.length; k++) {
+    const v = d.explored[k] ? 1 : 0;
+    if (v === cur) run++;
+    else {
+      ex.push(run);
+      cur = v;
+      run = 1;
+    }
+  }
+  ex.push(run);
+  const ground = [];
+  for (const pk of G.pickups) {
+    if (pk.type === 'item') ground.push({ t: 'item', x: r2(pk.x), z: r2(pk.z), item: pk.item });
+    else if (pk.type === 'credits') ground.push({ t: 'credits', x: r2(pk.x), z: r2(pk.z), amount: pk.amount });
+    else if (pk.type === 'stim') ground.push({ t: 'stim', x: r2(pk.x), z: r2(pk.z) });
+  }
+  const buffs = {};
+  for (const k in p.buffs) if (typeof p.buffs[k] === 'number' && p.buffs[k] > 0) buffs[k] = r2(p.buffs[k]);
+  const used = [];
+  R.statics.forEach((pk, i) => {
+    if (pk.opened || pk.used || pk.state === 'done' || !G.pickups.includes(pk)) used.push(i);
+  });
+  return {
+    v: 1, floor: G.floor, seed: R.seed, fp: R.fp, anomaly: G.anomaly || null,
+    x: r2(p.x), z: r2(p.z), hp: Math.max(1, Math.round(p.hp)), en: Math.round(p.en || 0), buffs,
+    foes: R.foes.map((e) => (e.alive ? Math.max(1, Math.round(e.hp)) : 0)),
+    used, ex, ground,
+    contract: G.contract ? { ...G.contract, times: [] } : null,
+    clear: G.clear ? { ...G.clear } : null,
+    nest: G.nest ? { left: G.nest.left, woke: G.nest.woke, done: G.nest.done } : null,
+    shop: d.shop || null,
+  };
+}
+
+// refaz o andar salvo; false = não deu (save antigo, andar diferente...) e o jogo começa um andar novo
+function resumeFloor(c) {
+  const h = c.here;
+  if (!h || h.v !== 1 || h.floor !== c.floor || h.seed == null || isFinalFloor(h.floor) || !Array.isArray(h.foes)) return false;
+  let d;
+  try {
+    d = buildFloor(h.floor, true, h);
+  } catch (err) {
+    console.warn('resume', err);
+    return false;
+  }
+  const R = G.floorRun;
+  if (!R || R.fp !== h.fp || R.foes.length !== h.foes.length) return false;
+  // inimigos: os mortos somem sem efeito nenhum; os vivos voltam com a vida que tinham
+  R.foes.forEach((e, i) => {
+    const hp = h.foes[i];
+    if (hp > 0) {
+      e.hp = Math.min(e.maxHp, hp);
+      return;
+    }
+    e.alive = false;
+    G.world.remove(e.model.root);
+    if (e.laser) G.world.remove(e.laser);
+    if (e.boss) d.meshes.exit.locked = false; // o chefe já tinha caído: elevador liberado
+  });
+  // cofres abertos, santuários usados e fendas concluídas não voltam
+  for (const i of h.used || []) {
+    const pk = R.statics[i];
+    if (!pk) continue;
+    G.world.remove(pk.group);
+    if (pk.label) pk.label.remove();
+    const k = G.pickups.indexOf(pk);
+    if (k >= 0) G.pickups.splice(k, 1);
+  }
+  // o que estava no chão
+  for (const g of h.ground || []) {
+    if (!isWalkable(d, g.x, g.z)) continue;
+    const pk = g.t === 'item' && g.item ? spawnPickup('item', g.x, g.z, { item: g.item, quiet: true }) : g.t === 'credits' ? spawnPickup('credits', g.x, g.z, { amount: g.amount | 0 }) : g.t === 'stim' ? spawnPickup('stim', g.x, g.z, {}) : null;
+    if (pk) {
+      pk.vx = pk.vz = 0;
+      pk.vy = 0;
+      pk.t = 1;
+    }
+  }
+  // mapa explorado
+  if (Array.isArray(h.ex)) {
+    let k = 0;
+    let v = 0;
+    for (const n of h.ex) {
+      if (v) for (let j = 0; j < n && k + j < d.explored.length; j++) d.explored[k + j] = 1;
+      k += n;
+      v ^= 1;
+    }
+    const all = [];
+    for (let j = 0; j < d.explored.length; j++) if (d.explored[j]) all.push(j);
+    markMinimap(all);
+  }
+  if (h.contract) G.contract = h.contract;
+  else G.contract = null;
+  if (h.clear && G.clear) Object.assign(G.clear, h.clear);
+  if (h.nest && G.nest) Object.assign(G.nest, h.nest);
+  if (h.shop) d.shop = h.shop;
+  const p = G.player;
+  const ok = isWalkable(d, h.x, h.z);
+  enterFloor(d, ok ? h.x : d.start.x, ok ? h.z : d.start.z);
+  p.hp = clamp(h.hp || p.stats.maxHp, 1, p.stats.maxHp);
+  p.en = clamp(h.en ?? p.stats.maxEn, 0, p.stats.maxEn);
+  Object.assign(p.buffs, h.buffs || {});
+  banner(`${L('ANDAR', 'FLOOR')} ${h.floor}`, L('De volta de onde você parou', 'Back where you left off'));
+  announceFloor(h.floor);
+  return true;
 }
 
 export function startGame(cls, fresh) {
@@ -318,7 +505,7 @@ export function startGame(cls, fresh) {
   createPlayer();
   showHUD();
   G.mode = 'play';
-  startFloor(G.char.floor || 1);
+  if (fresh || !resumeFloor(G.char)) startFloor(G.char.floor || 1);
   if (G.char.level === 1 && G.char.kills === 0) {
     setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} powers')) : L('Clique para mover/atacar · 1–6 poderes · F stim · I inventário', 'Click to move/attack · 1–6 powers · F stim · I inventory')), 2800);
   }
@@ -347,6 +534,8 @@ function sanitizeChar(c) {
   c.kills = c.kills || 0;
   c.wins = c.wins || 0;
   c.playTime = c.playTime || 0;
+  // onde estava no andar (saves antigos não têm: começam o andar do início)
+  if (!c.here || typeof c.here !== 'object') c.here = null;
   c.deaths = c.deaths || 0;
   // implantes (escolhidos depois de cada chefe)
   c.implants = c.implants || {};

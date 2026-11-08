@@ -303,10 +303,14 @@ export function syncNow() {
   })();
 }
 
-// o jogo salvou: envia logo depois (junta várias gravações seguidas)
+// o jogo salvou: envia depois de `delay` (junta várias gravações seguidas; durante a partida
+// o atraso é longo, e um envio já marcado para antes não é adiado)
 export function syncDirty(delay = 4000) {
   if (!sync.user) return;
+  const due = Date.now() + delay;
+  if (sync.timer && sync.due <= due) return;
   clearTimeout(sync.timer);
+  sync.due = due;
   sync.timer = setTimeout(syncNow, delay);
 }
 

@@ -1,7 +1,7 @@
 // Geração procedural das masmorras, malhas, colisão, campo de fluxo e A*.
 import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
-import { ri, rr, pick, clamp, shuffle } from './utils.js';
+import { ri, rr, rnd, pick, clamp, shuffle } from './utils.js';
 import { L } from './i18n.js';
 
 const NEON_LIGHT = { sky: 0x8a90ff, ground: 0x1a0f2a, hemi: 1.25, dir: 0xd8ccff, dirI: 1.5, fogNear: 22, fogFar: 44 };
@@ -109,7 +109,7 @@ function connectRooms(grid, W, H, rooms, width) {
 // Cavernas orgânicas (autômato celular)
 function genCave(W, H, open = 0.55) {
   let grid = new Uint8Array(W * H);
-  for (let j = 2; j < H - 2; j++) for (let i = 2; i < W - 2; i++) grid[j * W + i] = Math.random() < open ? TILE.FLOOR : TILE.WALL;
+  for (let j = 2; j < H - 2; j++) for (let i = 2; i < W - 2; i++) grid[j * W + i] = rnd() < open ? TILE.FLOOR : TILE.WALL;
   for (let it = 0; it < 5; it++) {
     const ng = new Uint8Array(W * H);
     for (let j = 2; j < H - 2; j++)
@@ -200,7 +200,7 @@ function genGrid(W, H) {
   const cells = [];
   for (let gy = 0; gy < n; gy++)
     for (let gx = 0; gx < n; gx++) {
-      if (Math.random() < 0.12) {
+      if (rnd() < 0.12) {
         cells.push(null);
         continue;
       }
@@ -303,7 +303,7 @@ function carveCorridor(grid, W, H, x1, y1, x2, y2, width = 2) {
         if (xx > 1 && yy > 1 && xx < W - 2 && yy < H - 2) grid[yy * W + xx] = TILE.FLOOR;
       }
   };
-  if (Math.random() < 0.5) {
+  if (rnd() < 0.5) {
     for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) carve(x, y1);
     for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) carve(x2, y);
   } else {
