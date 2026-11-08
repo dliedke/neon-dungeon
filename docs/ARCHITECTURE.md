@@ -199,6 +199,7 @@ hitEnemy(e, mult, opts)
 - **Anomalies** (`ANOMALIES`): one optional modifier per normal floor. Code reads it with `amod(key, default)`. Keys include `count`, `elite`, `hp`, `dmg`, `speed`, `xp`, `credits`, `loot`, `orbs`, `pdmg`, `taken`, `cd`, `regen`, `killHeal`, `explode`, `giant` and `dark`.
 - **Contracts**: optional floor goals (`rollContract`), paid out in `runFloorDone`.
 - **Challenge rifts**: `spawnRift`, a timed arena with a reward.
+- **Nest** (`spawnNest` / `wakeNest` / `nestDown` in `enemies.js`, state in `G.nest`): a packed room whose enemies (`e.nest`) all wake together; clearing it drops a chest.
 - **Kill combo** (`runKill`) and the **floor-clear bonus** (`clearBonus = (150 + floor × 40) × (1 + tier × 0.5)`).
 - **Implants** (`IMPLANTS`): pick one of three after each boss. `bossReward()` keys them by `floor + 100 × tier`, so each tier grants its own. `implantMods(c)` feeds `computeStats`.
 - **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset (30 / 60, so each mode continues where the previous one ended), enemy HP and damage multipliers, and loot, credits and elite bonuses.

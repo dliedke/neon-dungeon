@@ -130,7 +130,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 - **Data Thief:** a rare golden runner carrying a backpack of stolen data. It flees from you, drops credits as it runs and teleports away after about 14 seconds.
   Catch it for a jackpot: guaranteed rare-or-better items, a pile of credits and a stim.
-- **Raging Behemoth:** from floor 3 on, about one floor in five hides a huge armored beast in a far room. It is very tough (it shrugs off 20% of all damage), roars when it spots you and hits extremely hard: a ground slam and a straight-line charge, both telegraphed on the floor. If the charge hits a wall it is stunned for a moment. Below half health it becomes enraged: faster, stronger, double slams and double charges.
+- **Raging Behemoth:** from floor 3 on, about one floor in three hides a huge armored beast in a far room. You are warned when you arrive, and it shows on the minimap (with an arrow at the edge) and on the full map. It is very tough (it shrugs off 20% of all damage), roars when it spots you and hits extremely hard: a ground slam and a straight-line charge, both telegraphed on the floor. If the charge hits a wall it is stunned for a moment. Below half health it becomes enraged: faster, stronger, double slams and double charges.
   Kill it for a big payout: a pile of credits (about the price of a legendary in the shop), 3 items (the first is rare or better), a stim and an orb.
 - **Neon Shrines:** glowing pillars that grant a 30-second buff when you walk over them:
   **Fury** (+50% damage), **Haste** (+35% move speed, +30% attack speed), **Fortune** (more loot and double credits) or **Aegis** (half damage taken).
@@ -141,7 +141,8 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
   Completing one pays credits and good items.
 - **Challenge Rifts:** stand on the rift to open it and survive 3 waves; the last one includes an elite. The reward is a guaranteed Prototype item and more.
 - **Floor cleared:** kill every enemy on a floor (the final battle doesn't count) for a credit bonus that grows with the floor and difficulty, plus its own medals. When 10 or fewer remain, the HUD shows how many are left.
-- **Kill combo:** chain kills quickly to build a combo. It adds bonus experience and pays credits every 10 kills.
+- **Kill combo:** chain kills quickly to build a combo. It adds bonus experience and pays credits every 10 kills. The time window grows with the combo (3.5s up to 6s at 50 kills), so you can reach the next group.
+- **Nest:** from floor 4 on, about one floor in three has a big room packed with 30 to 60 weaker enemies (plus one elite). You are warned on arrival and it is marked on the map. When one of them spots you, the whole nest charges at once: perfect for big combos. Wipe it out for a loot cache and credits.
 
 Thieves, shrines and rifts show up on the minimap once explored. Click or tap the minimap (or press M) to open the full map.
 

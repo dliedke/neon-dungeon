@@ -291,6 +291,7 @@ const laserGeo = new THREE.BoxGeometry(0.05, 0.05, 1).translate(0, 0, 0.5);
 
 export function onEnemyKilled(e) {
   if (e.auraRing) e.auraRing.visible = false;
+  if (e.nest) nestDown(e);
   // se a Ilusionista verdadeira morre, as cópias somem
   if (e.decoys) {
     for (const c of e.decoys) {
@@ -399,6 +400,7 @@ export function updateEnemies(dt, cam) {
     if (e.alerted) {
       e.alerted = false;
       for (const o of G.enemies) if (o.alive && !o.aggro && !o.inert && Math.hypot(o.x - e.x, o.z - e.z) < 5) o.aggro = true;
+      if (e.nest) wakeNest();
       if (e.boss) startBoss(e);
     }
     if (e.aggro && p.alive) anyAggro = true;
@@ -1821,7 +1823,59 @@ function chooseBossAttack(e, dist) {
 }
 
 const BOSS_HP_K = 1.3;
-const BEAST_CHANCE = 0.3; // chance de um Behemoth Furioso por andar (fora os de chefe)
+const BEAST_CHANCE = 0.35; // chance de um Behemoth Furioso por andar (fora os de chefe)
+const NEST_CHANCE = 0.3; // chance de um Ninho (sala lotada de inimigos que acordam juntos) por andar
+
+// ---------------- Ninho ----------------
+// uma sala grande lotada de inimigos mais fracos; quando um acorda, todos vêm juntos (ótimo para combos)
+function spawnNest(d, r, floor) {
+  const D = diff();
+  const types = [];
+  for (let k = 0; k < 20 && types.length < 2; k++) {
+    const t = pickEnemyType(floor);
+    const T = ETYPES[t];
+    if (!T.solo && !T.static && t !== 'medic' && !types.includes(t)) types.push(t);
+  }
+  if (!types.length) return;
+  const n = Math.round(Math.min(55, 26 + floor * 1.1) * Math.min(1.3, D.count));
+  const N = { x: r.x + r.w / 2, z: r.y + r.h / 2, n: 0, left: 0, woke: false, done: false };
+  for (let i = 0; i < n; i++) {
+    const pt = randomFloorInRoom(d, r, 1);
+    if (!isWalkable(d, pt.x, pt.z) || npcNear(d, pt.x, pt.z, 2.5)) continue;
+    const e = spawnEnemy(types[i % types.length], pt.x, pt.z, { elite: i === 0, anomaly: true });
+    e.nest = true;
+    if (!e.elite) {
+      e.hp = e.maxHp = e.hp * 0.6;
+      e.xp = Math.round(e.xp * 0.7);
+    }
+    N.n++;
+  }
+  N.left = N.n;
+  if (N.n) G.nest = N;
+}
+// algum inimigo do ninho viu o jogador: o ninho inteiro acorda
+function wakeNest() {
+  const N = G.nest;
+  if (!N || N.woke) return;
+  N.woke = true;
+  for (const o of G.enemies) if (o.alive && o.nest) o.aggro = true;
+  banner(L('O NINHO DESPERTOU!', 'THE NEST AWAKENS!'), L(`${N.left} inimigos vindo de uma vez: hora do combo!`, `${N.left} enemies at once: combo time!`));
+  sfx.boss();
+}
+function nestDown(e) {
+  const N = G.nest;
+  if (!N || N.done || !e.nest) return;
+  if (!N.woke) wakeNest();
+  N.left = G.enemies.filter((o) => o.alive && o.nest && o !== e).length;
+  if (N.left > 0) return;
+  N.done = true;
+  banner(L('NINHO DESTRUÍDO', 'NEST DESTROYED'), L('Um cofre apareceu no meio do ninho', 'A cache appeared in the middle of the nest'));
+  sfx.legendary();
+  const pt = isWalkable(G.dungeon, N.x, N.z) ? N : { x: e.x, z: e.z };
+  ringFx(pt.x, pt.z, 4, 0xff4466, 0.7);
+  spawnChest(pt.x, pt.z);
+  for (let k = 0; k < 6; k++) spawnPickup('credits', pt.x, pt.z, { amount: Math.round(rr(4, 8) * (1 + G.floor * 0.5)) });
+}
 
 // ---------------- Povoamento do andar ----------------
 // ponto aleatório da sala longe do mercador e do ferreiro (null se não achar)
@@ -1846,9 +1900,16 @@ export function populateFloor(d, floor, boss) {
   const final = isFinalFloor(floor);
   // no andar final o foco são os chefes: metade dos inimigos comuns
   const budget = Math.round(Math.min(140, Math.round((15 + floor * 8) * D.count * areaK)) * (final ? 0.5 : 1) * amod('count'));
+  // Ninho: escolhe uma sala grande longe do início (os inimigos dele contam no orçamento do andar)
+  G.nest = null;
+  let nestRoom = null;
+  if (floor >= 4 && !final && !boss && chance(NEST_CHANCE)) {
+    const big = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom && !r.safe && r.w >= 8 && r.h >= 8 && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 16);
+    if (big.length) nestRoom = pick(big);
+  }
   const quotas = new Map();
   for (const r of d.rooms) {
-    if (r === d.rooms[0]) continue;
+    if (r === d.rooms[0] || r === nestRoom) continue;
     if (boss && r === d.exitRoom) continue;
     if (r.safe) continue;
     if (chance(emptyChance)) continue;
@@ -1864,6 +1925,7 @@ export function populateFloor(d, floor, boss) {
     }
   }
   const startCount = G.enemies.length;
+  if (nestRoom) spawnNest(d, nestRoom, floor);
   for (const r of slots) {
     if (G.enemies.length - startCount >= budget) break;
     {
@@ -1918,7 +1980,7 @@ export function populateFloor(d, floor, boss) {
     spawnEnemy('thief', pt.x, pt.z);
   }
   // Behemoth Furioso: aparece de vez em quando (não nos andares de chefe), numa sala grande longe do início e da saída
-  const beastRooms = far.filter((r) => !r.safe && r.w >= 7 && r.h >= 7 && r !== d.exitRoom);
+  const beastRooms = far.filter((r) => !r.safe && r.w >= 7 && r.h >= 7 && r !== d.exitRoom && r !== nestRoom);
   if ((floor >= 3 || tierOf().off) && !final && !boss && beastRooms.length && chance(BEAST_CHANCE)) {
     const pt = spotAwayFromNpc(d, pick(beastRooms), 2.5);
     if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 5 && Math.hypot(pt.x - d.start.x, pt.z - d.start.z) > 16) spawnEnemy('behemoth', pt.x, pt.z);

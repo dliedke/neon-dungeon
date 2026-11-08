@@ -269,6 +269,7 @@ function buildFloor(floor, withEnemies = true) {
     dirLight.intensity *= 0.35;
   }
   resetMinimap(d);
+  G.nest = null;
   if (withEnemies) populateFloor(d, floor, isBossFloor(floor));
   if (withEnemies && !isFinalFloor(floor)) spawnPets(d);
   return d;

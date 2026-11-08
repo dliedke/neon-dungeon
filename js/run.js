@@ -292,8 +292,10 @@ function updateRifts(dt) {
 // ------------------------------------------------------------------
 // Combo de abates
 // ------------------------------------------------------------------
+// janela do combo: 3,5s, crescendo com o combo (até 6s no combo 50) para dar tempo de ir até o próximo grupo
 const COMBO_WINDOW = 3.5;
-const combo = { n: 0, t: 0, best: 0 };
+const comboWindow = () => COMBO_WINDOW + Math.min(2.5, combo.n * 0.05);
+const combo = { n: 0, t: 0, best: 0, w: COMBO_WINDOW };
 export const comboBonus = () => Math.min(0.6, combo.n * 0.02);
 
 // ------------------------------------------------------------------
@@ -333,7 +335,19 @@ export function announceFloor(floor) {
     setTimeout(() => G.floor === floor && toast(`<b style="color:${A.css}">${A.icon} ${L('ANOMALIA', 'ANOMALY')}: ${A.name}</b><br><small>${A.desc}</small>`, 'leg'), 1300);
   }
   const C = G.contract;
-  if (C) setTimeout(() => G.floor === floor && G.contract === C && toast(`📜 <b>${L('Contrato', 'Contract')}</b>: ${C.text}`, 'leg'), A ? 5600 : 1300);
+  let t = A ? 5600 : 1300;
+  if (C) {
+    setTimeout(() => G.floor === floor && G.contract === C && toast(`📜 <b>${L('Contrato', 'Contract')}</b>: ${C.text}`, 'leg'), t);
+    t += 4300;
+  }
+  // Ninho e Behemoth: avisa logo na chegada (os dois aparecem no minimapa)
+  const N = G.nest;
+  if (N) {
+    setTimeout(() => G.floor === floor && G.nest === N && !N.woke && toast(L(`🪺 Há um <b>Ninho</b> neste andar: ${N.n} inimigos juntos que acordam de uma vez (marcado no mapa). Destrua tudo para ganhar um cofre. Ótimo para combos!`, `🪺 There is a <b>Nest</b> on this floor: ${N.n} enemies that wake up all at once (marked on the map). Wipe it out for a loot cache. Great for combos!`), 'leg', 'nest'), t);
+    t += 4300;
+  }
+  const B = G.enemies.find((e) => e.alive && e.type === 'behemoth');
+  if (B) setTimeout(() => G.floor === floor && B.alive && !B.roared && toast(L('🦏 Um <b>Behemoth Furioso</b> ronda este andar (marcado no mapa). Muito forte, mas paga muitos créditos e itens.', '🦏 A <b>Raging Behemoth</b> roams this floor (marked on the map). Very tough, but it pays lots of credits and items.'), 'leg', 'beast'), t);
 }
 
 // inimigo derrotado pelo jogador (não conta barril nem autodestruição)
@@ -342,7 +356,8 @@ export function runKill(e) {
   if (e.type === 'barrel') return;
   // combo
   combo.n = combo.t > 0 ? combo.n + 1 : 1;
-  combo.t = COMBO_WINDOW;
+  combo.w = comboWindow();
+  combo.t = combo.w;
   combo.best = Math.max(combo.best, combo.n);
   const bonus = comboBonus();
   if (bonus > 0 && e.xp) gainXp(e.xp * bonus);
@@ -522,7 +537,7 @@ export function runHud() {
       void el.offsetWidth;
       el.classList.add('pop');
     }
-    el.querySelector('i').style.transform = `scaleX(${(combo.t / COMBO_WINDOW).toFixed(3)})`;
+    el.querySelector('i').style.transform = `scaleX(${(combo.t / combo.w).toFixed(3)})`;
   } else hudCache.combo = null;
   el.classList.toggle('hidden', !show);
 }

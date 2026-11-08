@@ -796,10 +796,26 @@ function drawMapMarks(ctx, d, p, near) {
     ctx.arc(ex.x, ex.z, 1.4, 0, Math.PI * 2);
     ctx.fill();
   }
+  // Ninho: anel vermelho pulsando (sempre visível até ser destruído)
+  const N = G.nest;
+  if (N && !N.done) {
+    ctx.strokeStyle = '#ff4466';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(N.x, N.z, 3 + Math.sin(G.t * 4) * 0.6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   // inimigos próximos (quando faltam poucos para limpar o andar, aparecem todos, mesmo longe ou no escuro)
   const hunt = G.clear && !G.clear.done && G.clear.left <= 5;
   for (const e of G.enemies) {
     if (!e.alive || e.type === 'thief') continue;
+    // Behemoth: sempre visível no mapa, pulsando
+    if (e.type === 'behemoth') {
+      const k = 1.3 + Math.sin(G.t * 5) * 0.35;
+      ctx.fillStyle = '#ff7a1a';
+      ctx.fillRect(e.x - k, e.z - k, k * 2, k * 2);
+      continue;
+    }
     if (hunt && !e.inert && !e.decoy && e.type !== 'pylon') {
       const k = 1 + Math.sin(G.t * 7) * 0.3;
       ctx.fillStyle = e.boss ? '#ff2244' : '#ff4466';
@@ -884,20 +900,13 @@ function drawMapMarks(ctx, d, p, near) {
 function drawThiefArrows(ctx, W, sc) {
   const p = G.player;
   const c = Math.SQRT1_2;
-  // quando faltam poucos inimigos para limpar o andar, setas vermelhas apontam para eles
-  const hunt = G.clear && !G.clear.done && G.clear.left <= 5;
-  for (const e of G.enemies) {
-    if (!e.alive) continue;
-    const thief = e.type === 'thief';
-    if (!thief && !(hunt && !e.inert && !e.decoy && e.type !== 'pylon')) continue;
-    const col = thief ? '#ffd23d' : '#ff4466';
-    const dx = e.x - p.x;
-    const dz = e.z - p.z;
+  const R = W / 2 - 9;
+  const arrow = (x, z, col, k) => {
+    const dx = x - p.x;
+    const dz = z - p.z;
     const sx = (dx * c - dz * c) * sc;
     const sy = (dx * c + dz * c) * sc;
-    const R = W / 2 - 9;
-    const len = Math.hypot(sx, sy);
-    if (len < R) continue;
+    if (Math.hypot(sx, sy) < R) return;
     const a = Math.atan2(sy, sx);
     ctx.save();
     ctx.translate(W / 2 + Math.cos(a) * R, W / 2 + Math.sin(a) * R);
@@ -906,7 +915,7 @@ function drawThiefArrows(ctx, W, sc) {
     ctx.fillStyle = col;
     ctx.shadowColor = col;
     ctx.shadowBlur = 8;
-    if (!thief) ctx.scale(0.75, 0.75);
+    if (k !== 1) ctx.scale(k, k);
     ctx.beginPath();
     ctx.moveTo(8, 0);
     ctx.lineTo(-5, -6.5);
@@ -915,7 +924,18 @@ function drawThiefArrows(ctx, W, sc) {
     ctx.closePath();
     ctx.fill();
     ctx.restore();
+  };
+  // setas na borda do minimapa: Ladrão (amarela), Behemoth (laranja), Ninho (vermelha) e,
+  // quando faltam poucos inimigos para limpar o andar, setas vermelhas menores apontam para eles
+  const hunt = G.clear && !G.clear.done && G.clear.left <= 5;
+  for (const e of G.enemies) {
+    if (!e.alive) continue;
+    if (e.type === 'thief') arrow(e.x, e.z, '#ffd23d', 1);
+    else if (e.type === 'behemoth') arrow(e.x, e.z, '#ff7a1a', 1);
+    else if (hunt && !e.inert && !e.decoy && e.type !== 'pylon') arrow(e.x, e.z, '#ff4466', 0.75);
   }
+  const N = G.nest;
+  if (N && !N.done && !hunt) arrow(N.x, N.z, '#ff4466', 1);
 }
 
 // ------------------------------------------------------------------
@@ -954,7 +974,16 @@ function drawBigMap() {
   if (!d || !mmCanvas || !p) return;
   const W = cv.width;
   ctx.clearRect(0, 0, W, W);
-  const b = mmB || { x0: p.x - 8, x1: p.x + 8, z0: p.z - 8, z1: p.z + 8 };
+  const b = { ...(mmB || { x0: p.x - 8, x1: p.x + 8, z0: p.z - 8, z1: p.z + 8 }) };
+  // o ninho e o Behemoth aparecem mesmo fora da área explorada
+  const marks = G.enemies.filter((e) => e.alive && e.type === 'behemoth');
+  if (G.nest && !G.nest.done) marks.push(G.nest);
+  for (const m of marks) {
+    b.x0 = Math.min(b.x0, m.x - 4);
+    b.x1 = Math.max(b.x1, m.x + 4);
+    b.z0 = Math.min(b.z0, m.z - 4);
+    b.z1 = Math.max(b.z1, m.z + 4);
+  }
   const w = b.x1 - b.x0 + 3;
   const h = b.z1 - b.z0 + 3;
   const cx = (b.x0 + b.x1 + 1) / 2;
