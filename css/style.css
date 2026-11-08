@@ -510,6 +510,7 @@ body.pad .cell.empty { pointer-events: auto; }
 /* comparação com o equipado */
 .it-diff { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--line); font-size: 14px; font-weight: 600; color: var(--muted); }
 .it-diff-h { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: 400; }
+.it-diff-n { text-transform: none; letter-spacing: 0; color: #ffb547; }
 .it-diff .up { color: #39ff88; }
 .it-diff .down { color: #ff5577; }
 .cmp-cur .it-cmp { margin-top: 0; }

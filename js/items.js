@@ -153,7 +153,8 @@ export function forgeCost(it) {
   return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4, 6][it.rarity] * Math.pow(1.32, it.plus | 0));
 }
 export function forgeItem(it) {
-  if (!it.base) it.base = { wMin: it.wMin, wMax: it.wMax, armor: it.armor, affixes: { ...it.affixes } };
+  // a0: atributos originais (os marcos mudam base.affixes); itens antigos não têm e usam base.affixes
+  if (!it.base) it.base = { wMin: it.wMin, wMax: it.wMax, armor: it.armor, affixes: { ...it.affixes }, a0: { ...it.affixes } };
   it.plus = (it.plus | 0) + 1;
   let gained = null;
   if (isMilestone(it.plus)) {
@@ -183,11 +184,19 @@ function applyForge(it) {
   for (const [a, v] of Object.entries(b.affixes)) it.affixes[a] = fround(v * ka);
 }
 
-// O item é melhor do que o equipado no mesmo espaço?
+// O item como era antes do ferreiro (sem o +N). Comparações usam isso: um item novo melhor
+// deve aparecer como melhoria mesmo que o equipado já esteja aprimorado.
+export function unforged(it) {
+  if (!it || !it.plus || !it.base) return it;
+  const b = it.base;
+  return { ...it, plus: 0, wMin: b.wMin, wMax: b.wMax, armor: b.armor, affixes: b.a0 || b.affixes };
+}
+
+// O item é melhor do que o equipado no mesmo espaço? (os dois sem aprimoramento)
 export function isUpgrade(it, equip) {
   const cur = equip[it.slot];
   if (!cur) return true;
-  return itemScore(it) > itemScore(cur) * 1.03;
+  return itemScore(unforged(it)) > itemScore(unforged(cur)) * 1.03;
 }
 
 export function starterWeapon(cls) {
@@ -244,6 +253,10 @@ const DIFF_NAMES = {
 };
 export function itemDiffHtml(it, cur) {
   if (!cur) return '';
+  // compara os itens sem o aprimoramento do ferreiro
+  const forged = Math.max(it.plus | 0, cur.plus | 0);
+  it = unforged(it);
+  cur = unforged(cur);
   const rows = [];
   const add = (d, label, lowerBetter) => {
     d = Math.round(d * 10) / 10;
@@ -274,7 +287,8 @@ export function itemDiffHtml(it, cur) {
     if (it.leg) rows.push(`<div class="up">▲ ${LEGENDARIES[it.leg].name}</div>`);
   }
   if (!rows.length) rows.push(`<div>= ${L('Igual ao equipado', 'Same as equipped')}</div>`);
-  return `<div class="it-diff"><div class="it-diff-h">${L('Comparado ao equipado', 'Compared to equipped')}</div>${rows.join('')}</div>`;
+  const note = forged ? ` <span class="it-diff-n">${L('(sem aprimoramento ⚒)', '(without upgrades ⚒)')}</span>` : '';
+  return `<div class="it-diff"><div class="it-diff-h">${L('Comparado ao equipado', 'Compared to equipped')}${note}</div>${rows.join('')}</div>`;
 }
 
 // Ordem do inventário: melhorias primeiro, depois raridade, tipo e pontuação

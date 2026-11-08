@@ -8,7 +8,7 @@ import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
-import { makeItem, itemScore, isUpgrade, SLOTS } from './items.js';
+import { makeItem, itemScore, isUpgrade, unforged, SLOTS } from './items.js';
 import { openShop, openForge, openStash } from './ui.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
@@ -492,7 +492,7 @@ function makeShopStock(floor) {
 function upgradeFor(slot, floor, minRarity) {
   const c = G.char;
   const cur = c.equip[slot];
-  const curScore = itemScore(cur);
+  const curScore = itemScore(unforged(cur));
   let best = null;
   for (let t = 0; t < 80; t++) {
     // a cada tentativa sem sucesso, o nível do item sobe um pouco
