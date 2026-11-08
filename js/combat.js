@@ -7,7 +7,7 @@ import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
 import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
-import { dropLoot } from './loot.js';
+import { dropLoot, killBounty } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
@@ -219,6 +219,7 @@ export function killEnemy(e) {
   } else if (!e.selfDestruct && !e.decoy) {
     gainXp(e.xp);
     const credits = dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss, thief: e.type === 'thief', beast: !!e.T.big });
+    killBounty(e);
     if (e.type === 'thief') {
       banner(L('JACKPOT!', 'JACKPOT!'), L('Ladrão de Dados derrubado', 'Data Thief taken down'));
       sfx.legendary();

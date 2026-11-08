@@ -181,6 +181,10 @@ export function rewardK(kind) {
   return t[i] + (t[i + 1] - t[i]) * (lv - i);
 }
 export const rewardRamping = () => rewardLvl >= 0 && rewardLvl < diffRank();
+// nível de recompensa atual (sobe aos poucos, como o rewardK)
+export const rewardRank = () => Math.max(0, Math.min(diffRank(), rewardLvl < 0 ? 1 : rewardLvl));
+// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30
+export const diffIlvl = () => Math.round(Math.max(0, rewardRank() - 5) * 10);
 
 // Troca de dificuldade no meio do andar: os inimigos vivos mudam na hora (vida proporcional e dano)
 export function setDifficulty(key) {

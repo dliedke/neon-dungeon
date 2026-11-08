@@ -12,7 +12,7 @@ import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
-import { rewardK, diffRank } from './enemies.js';
+import { rewardK, rewardRank, diffIlvl } from './enemies.js';
 
 export const INV_SIZE = 50;
 const UP_COLOR = 0x39ff88;
@@ -29,7 +29,7 @@ function mythChance(o, find) {
 // a partir do Caos. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
 function divChance(o, find) {
   const t = G.char.tier | 0;
-  const dr = diffRank();
+  const dr = Math.floor(rewardRank() + 1e-6);
   const k = dr >= 8 ? 1.5 : dr >= 7 ? 1 : t >= 1 && dr >= 6 ? 0.6 : 0;
   if (!k || effFloor() < 10) return 0;
   const base = o.boss ? 0.008 : o.rift ? 0.006 : o.thief || o.beast ? 0.005 : o.contract ? 0.003 : o.chest ? 0.0015 : o.elite ? 0.0008 : 0.0001;
@@ -37,11 +37,24 @@ function divChance(o, find) {
 }
 let labelRoot = null;
 
+// Recompensa por abate: créditos direto na carteira em todo inimigo morto, crescendo com o
+// nível do personagem e o andar (e com o modo, a dificuldade, anomalias e a Fortuna, como as moedas)
+export function killBounty(e) {
+  const c = G.char;
+  const k = e.boss ? 10 : e.type === 'thief' || e.T.big ? 6 : e.elite ? 3 : 1;
+  const cr = Math.round((2 + (c.level | 0) * 0.25) * (1 + G.floor * 0.05) * k * tierOf().credits * rewardK('cr') * amod('credits') * (G.player.buffs.fortune > 0 ? 2 : 1));
+  if (cr < 1) return;
+  c.credits += cr;
+  achAdd('credits', cr);
+  floatText(e.x, e.height + 0.9, e.z, `+${cr}¢`, 'cr');
+}
+
 export function dropLoot(x, z, o = {}) {
   const p = G.player;
   const find = 1 + (p.stats.findPct || 0) / 100;
   const T = tierOf();
-  const ilvl = G.floor + T.off + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0);
+  // dificuldades altas dão itens de nível maior (diffIlvl)
+  const ilvl = G.floor + T.off + diffIlvl() + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0);
   let items = 0;
   // dificuldade: mais itens, raridade melhor e mais créditos (ver rewardK em enemies.js)
   const lk = rewardK('loot');

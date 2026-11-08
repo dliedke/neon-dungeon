@@ -254,6 +254,7 @@ body.touch #skillbar { display: none; }
 .floater.shield { color: #8fd0ff; }
 .floater.dot { color: #ffaa55; font-size: 12px; }
 .floater.info { color: var(--accent); font-size: 14px; }
+.floater.cr { color: #ffd84d; font-size: 13px; text-shadow: 0 0 6px #b8860b, 0 2px 2px #000; }
 .floater.up { color: #39ff88; font-size: 16px; text-shadow: 0 0 10px #39ff88, 0 2px 2px #000; }
 /* mercador/ferreiro/baú: aviso clicável em cima deles quando o jogador está perto */
 #interact {

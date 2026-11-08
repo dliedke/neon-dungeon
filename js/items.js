@@ -219,8 +219,16 @@ export function itemScore(it) {
   return s;
 }
 
+// créditos gastos no ferreiro até o +N atual (calculado pela fórmula, vale para itens antigos)
+export function forgeSpent(it) {
+  let s = 0;
+  for (let k = 0; k < (it.plus | 0); k++) s += forgeCost({ ilvl: it.ilvl, rarity: it.rarity, plus: k });
+  return s;
+}
+
+// reciclar devolve o valor do item mais tudo o que foi gasto no ferreiro
 export function recycleValue(it) {
-  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100][it.rarity] * (1 + 0.15 * (it.plus | 0)));
+  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100][it.rarity]) + forgeSpent(it);
 }
 
 export function itemStatLines(it) {
