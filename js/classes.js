@@ -11,6 +11,8 @@ import { L } from './i18n.js';
 import * as PW from './powers.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
+// nível máximo de cada poder (a árvore toda soma bem menos pontos do que os 200 níveis dão)
+export const MAX_RANK = 15;
 const pct = (v) => `${Math.round(v * 100)}%`;
 
 export const ICONS = {

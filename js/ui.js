@@ -2,9 +2,9 @@
 import { G } from './state.js';
 import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
-import { CLASSES, CLASS_ORDER, iconSvg, rankMult } from './classes.js';
+import { CLASSES, CLASS_ORDER, iconSvg, rankMult, MAX_RANK } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
-import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot } from './player.js';
+import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill, minRank } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack } from './audio.js';
@@ -1263,6 +1263,25 @@ function treeSpend(i) {
   restoreFocus(`[data-node="${i}"]`);
 }
 
+// Devolve todos os pontos do poder (com confirmação) para reaplicar em outros
+function treeRefund(i) {
+  const c = G.char;
+  const sk = CLASSES[c.cls].skills[i];
+  const back = (c.skills[i] || 0) - minRank(i);
+  if (back <= 0) return sfx.deny();
+  const note = minRank(i) ? L(` Ele volta ao nível ${minRank(i)}.`, ` It goes back to level ${minRank(i)}.`) : L(' Ele volta a ficar bloqueado e sai do botão.', ' It becomes locked again and leaves its button.');
+  confirmDialog(L('Devolver pontos?', 'Refund points?'), L(`Devolver os ${back} pontos de ${sk.name} para gastar em outros poderes?`, `Refund the ${back} points from ${sk.name} to spend on other powers?`) + note, () => {
+    const n = refundSkill(i);
+    if (!n) return;
+    sfx.coin();
+    toast(L(`${sk.name}: +${n} pontos devolvidos`, `${sk.name}: +${n} points refunded`), 'up', 'tree');
+    refreshSkillBar();
+    renderChar();
+    saveGame();
+    restoreFocus(`[data-node="${i}"]`);
+  });
+}
+
 // Coloca o poder no próximo botão (1 → 2 → … → 6)
 function treeCycleSlot(i) {
   const c = G.char;
@@ -1292,12 +1311,12 @@ function renderTree() {
       const req = sk.req || 1;
       const locked = r === 0;
       const canLearn = locked && c.level >= req && c.skillPoints > 0;
-      const canUp = !locked && r < 10 && c.skillPoints > 0;
+      const canUp = !locked && r < MAX_RANK && c.skillPoints > 0;
       const slot = c.slots.indexOf(i);
       const state = locked ? (c.level >= req ? 'available' : 'locked') : 'learned';
       html += `<button class="tnode ${state}${sk.passive ? ' passive' : ''}${treeSel === i ? ' sel' : ''}${canLearn || canUp ? ' can' : ''}" data-nav data-node="${i}" title="${sk.name}">
         <span class="ticon">${iconSvg(sk.icon)}</span>
-        <span class="tbadge">${locked ? (c.level >= req ? '+' : `🔒${req}`) : `${r}/10`}</span>
+        <span class="tbadge">${locked ? (c.level >= req ? '+' : `🔒${req}`) : `${r}/${MAX_RANK}`}</span>
         ${slot >= 0 ? `<span class="tslot">${slotKey(slot)}</span>` : i === 0 ? `<span class="tslot">⚔</span>` : ''}${sk.passive ? `<span class="tpas">${L('PASSIVO', 'PASSIVE')}</span>` : ''}
       </button>`;
     }
@@ -1314,9 +1333,11 @@ function renderTree() {
   let status = '';
   if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
   else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
-  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/10${r < 10 ? (sk.passive || sk.adv ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
-  const canSpend = c.skillPoints > 0 && r < 10 && c.level >= req;
-  let actions = `<button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
+  const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
+  // devolver os pontos deste poder para reaplicar em outros
+  const back = r - minRank(i);
+  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${L(`↺ Devolver pontos (${back})`, `↺ Refund points (${back})`)}</button>` : ''}</div>`;
   if (i > 0 && !locked && !sk.passive) {
     actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${c.slots.map((_, k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
   }
@@ -1346,6 +1367,8 @@ function renderTree() {
       restoreFocus('[data-spend]');
     } else sfx.deny();
   };
+  const rf = $('skill-list').querySelector('[data-refund]');
+  if (rf) rf.onclick = () => treeRefund(i);
   $('skill-list').querySelectorAll('[data-slot]').forEach((b) => (b.onclick = () => {
     assignSlot(+b.dataset.slot, i);
     sfx.click();

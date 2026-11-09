@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { Input } from './input.js';
-import { CLASSES, SKILL_FN, passiveMods, updateAura } from './classes.js';
+import { CLASSES, SKILL_FN, passiveMods, updateAura, MAX_RANK } from './classes.js';
 import { starterWeapon, SLOTS } from './items.js';
 import { makePlayerModel, addShadow, animWalk } from './models.js';
 import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from './dungeon.js';
@@ -810,7 +810,7 @@ export function skillReq(i) {
 // Gasta 1 ponto: desbloqueia (nível 1) ou evolui a habilidade
 export function spendPoint(i) {
   const c = G.char;
-  if (c.skillPoints <= 0 || c.skills[i] >= 10 || c.level < skillReq(i)) return false;
+  if (c.skillPoints <= 0 || c.skills[i] >= MAX_RANK || c.level < skillReq(i)) return false;
   const wasLocked = !(c.skills[i] > 0);
   c.skills[i] = (c.skills[i] || 0) + 1;
   c.skillPoints--;
@@ -820,6 +820,22 @@ export function spendPoint(i) {
     if (free >= 0) c.slots[free] = i;
   }
   return true;
+}
+
+// Nível mínimo de um poder: o ataque básico e o primeiro poder já vêm no nível 1 de graça
+export const minRank = (i) => (i < 2 ? 1 : 0);
+
+// Devolve todos os pontos gastos num poder para reaplicar em outros. Se ele volta a ficar
+// bloqueado, sai do botão. Retorna quantos pontos voltaram.
+export function refundSkill(i) {
+  const c = G.char;
+  const back = (c.skills[i] || 0) - minRank(i);
+  if (back <= 0) return 0;
+  c.skills[i] = minRank(i);
+  c.skillPoints += back;
+  if (!c.skills[i]) c.slots = c.slots.map((k) => (k === i ? null : k));
+  refreshStats();
+  return back;
 }
 
 export function assignSlot(slot, i) {
