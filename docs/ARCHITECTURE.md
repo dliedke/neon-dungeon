@@ -196,7 +196,7 @@ hitEnemy(e, mult, opts)
 - Optional item fields: `plus` (forge level) with `base` (the pre-forge stats that `forgeItem` scales from; every 4th level adds or boosts an affix), and `fav` (favorite, protected from recycling).
 - `itemScore` ranks items. `isUpgrade` (more than 3 % better than equipped) drives the ▲ marker and the shop stock.
 - `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (50).
-- Divine drops: `divChance` in `loot.js` (0 below Apocalypse, except Chaos+ in Nightmare/Inferno; needs effective floor 10).
+- Divine drops: `divChance` in `loot.js` (0 below Apocalypse, except Brutal+ in Nightmare/Inferno; needs effective floor 10).
 - `mythic.js` runs the mythic and divine powers each frame and hooks into hits (`mythOnHit`, `divOnHit`), kills, damage taken (`divBlock` before armor, `divAmbrosia` after the hit) and death.
 
 ## Run events (`run.js`)
