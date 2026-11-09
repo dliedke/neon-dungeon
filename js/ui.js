@@ -210,6 +210,7 @@ export function initUI() {
   bindTouchButton($('tb-s4'), 's4');
   bindTouchButton($('tb-s5'), 's5');
   bindTouchButton($('tb-s6'), 's6');
+  bindTouchButton($('tb-s7'), 's7');
   bindTouchButton($('tb-stim'), 'stim');
   bindTouchButton($('interact'), 'interact');
   $('tb-stim').querySelector('.icon').innerHTML = iconSvg('stim');
@@ -429,7 +430,7 @@ export function showHUD() {
   refreshSkillBar();
 }
 
-// Índices das habilidades em cada botão: [ataque básico, 1, 2, 3, 4, 5, 6]
+// Índices das habilidades em cada botão: [ataque básico, 1, 2, 3, 4, 5, 6, 7]
 const barSkills = () => [0, ...G.char.slots];
 
 export function refreshSkillBar() {
@@ -450,7 +451,7 @@ export function refreshSkillBar() {
 // Rótulos dos botões na barra de habilidades (teclado ou ícones do controle)
 export function refreshKeyLabels() {
   const pad = G.lastInput === 'pad';
-  const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb'), glyph('rb'), glyph('lt')] : ['LMB', '1', '2', '3', '4', '5', '6'];
+  const labels = pad ? [glyph('a'), glyph('x'), glyph('y'), glyph('b'), glyph('lb'), glyph('rb'), glyph('lt'), glyph('rt')] : ['LMB', '1', '2', '3', '4', '5', '6', '7'];
   labels.forEach((l, k) => ($('sk' + k).querySelector('.key').innerHTML = l));
   $('skstim').querySelector('.key').innerHTML = pad ? glyph('ls') : 'F';
   mmHint();
@@ -1269,7 +1270,7 @@ const TIERS = [
 ];
 const tierIdx = (C, t) => (t.late || t.adv ? C.skills.map((sk, i) => ((t.late ? sk.late : sk.adv) ? i : -1)).filter((i) => i >= 0) : t.idx);
 function slotKey(k) {
-  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt'][k]);
+  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k]);
   return String(k + 1);
 }
 

@@ -12,7 +12,7 @@ import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloo
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
 import { populateFloor, updateEnemies, spawnEnemy, tickReward } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
-import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL } from './player.js';
+import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL, SLOT_N } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
 import { placeFeatures, buildFeatures, updateBiome, npcUnderCursor } from './biomes.js';
@@ -521,7 +521,7 @@ export function startGame(cls, fresh) {
   G.mode = 'play';
   if (fresh || !resumeFloor(G.char)) startFloor(G.char.floor || 1);
   if (G.char.level === 1 && G.char.kills === 0) {
-    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} powers')) : L('Clique para mover/atacar · 1–6 poderes · F stim · I inventário', 'Click to move/attack · 1–6 powers · F stim · I inventory')), 2800);
+    setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} {RT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} {RT} powers')) : L('Clique para mover/atacar · 1–7 poderes · F stim · I inventário', 'Click to move/attack · 1–7 powers · F stim · I inventory')), 2800);
   }
 }
 
@@ -531,9 +531,9 @@ function sanitizeChar(c) {
   c.skills = c.skills || [1, 1, 1, 1];
   while (c.skills.length < n) c.skills.push(0);
   if (!c.slots) c.slots = [1, 2, 3].map((i) => (c.skills[i] > 0 ? i : null));
-  // 6 espaços de poderes (antes eram 3); passivos nunca ficam em botões
-  c.slots = c.slots.slice(0, 6).map((i) => (i != null && c.skills[i] > 0 && !CLASSES[c.cls].skills[i]?.passive ? i : null));
-  while (c.slots.length < 6) c.slots.push(null);
+  // 7 espaços de poderes (antes eram 3, depois 6); passivos nunca ficam em botões
+  c.slots = c.slots.slice(0, SLOT_N).map((i) => (i != null && c.skills[i] > 0 && !CLASSES[c.cls].skills[i]?.passive ? i : null));
+  while (c.slots.length < SLOT_N) c.slots.push(null);
   // preenche os espaços vazios com poderes já aprendidos que estavam fora da barra
   CLASSES[c.cls].skills.forEach((sk, i) => {
     if (i === 0 || sk.passive || !(c.skills[i] > 0) || c.slots.includes(i)) return;

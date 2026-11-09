@@ -19,7 +19,10 @@ import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 
-export const MAX_LEVEL = 200;
+// sem nível máximo: o personagem sobe para sempre (depois do 50 cada nível conta metade nos atributos)
+export const MAX_LEVEL = Infinity;
+// espaços de poderes na barra (o ataque básico fica fora): 7 + ataque = 8 ações, uma por botão do controle
+export const SLOT_N = 7;
 // pontos de habilidade por nível (eram 1; spV marca os personagens que já receberam a diferença)
 export const SP_PER_LEVEL = 2;
 export const xpNeeded = (lvl) => Math.floor(45 * Math.pow(lvl, 1.5));
@@ -29,7 +32,7 @@ export const MAX_STIMS = 9;
 export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
-    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, null, null, null, null, null], skillPoints: 0, spV: 2,
+    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, ...Array(SLOT_N - 1).fill(null)], skillPoints: 0, spV: 2,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
 }
@@ -585,8 +588,8 @@ export function updatePlayer(dt) {
   p.attackHold = Math.max(0, (p.attackHold || 0) - dt);
 
   // ---------- habilidades ----------
-  // 1–6 (X/Y/B/LB/RB/LT no controle) usam os poderes colocados nos 6 espaços
-  ['s1', 's2', 's3', 's4', 's5', 's6'].forEach((a, k) => {
+  // 1–7 (X/Y/B/LB/RB/LT/RT no controle) usam os poderes colocados nos 7 espaços
+  ['s1', 's2', 's3', 's4', 's5', 's6', 's7'].forEach((a, k) => {
     if (!Input.pressed(a)) return;
     const i = c.slots[k];
     if (i == null) {

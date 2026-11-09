@@ -5,14 +5,14 @@ import { detectPadType } from './padglyphs.js';
 
 const KB = {
   KeyQ: 's1', KeyE: 's2', KeyR: 's3',
-  Digit1: 's1', Digit2: 's2', Digit3: 's3', Digit4: 's4', Digit5: 's5', Digit6: 's6',
-  Numpad1: 's1', Numpad2: 's2', Numpad3: 's3', Numpad4: 's4', Numpad5: 's5', Numpad6: 's6',
+  Digit1: 's1', Digit2: 's2', Digit3: 's3', Digit4: 's4', Digit5: 's5', Digit6: 's6', Digit7: 's7',
+  Numpad1: 's1', Numpad2: 's2', Numpad3: 's3', Numpad4: 's4', Numpad5: 's5', Numpad6: 's6', Numpad7: 's7',
   Space: 'primary', KeyF: 'stim', KeyG: 'stim',
   KeyI: 'inv', Tab: 'inv', KeyC: 'inv', KeyK: 'skills', KeyM: 'map',
   Escape: 'pause', KeyP: 'pause',
   Enter: 'interact', NumpadEnter: 'interact',
 };
-const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 'stim', 'inv', 'skills', 'pause', 'map', 'interact'];
+const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 'stim', 'inv', 'skills', 'pause', 'map', 'interact'];
 const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb', 'rt'];
 
 const src = { kb: {}, mouse: {}, touch: {}, pad: {} };
@@ -247,14 +247,15 @@ function update(dt) {
     if (b(13)) padMove.y = -1;
     if (b(14)) padMove.x = -1;
     if (b(15)) padMove.x = 1;
-    // ataque: A/✕ ou RT/R2; poderes: X/□, Y/△, B/○, LB/L1, RB/R1, LT/L2; stim: analógico esquerdo; mapa: analógico direito
-    src.pad.primary = b(0) || b(7);
+    // ataque: A/✕; poderes: X/□, Y/△, B/○, LB/L1, RB/R1, LT/L2, RT/R2 (8 ações nos 8 botões); stim: analógico esquerdo; mapa: analógico direito
+    src.pad.primary = b(0);
     src.pad.s1 = b(2);
     src.pad.s2 = b(3);
     src.pad.s3 = b(1);
     src.pad.s4 = b(4);
     src.pad.s5 = b(5);
     src.pad.s6 = b(6);
+    src.pad.s7 = b(7);
     src.pad.stim = b(10);
     src.pad.map = b(11);
     src.pad.pause = b(9);

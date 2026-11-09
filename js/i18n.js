@@ -57,16 +57,16 @@ const DICT = {
   gamepad: ['Controle', 'Gamepad'],
   touch: ['Toque', 'Touch'],
   'help.kb': [
-    '<p><b>Clique esquerdo</b> no chão: mover · no inimigo: atacar</p><p><b>WASD</b>: mover · <b>Espaço</b> ou <b>Shift + clique</b>: atacar</p><p><b>1 a 6</b>: poderes (Q / E / R também usam os 3 primeiros) · <b>Botão direito</b>: poder 1</p><p><b>F</b>: stim (cura 60% da vida) · <b>I</b> / <b>Tab</b>: personagem · <b>M</b> ou clique no minimapa: mapa · <b>Esc</b>: pausa</p>',
-    '<p><b>Left click</b> on the ground: move · on an enemy: attack</p><p><b>WASD</b>: move · <b>Space</b> or <b>Shift + click</b>: attack</p><p><b>1 to 6</b>: powers (Q / E / R also fire the first 3) · <b>Right click</b>: power 1</p><p><b>F</b>: stim (heals 60% health) · <b>I</b> / <b>Tab</b>: character · <b>M</b> or click the minimap: map · <b>Esc</b>: pause</p>',
+    '<p><b>Clique esquerdo</b> no chão: mover · no inimigo: atacar</p><p><b>WASD</b>: mover · <b>Espaço</b> ou <b>Shift + clique</b>: atacar</p><p><b>1 a 7</b>: poderes (Q / E / R também usam os 3 primeiros) · <b>Botão direito</b>: poder 1</p><p><b>F</b>: stim (cura 60% da vida) · <b>I</b> / <b>Tab</b>: personagem · <b>M</b> ou clique no minimapa: mapa · <b>Esc</b>: pausa</p>',
+    '<p><b>Left click</b> on the ground: move · on an enemy: attack</p><p><b>WASD</b>: move · <b>Space</b> or <b>Shift + click</b>: attack</p><p><b>1 to 7</b>: powers (Q / E / R also fire the first 3) · <b>Right click</b>: power 1</p><p><b>F</b>: stim (heals 60% health) · <b>I</b> / <b>Tab</b>: character · <b>M</b> or click the minimap: map · <b>Esc</b>: pause</p>',
   ],
   'help.pad': [
-    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p>{A} {RT}: atacar · {X} {Y} {B} {LB} {RB} {LT}: poderes 1 a 6</p><p>{LS} (apertar o analógico esquerdo): stim, cura 60% da vida · {RS} (apertar o direito): mapa · {SELECT}: personagem · {START}: pausa</p>',
-    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p>{A} {RT}: attack · {X} {Y} {B} {LB} {RB} {LT}: powers 1 to 6</p><p>{LS} (click the left stick): stim, heals 60% health · {RS} (click the right stick): map · {SELECT}: character · {START}: pause</p>',
+    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p>{A}: atacar · {X} {Y} {B} {LB} {RB} {LT} {RT}: poderes 1 a 7</p><p>{LS} (apertar o analógico esquerdo): stim, cura 60% da vida · {RS} (apertar o direito): mapa · {SELECT}: personagem · {START}: pausa</p>',
+    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p>{A}: attack · {X} {Y} {B} {LB} {RB} {LT} {RT}: powers 1 to 7</p><p>{LS} (click the left stick): stim, heals 60% health · {RS} (click the right stick): map · {SELECT}: character · {START}: pause</p>',
   ],
   'help.touch': [
-    '<p>Toque e arraste do <b>lado esquerdo</b> da tela para mover.</p><p>Botões à direita: ataque (segure), até 6 poderes e stim (o botão verde: cura 60% da vida).</p><p>Toque no minimapa para ver o mapa inteiro.</p>',
-    '<p>Touch and drag on the <b>left side</b> of the screen to move.</p><p>Buttons on the right: attack (hold), up to 6 powers and stim (the green button: heals 60% health).</p><p>Tap the minimap to see the whole map.</p>',
+    '<p>Toque e arraste do <b>lado esquerdo</b> da tela para mover.</p><p>Botões à direita: ataque (segure), até 7 poderes e stim (o botão verde: cura 60% da vida).</p><p>Toque no minimapa para ver o mapa inteiro.</p>',
+    '<p>Touch and drag on the <b>left side</b> of the screen to move.</p><p>Buttons on the right: attack (hold), up to 7 powers and stim (the green button: heals 60% health).</p><p>Tap the minimap to see the whole map.</p>',
   ],
   'help.tip': [
     'Ataques e habilidades miram sozinhos no inimigo mais próximo. Encontre o <b>elevador</b> brilhante para descer; a cada 3 andares um chefe guarda a saída. No andar 30, derrote os 7 chefes, que vêm em ondas de 2, para vencer o jogo. Itens com <b style="color:#39ff88">▲</b> são melhores que os seus.',

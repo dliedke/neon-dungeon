@@ -228,20 +228,21 @@ body.touch #skillbar { display: none; }
 }
 .tbtn .icon { position: absolute; inset: 14px; color: var(--accent); }
 .tbtn.down { border-color: var(--accent); background: rgba(0, 240, 255, 0.18); }
-.tbtn.big { width: 90px; height: 90px; right: calc(22px + var(--safe-r)); bottom: calc(22px + var(--safe-b)); }
-.tbtn.big .icon { inset: 22px; }
-/* poderes 1–3: colados ao ataque, uns 5px entre os botões, sem tocar no minimapa nem nos créditos em telas baixas */
-#tb-s1 { right: calc(115px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); }
-#tb-s2 { right: calc(153px + var(--safe-r)); bottom: calc(73px + var(--safe-b)); }
-#tb-s3 { right: calc(88px + var(--safe-r)); bottom: calc(98px + var(--safe-b)); }
-/* poderes 4–6: segunda camada, encaixada nos vãos da primeira */
-.tbtn.mid { width: 54px; height: 54px; }
-.tbtn.mid .icon { inset: 12px; }
-#tb-s4 { right: calc(184px + var(--safe-r)); bottom: calc(19px + var(--safe-b)); }
-#tb-s5 { right: calc(180px + var(--safe-r)); bottom: calc(139px + var(--safe-b)); }
-#tb-s6 { right: calc(124px + var(--safe-r)); bottom: calc(159px + var(--safe-b)); }
-.tbtn.small { width: 50px; height: 50px; right: calc(243px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); }
-.tbtn.small .icon { inset: 11px; color: #39ff88; }
+/* 8 ações bem juntinhas em volta do ataque (centro a 63px do canto): 4 poderes no anel de dentro,
+   3 poderes e o stim no anel de fora, uns 4px entre os botões, sem chegar no minimapa em telas baixas */
+.tbtn.big { width: 86px; height: 86px; right: calc(20px + var(--safe-r)); bottom: calc(20px + var(--safe-b)); }
+.tbtn.big .icon { inset: 21px; }
+.tbtn.mid, .tbtn.small { width: 54px; height: 54px; }
+.tbtn.mid .icon, .tbtn.small .icon { inset: 12px; }
+.tbtn.small .icon { color: #39ff88; }
+#tb-s1 { right: calc(104px + var(--safe-r)); bottom: calc(7px + var(--safe-b)); }
+#tb-s2 { right: calc(104px + var(--safe-r)); bottom: calc(65px + var(--safe-b)); }
+#tb-s3 { right: calc(62px + var(--safe-r)); bottom: calc(105px + var(--safe-b)); }
+#tb-s4 { right: calc(4px + var(--safe-r)); bottom: calc(103px + var(--safe-b)); }
+#tb-stim { right: calc(164px + var(--safe-r)); bottom: calc(4px + var(--safe-b)); }
+#tb-s5 { right: calc(165px + var(--safe-r)); bottom: calc(63px + var(--safe-b)); }
+#tb-s6 { right: calc(140px + var(--safe-r)); bottom: calc(117px + var(--safe-b)); }
+#tb-s7 { right: calc(96px + var(--safe-r)); bottom: calc(154px + var(--safe-b)); }
 
 #exit-prompt {
   position: absolute; left: 50%; bottom: calc(110px + var(--safe-b)); transform: translateX(-50%); text-align: center;
@@ -707,7 +708,6 @@ body.pad .pad-hints { display: block; }
   .logo-top, .logo-bot { font-size: 30px; }
   .logo-sub { display: none; }
   .menu-foot .btn { padding: 6px 12px; font-size: 12px; }
-  .tbtn.big { width: 78px; height: 78px; }
 }
 
 /* Loja */

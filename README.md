@@ -42,8 +42,8 @@ If two devices disagree, each class keeps the most advanced character and the be
 
 Every class has a **skill tree with 14 active powers and 6 passive powers** (the Netrunner has 13 actives plus its own Net Jump). You start with only the basic attack and one skill;
 new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn. Every level grants **2 skill points**.
-Points also upgrade each power up to rank 15, and you can refund all the points of any power to spend them elsewhere (on a gamepad: A upgrade, X change button, RT refund on the selected power). Pick which **6 powers** go on your 1–6 buttons
-(X / Y / B / LB / RB / LT on a gamepad).
+Points also upgrade each power up to rank 20, and you can refund all the points of any power to spend them elsewhere (on a gamepad: A upgrade, X change button, RT refund on the selected power). Pick which **7 powers** go on your 1–7 buttons
+(X / Y / B / LB / RB / LT / RT on a gamepad), so with the basic attack you have 8 actions, one per gamepad button.
 
 Four **advanced powers** unlock at levels 40, 50, 60 and 70: two attacks and two defenses per class (see the table below).
 
@@ -79,15 +79,15 @@ Every class can also learn **Teleport** (from level 3): it blinks up to 8m towar
 
 - **Keyboard + mouse:**
   - Click to move and attack, or use WASD to move and Space to attack.
-  - 1–6 for powers (Q / E / R also fire the first three), F for a stim (heals 60% of your health), I for the inventory and Esc to pause.
+  - 1–7 for powers (Q / E / R also fire the first three), F for a stim (heals 60% of your health), I for the inventory and Esc to pause.
 - **Gamepad:**
-  - Left stick to move; A or RT to attack.
-  - X / Y / B / LB / RB / LT for powers 1–6, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.
+  - Left stick to move; A to attack.
+  - X / Y / B / LB / RB / LT / RT for powers 1–7, click a stick (LS / RS) for a stim, Select for the inventory and Start to pause.
   - Menus can be navigated with the D-pad; A selects/equips, X recycles, Y recycles all (equipment tab) or switches tabs, RT favorites the item, LB/RB switch tabs and B goes back.
   - The game detects Xbox, PlayStation 4/5 and Nintendo Switch Pro controllers and shows the matching button icons.
 - **Mobile:**
   - Drag on the left side of the screen to move.
-  - Use the buttons on the right to attack and use up to 6 powers.
+  - Use the buttons on the right to attack and use up to 7 powers (all 8 actions packed around the attack button) plus a stim.
   - The game switches to fullscreen landscape when you tap Play (on Android), and pauses with a hint if the phone is held upright.
   - It can be installed to the home screen as an app (Share → Add to Home Screen on iPhone) to play in fullscreen.
 
@@ -231,7 +231,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory). **Store all mythics** sends every mythic (and divine) item in your inventory to the stash at once.
     With a gamepad connected, the buttons show which controller button does each action (A store/take, X equip, Y store all mythics, B close).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
-- **Progression:** levels up to **200** (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 15 per skill, refundable per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).
+- **Progression:** no level cap (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 20 per skill, refundable per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses. A 6th song, Neon Dawn, plays only in the true ending.
 - **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items: from Brutal on (or in Nightmare) common items stop dropping, and from Insane on (or in Inferno) modded items stop dropping too, so the worst drop is rare. Chaos, Apocalypse and Death also raise the item level (+10, +20 and +30). It changes instantly, enemies on the floor included.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).

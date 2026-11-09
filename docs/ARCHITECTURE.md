@@ -147,8 +147,8 @@ Navigation helpers:
 - `newCharacter(cls)` creates the saved character.
 - `createPlayer()` creates the runtime entity and model. `refreshStats()` recomputes `p.stats = computeStats(G.char)` after anything changes (gear, level, skills, implants).
 - `computeStats` adds up: class `base` + level scaling + equipped items (armor, weapon damage, affixes, `legs` / `myths` sets) + passive skills (`passiveMods`) + implants (`implantMods`) − difficulty, then applies the caps (crit 75 %, CDR 40 %, life steal 20 %, dodge 25 %, damage reduction 30 %).
-- `updatePlayer(dt)` handles movement (keys, stick, click-to-move path, touch joystick), the primary attack (`SKILL_FN[skills[0].id]`), skill slots `s1`..`s6` (`tryUseSkill`: checks rank, cooldown and energy, then calls `SKILL_FN[id](p, rank)`; returning `false` means "couldn't use, refund"), stims, regen, buffs and statuses.
-- `gainXp`, `spendPoint` (up to `MAX_RANK` = 15, in `classes.js`), `refundSkill` (gives back every point of one power down to `minRank`: 1 for skills 0–1, else 0, and clears its slot), `assignSlot`, `skillReq`, `skillCost`, `skillCd`. `MAX_LEVEL` is 200 (`xpNeeded(lvl) = 45 × lvl^1.5`). In `computeStats`, levels above 50 count half (effective level `50 + (level − 50) × 0.5`), so the stats keep growing without running away.
+- `updatePlayer(dt)` handles movement (keys, stick, click-to-move path, touch joystick), the primary attack (`SKILL_FN[skills[0].id]`), skill slots `s1`..`s7` (`tryUseSkill`: checks rank, cooldown and energy, then calls `SKILL_FN[id](p, rank)`; returning `false` means "couldn't use, refund"), stims, regen, buffs and statuses.
+- `gainXp`, `spendPoint` (up to `MAX_RANK` = 20, in `classes.js`), `refundSkill` (gives back every point of one power down to `minRank`: 1 for skills 0–1, else 0, and clears its slot), `assignSlot`, `skillReq`, `skillCost`, `skillCd`. `MAX_LEVEL` is `Infinity`, so there is no level cap (`xpNeeded(lvl) = 45 × lvl^1.5`). `SLOT_N` = 7 skill-bar slots (plus the basic attack = 8 actions, one per gamepad button: A, X, Y, B, LB, RB, LT, RT). In `computeStats`, levels above 50 count half (effective level `50 + (level − 50) × 0.5`), so the stats keep growing without running away.
 - Timed defensive buffs used by the advanced powers: `p.buffs.guard` (damage taken × `p.guardK`, applied in `damagePlayer`), `p.buffs.mend` (heals `p.mendRate` × max HP per second in the regen step), `p.buffs.evade` (+`p.evadeK` dodge %) and `p.buffs.leech` (+10 life steal). `p.aura` (`{ t, tick, r, mult, color, burn, slow }`) is a damage aura around the player, ticked every 0.5 s by `updateAura` (`classes.js`); it is cleared on floor start and death.
 
 ### Classes and skills (`classes.js`, `powers.js`)
@@ -238,7 +238,7 @@ localStorage['neon-dungeon-settings-v1'] = G.settings
 localStorage['neon-dungeon:device']      = random device id (medal counters)
 ```
 
-- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (6 skill-bar slots → skill index), `skillPoints` (`SP_PER_LEVEL` = 2 per level; `spV` marks saves that already got the retroactive points in `sanitizeChar`), `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`, `here` (floor snapshot or null).
+- The character (`G.char`, saved in `slots[cls]`) holds: `cls`, `level`, `xp`, `credits`, `stims`, `floor`, `maxFloor`, `skills` (rank per skill index), `slots` (`SLOT_N` = 7 skill-bar slots → skill index; `sanitizeChar` pads older saves), `skillPoints` (`SP_PER_LEVEL` = 2 per level; `spV` marks saves that already got the retroactive points in `sanitizeChar`), `equip`, `inv`, `kills`, `created`, `wins`, `playTime`, `deaths`, `implants`, `implantFloors`, `implantPending`, `tier`, `bestTier`, `resetAt`, `here` (floor snapshot or null).
 - `saveGame()` writes it (autosave every 20 s, on tab hide and after important actions like equipping or leveling), with the floor snapshot `here`, and marks the cloud dirty (`syncDirty(delay)`: 3 min while playing, 4 s elsewhere; an earlier scheduled sync is never postponed). Changing floor, hiding the tab and quitting to the menu sync right away.
 - `sanitizeChar(c)` runs on load and is the single place where old saves are upgraded. Backfill every new field there.
 - `sync.js` signs in with the Google OAuth implicit flow (public Client ID only) and stores one JSON file in the hidden `appDataFolder` of the user's own Drive (scope `drive.appdata`). `mergeProgress(local, cloud)`:
@@ -252,7 +252,7 @@ localStorage['neon-dungeon:device']      = random device id (medal counters)
 
 ## Input (`input.js`, `padglyphs.js`)
 
-- `Input.update(dt)` merges four sources (`kb`, `mouse`, `touch`, `pad`) into named actions: `primary`, `s1`..`s6`, `stim`, `inv`, `skills`, `pause`, `map`. Read them with `Input.pressed(action)` (edge) or `Input.held[action]`.
+- `Input.update(dt)` merges four sources (`kb`, `mouse`, `touch`, `pad`) into named actions: `primary`, `s1`..`s7`, `stim`, `inv`, `skills`, `pause`, `map`. Read them with `Input.pressed(action)` (edge) or `Input.held[action]`.
 - `Input.move` and `Input.aimStick` are analog vectors. `Input.mouse` has the cursor and `lmbPressed`.
 - Menu navigation uses `Input.nav(name)` for `up`, `down`, `left`, `right`, `a`, `b`, `x`, `y`, `lb`, `rb`, `rt`, with key repeat. A `latch` makes sure quick taps that press and release within one frame are still seen.
 - `G.lastInput` switches between `kb`, `pad` and `touch`. The body classes and the HUD labels follow it (`refreshKeyLabels`, `refreshPadLabels`).
