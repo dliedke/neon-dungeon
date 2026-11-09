@@ -32,6 +32,7 @@ export const ETYPES = {
   illusionist: { name: L('Ilusionista', 'Illusionist'), hp: 40, dmg: 9, speed: 3.0, r: 0.34, h: 1.5, xp: 22, minFloor: 4, weight: 3, ai: 'illusionist', range: 10, keep: [6, 9], atkCd: 2.1, solo: true, blood: 0xd04dff },
   tank: { name: L('Tanque Lança-mísseis', 'Missile Tank'), hp: 150, dmg: 14, speed: 1.6, r: 0.72, h: 1.4, xp: 45, minFloor: 4, weight: 2, ai: 'tank', range: 13, keep: [6, 11], atkCd: 4.2, heavy: true, solo: true, blood: 0xffaa00 },
   medic: { name: L('Drone Médico', 'Medic Drone'), fly: true, hp: 20, dmg: 0, speed: 3.8, r: 0.34, h: 1.5, xp: 12, minFloor: 2, weight: 0, ai: 'medic', blood: 0x39ff88 },
+  crack: { name: L('Parede Rachada', 'Cracked Wall'), hp: 3, dmg: 0, speed: 0, r: 0.45, h: 1.7, xp: 0, minFloor: 99, weight: 0, ai: 'inert', inert: true, static: true, prop: true, blood: 0x9aa4c0 },
   barrel: { name: L('Barril Explosivo', 'Explosive Barrel'), hp: 1, dmg: 14, speed: 0, r: 0.35, h: 0.9, xp: 0, minFloor: 1, weight: 0, ai: 'inert', inert: true, static: true, blood: 0xff7a1a },
   scrap: { name: L('Rei do Ferro-Velho', 'Scrap King'), boss: true, hp: 620, dmg: 13, speed: 2.0, r: 1.3, h: 3.2, xp: 550, minFloor: 99, weight: 0, ai: 'scrap', heavy: true, blood: 0xffaa00 },
   reaper: { name: L('Ceifadora Fantasma', 'Phantom Reaper'), boss: true, hp: 470, dmg: 12, speed: 4.0, r: 0.8, h: 2.8, xp: 550, minFloor: 99, weight: 0, ai: 'reaper', heavy: true, blood: 0xb36bff },

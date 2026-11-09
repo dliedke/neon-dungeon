@@ -164,12 +164,29 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 - **Kill combo:** chain kills quickly to build a combo. It adds bonus experience and pays credits every 10 kills. The time window grows with the combo (3.5s up to 6s at 50 kills), so you can reach the next group.
 - **Nest:** from floor 4 on, about one floor in three has a big room packed with 30 to 60 weaker enemies (plus one elite). You are warned on arrival and it is marked on the map. When one of them spots you, the whole nest charges at once: perfect for big combos. Wipe it out for a loot cache and credits.
 
+### Puzzles and challenges
+
+From floor 2 on, most floors (not boss floors) get one **main event**, and some also get a **small event**. Each one is announced when you arrive, shown in the HUD and marked on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Completing one pays credits and items, and each kind has its own medal.
+
+| Event | What to do |
+|---|---|
+| **Terminal Sequence** | Four terminals light up in a sequence (3 steps, up to 7 on deeper floors). Step on the matching plates in the same order. A mistake sounds the alarm, sends a wave of enemies and replays the sequence. Three mistakes lock the terminals. |
+| **Light Floor** | A 3×3 grid of plates. Stepping on one flips it and its neighbours. Light all nine. A reset plate restores the starting pattern. |
+| **Laser Prisms** | Step on a prism to rotate it and guide the laser from the emitter to the receiver. |
+| **Data Upload** | Stand inside the circle for 45 seconds while waves of enemies attack. Progress pauses when you step out. |
+| **Time Bomb** | Defuse 3 consoles spread across the floor before the timer runs out. If it explodes, you lose part of your health (never lethal). |
+| **Wanted** | A named elite with a bounty. When it is badly hurt it flees and hides on the other side of the floor, twice. Hunt it down for a big reward. |
+| **Shard Hunt** | The first shard starts a timer. Collect all 6 before time runs out. |
+| **Prisoner** | A caged prisoner watched by guards. Defeat the guards and open the cage: the prisoner thanks you with Fury and Haste. |
+| **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
+| **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic). Each bet costs more than the last. |
+
 Thieves, shrines and rifts show up on the minimap once explored. Click or tap the minimap (or press M) to open the full map.
 
 ## Medals
 
-**126 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
-They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches,
+**142 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
@@ -269,6 +286,7 @@ js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
+js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, secret room...)
 js/mythic.js           mythic item powers
 js/pets.js             decorative pets that wander each biome
 vendor/three/          Three.js r160 (MIT)

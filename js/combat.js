@@ -15,6 +15,7 @@ import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAm
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
+import { propBroken } from './events.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -142,6 +143,18 @@ export function damageEnemy(e, amount, crit, o = {}) {
     if (!o.dot) burst(e.x, e.height * 0.7, e.z, 0x00f0ff, 3, 2, 0.05, 0.25);
     return 0;
   }
+  // objeto quebrável (parede rachada): cada golpe tira 1, no máximo 4 por segundo; veneno/queimadura não
+  if (e.T.prop) {
+    if (o.dot || G.t - (e.propT ?? -9) < 0.25) return 0;
+    e.propT = G.t;
+    e.hp -= 1;
+    e.flash = 0.09;
+    floatText(e.x, e.height + 0.3, e.z, 1, 'dmg');
+    sfx.hit();
+    burst(e.x + Math.sin(e.facing) * 0.5, 1, e.z + Math.cos(e.facing) * 0.5, 0x9aa4c0, 8, 3, 0.07, 0.4);
+    if (e.hp <= 0) killEnemy(e);
+    return 1;
+  }
   if (e.vulnerable) amount *= 1.5;
   if (e.dr) amount *= 1 - e.dr;
   // Tropa de Choque: o escudo bloqueia quase tudo que vem pela frente
@@ -205,9 +218,12 @@ export function killEnemy(e) {
   e.hp = 0;
   const p = G.player;
   sfx.die();
-  if (!e.selfDestruct && !e.decoy) achKill(e);
+  if (!e.selfDestruct && !e.decoy && !e.T.prop) achKill(e);
   burst(e.x, e.height * 0.5, e.z, e.bloodColor, e.boss ? 80 : e.elite ? 30 : 16, e.boss ? 9 : 5, 0.08, 0.7);
-  if (e.type === 'barrel') {
+  if (e.T.prop) {
+    // parede da Sala Secreta
+    propBroken(e);
+  } else if (e.type === 'barrel') {
     // barril: explode ferindo inimigos (e o jogador, se estiver perto)
     const x = e.x;
     const z = e.z;

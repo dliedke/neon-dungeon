@@ -20,6 +20,7 @@ import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
+import { setupEvents, updateEvents, eventsHud, eventKill, eventsBusy, announceEvents } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -341,6 +342,9 @@ export function setupFloorEvents(d, floor, boss, rooms) {
     }
   }
   rollContract(floor);
+  // eventos e quebra-cabeças do andar (podem trazer guardas e um Procurado: entram na conta do andar limpo)
+  setupEvents(d, floor, boss, rooms);
+  if (G.clear) G.clear.start = G.clear.left = enemiesLeft();
 }
 
 // avisos do começo do andar (anomalia e contrato)
@@ -356,6 +360,8 @@ export function announceFloor(floor) {
     setTimeout(() => G.floor === floor && G.contract === C && toast(`📜 <b>${L('Contrato', 'Contract')}</b>: ${C.text}`, 'leg'), t);
     t += 4300;
   }
+  // eventos do andar
+  t = announceEvents(floor, t);
   // Ninho e Behemoth: avisa logo na chegada (os dois aparecem no minimapa)
   const N = G.nest;
   if (N) {
@@ -370,6 +376,7 @@ export function announceFloor(floor) {
 export function runKill(e) {
   const p = G.player;
   if (e.type === 'barrel') return;
+  eventKill(e);
   // combo
   combo.n = combo.t > 0 ? combo.n + 1 : 1;
   combo.w = comboWindow();
@@ -473,7 +480,7 @@ function updateClear(dt) {
   K.t = 0.25;
   K.left = enemiesLeft();
   // fenda aberta ainda manda ondas: só conta quando ela fechar
-  if (K.left > 0 || G.pickups.some((pk) => pk.type === 'rift' && pk.state === 'active')) return;
+  if (K.left > 0 || G.pickups.some((pk) => pk.type === 'rift' && pk.state === 'active') || eventsBusy()) return;
   K.done = true;
   // em andar de chefe espera o aviso do chefe passar
   after(isBossFloor(G.floor) ? 2.6 : 0.4, () => {
@@ -496,6 +503,7 @@ function updateClear(dt) {
 let implantDelay = 0;
 export function updateRun(dt) {
   updateRifts(dt);
+  updateEvents(dt);
   updateClear(dt);
   if (combo.t > 0) {
     combo.t -= dt;
@@ -534,6 +542,7 @@ export function runHud() {
     const st = C.done ? 'done' : C.failed ? 'fail' : '';
     h += `<div class="ri-con ${st}">📜 ${C.text}<b>${C.done ? ' ✔' : C.failed ? ' ✖' : ` ${Math.min(C.cur, C.goal)}/${C.goal}${time}`}</b></div>`;
   }
+  h += eventsHud();
   const K = G.clear;
   if (K && K.done) h += `<div class="ri-con ri-clear done">🧹 ${L('Andar limpo', 'Floor cleared')}<b> ✔</b></div>`;
   else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${clearBonus()}¢</b></div>`;

@@ -19,6 +19,7 @@ import { achAdd, achList, achProgress, playTotal, TIERS as MEDAL_TIERS } from '.
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
+import { drawEventMarks, eventArrows } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -837,7 +838,7 @@ function drawMapMarks(ctx, d, p, near) {
     }
     if (near && (Math.abs(e.x - p.x) > near || Math.abs(e.z - p.z) > near)) continue;
     if (e.inert) {
-      if (!d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
+      if (e.T.prop || !d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
       ctx.fillStyle = '#ff7a1a';
       ctx.fillRect(e.x - 0.3, e.z - 0.3, 0.6, 0.6);
       continue;
@@ -893,6 +894,8 @@ function drawMapMarks(ctx, d, p, near) {
     const r = pk.item.myth ? 1.1 + Math.sin(G.t * 6) * 0.25 : pk.up ? 0.75 : 0.4;
     ctx.fillRect(pk.x - r, pk.z - r, r * 2, r * 2);
   }
+  // eventos do andar (terminais, bomba, fragmentos, Procurado...)
+  drawEventMarks(ctx, d);
   // Ladrão de Dados: sempre aparece (mesmo longe ou em área não explorada), grande e piscando
   for (const e of G.enemies) {
     if (!e.alive || e.type !== 'thief') continue;
@@ -949,6 +952,7 @@ function drawThiefArrows(ctx, W, sc) {
   }
   const N = G.nest;
   if (N && !N.done && !hunt) arrow(N.x, N.z, '#ff4466', 1);
+  eventArrows(arrow);
 }
 
 // ------------------------------------------------------------------

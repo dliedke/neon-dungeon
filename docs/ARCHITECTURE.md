@@ -38,6 +38,7 @@ Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `
 | `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
 | `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |
 | `anomaly`, `contract`, `clear` | Per-floor run events (`run.js`). |
+| `events` | Active floor puzzles and challenges (`events.js`), one object per event with `kind` and `st`. |
 | `lastInput`, `padType`, `isTouch` | Which input method is in use (`kb` / `pad` / `touch`) and which gamepad family. |
 | `mouseWorld`, `hoverEnemy`, `camFocus` | Mouse ray on the ground, hovered enemy, camera target. |
 
@@ -92,11 +93,11 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 - `buildFloor(floor)`:
   1. `clearWorld()`.
   2. `themeFor(floor)` picks the biome. `rollAnomaly(floor)` may roll a floor anomaly.
-  3. `generateDungeon(floor)` builds the map. `placeFeatures` adds biome tiles and props.
+  3. `generateDungeon(floor)` builds the map. `placeFeatures` adds biome tiles and props, then `carveSecret` (`events.js`) may carve a hidden room behind a cracked wall (`d.secret`; `d.hidden` keeps its tiles off the explored map until the wall breaks).
   4. `buildDungeonMeshes` and `buildFeatures` build the meshes. Fog and lights come from `theme.light`; the `dark` anomaly dims them.
-  5. `resetMinimap`, `populateFloor` (enemies, chests, shrines, boss, rift, contract) and `spawnPets`.
+  5. `resetMinimap`, `populateFloor` (enemies, chests, shrines, boss, rift, contract, then `setupEvents` for the floor puzzles) and `spawnPets`.
 - Every floor is built from a seed (`newSeed` / `seedRandom` in `utils.js`), and each step above reseeds from it, so the same seed always rebuilds the same floor. **Game logic must draw from `rnd`/`rr`/`ri`/`pick`/`chance`/`shuffle` (utils.js); visuals, particles and Three.js stay on `Math.random`.** Never use `sort(() => rnd() - 0.5)` (the number of comparator calls varies) and wrap draws that depend on the player's state in `isolateRandom` (like the shop stock). `G.floorRun` keeps the seed, the initial enemies and statics, and a fingerprint (`floorPrint`).
-- Resume: `saveGame` stores `c.here` = `floorSnapshot()` (seed, fingerprint, player position/HP/energy/buffs, HP of each initial enemy, used chests/shrines/rifts, ground loot, explored map as RLE, contract, clear, nest, shop, anomaly). `resumeFloor(c)` rebuilds the floor with the same seed, checks the fingerprint and applies the snapshot; if anything doesn't match (old save, generation changed) it returns false and the floor starts fresh. No snapshot on the final floor or while dead.
+- Resume: `saveGame` stores `c.here` = `floorSnapshot()` (seed, fingerprint, player position/HP/energy/buffs, HP of each initial enemy, used chests/shrines/rifts, ground loot, explored map as RLE, contract, clear, nest, shop, anomaly, floor events `ev`). `resumeFloor(c)` rebuilds the floor with the same seed, checks the fingerprint and applies the snapshot; if anything doesn't match (old save, generation changed) it returns false and the floor starts fresh. No snapshot on the final floor or while dead.
 - `startFloor(floor)` also stores `c.floor` / `c.maxFloor`, places the player at `d.start`, reveals the minimap around it and announces the floor.
 - `updateExit` watches the elevator. It stays locked while a boss is alive. Using it calls `nextFloor()`: fade out, `runFloorDone()` (contract and clear rewards), `startFloor(floor + 1)`, heal 25 % HP and give +1 stim if the player has fewer than 3.
 - Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`.
@@ -206,7 +207,27 @@ hitEnemy(e, mult, opts)
 - **Nest** (`spawnNest` / `wakeNest` / `nestDown` in `enemies.js`, state in `G.nest`): a packed room whose enemies (`e.nest`) all wake together; clearing it drops a chest.
 - **Kill combo** (`runKill`) and the **floor-clear bonus** (`clearBonus = (150 + floor × 40) × (1 + tier × 0.5)`).
 - **Implants** (`IMPLANTS`): pick one of three after each boss. `bossReward()` keys them by `floor + 100 × tier`, so each tier grants its own. `implantMods(c)` feeds `computeStats`.
+- **Floor events**: see [Floor events](#floor-events-eventsjs) below.
 - **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset (30 / 60, so each mode continues where the previous one ended), enemy HP and damage multipliers, and loot, credits and elite bonuses.
+
+## Floor events (`events.js`)
+
+Puzzles and challenges. Each floor gets at most one main event (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner) and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor.
+
+- Each kind is an object registered in `KIND`:
+  - `setup(d, floor, rooms)` builds the meshes and returns the event object, or `null` if it doesn't fit.
+  - `update(E, dt)`, `hud(E)`, `save(E)` / `load(E, s)` and `intro(E)` (the arrival toast).
+  - Optional: `busy(E)` holds the floor-clear check (e.g. during the upload), and `kill(E, e)` reacts to kills.
+- `EVENT_INFO[kind]` has the icon, color, name and an optional `short` name for the HUD.
+- Resuming rebuilds the same events:
+  - `setupEvents` always spends the same random draws, and each setup runs inside `isolateRandom`.
+  - `eventsSnapshot()` / `eventsRestore(list)` save and restore their progress in the floor snapshot (`ev`).
+  - For testing, calling `eventsResume({ ev: [{ k: kind }] })` before `startFloor` forces a kind.
+- Shared helpers: `complete(E, mult, title, sub, x, z)` pays credits, drops loot, counts the medal and saves. `failed(E, msg)` ends the event without a reward.
+- Interactive objects are walk-over pads, so every input method works.
+- The cracked wall is an enemy with `T.prop` (`crack` in `ETYPES`). It takes 1 damage per hit and gives no XP, loot or kill medals. When it dies, `killEnemy` calls `propBroken`.
+- The slot machine is an NPC prop (`type: 'gamble'`) opened through `openNpc` in `biomes.js`.
+- The minimap draws the events with `drawEventMarks` and the edge arrows with `eventArrows`.
 
 ## Saves and cloud sync
 

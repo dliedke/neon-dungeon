@@ -986,6 +986,21 @@ export function makeEnemyModel(type, eliteColor) {
       m = { root, body: root, head, mats: [mBody, mDark], kind: 'sentry' };
       break;
     }
+    case 'crack': {
+      // parede da Sala Secreta: bloco na casa da frente (+z local) com rachaduras brilhando
+      const root = new THREE.Group();
+      const mBody = lambert(0x3a4258);
+      const wall = mesh(box(1, 1.7, 1), mBody, 0, 0.85, 1);
+      root.add(wall);
+      const g = glowMat(0xffaa33, 2.4);
+      for (const [x, y, w, h, r] of [[0.02, 1.25, 0.05, 0.4, 0.5], [-0.08, 0.9, 0.05, 0.38, -0.4], [0.06, 0.55, 0.05, 0.36, 0.45], [0.2, 1.05, 0.04, 0.26, 1.1], [-0.22, 0.7, 0.04, 0.24, -1.2]]) {
+        const c = mesh(box(w, h, 0.03), g, x, y, 0.495);
+        c.rotation.z = r;
+        root.add(c);
+      }
+      m = { root, body: root, wall, mats: [mBody], kind: 'static' };
+      break;
+    }
     case 'barrel': {
       const root = new THREE.Group();
       const mBody = lambert(0xb04a10);

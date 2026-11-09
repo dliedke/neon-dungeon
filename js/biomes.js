@@ -12,6 +12,8 @@ import { makeItem, itemScore, isUpgrade, unforged, SLOTS } from './items.js';
 import { openShop, openForge, openStash } from './ui.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
+import { useGamble, gambleCost } from './events.js';
+import { fmt } from './utils.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
@@ -1136,7 +1138,7 @@ export function updateBiome(dt, camera) {
 // ---------------- mercador, ferreiro e baú: abrem só quando o jogador pede ----------------
 // Mouse: clicar neles (de longe o personagem anda até lá). Controle: {A} perto. Toque: o botão que aparece em cima.
 // Teclado: Enter perto. O botão flutuante também funciona com clique.
-const NPC_RANGE = { merchant: 2.3, smith: 2.5, stash: 2.1 };
+const NPC_RANGE = { merchant: 2.3, smith: 2.5, stash: 2.1, gamble: 1.9 };
 const npcV = new THREE.Vector3();
 let promptEl = null;
 let promptHtml = '';
@@ -1150,6 +1152,7 @@ export function openNpc(pr) {
   if (pr.type === 'merchant') openShop(G.dungeon.shop);
   else if (pr.type === 'smith') openForge();
   else if (pr.type === 'stash') openStash();
+  else if (pr.type === 'gamble') useGamble(pr);
 }
 
 // mercador/ferreiro/baú sob o cursor (em pixels na tela), para o clique do mouse
@@ -1173,6 +1176,7 @@ export function npcUnderCursor(mx, my, camera) {
 function npcLabel(pr) {
   if (pr.type === 'merchant') return L('Abrir loja', 'Open shop');
   if (pr.type === 'smith') return L('Falar com o ferreiro', 'Talk to the blacksmith');
+  if (pr.type === 'gamble') return L(`🎰 Apostar ${fmt(gambleCost(pr.ev))}¢`, `🎰 Bet ${fmt(gambleCost(pr.ev))}¢`);
   return L('Abrir baú', 'Open stash');
 }
 
@@ -1219,7 +1223,7 @@ function updateNpcInteract(d, p, camera) {
     promptHtml = html;
     promptEl.innerHTML = html;
   }
-  npcV.set(near.x, near.type === 'stash' ? 1.5 : 2.6, near.z).project(camera);
+  npcV.set(near.x, near.type === 'stash' ? 1.5 : near.type === 'gamble' ? 2.2 : 2.6, near.z).project(camera);
   promptEl.style.transform = `translate(${((npcV.x + 1) / 2) * innerWidth}px, ${((1 - npcV.y) / 2) * innerHeight}px) translate(-50%, -100%)`;
   promptEl.classList.remove('hidden');
 }

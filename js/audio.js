@@ -277,6 +277,24 @@ export const sfx = {
   click() {
     tone({ type: 'square', f: 820, dur: 0.03, vol: 0.035 });
   },
+  // nota de cada terminal/placa (eventos de andar)
+  seq(i) {
+    const f = [392, 494, 587, 698][i & 3];
+    tone({ type: 'triangle', f, dur: 0.32, vol: 0.13 });
+    tone({ type: 'sine', f: f * 2, dur: 0.2, vol: 0.04 });
+  },
+  // alarme dos terminais
+  alarm() {
+    if (throttle('alarm', 500)) return;
+    for (let k = 0; k < 3; k++) {
+      tone({ type: 'sawtooth', f: 620, f2: 900, dur: 0.16, vol: 0.07, lp: 2500, delay: k * 0.2 });
+      tone({ type: 'sawtooth', f: 900, f2: 620, dur: 0.04, vol: 0.05, lp: 2500, delay: k * 0.2 + 0.16 });
+    }
+  },
+  // Máquina de Apostas girando
+  spin() {
+    for (let k = 0; k < 12; k++) tone({ type: 'square', f: 500 + (k % 3) * 160, dur: 0.04, vol: 0.035, delay: k * 0.1 });
+  },
   playerDeath() {
     tone({ type: 'sawtooth', f: 400, f2: 40, dur: 1.4, vol: 0.2, lp: 1500 });
   },

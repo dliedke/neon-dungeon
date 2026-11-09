@@ -24,6 +24,7 @@ Rules that apply to every recipe:
 - [Legendary (Prototype) power](#legendary-prototype-power)
 - [Mythic power](#mythic-power) (and divine powers)
 - [Anomaly, implant or shrine](#anomaly-implant-or-shrine)
+- [Floor event (puzzle or challenge)](#floor-event-puzzle-or-challenge)
 - [Medal](#medal)
 - [Sound effect](#sound-effect)
 - [Song](#song)
@@ -171,6 +172,23 @@ All in `js/run.js` except shrines (`js/loot.js`).
 - **Anomaly:** add to `ANOMALIES`: `{ icon, css, name, desc, ...modifiers }`. Existing modifier keys are read with `amod(key, default)` (`count`, `elite`, `hp`, `dmg`, `speed`, `xp`, `credits`, `loot`, `orbs`, `pdmg`, `taken`, `cd`, `regen`, `killHeal`, `explode`, `giant`, `dark`). A new key needs an `amod('key')` call where it applies. The `anomalyAll` medal counts the list automatically. README "Floor events".
 - **Implant:** add to `IMPLANTS`: `{ icon, name, mods }`, where `mods` uses `computeStats` keys (including `hpPct` / `armorPct`). Implant keys are stored in `c.implants`. README "Floor events" or "Loot and progression".
 - **Shrine:** add to `SHRINES`: `{ name, desc, color, css }`. Touching one sets a timed `p.buffs[key]`. Apply the effect where it matters (search for an existing one, e.g. `buffs.fury` in `combat.js`).
+
+## Floor event (puzzle or challenge)
+
+All in `js/events.js`. See [Floor events](ARCHITECTURE.md#floor-events-eventsjs) for how they run.
+
+1. Add `EVENT_INFO[kind]` with `{ icon, css, name }` (plus `short` if the name is long for the HUD).
+2. Write the kind object:
+   - `setup(d, floor, rooms)`: find a spot with `findSpot(d, rooms, radius)`, build the meshes in a group from `groupAt`, and return `{ kind, x, z, st, ... }` (or `null` if it doesn't fit).
+   - Only draw from `rr`/`ri`/`pick`/`chance` in `setup` (it runs inside `isolateRandom`). Use `Math.random` in `update`.
+   - `update(E, dt)` drives it. End with `complete(E, mult, title, sub, x, z)` or `failed(E, msg)`.
+   - `hud(E)` returns the short text after the name. `intro(E)` shows the arrival toast.
+   - `save(E)` / `load(E, s)` keep its progress across a resume.
+3. Register it in `KIND`. Main events also go in `MAIN_EVENTS`; a small event needs its own roll in `setupEvents`.
+4. Make it playable with every input method: walk-over pads, things you hit, or an NPC prop (see the slot machine).
+5. Add the minimap mark in `drawEventMarks` and, if it needs one, an arrow in `eventArrows`.
+6. Medals: `complete` already marks `evDone`. Add the kind to the `evMedals` table in `ach.js` (it creates the `ev_<kind>` medal); `evAll` counts it automatically.
+7. Add it to the README "Puzzles and challenges" table and update the medal count.
 
 ## Medal
 

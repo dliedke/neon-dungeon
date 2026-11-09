@@ -557,6 +557,7 @@ export function revealAround(d, x, z, radius) {
       if (i < 0 || j < 0 || i >= d.W || j >= d.H) continue;
       if ((i - ci) ** 2 + (j - cj) ** 2 > radius * radius) continue;
       const k = j * d.W + i;
+      if (d.hidden && d.hidden[k]) continue; // Sala Secreta ainda fechada
       if (!d.explored[k]) {
         d.explored[k] = 1;
         newly.push(k);

@@ -351,14 +351,15 @@ function assistTarget(p, dx, dz, minDot) {
   let best = null;
   let bs = -Infinity;
   for (const e of G.enemies) {
-    if (!e.alive || e.inert || e.invulnerable) continue;
+    if (!e.alive || (e.inert && !e.T.prop) || e.invulnerable) continue;
     const ex = e.x - p.x;
     const ez = e.z - p.z;
     const d = Math.hypot(ex, ez);
     if (d > AIM_RANGE || d < 0.01) continue;
     const dot = (ex * dx + ez * dz) / d;
     if (dot < minDot) continue;
-    const score = dot * 0.8 - d / 3;
+    // parede rachada: só quando não houver inimigo melhor
+    const score = dot * 0.8 - d / 3 - (e.T.prop ? 3 : 0);
     if (score > bs && lineOfSight(G.dungeon, p.x, p.z, e.x, e.z)) {
       bs = score;
       best = e;

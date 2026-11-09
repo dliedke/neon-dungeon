@@ -83,7 +83,7 @@ export function achKill(e) {
 // ---------- definições ----------
 const chars = () => Object.values(G.save.slots || {});
 const maxOf = (f) => chars().reduce((m, c) => Math.max(m, f(c) || 0), 0);
-const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief', 'behemoth'].includes(k));
+const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief', 'behemoth', 'crack'].includes(k));
 
 // tier: 0 bronze, 1 prata, 2 ouro, 3 platina
 const TIERS = [
@@ -219,6 +219,30 @@ export function achList() {
   add('implants9', '🤖', 2, L('Ciborgue Completo', 'Full Cyborg'), L('Ganhe os 9 implantes dos chefes com um personagem', 'Earn all 9 boss implants with one character'), () => maxOf((c) => (c.implantFloors || []).length), 9);
   add('chest10', '📦', 0, L('Arrombador', 'Safecracker'), L('Abra 10 cofres', 'Open 10 loot caches'), () => total('chests'), 10);
   add('chest100', '🗃️', 2, L('Saqueador Profissional', 'Professional Looter'), L('Abra 100 cofres', 'Open 100 loot caches'), () => total('chests'), 100);
+
+  // eventos e quebra-cabeças dos andares
+  const evMedals = {
+    terminals: ['🖥️', 0, L('Memória de Silício', 'Silicon Memory'), L('Complete uma Sequência de Terminais', 'Complete a Terminal Sequence')],
+    lights: ['💡', 0, L('Luz Própria', 'Lights On'), L('Acenda todo o Piso de Luzes', 'Light up a whole Light Floor')],
+    prisms: ['🔺', 0, L('Óptica Avançada', 'Advanced Optics'), L('Leve o laser até o receptor nos Prismas de Laser', 'Guide the laser to the receiver in Laser Prisms')],
+    upload: ['📡', 0, L('Download Concluído', 'Transfer Complete'), L('Conclua um Upload de Dados', 'Finish a Data Upload')],
+    bomb: ['💣', 1, L('Fio Vermelho', 'Red Wire'), L('Desarme uma Bomba-Relógio', 'Defuse a Time Bomb')],
+    wanted: ['🎯', 1, L('Xerife Neon', 'Neon Sheriff'), L('Capture um Procurado', 'Bring down a Wanted target')],
+    shards: ['💠', 0, L('Colecionador de Dados', 'Data Collector'), L('Recupere todos os fragmentos numa Caça aos Fragmentos', 'Recover every shard in a Shard Hunt')],
+    prisoner: ['⛓️', 0, L('Libertador', 'Liberator'), L('Liberte um Prisioneiro', 'Free a Prisoner')],
+    secret: ['🧱', 0, L('Olho Clínico', 'Keen Eye'), L('Encontre uma Sala Secreta', 'Find a Secret Room')],
+    gamble: ['🎰', 0, L('Apostador', 'High Roller'), L('Jogue na Máquina de Apostas', 'Play a Slot Machine')],
+  };
+  for (const k in evMedals) {
+    const [ic, t, n, ds] = evMedals[k];
+    add('ev_' + k, ic, t, n, ds, () => (has('evDone', k) ? 1 : 0));
+  }
+  add('ev25', '🎪', 1, L('Caçador de Eventos', 'Event Hunter'), L('Complete 25 eventos de andar', 'Complete 25 floor events'), () => total('events'), 25);
+  add('ev100', '🎡', 2, L('Rei dos Eventos', 'Event King'), L('Complete 100 eventos de andar', 'Complete 100 floor events'), () => total('events'), 100);
+  add('evAll', '🧩', 2, L('Mestre dos Quebra-Cabeças', 'Puzzle Master'), L(`Complete os ${Object.keys(evMedals).length} tipos de evento de andar`, `Complete all ${Object.keys(evMedals).length} kinds of floor event`), () => Object.keys(evMedals).filter((k) => has('evDone', k)).length, Object.keys(evMedals).length);
+  add('evPerfect', '🧠', 1, L('Memória Fotográfica', 'Photographic Memory'), L('Complete uma Sequência de Terminais sem errar', 'Complete a Terminal Sequence without a mistake'), () => (has('flags', 'evPerfect') ? 1 : 0));
+  add('evBombFast', '⏱️', 2, L('Sangue Frio', 'Cool Under Pressure'), L('Desarme uma Bomba-Relógio com metade do tempo sobrando', 'Defuse a Time Bomb with half the time left'), () => (has('flags', 'evBombFast') ? 1 : 0));
+  add('gambleMyth', '🍀', 2, L('Jackpot!', 'Jackpot!'), L('Ganhe um item mítico ou melhor na Máquina de Apostas', 'Win a mythic or better item from a Slot Machine'), () => (has('flags', 'gambleMyth') ? 1 : 0));
 
   // tempo de jogo (conta toda)
   const hrs = (v) => (v > 0 && v % 3600 === 0 ? `${v / 3600}h` : fmtPlay(v));

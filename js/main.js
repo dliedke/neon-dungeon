@@ -29,6 +29,7 @@ import {
 } from './ui.js';
 import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
+import { carveSecret, eventsSnapshot, eventsRestore, eventsResume } from './events.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
 const SETTINGS_KEY = 'neon-dungeon-settings-v1';
@@ -243,6 +244,7 @@ function clearWorld() {
   G.boss = null;
   G.bosses = [];
   G.final = null;
+  G.events = [];
   bossBar();
 }
 
@@ -270,6 +272,8 @@ function buildFloor(floor, withEnemies = true, resume = null) {
     G.dungeon = d;
     stage(3);
     placeFeatures(d, theme);
+    // Sala Secreta: escavada antes das malhas (a porta vira uma parede rachada)
+    if (withEnemies) carveSecret(d, floor);
     stage(4);
     const world = buildDungeonMeshes(d, theme);
     buildFeatures(d, theme, world);
@@ -417,6 +421,7 @@ function floorSnapshot() {
     clear: G.clear ? { ...G.clear } : null,
     nest: G.nest ? { left: G.nest.left, woke: G.nest.woke, done: G.nest.done } : null,
     shop: d.shop || null,
+    ev: eventsSnapshot(),
   };
 }
 
@@ -426,6 +431,7 @@ function resumeFloor(c) {
   if (!h || h.v !== 1 || h.floor !== c.floor || h.seed == null || isFinalFloor(h.floor) || !Array.isArray(h.foes)) return false;
   let d;
   try {
+    eventsResume(h);
     d = buildFloor(h.floor, true, h);
   } catch (err) {
     console.warn('resume', err);
@@ -481,6 +487,7 @@ function resumeFloor(c) {
   else G.contract = null;
   if (h.clear && G.clear) Object.assign(G.clear, h.clear);
   if (h.nest && G.nest) Object.assign(G.nest, h.nest);
+  eventsRestore(h.ev);
   if (h.shop) d.shop = h.shop;
   const p = G.player;
   const ok = isWalkable(d, h.x, h.z);
