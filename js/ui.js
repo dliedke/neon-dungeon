@@ -1222,6 +1222,8 @@ export function renderChar() {
     $('btn-buy-stim').textContent = `${G.isTouch ? 'Stim' : L('Comprar Stim', 'Buy Stim')} · ${L('cura 60%', 'heals 60%')} · ${price}¢ · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').title = L(`Stim: cura 60% da vida na hora e mais um pouco nos 4s seguintes. Use com F, apertando o analógico esquerdo no controle ou no botão verde no toque. Leve até ${MAX_STIMS}.`, `Stim: instantly heals 60% of your health, plus a bit more over the next 4s. Use it with F, by clicking the left stick on a gamepad or with the green touch button. Carry up to ${MAX_STIMS}.`);
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
+    // no controle cada botão mostra o atalho ({Y}: reciclar tudo)
+    $('btn-recycle-all').innerHTML = L('Reciclar tudo', 'Recycle all') + padKey('y');
     $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
     // atributos
     const s = p.stats;
@@ -1434,15 +1436,15 @@ function renderDetail() {
   }
   const c = G.char;
   // favorito: protegido contra reciclagem (um a um e em lote)
-  const fav = `<button class="btn small ghost fav-btn${it.fav ? ' on' : ''}" data-nav data-act="fav">${it.fav ? L('★ Desfavoritar', '★ Unfavorite') : L('☆ Favoritar', '☆ Favorite')}</button>`;
+  const fav = `<button class="btn small ghost fav-btn${it.fav ? ' on' : ''}" data-nav data-act="fav">${it.fav ? L('★ Desfavoritar', '★ Unfavorite') : L('☆ Favoritar', '☆ Favorite')}${padKey('rt')}</button>`;
   let actions = '';
   if (selected.where === 'inv') {
     const rec = it.fav
       ? `<button class="btn small danger" disabled>🔒 ${L('Favorito', 'Favorite')}</button>`
-      : `<button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)</button>`;
-    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}</button>${fav}${rec}</div>`;
+      : `<button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)${padKey('x')}</button>`;
+    actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}${padKey('a')}</button>${fav}${rec}</div>`;
   } else {
-    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}</button>${fav}</div>`;
+    actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}${padKey('a')}</button>${fav}</div>`;
   }
   const cur = selected.where === 'inv' ? c.equip[it.slot] : null;
   if (cur) {
