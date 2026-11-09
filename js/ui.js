@@ -430,8 +430,8 @@ export function showHUD() {
   refreshSkillBar();
 }
 
-// Índices das habilidades em cada botão: [ataque básico, 1, 2, 3, 4, 5, 6, 7]
-const barSkills = () => [0, ...G.char.slots];
+// Índices das habilidades em cada botão: [⚔ (ataque básico ou outro poder), 1, 2, 3, 4, 5, 6, 7]
+const barSkills = () => [G.char.atk || 0, ...G.char.slots];
 
 export function refreshSkillBar() {
   const C = CLASSES[G.char.cls];
@@ -443,7 +443,7 @@ export function refreshSkillBar() {
     const tb = k === 0 ? $('tb-primary') : $('tb-s' + k);
     tb.querySelector('.icon').innerHTML = icon;
     tb.classList.toggle('empty-slot', !sk);
-    if (k > 0) $('sk' + k).querySelector('.cost').textContent = sk ? skillCost(i) || '' : '';
+    $('sk' + k).querySelector('.cost').textContent = sk && i ? skillCost(i) || '' : '';
   });
   refreshKeyLabels();
 }
@@ -1271,9 +1271,16 @@ const TIERS = [
   { label: [40, 70], adv: true },
 ];
 const tierIdx = (C, t) => (t.late || t.adv ? C.skills.map((sk, i) => ((t.late ? sk.late : sk.adv) ? i : -1)).filter((i) => i >= 0) : t.idx);
+// k = -1 é o ⚔ (botão de ataque: A no controle, Espaço/clique no teclado)
 function slotKey(k) {
-  if (G.lastInput === 'pad') return glyphText(['x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k]);
-  return String(k + 1);
+  if (G.lastInput === 'pad') return glyphText(['a', 'x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k + 1]);
+  return k < 0 ? '⚔' : String(k + 1);
+}
+// em qual botão o poder está: -1 no ⚔, 0–6 nos 7 botões, null fora da barra
+function slotOf(c, i) {
+  if ((c.atk || 0) === i) return -1;
+  const k = c.slots.indexOf(i);
+  return k >= 0 ? k : null;
 }
 
 // Desbloqueia ou evolui o poder (botão de confirmar do controle ou clique duplo)
@@ -1315,12 +1322,12 @@ function treeRefund(i) {
   });
 }
 
-// Coloca o poder no próximo botão (1 → 2 → … → 6)
+// Coloca o poder no próximo botão (1 → 2 → … → 7 → ⚔ → 1)
 function treeCycleSlot(i) {
   const c = G.char;
-  if (i === 0 || !(c.skills[i] > 0) || CLASSES[c.cls].skills[i].passive) return sfx.deny();
-  const cur = c.slots.indexOf(i);
-  assignSlot((cur + 1) % c.slots.length, i);
+  if (!(c.skills[i] > 0) || CLASSES[c.cls].skills[i].passive) return sfx.deny();
+  const cur = slotOf(c, i) ?? -1;
+  assignSlot(cur + 1 >= c.slots.length ? -1 : cur + 1, i);
   sfx.click();
   refreshSkillBar();
   renderTree();
@@ -1345,12 +1352,12 @@ function renderTree() {
       const locked = r === 0;
       const canLearn = locked && c.level >= req && c.skillPoints > 0;
       const canUp = !locked && r < MAX_RANK && c.skillPoints > 0;
-      const slot = c.slots.indexOf(i);
+      const slot = slotOf(c, i);
       const state = locked ? (c.level >= req ? 'available' : 'locked') : 'learned';
       html += `<button class="tnode ${state}${sk.passive ? ' passive' : ''}${treeSel === i ? ' sel' : ''}${canLearn || canUp ? ' can' : ''}" data-nav data-node="${i}" title="${sk.name}">
         <span class="ticon">${iconSvg(sk.icon)}</span>
         <span class="tbadge">${locked ? (c.level >= req ? '+' : `🔒${req}`) : `${r}/${MAX_RANK}`}</span>
-        ${slot >= 0 ? `<span class="tslot">${slotKey(slot)}</span>` : i === 0 ? `<span class="tslot">⚔</span>` : ''}${sk.passive ? `<span class="tpas">${L('PASSIVO', 'PASSIVE')}</span>` : ''}
+        ${slot != null ? `<span class="tslot">${slotKey(slot)}</span>` : ''}${sk.passive ? `<span class="tpas">${L('PASSIVO', 'PASSIVE')}</span>` : ''}
       </button>`;
     }
     html += '</div></div>';
@@ -1374,8 +1381,10 @@ function renderTree() {
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');
   let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
-  if (i > 0 && !locked && !sk.passive) {
-    actions += `<div class="slot-pick"><span>${pg('x')}${L('Colocar no botão:', 'Assign to button:')}</span>${c.slots.map((_, k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
+  if (!locked && !sk.passive) {
+    // o primeiro é o ⚔ (botão de ataque): um poder nele troca de lugar com o ataque básico
+    const cur = slotOf(c, i);
+    actions += `<div class="slot-pick"><span>${pg('x')}${L('Colocar no botão:', 'Assign to button:')}</span>${[-1, ...c.slots.keys()].map((k) => `<button class="btn small ${cur === k ? '' : 'ghost'}" data-nav data-slot="${k}" title="${k < 0 ? L('Botão de ataque', 'Attack button') : ''}">${slotKey(k)}</button>`).join('')}</div>`;
   }
   const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-detail">

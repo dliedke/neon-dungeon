@@ -32,7 +32,7 @@ export const MAX_STIMS = 9;
 export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
-    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, ...Array(SLOT_N - 1).fill(null)], skillPoints: 0, spV: 2,
+    skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, ...Array(SLOT_N - 1).fill(null)], atk: 0, skillPoints: 0, spV: 2,
     equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
   };
 }
@@ -376,16 +376,18 @@ function setMoveTarget(p, x, z) {
   p.target = null;
 }
 
-function tryUseSkill(p, i) {
+// quiet: segurando o botão de ataque com um poder nele, tenta de novo sem som de erro a cada quadro
+function tryUseSkill(p, i, quiet = false) {
   const C = CLASSES[G.char.cls];
   const sk = C.skills[i];
   if (!sk || sk.passive || !(G.char.skills[i] > 0)) return;
   if (p.cds[i] > 0) {
-    sfx.deny();
+    if (!quiet) sfx.deny();
     return;
   }
   const cost = skillCost(i);
   if (p.en < cost) {
+    if (quiet) return;
     sfx.deny();
     toast(L('Energia insuficiente', 'Not enough energy'), 'warn', 'en');
     return;
@@ -393,7 +395,7 @@ function tryUseSkill(p, i) {
   computeAim(p);
   const ok = SKILL_FN[sk.id](p, G.char.skills[i]);
   if (ok === false) {
-    sfx.deny();
+    if (!quiet) sfx.deny();
     return;
   }
   p.en -= cost;
@@ -401,6 +403,11 @@ function tryUseSkill(p, i) {
   p.facing = Math.atan2(p.aim.dx, p.aim.dz);
   p.lockFace = 0.25;
   p.inCombat = 4;
+}
+
+function emptySlotWarn() {
+  sfx.deny();
+  toast(L('Espaço vazio: escolha um poder na árvore de habilidades (I).', 'Empty slot: pick a power in the skill tree (I).'), 'warn', 'slot');
 }
 
 // Rede de segurança: se o jogador terminar dentro de uma parede, volta ao chão mais próximo
@@ -559,6 +566,16 @@ export function updatePlayer(dt) {
   p.moveDir.x = vx;
   p.moveDir.z = vz;
 
+  // ---------- ⚔ com outro poder ----------
+  // o botão de ataque (Espaço/clique no inimigo, A no controle, botão grande no toque) pode ter um
+  // poder no lugar do ataque básico; aí o ataque básico vai para um dos 7 botões e repete enquanto segura
+  const atk = c.atk || 0;
+  if (atk) {
+    if (wantAttack) tryUseSkill(p, atk, !Input.pressed('primary'));
+    const k0 = c.slots.indexOf(0);
+    wantAttack = k0 >= 0 && !!Input.held['s' + (k0 + 1)];
+  }
+
   // ---------- ataque básico ----------
   // Lâmina: se o inimigo mirado estiver fora do alcance da espada, avança até ele
   if (wantAttack && (C.melee || C.range < 6) && p.aimEnemy && !vx && !vz && !p.dash && !p.leap) {
@@ -592,11 +609,8 @@ export function updatePlayer(dt) {
   ['s1', 's2', 's3', 's4', 's5', 's6', 's7'].forEach((a, k) => {
     if (!Input.pressed(a)) return;
     const i = c.slots[k];
-    if (i == null) {
-      sfx.deny();
-      toast(L('Espaço vazio: escolha um poder na árvore de habilidades (I).', 'Empty slot: pick a power in the skill tree (I).'), 'warn', 'slot');
-      return;
-    }
+    if (i == null) return emptySlotWarn();
+    if (i === 0) return; // ataque básico neste botão: dispara lá em cima, enquanto segura
     tryUseSkill(p, i);
   });
   if (Input.pressed('stim')) useStim();
@@ -837,16 +851,42 @@ export function refundSkill(i) {
   if (back <= 0) return 0;
   c.skills[i] = minRank(i);
   c.skillPoints += back;
-  if (!c.skills[i]) c.slots = c.slots.map((k) => (k === i ? null : k));
+  if (!c.skills[i]) {
+    c.slots = c.slots.map((k) => (k === i ? null : k));
+    // estava no ⚔: o ataque básico volta para ele
+    if (c.atk === i) {
+      c.atk = 0;
+      c.slots = c.slots.map((k) => (k === 0 ? null : k));
+    }
+  }
   refreshStats();
   return back;
 }
 
+// Coloca o poder i num botão: slot -1 é o ⚔ (botão de ataque), 0–6 são os 7 botões de poder.
+// c.atk guarda o que está no ⚔ (0 = ataque básico) e ele nunca fica vazio. Se o poder já estava em
+// outro botão, troca de lugar com o que estava no destino; o ataque básico não some da barra se houver espaço.
 export function assignSlot(slot, i) {
   const c = G.char;
   if (i > 0 && !(c.skills[i] > 0)) return;
   if (CLASSES[c.cls].skills[i]?.passive) return;
-  const prev = c.slots.indexOf(i);
-  if (prev >= 0) c.slots[prev] = c.slots[slot];
+  const atk = c.atk || 0;
+  const prev = atk === i ? -1 : c.slots.indexOf(i);
+  if (prev === slot) return;
+  if (slot < 0) {
+    // para o ⚔: o que estava nele vai para o botão de onde o poder saiu (ou para um espaço livre)
+    if (prev >= 0) c.slots[prev] = atk;
+    else if (c.slots.includes(null)) c.slots[c.slots.indexOf(null)] = atk;
+    c.atk = i;
+    return;
+  }
+  const old = c.slots[slot];
+  if (i === 0 && atk === 0 && old == null) return; // o ⚔ nunca fica vazio
   c.slots[slot] = i;
+  if (prev >= 0) c.slots[prev] = old;
+  else if (prev === -1 && atk === i) {
+    // saiu do ⚔: o que estava no destino vai para ele (se o destino estava vazio, volta o ataque básico)
+    c.atk = old ?? 0;
+    if (old == null) c.slots = c.slots.map((k, j) => (k === 0 && j !== slot ? null : k));
+  } else if (old === 0 && c.slots.includes(null)) c.slots[c.slots.indexOf(null)] = 0;
 }

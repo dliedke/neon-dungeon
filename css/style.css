@@ -843,8 +843,8 @@ body.touch .tbtn.mid.empty-slot { display: none; }
 .tstatus.lock { color: var(--muted); }
 .td-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .td-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-.slot-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
-.slot-pick .btn { min-width: 44px; }
+.slot-pick { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.slot-pick .btn { min-width: 40px; padding-left: 8px; padding-right: 8px; letter-spacing: 0.04em; }
 body.pad .tnode.gp-focus { outline: 3px solid #fff !important; outline-offset: 3px; transform: scale(1.14); }
 .skill.empty-slot .icon, .tbtn.empty-slot .icon { color: var(--muted); filter: none; }
 @media (max-width: 760px), (max-height: 520px) {

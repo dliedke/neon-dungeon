@@ -534,9 +534,12 @@ function sanitizeChar(c) {
   // 7 espaços de poderes (antes eram 3, depois 6); passivos nunca ficam em botões
   c.slots = c.slots.slice(0, SLOT_N).map((i) => (i != null && c.skills[i] > 0 && !CLASSES[c.cls].skills[i]?.passive ? i : null));
   while (c.slots.length < SLOT_N) c.slots.push(null);
+  // ⚔: o que está no botão de ataque (0 = ataque básico; saves antigos não têm)
+  if (!(c.skills[c.atk] > 0) || CLASSES[c.cls].skills[c.atk]?.passive) c.atk = 0;
+  c.slots = c.slots.map((i) => (i === c.atk ? null : i));
   // preenche os espaços vazios com poderes já aprendidos que estavam fora da barra
   CLASSES[c.cls].skills.forEach((sk, i) => {
-    if (i === 0 || sk.passive || !(c.skills[i] > 0) || c.slots.includes(i)) return;
+    if (i === 0 || i === c.atk || sk.passive || !(c.skills[i] > 0) || c.slots.includes(i)) return;
     const free = c.slots.indexOf(null);
     if (free >= 0) c.slots[free] = i;
   });
