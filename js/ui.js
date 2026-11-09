@@ -448,6 +448,12 @@ export function refreshKeyLabels() {
   labels.forEach((l, k) => ($('sk' + k).querySelector('.key').innerHTML = l));
   $('skstim').querySelector('.key').innerHTML = pad ? glyph('ls') : 'F';
   mmHint();
+  // com a árvore aberta, os ícones dos botões trocam na hora (teclado ↔ controle)
+  if (!$('panel-char').classList.contains('hidden') && currentTab === 'skills') {
+    const node = focused && focused.dataset.node;
+    renderTree();
+    if (pad) restoreFocus(`[data-node="${node ?? treeSel}"]`);
+  }
 }
 
 // Selo de lupa no minimapa: mostra o botão que abre o mapa inteiro e pulsa até o jogador abrir uma vez
@@ -532,6 +538,9 @@ export function updateHUD(dt) {
   setScale($('hp-shield'), p.shield / s.maxHp);
   setScale($('en-fill'), p.en / s.maxEn);
   setScale($('xp-fill'), c.level >= MAX_LEVEL ? 1 : c.xp / xpNeeded(c.level));
+  // números da XP: atual / necessária e a porcentagem (no nível máximo, só avisa)
+  if (c.level >= MAX_LEVEL) setText('xp-text', L('XP MÁXIMA', 'MAX XP'));
+  else { const need = xpNeeded(c.level); setText('xp-text', `XP ${fmt(c.xp)} / ${fmt(need)} (${Math.floor((c.xp / need) * 100)}%)`); }
   setText('hp-text', `${Math.ceil(p.hp)} / ${s.maxHp}`);
   setText('en-text', `${Math.floor(p.en)} / ${s.maxEn}`);
   setText('lvl', String(c.level));
@@ -1351,11 +1360,14 @@ function renderTree() {
   const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
   // devolver os pontos deste poder para reaplicar em outros
   const back = r - minRank(i);
-  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${L(`↺ Devolver pontos (${back})`, `↺ Refund points (${back})`)}</button>` : ''}</div>`;
+  // no controle, cada ação mostra o botão que a faz direto do poder selecionado
+  const pad = G.lastInput === 'pad';
+  const pg = (k) => (pad ? glyph(k) + ' ' : '');
+  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
   if (i > 0 && !locked && !sk.passive) {
-    actions += `<div class="slot-pick"><span>${L('Colocar no botão:', 'Assign to button:')}</span>${c.slots.map((_, k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
+    actions += `<div class="slot-pick"><span>${pg('x')}${L('Colocar no botão:', 'Assign to button:')}</span>${c.slots.map((_, k) => `<button class="btn small ${c.slots[k] === i ? '' : 'ghost'}" data-nav data-slot="${k}">${slotKey(k)}</button>`).join('')}</div>`;
   }
-  const tip = G.lastInput === 'pad' ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão', '{A} on a power: unlock/upgrade · {X}: change button')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
+  const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
     <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
@@ -1698,6 +1710,7 @@ export function uiPadUpdate() {
     else focusInvCell(idx);
   }
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
+  if (Input.nav('rt') && focused && focused.matches('[data-node]')) treeRefund(+focused.dataset.node); // {RT}: devolver os pontos do poder
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
   else if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
   if (Input.nav('b')) uiBack(root);

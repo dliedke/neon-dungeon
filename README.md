@@ -42,7 +42,7 @@ If two devices disagree, each class keeps the most advanced character and the be
 
 Every class has a **skill tree with 14 active powers and 6 passive powers** (the Netrunner has 13 actives plus its own Net Jump). You start with only the basic attack and one skill;
 new powers unlock as you level up (levels 2, 4, 5, 7, 9, 12 and 15) and cost one skill point to learn. Every level grants **2 skill points**.
-Points also upgrade each power up to rank 15, and you can refund all the points of any power to spend them elsewhere. Pick which **6 powers** go on your 1–6 buttons
+Points also upgrade each power up to rank 15, and you can refund all the points of any power to spend them elsewhere (on a gamepad: A upgrade, X change button, RT refund on the selected power). Pick which **6 powers** go on your 1–6 buttons
 (X / Y / B / LB / RB / LT on a gamepad).
 
 Four **advanced powers** unlock at levels 40, 50, 60 and 70: two attacks and two defenses per class (see the table below).

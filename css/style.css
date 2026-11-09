@@ -66,9 +66,9 @@ button { font-family: inherit; }
 .bar.hp .shield { background: rgba(120, 200, 255, 0.55); }
 .bar.en { height: 12px; }
 .bar.en .fill { background: linear-gradient(90deg, #005bff, #00c8ff); box-shadow: 0 0 10px #00c8ff; }
-/* XP para o próximo nível: linha fina na borda de baixo da tela, de ponta a ponta */
+/* XP para o próximo nível: faixa fina na borda de baixo da tela, de ponta a ponta, com os números no meio */
 #xp-bar {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 4px; overflow: hidden;
+  position: absolute; left: 0; right: 0; bottom: 0; height: 12px; overflow: hidden;
   background: rgba(6, 6, 18, 0.75); border-top: 1px solid rgba(194, 123, 255, 0.25);
 }
 #xp-bar .fill {
@@ -79,6 +79,10 @@ button { font-family: inherit; }
 #xp-bar::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.55) calc(10% - 1px) 10%);
+}
+#xp-bar span {
+  position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-size: 10px; line-height: 1; font-weight: 700;
+  letter-spacing: 0.5px; color: #f1e6ff; text-shadow: 0 0 2px #000, 0 0 3px #000, 0 1px 1px #000; white-space: nowrap;
 }
 .bar span {
   position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; line-height: 1;
