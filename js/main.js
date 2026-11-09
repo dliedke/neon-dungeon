@@ -33,6 +33,8 @@ import { carveSecret, eventsSnapshot, eventsRestore, eventsResume } from './even
 import { playFinale, closeFinale } from './finale.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
+// aba que estava jogando quando a página foi recarregada (classe), para voltar direto ao jogo
+const RESUME_KEY = 'neon-dungeon-resume';
 const SETTINGS_KEY = 'neon-dungeon-settings-v1';
 
 const canvas = document.getElementById('game');
@@ -839,6 +841,22 @@ function boot() {
   achCheck(); // medalhas já conquistadas por saves antigos
   syncStart(back);
   addEventListener('beforeunload', () => G.char && saveGame());
+  // recarregar a página no meio da partida volta direto para o jogo (só nesta aba: sessionStorage)
+  addEventListener('pagehide', () => {
+    try {
+      if (G.char && !['menu', 'dying', 'dead', 'ending', 'finale'].includes(G.mode)) sessionStorage.setItem(RESUME_KEY, G.char.cls);
+      else sessionStorage.removeItem(RESUME_KEY);
+    } catch (_) {}
+  });
+  let live = null;
+  try {
+    live = sessionStorage.getItem(RESUME_KEY);
+    sessionStorage.removeItem(RESUME_KEY);
+  } catch (_) {}
+  if (live && CLASSES[live] && G.save.slots[live]) {
+    document.getElementById('menu').classList.add('hidden');
+    startGame(live, false);
+  }
   window.__G = G; // útil para depuração no console
   window.__classes = CLASSES;
   window.__dbg = {
