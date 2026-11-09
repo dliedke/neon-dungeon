@@ -348,10 +348,11 @@ function placeStash(d) {
 }
 
 
-// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...) e às vezes nos outros
-export const smithFloor = (f) => f >= 2 && !isFinalFloor(f) && (f % 3 === 1 || chance(0.3));
+// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...), logo no início do andar final e às vezes nos outros
+export const smithFloor = (f) => f >= 2 && (isFinalFloor(f) || f % 3 === 1 || chance(0.3));
 function placeSmith(d, rooms) {
   if (!G.char || !smithFloor(d.floor)) return;
+  if (isFinalFloor(d.floor) && placeSmithAtStart(d)) return;
   const ok = rooms.filter((r) => r !== d.exitRoom && !r.safe && r.w >= 6 && r.h >= 6);
   const list = shuffle((ok.length ? ok : rooms.filter((r) => r !== d.exitRoom && !r.safe)).slice());
   const seen = reachMap(d);
@@ -362,6 +363,40 @@ function placeSmith(d, rooms) {
     d.props.push({ type: 'smith', x: pt.x, z: pt.z, near: false, t: 0 });
     return;
   }
+}
+
+// Andar final: o ferreiro fica a poucos passos do início, fora da arena (dá para forjar antes da batalha)
+function placeSmithAtStart(d) {
+  const { W, H, grid, feat } = d;
+  const seen = reachMap(d);
+  const sx = Math.floor(d.start.x);
+  const sz = Math.floor(d.start.z);
+  let best = null;
+  let bd = Infinity;
+  for (let j = sz - 8; j <= sz + 8; j++)
+    for (let i = sx - 8; i <= sx + 8; i++) {
+      if (i < 3 || j < 3 || i >= W - 3 || j >= H - 3 || !seen[j * W + i]) continue;
+      const x = i + 0.5;
+      const z = j + 0.5;
+      const dist = Math.hypot(x - d.start.x, z - d.start.z);
+      if (dist < 4 || inArena(d, x, z) || Math.hypot(x - d.exit.x, z - d.exit.z) < 6) continue;
+      let free = true;
+      for (let dy = -1; dy <= 1 && free; dy++)
+        for (let dx = -1; dx <= 1 && free; dx++) {
+          const k = (j + dy) * W + i + dx;
+          if (grid[k] !== TILE.FLOOR || feat[k]) free = false;
+        }
+      if (!free || d.props.some((p) => Math.hypot(p.x - x, p.z - z) < 2)) continue;
+      // o mais perto possível de uns 5 passos do início
+      const sc = Math.abs(dist - 5);
+      if (sc < bd) {
+        bd = sc;
+        best = { x, z };
+      }
+    }
+  if (!best) return false;
+  d.props.push({ type: 'smith', x: best.x, z: best.z, near: false, t: 0 });
+  return true;
 }
 
 // Ladrilhos alcançáveis a pé a partir do início do andar
