@@ -1778,6 +1778,7 @@ function buy(what) {
 export function openForge() {
   if (G.mode !== 'play') return;
   G.mode = 'forge';
+  G.save.smithSeen = true;
   $('panel-forge').classList.remove('hidden');
   clearFocus();
   sfx.forge(false);

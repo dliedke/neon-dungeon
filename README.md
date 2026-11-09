@@ -221,7 +221,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Sandals of Hermes** (feet: +20% movement speed, +8% dodge) and **Ambrosia** (chip: below 30% health, or on a fatal blow, heals 50% and grants 2 s of invulnerability, every 60 s).
     Wearing all 6 unlocks **Wrath of the Gods**: every 6 s, 5 lightning bolts strike nearby enemies.
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
-  - **Blacksmith:** appears on floors 4, 7, 10…, on floor 30 and sometimes on others, always a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
+  - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
 import { rr, ri, rnd, pick, chance, shuffle, isolateRandom } from './utils.js';
-import { isWalkableTile, isWalkable, randomFloorInRoom, tileAt, isFinalFloor } from './dungeon.js';
+import { isWalkableTile, isWalkable, randomFloorInRoom, tileAt } from './dungeon.js';
 import { damagePlayer, hitEnemy, damageEnemy, enemiesInRadius } from './combat.js';
 import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
 import { sfx } from './audio.js';
@@ -348,11 +348,9 @@ function placeStash(d) {
 }
 
 
-// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...), no andar final e às vezes nos outros;
-// fica no início do andar, ao lado do baú (se não couber, numa sala qualquer)
-export const smithFloor = (f) => f >= 2 && (isFinalFloor(f) || f % 3 === 1 || chance(0.3));
+// Ferreiro: em todo andar, no início, ao lado do baú (se não couber, perto do início ou numa sala qualquer)
 function placeSmith(d, rooms) {
-  if (!G.char || !smithFloor(d.floor)) return;
+  if (!G.char) return;
   // do lado do baú; sem espaço lá, perto do início mesmo
   if (placeSmithAtStart(d, true) || placeSmithAtStart(d, false)) return;
   const ok = rooms.filter((r) => r !== d.exitRoom && !r.safe && r.w >= 6 && r.h >= 6);
