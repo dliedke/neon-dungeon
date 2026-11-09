@@ -112,7 +112,7 @@ Every floor changes biome (13 in total), each with its own map layout, lighting 
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Grid of rooms | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one) |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 

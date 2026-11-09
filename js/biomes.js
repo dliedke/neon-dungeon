@@ -499,7 +499,9 @@ function upgradeFor(slot, floor, minRarity) {
   for (let t = 0; t < 80; t++) {
     // a cada tentativa sem sucesso, o nível do item sobe um pouco
     const ilvl = Math.max(floor + 1, (cur ? cur.ilvl : 1)) + Math.floor(t / 8);
-    const rarity = Math.max(minRarity, Math.min(3, (cur ? cur.rarity : 0) + (t > 30 ? 1 : 0)), t > 50 ? 3 : 0);
+    // nunca abaixo da raridade equipada: com mítico oferece mítico melhor, com divino, divino melhor
+    const cr = cur ? cur.rarity : 0;
+    const rarity = Math.max(minRarity, cr, Math.min(3, cr + (t > 30 ? 1 : 0)), t > 50 ? 3 : 0);
     const it = makeItem({ ilvl, rarity, slot, cls: c.cls });
     if (!best || itemScore(it) > itemScore(best)) best = it;
     if (itemScore(it) >= curScore * 1.1 && isUpgrade(it, c.equip)) {
@@ -508,7 +510,7 @@ function upgradeFor(slot, floor, minRarity) {
     }
   }
   const gain = curScore > 0 ? Math.max(0, itemScore(best) / curScore - 1) : 1;
-  best.price = Math.round((40 + floor * 25) * [1, 1.6, 3, 6][best.rarity] * (1 + Math.min(gain, 2)));
+  best.price = Math.round((40 + floor * 25) * [1, 1.6, 3, 6, 7, 8][best.rarity] * (1 + Math.min(gain, 0.6)));
   return best;
 }
 
