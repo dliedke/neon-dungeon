@@ -467,6 +467,8 @@ body.pad .cell.empty { pointer-events: auto; }
 .sact-hint { flex-basis: 100%; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 .sact-hint b { color: #e8e6ff; font-weight: 700; }
 .cell .fav { position: absolute; left: 3px; top: 1px; color: #ffd23d; font-size: 14px; line-height: 1; text-shadow: 0 0 6px #ffd23d, 0 0 2px #000; pointer-events: none; }
+/* item aprimorado no ferreiro: +N pequeno no canto de baixo */
+.cell .plus { position: absolute; left: 2px; bottom: 1px; color: #ff9a3d; font-size: 10px; font-weight: 700; line-height: 1; text-shadow: 0 0 4px #ff7a1a, 0 0 2px #000, 0 0 2px #000; pointer-events: none; }
 /* itens melhores que o equipado: brilho verde pulsante */
 .cell.better { animation: betterPulse 1.4s ease-in-out infinite; }
 .cell.better svg { filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor); }

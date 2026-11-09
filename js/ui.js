@@ -1494,8 +1494,9 @@ function toggleFav(it) {
   saveGame();
 }
 
+// marcas da célula: ★ favorito (canto de cima) e +N do ferreiro (canto de baixo)
 function favMark(it) {
-  return it.fav ? '<span class="fav">★</span>' : '';
+  return (it.fav ? '<span class="fav">★</span>' : '') + (it.plus > 0 ? `<span class="plus">+${it.plus}</span>` : '');
 }
 
 // itens míticos e favoritos nunca são reciclados em lote
