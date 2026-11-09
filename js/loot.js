@@ -219,9 +219,10 @@ export function spawnPickup(type, x, z, data) {
       burst(x, 1, z, DIV_COLOR, 90, 9, 0.1, 1.2, { up: 3 });
       G.shake = Math.max(G.shake, 0.45);
     } else if (data.item.rarity === MYTHIC) {
-      // o grande momento: som próprio, faixa no meio da tela e explosão de luz
+      // o grande momento: som próprio, faixa no meio da tela e explosão de luz. Do Brutal para cima
+      // (ou no Pesadelo/Inferno) os míticos caem a toda hora: fica só o aviso pequeno, sem a faixa
       sfx.mythic();
-      banner(L('✦ ITEM MÍTICO ✦', '✦ MYTHIC ITEM ✦'), name);
+      if (rewardRank() < 4 && !tierOf().off) banner(L('✦ ITEM MÍTICO ✦', '✦ MYTHIC ITEM ✦'), name);
       toast(`<b style="color:${RARITY[MYTHIC].color}">✦ ${L('MÍTICO', 'MYTHIC')}:</b> ${name}<br><small>${MYTHICS[data.item.myth].desc}</small>`, 'myth');
       ringFx(x, z, 4, MYTH_COLOR, 0.8, { from: 0.4 });
       ringFx(x, z, 2.4, 0xffffff, 0.5, { from: 0.2 });

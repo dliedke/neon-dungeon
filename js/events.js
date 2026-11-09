@@ -30,7 +30,7 @@ export const EVENT_INFO = {
   lights: { icon: '💡', css: '#7affc8', name: L('Piso de Luzes', 'Light Floor') },
   prisms: { icon: '🔺', css: '#ff4d75', name: L('Prismas de Laser', 'Laser Prisms') },
   upload: { icon: '📡', css: '#6b93ff', name: L('Upload de Dados', 'Data Upload') },
-  bomb: { icon: '💣', css: '#ff7a1a', name: L('Bomba-Relógio', 'Time Bomb') },
+  bomb: { icon: '💣', css: '#ff7a1a', name: L('Bomba-Relógio', 'Time Bomb'), short: L('Bomba', 'Bomb') },
   wanted: { icon: '🎯', css: '#ffaa00', name: L('Procurado', 'Wanted') },
   shards: { icon: '💠', css: '#7affc8', name: L('Caça aos Fragmentos', 'Shard Hunt'), short: L('Fragmentos', 'Shards') },
   prisoner: { icon: '⛓️', css: '#c08aff', name: L('Prisioneiro', 'Prisoner') },
@@ -688,7 +688,7 @@ const bomb = {
       z = c.z;
     }
     const limit = Math.round(Math.min(240, Math.max(75, 35 + (dist * 1.6) / 4.6 + 3 * HOLD)) / 5) * 5;
-    const E = { kind: 'bomb', x: null, z: null, cons, t: limit, limit, delay: 8, st: 'armed', beep: 0 };
+    const E = { kind: 'bomb', x: null, z: null, cons, t: limit, limit, delay: 8, st: 'armed', beep: 0, tipT: 0, hinted: false };
     for (const c of cons) {
       c.g = groupAt(c.x, c.z);
       const con = makeConsole(c.g, 0, -0.1, 0xff2244, 0, 5);
@@ -707,11 +707,23 @@ const bomb = {
     const p = G.player;
     if (!p.alive || G.mode !== 'play') return;
     const blink = Math.sin(G.t * (E.t < 15 ? 18 : 8)) > 0;
+    E.tipT -= dt;
     for (const c of E.cons) {
       if (c.off) continue;
       setLight(c.scr, 0xff2244, blink ? 2.4 : 0.6);
-      const on = Math.hypot(p.x - c.x, p.z - c.z) < 1.3;
+      const dc = Math.hypot(p.x - c.x, p.z - c.z);
+      const on = dc < 1.3;
       c.hold = on ? c.hold + dt : Math.max(0, c.hold - dt * 2);
+      // explicação na tela: perto do console diz o que fazer; em cima mostra o progresso
+      if (dc < 7 && E.tipT <= 0) {
+        E.tipT = on ? 0.8 : 1.6;
+        if (on) floatText(c.x, 2.3, c.z, L(`DESARMANDO ${Math.min(99, Math.floor((c.hold / HOLD) * 100))}%`, `DISARMING ${Math.min(99, Math.floor((c.hold / HOLD) * 100))}%`), 'up');
+        else floatText(c.x, 2.3, c.z, c.hold > 0 ? L('▼ VOLTE AO CÍRCULO', '▼ STEP BACK IN') : L('▼ FIQUE NO CÍRCULO', '▼ STAND IN THE CIRCLE'), 'info');
+      }
+      if (dc < 7 && !E.hinted) {
+        E.hinted = true;
+        toast(L(`💣 <b>Como desarmar:</b> entre no círculo vermelho do console e fique dentro dele por 2,5s, até o círculo encher de verde. Se sair antes, o progresso volta. Faça isso nos 3 consoles antes do tempo acabar.`, `💣 <b>How to disarm:</b> step into the console's red circle and stay inside for ${HOLD}s, until it fills up green. If you leave early, the progress drains. Do it on all 3 consoles before time runs out.`), 'leg');
+      }
       const k = Math.min(1, c.hold / HOLD) * 1.2;
       c.fill.scale.set(Math.max(0.001, k), 1, Math.max(0.001, k));
       if (on && Math.random() < dt * 10) burst(c.x, 0.9, c.z, 0x39ff88, 1, 1.5, 0.05, 0.4, { up: 1 });
@@ -755,7 +767,7 @@ const bomb = {
     E.st = 'failed';
     sfx.deny();
   },
-  hud: (E) => `${E.cons.filter((c) => c.off).length}/3 · <span style="color:${E.t < 15 ? '#ff4466' : 'inherit'}">${mmss(E.t)}</span>`,
+  hud: (E) => `${L('consoles', 'consoles')} ${E.cons.filter((c) => c.off).length}/3 · <span style="color:${E.t < 15 ? '#ff4466' : 'inherit'}">${mmss(E.t)}</span>`,
   save: (E) => ({ t: Math.round(E.t), off: E.cons.map((c) => (c.off ? 1 : 0)).join('') }),
   load(E, s) {
     E.t = Math.max(1, +s.t || E.limit);
@@ -770,7 +782,7 @@ const bomb = {
       if (s.st === 'failed') for (const c of E.cons) if (!c.off) setLight(c.scr, 0x333344, 0.3);
     }
   },
-  intro: (E) => L(`uma bomba foi armada! Desarme os 3 consoles (marcados no mapa) em <b>${mmss(E.limit)}</b>: fique em cima de cada um por ${HOLD}s.`, `a bomb has been armed! Disarm the 3 consoles (marked on the map) within <b>${mmss(E.limit)}</b>: stand on each one for ${HOLD}s.`),
+  intro: (E) => L(`uma bomba foi armada! Ache os 3 consoles vermelhos (◆ laranja no mapa e setas na borda da tela) e desarme cada um ficando dentro do círculo dele por 2,5s, até encher de verde. Você tem <b>${mmss(E.limit)}</b>; se o tempo acabar, ela explode.`, `a bomb has been armed! Find the 3 red consoles (orange ◆ on the map and arrows at the screen edge) and disarm each one by staying inside its circle for ${HOLD}s, until it fills up green. You have <b>${mmss(E.limit)}</b>; if time runs out, it blows up.`),
 };
 
 // ==================================================================

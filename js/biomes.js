@@ -311,8 +311,8 @@ export function placeFeatures(d, theme) {
   }
   // o estoque depende do equipamento atual: não pode mexer na sequência da semente do andar
   if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = isolateRandom(() => makeShopStock(d.floor));
-  placeSmith(d, rooms);
   placeStash(d);
+  placeSmith(d, rooms);
 }
 
 // Mercador ou ferreiro a menos de `rad` do ponto (fendas, santuários e cofres não podem ficar em cima deles)
@@ -348,11 +348,13 @@ function placeStash(d) {
 }
 
 
-// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...), logo no início do andar final e às vezes nos outros
+// Ferreiro: sempre no andar depois de cada chefe (4, 7, 10...), no andar final e às vezes nos outros;
+// fica no início do andar, ao lado do baú (se não couber, numa sala qualquer)
 export const smithFloor = (f) => f >= 2 && (isFinalFloor(f) || f % 3 === 1 || chance(0.3));
 function placeSmith(d, rooms) {
   if (!G.char || !smithFloor(d.floor)) return;
-  if (isFinalFloor(d.floor) && placeSmithAtStart(d)) return;
+  // do lado do baú; sem espaço lá, perto do início mesmo
+  if (placeSmithAtStart(d, true) || placeSmithAtStart(d, false)) return;
   const ok = rooms.filter((r) => r !== d.exitRoom && !r.safe && r.w >= 6 && r.h >= 6);
   const list = shuffle((ok.length ? ok : rooms.filter((r) => r !== d.exitRoom && !r.safe)).slice());
   const seen = reachMap(d);
@@ -365,9 +367,11 @@ function placeSmith(d, rooms) {
   }
 }
 
-// Andar final: o ferreiro fica a poucos passos do início, fora da arena (dá para forjar antes da batalha)
-function placeSmithAtStart(d) {
+// O ferreiro fica a poucos passos do início, do lado do baú, fora da arena (no andar final dá para forjar antes da batalha)
+function placeSmithAtStart(d, byStash) {
   const { W, H, grid, feat } = d;
+  const stash = byStash ? d.props.find((p) => p.type === 'stash') : null;
+  if (byStash && !stash) return false;
   const seen = reachMap(d);
   const sx = Math.floor(d.start.x);
   const sz = Math.floor(d.start.z);
@@ -379,16 +383,17 @@ function placeSmithAtStart(d) {
       const x = i + 0.5;
       const z = j + 0.5;
       const dist = Math.hypot(x - d.start.x, z - d.start.z);
-      if (dist < 4 || inArena(d, x, z) || Math.hypot(x - d.exit.x, z - d.exit.z) < 6) continue;
+      const ds = stash ? Math.hypot(x - stash.x, z - stash.z) : 0;
+      if (dist < (stash ? 2.4 : 4) || (stash && (ds < 2.6 || ds > 5.5)) || inArena(d, x, z) || Math.hypot(x - d.exit.x, z - d.exit.z) < 6) continue;
       let free = true;
       for (let dy = -1; dy <= 1 && free; dy++)
         for (let dx = -1; dx <= 1 && free; dx++) {
           const k = (j + dy) * W + i + dx;
           if (grid[k] !== TILE.FLOOR || feat[k]) free = false;
         }
-      if (!free || d.props.some((p) => Math.hypot(p.x - x, p.z - z) < 2)) continue;
-      // o mais perto possível de uns 5 passos do início
-      const sc = Math.abs(dist - 5);
+      if (!free || d.props.some((p) => p !== stash && Math.hypot(p.x - x, p.z - z) < (p.type === 'stash' ? 2.6 : 2))) continue;
+      // colado no baú (uns 3 passos) e perto do início; sem baú, a uns 5 passos do início
+      const sc = stash ? Math.abs(ds - 3) + Math.max(0, dist - 3) * 0.3 : Math.abs(dist - 5);
       if (sc < bd) {
         bd = sc;
         best = { x, z };

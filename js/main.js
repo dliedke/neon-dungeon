@@ -326,7 +326,7 @@ export function startFloor(floor) {
   c.floor = floor;
   c.maxFloor = Math.max(c.maxFloor || 1, floor);
   achMark('biomes', G.theme.id);
-  if (d.props.some((p) => p.type === 'smith')) setTimeout(() => G.floor === floor && G.mode === 'play' && toast(L('⚒ Há um <b>ferreiro</b> neste andar: ele aprimora seu equipamento por créditos.', '⚒ There is a <b>blacksmith</b> on this floor: he upgrades your gear for credits.'), 'item'), 3400);
+  if (d.props.some((p) => p.type === 'smith')) setTimeout(() => G.floor === floor && G.mode === 'play' && toast(L('⚒ Há um <b>ferreiro</b> neste andar, logo no início: ele aprimora seu equipamento por créditos.', '⚒ There is a <b>blacksmith</b> on this floor, right at the start: he upgrades your gear for credits.'), 'item'), 3400);
   if (!G.save.stashSeen && d.props.some((p) => p.type === 'stash')) setTimeout(() => G.floor === floor && G.mode === 'play' && !G.save.stashSeen && toast(L('📦 Perto do início de cada andar há um <b>baú compartilhado</b>: o que você guardar nele fica para todos os seus personagens.', '📦 Near the start of every floor there is a <b>shared stash</b>: whatever you store in it is available to all your characters.'), 'item'), 1500);
   enterFloor(d, d.start.x, d.start.z);
   const word = L('ANDAR', 'FLOOR');

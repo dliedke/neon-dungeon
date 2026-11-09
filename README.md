@@ -174,7 +174,7 @@ From floor 2 on, most floors (not boss floors) get one **main event**, and some 
 | **Light Floor** | A 3×3 grid of plates. Stepping on one flips it and its neighbours. Light all nine. A reset plate restores the starting pattern. |
 | **Laser Prisms** | Step on a prism to rotate it and guide the laser from the emitter to the receiver. |
 | **Data Upload** | Stand inside the circle for 45 seconds while waves of enemies attack. Progress pauses when you step out. |
-| **Time Bomb** | Defuse 3 consoles spread across the floor before the timer runs out. If it explodes, you lose part of your health (never lethal). |
+| **Time Bomb** | Defuse 3 consoles spread across the floor before the timer runs out: stand inside each console's circle for 2.5 s until it fills up green (on-screen hints show what to do and the progress). If it explodes, you lose part of your health (never lethal). |
 | **Wanted** | A named elite with a bounty. When it is badly hurt it flees and hides on the other side of the floor, twice. Hunt it down for a big reward. |
 | **Shard Hunt** | The first shard starts a timer. Collect all 6 before time runs out. |
 | **Prisoner** | A caged prisoner watched by guards. Defeat the guards and open the cage: the prisoner thanks you with Fury and Haste. |
@@ -207,11 +207,11 @@ Medals and their counters sync with the Google cloud save; progress from every d
 - **Loot:**
   - 6 rarities and 13 stat types.
   - 6 legendary effects.
-  - **Mythic items** (from floor 3 onwards): very rare purple drops with a light beam, their own sound and a big announcement. Each one has a special power:
+  - **Mythic items** (from floor 3 onwards): very rare purple drops with a light beam, their own sound and a big announcement (from Brutal on, or in Nightmare/Inferno, where they drop often, only the small notice). Each one has a special power:
     **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
-    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythics.
+    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic or divine items.
   - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, only on Apocalypse and Death difficulty
     (or on Brutal and above in Nightmare/Inferno), from floor 10 onwards. They are much rarer than mythics: bosses are the best source
     (about 14% per boss on Death, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
@@ -221,7 +221,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Sandals of Hermes** (feet: +20% movement speed, +8% dodge) and **Ambrosia** (chip: below 30% health, or on a fatal blow, heals 50% and grants 2 s of invulnerability, every 60 s).
     Wearing all 6 unlocks **Wrath of the Gods**: every 6 s, 5 lightning bolts strike nearby enemies.
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
-  - **Blacksmith:** appears on floors 4, 7, 10… and sometimes on others, and on floor 30 it waits a few steps from the start, so you can upgrade before the final battle. For credits he upgrades your equipped items:
+  - **Blacksmith:** appears on floors 4, 7, 10…, on floor 30 and sometimes on others, always a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - Upgrade highlighting for items better than what you have equipped.

@@ -687,8 +687,10 @@ export function toast(html, cls = '', key = null) {
   root.appendChild(el);
   while (root.children.length > 4) root.firstChild.remove();
   const long = cls === 'leg' || cls === 'myth';
-  setTimeout(() => el.classList.add('out'), cls === 'myth' ? 6000 : long ? 4000 : 2200);
-  setTimeout(() => el.remove(), cls === 'myth' ? 6500 : long ? 4500 : 2700);
+  // texto comprido (explicações dos eventos) fica mais tempo para dar para ler
+  const ms = Math.max(cls === 'myth' ? 6000 : long ? 4000 : 2200, Math.min(9000, el.textContent.length * 40));
+  setTimeout(() => el.classList.add('out'), ms);
+  setTimeout(() => el.remove(), ms + 500);
 }
 
 export function invFull() {
@@ -1499,7 +1501,7 @@ function favMark(it) {
   return (it.fav ? '<span class="fav">★</span>' : '') + (it.plus > 0 ? `<span class="plus">+${it.plus}</span>` : '');
 }
 
-// itens míticos e favoritos nunca são reciclados em lote
+// itens míticos, divinos (também têm poder mítico) e favoritos nunca são reciclados em lote
 const canBulkRecycle = (it) => !it.myth && !it.fav;
 
 // Recicla todo o inventário (o que está equipado não é tocado)
@@ -1512,7 +1514,7 @@ function recycleAll() {
   const total = list.reduce((s, it) => s + recycleValue(it), 0);
   const ups = list.filter((it) => isUpgrade(it, c.equip)).length;
   const warn = ups ? L(` Atenção: ${ups} ${ups > 1 ? 'são melhores' : 'é melhor'} que o equipado (▲).`, ` Warning: ${ups} ${ups > 1 ? 'are' : 'is'} better than what you have equipped (▲).`) : '';
-  const keep = kept ? L(` Os míticos e favoritos (★) ficam.`, ` Mythic and favorite (★) items are kept.`) : '';
+  const keep = kept ? L(` Os míticos, divinos e favoritos (★) ficam.`, ` Mythic, divine and favorite (★) items are kept.`) : '';
   confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + keep + warn, () => {
     c.inv = c.inv.filter((it) => !canBulkRecycle(it));
     c.credits += total;
