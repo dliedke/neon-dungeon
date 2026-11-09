@@ -825,8 +825,9 @@ export function spendPoint(i) {
   return true;
 }
 
-// Nível mínimo de um poder: o ataque básico e o primeiro poder já vêm no nível 1 de graça
-export const minRank = (i) => (i < 2 ? 1 : 0);
+// Nível mínimo de um poder: só o ataque básico nunca fica bloqueado. O primeiro poder vem no
+// nível 1 de graça, mas dá para devolver esse ponto também (ele volta a ficar bloqueado)
+export const minRank = (i) => (i === 0 ? 1 : 0);
 
 // Devolve todos os pontos gastos num poder para reaplicar em outros. Se ele volta a ficar
 // bloqueado, sai do botão. Retorna quantos pontos voltaram.
