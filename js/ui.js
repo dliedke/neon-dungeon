@@ -291,6 +291,7 @@ export function renderClassCards() {
 export function confirmDialog(title, text, onYes) {
   $('confirm-title').textContent = title;
   $('confirm-text').textContent = text;
+  confirmBack = focused; // ao fechar, o seletor volta para onde estava
   $('confirm-yes').onclick = () => {
     closeOverlay('panel-confirm');
     onYes();
@@ -408,9 +409,14 @@ function openOverlay(id) {
   $(id).classList.remove('hidden');
   clearFocus();
 }
+let confirmBack = null;
 function closeOverlay(id) {
   $(id).classList.add('hidden');
   clearFocus();
+  if (id === 'panel-confirm') {
+    if (confirmBack && confirmBack.isConnected) setFocus(confirmBack);
+    confirmBack = null;
+  }
 }
 
 // ------------------------------------------------------------------
@@ -1292,6 +1298,7 @@ function treeRefund(i) {
   const sk = CLASSES[c.cls].skills[i];
   const back = (c.skills[i] || 0) - minRank(i);
   if (back <= 0) return sfx.deny();
+  treeSel = i;
   const note = minRank(i) ? L(` Ele volta ao nível ${minRank(i)}.`, ` It goes back to level ${minRank(i)}.`) : L(' Ele volta a ficar bloqueado e sai do botão.', ' It becomes locked again and leaves its button.');
   confirmDialog(L('Devolver pontos?', 'Refund points?'), L(`Devolver os ${back} pontos de ${sk.name} para gastar em outros poderes?`, `Refund the ${back} points from ${sk.name} to spend on other powers?`) + note, () => {
     const n = refundSkill(i);
@@ -1666,8 +1673,8 @@ export function uiPadUpdate() {
   const root = activePanel();
   if (root !== lastPanel) {
     lastPanel = root;
-    if (focused) focused.classList.remove('gp-focus');
-    clearFocus();
+    // se o código já pôs o foco dentro do painel novo (ex.: voltar da confirmação), mantém o seletor onde está
+    if (!(root && focused && root.contains(focused))) clearFocus();
   }
   if (!root || G.lastInput !== 'pad') return;
   const list = navigables(root);
