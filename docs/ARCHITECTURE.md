@@ -83,6 +83,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 | `dead` | Death screen. |
 | `pause`, `char`, `shop`, `forge`, `implant` | Overlays. Logic is paused. |
 | `loading` | Elevator fade between floors. |
+| `finale` | True-ending cinematic (`finale.js`). The 3D scene is not rendered. |
 | `ending` | Ending screen after the final battle. |
 
 ## Floors
@@ -100,7 +101,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 - Resume: `saveGame` stores `c.here` = `floorSnapshot()` (seed, fingerprint, player position/HP/energy/buffs, HP of each initial enemy, used chests/shrines/rifts, ground loot, explored map as RLE, contract, clear, nest, shop, anomaly, floor events `ev`). `resumeFloor(c)` rebuilds the floor with the same seed, checks the fingerprint and applies the snapshot; if anything doesn't match (old save, generation changed) it returns false and the floor starts fresh. No snapshot on the final floor or while dead.
 - `startFloor(floor)` also stores `c.floor` / `c.maxFloor`, places the player at `d.start`, reveals the minimap around it and announces the floor.
 - `updateExit` watches the elevator. It stays locked while a boss is alive. Using it calls `nextFloor()`: fade out, `runFloorDone()` (contract and clear rewards), `startFloor(floor + 1)`, heal 25 % HP and give +1 stim if the player has fewer than 3.
-- Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`.
+- Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`. When the win was in the last mode (`tier >= MAX_TIER`, Inferno), `endGame()` first awaits `playFinale()` from `finale.js`: a ~58 s 2D-canvas cinematic in the `#finale` overlay (server → elevator through 90 floors → dawn with fireworks → credits). Skip goes through `uiBack` (`'finale'` is first in `PANEL_ORDER`), so Esc, {B} and the button all work. Then `showEnding({ legend: true })` shows the golden "Neon Legend" screen, and `closeFinale()` hides the overlay. `bestTier > MAX_TIER` marks a legend (👑 on the class card).
 - After winning, `startTier(tier)` restarts from floor 1 in Nightmare or Inferno (New Game+), keeping level, items and implants. `replayFinal()` replays floor 30.
 
 ### Biomes (`dungeon.js` `THEMES`)
@@ -278,6 +279,7 @@ localStorage['neon-dungeon:device']      = random device id (medal counters)
 - `sfx.name()` functions build each sound from `tone({ type, f, f2, dur, vol })` and `noise({ dur, vol, type, f, f2, q })`. `throttle(key, ms)` stops floods of the same sound.
 - `music.js` `SONGS` describes each song as data: `bpm`, chord progressions `prog`, drum and bass step patterns, `arp`, `lead` timbre, `mel` melodies (eighth notes, `-` hold, `.` rest) and `secs` (arrangement sections with active layers). `createMusic(ctx, dest, opts)` schedules it. Drums and bass come in during fights.
 - `applyTrack()` follows `G.settings.track` (`'shuffle'` or a song index).
+- `ANTHEM` (Neon Dawn) is an extra song outside `SONGS`, so it never enters the shuffle or the track option. `playAnthem(true)` fixes it during the true ending; `playAnthem(false)` (the ending-screen buttons) returns to the previous track setting.
 
 ## Medals (`ach.js`)
 

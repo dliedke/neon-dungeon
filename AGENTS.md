@@ -79,6 +79,7 @@ Module map (`js/`):
 | `items.js` | Slots, rarities, affixes, legendary and mythic powers, `makeItem`, forging, `itemScore`, item cards. |
 | `loot.js` | Ground loot, pickups, chests, shrines, `INV_SIZE`. |
 | `mythic.js` | Runtime effects of mythic items (orbital laser, phantom blades, reaper, singularity, phoenix, avatar). |
+| `finale.js` | True-ending cinematic after beating the Inferno: 2D canvas in the `#finale` overlay, its own theme song (`ANTHEM` in `music.js`). |
 | `run.js` | Per-floor events: anomalies, contracts, challenge rifts, kill combo, floor-clear bonus, implants, tiers (Nightmare/Inferno, New Game+). |
 | `events.js` | Floor puzzles and challenges (terminals, light floor, laser prisms, upload, time bomb, wanted, shard hunt, prisoner, secret room, slot machine). |
 | `pets.js` | Decorative pets that wander each biome. |

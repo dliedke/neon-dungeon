@@ -30,6 +30,7 @@ import {
 import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
 import { carveSecret, eventsSnapshot, eventsRestore, eventsResume } from './events.js';
+import { playFinale, closeFinale } from './finale.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
 const SETTINGS_KEY = 'neon-dungeon-settings-v1';
@@ -617,7 +618,14 @@ async function endGame() {
   achCheck();
   saveGame();
   syncNow();
-  showEnding({ time: F.time, deaths: F.deaths });
+  // venceu o Inferno (último modo): cinemática do final verdadeiro antes da tela de fim
+  const legend = (G.char.tier | 0) >= MAX_TIER;
+  if (legend) {
+    fade.classList.remove('on');
+    await playFinale();
+  }
+  showEnding({ time: F.time, deaths: F.deaths, legend });
+  if (legend) closeFinale();
   fade.classList.remove('on');
   transitioning = false;
 }
@@ -740,6 +748,10 @@ function frame() {
   handleGlobalInput();
   uiPadUpdate();
   updateOrientation();
+  if (G.mode === 'finale') {
+    Input.endFrame(); // a cinemática desenha no próprio canvas; poupa o 3D por trás
+    return;
+  }
   updateMouseWorld();
 
   const playing = G.mode === 'play' || G.mode === 'dying';

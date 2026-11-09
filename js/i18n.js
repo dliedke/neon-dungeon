@@ -77,6 +77,7 @@ const DICT = {
   mainMenu: ['Menu principal', 'Main menu'],
   endKicker: ['FIM DE JOGO', 'THE END'],
   endTitle: ['A CIDADE ACORDA', 'THE CITY WAKES UP'],
+  finaleSkip: ['Pular ▸', 'Skip ▸'],
   endReplay: ['Revanche (andar 30)', 'Rematch (floor 30)'],
   yes: ['Sim', 'Yes'],
   cancel: ['Cancelar', 'Cancel'],

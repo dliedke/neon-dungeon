@@ -336,6 +336,10 @@ function schedule() {
 export function trackNames() {
   return SONGS.map((s) => L(s.name[0], s.name[1]));
 }
+// hino do final verdadeiro (cinemática do Inferno); false volta para a trilha normal
+export function playAnthem(on) {
+  if (music && ctx) music.anthem(on, ctx.currentTime + 0.12);
+}
 // chamada pelas opções depois de mudar G.settings.track
 export function applyTrack() {
   if (music) music.choose(trackChoice());

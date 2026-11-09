@@ -556,6 +556,11 @@ body.pad .pad-hints { display: block; }
 
 /* ---------------- Final do jogo: o sol nasce sobre a cidade ---------------- */
 #panel-end { background: #05020f; overflow: hidden auto; z-index: 25; }
+/* final verdadeiro: cinemática em tela cheia por cima de tudo */
+#finale { position: fixed; inset: 0; z-index: 28; background: #000; }
+#finale-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#finale-skip { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); z-index: 1; padding: 8px 18px; font-size: 14px; opacity: 0.75; animation: finaleIn 0.6s; }
+@keyframes finaleIn { from { opacity: 0; } }
 .end-sky {
   position: fixed; inset: 0; overflow: hidden; pointer-events: none;
   background: linear-gradient(#05020f 0%, #1a0630 35%, #6a0f4a 62%, #ff5a3c 82%, #ffd23d 100%);
@@ -591,6 +596,11 @@ body.pad .pad-hints { display: block; }
 .end-title { margin: 6px 0 12px; font-size: clamp(22px, 5vw, 36px); letter-spacing: 4px; color: #fff; text-shadow: 0 0 14px #ff2bd6, 0 0 30px #ff5a3c; }
 #end-story p { margin: 8px 0; font-size: 15px; line-height: 1.45; color: #e2e4ff; opacity: 0; animation: endLine 1.2s ease-out forwards; }
 #end-story p.tease { color: #ff4466; font-style: italic; text-shadow: 0 0 8px #ff2244; }
+/* final verdadeiro (venceu o Inferno): painel dourado e o LED apagado de vez */
+#panel-end.legend .panel.end { border-color: #ffd23d; box-shadow: 0 0 40px rgba(255, 210, 61, 0.45), 0 0 90px rgba(255, 43, 214, 0.25); }
+#panel-end.legend .end-title { background: linear-gradient(90deg, #ffd23d, #fff6c8, #ff8a00, #ffd23d); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; filter: drop-shadow(0 0 10px rgba(255, 180, 60, 0.7)); animation: legendShine 4s linear infinite; }
+@keyframes legendShine { to { background-position: -200% 0; } }
+#panel-end.legend #end-story p.tease { color: #ffd23d; text-shadow: 0 0 8px rgba(255, 210, 61, 0.7); }
 @keyframes endLine { from { opacity: 0; transform: translateY(8px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
 #end-stats {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 6px; opacity: 0; animation: endLine 1s ease-out forwards;

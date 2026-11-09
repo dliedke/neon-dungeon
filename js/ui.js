@@ -7,7 +7,8 @@ import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_S
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill, minRank } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
-import { sfx, applyVolumes, initAudio, trackNames, applyTrack } from './audio.js';
+import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
+import { skipFinale } from './finale.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
 import { fmt, fmtPlay } from './utils.js';
 import { L, t } from './i18n.js';
@@ -92,18 +93,23 @@ export function initUI() {
     quitToMenu();
   };
   $('confirm-no').onclick = () => closeOverlay('panel-confirm');
+  // saindo da tela de fim, a música-tema do final verdadeiro dá lugar à trilha normal
   $('end-menu').onclick = () => {
     $('panel-end').classList.add('hidden');
+    playAnthem(false);
     quitToMenu();
   };
   $('end-replay').onclick = () => {
     $('panel-end').classList.add('hidden');
+    playAnthem(false);
     replayFinal();
   };
   $('end-tier').onclick = () => {
     $('panel-end').classList.add('hidden');
+    playAnthem(false);
     startTier(Math.min(MAX_TIER, (G.char.tier | 0) + 1));
   };
+  $('finale-skip').onclick = () => skipFinale();
   $('shop-close').onclick = () => closeShop();
   $('forge-close').onclick = () => closeForge();
   $('stash-close').onclick = () => closeStash();
@@ -259,7 +265,7 @@ export function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') : L('Novo personagem', 'New character')}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + ((save.bestTier | 0) > MAX_TIER ? ` · <span class="nowrap" style="color:#ffd23d" title="${L('Venceu o Inferno: final verdadeiro', 'Beat the Inferno: true ending')}">👑 ${L('Lenda', 'Legend')}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') : L('Novo personagem', 'New character')}</div>
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
         ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}
@@ -1077,9 +1083,17 @@ export function showEnding(info = {}) {
     L('O Núcleo OMEGA pisca uma última vez e se apaga. Pela primeira vez em décadas, as torres da corporação ficam em silêncio.', 'The OMEGA Core flickers one last time and goes dark. For the first time in decades, the corporate towers fall silent.'),
     L('Executor, Matriarca, Rei do Ferro-Velho, Ceifadora, Nave de Ataque, Hacker Supremo e OMEGA: os sete guardiões do subsolo agora são sucata.', 'Executor, Matriarch, Scrap King, Reaper, Gunship, Grand Hacker and OMEGA: the seven guardians of the underworld are now scrap.'),
     L(...(EPILOGUE[c.cls] || EPILOGUE.blade)),
-    L('O elevador sobe trinta andares. Lá em cima, os letreiros neon piscam… e o sol nasce sobre a cidade.', 'The elevator climbs thirty floors. Up top, the neon signs flicker… and the sun rises over the city.'),
-    L('Mas lá embaixo, em algum servidor esquecido, um LED vermelho volta a acender…', 'But far below, in some forgotten server, a red LED blinks back on…'),
+    info.legend
+      ? L('O elevador sobe os noventa andares das três descidas. Lá em cima, os letreiros neon piscam… e o sol nasce sobre a cidade.', 'The elevator climbs all ninety floors of the three descents. Up top, the neon signs flicker… and the sun rises over the city.')
+      : L('O elevador sobe trinta andares. Lá em cima, os letreiros neon piscam… e o sol nasce sobre a cidade.', 'The elevator climbs thirty floors. Up top, the neon signs flicker… and the sun rises over the city.'),
+    info.legend
+      ? L('Lá embaixo, o último LED vermelho continua apagado. Desta vez, para sempre.', 'Far below, the last red LED stays dark. This time, forever.')
+      : L('Mas lá embaixo, em algum servidor esquecido, um LED vermelho volta a acender…', 'But far below, in some forgotten server, a red LED blinks back on…'),
   ];
+  // final verdadeiro (venceu o Inferno): outro título e o painel dourado
+  $('panel-end').classList.toggle('legend', !!info.legend);
+  document.querySelector('#panel-end .end-kicker').textContent = info.legend ? L('FINAL VERDADEIRO', 'TRUE ENDING') : t('endKicker');
+  document.querySelector('#panel-end .end-title').textContent = info.legend ? L('LENDA DO NEON', 'NEON LEGEND') : t('endTitle');
   const step = 1.4; // segundos entre cada parágrafo
   $('end-story').innerHTML = lines.map((txt, i) => `<p style="animation-delay:${0.6 + i * step}s"${i === lines.length - 1 ? ' class="tease"' : ''}>${txt}</p>`).join('');
   const tm = info.time || 0;
@@ -1566,7 +1580,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1692,6 +1706,9 @@ export function uiPadUpdate() {
 export function uiBack(root = activePanel()) {
   if (!root) return;
   switch (root.id) {
+    case 'finale':
+      skipFinale();
+      break;
     case 'panel-end':
     case 'panel-implant':
       break; // o final só fecha pelos botões

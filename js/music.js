@@ -1,4 +1,5 @@
-// Trilha sonora: 5 músicas synthwave sintetizadas em tempo real com WebAudio.
+// Trilha sonora: 5 músicas synthwave sintetizadas em tempo real com WebAudio,
+// mais o tema do final verdadeiro (ANTHEM, fora do sorteio; tocado por anthem() depois de vencer o Inferno).
 // Cada música tem progressões, padrões de bateria/baixo/arpejo, melodias e um arranjo em seções.
 // Este módulo não importa nada: recebe o AudioContext e o nó de saída (também roda num OfflineAudioContext).
 
@@ -142,11 +143,35 @@ export const SONGS = [
   },
 ];
 
+// Hino do final verdadeiro (depois de vencer o Inferno). Fica fora de SONGS: não entra na rotação
+// nem nas opções, só toca pela cinemática (índice ANTHEM_I, depois das 5 músicas).
+export const ANTHEM = {
+  name: ['Amanhecer Neon', 'Neon Dawn'],
+  bpm: 96,
+  prog: { A: 'D A Bm G', B: 'G A F#m Bm', C: 'G A D D' },
+  kick: 'x...x...x...x...',
+  snare: '....x.......x...',
+  hat: '..x...x...x...x.',
+  bass: 'r-rr-rr-r-rr-ro-',
+  arp: '0213021302130213',
+  arpOct: 12,
+  lead: 'saw',
+  mel: {
+    A: 'f#5 - - - e5 - d5 - | e5 - - - c#5 - a4 - | d5 - - - f#5 - b5 - | a5 - g5 - f#5 - e5 -',
+    B: 'g5 - - - b5 - d6 - | c#6 - - - a5 - e5 - | f#5 - a5 - c#6 - - - | b5 - - - - - . . |' +
+       'g5 - b5 - d6 - e6 - | e6 - c#6 - a5 - c#6 - | d6 - - - c#6 - a5 - | b5 - - - - - - -',
+    C: 'b5 - - - g5 - b5 - | c#6 - - - a5 - e6 - | d6 - - - - - - - | - - - - . . . .',
+  },
+  secs: [['A', 4, 'pa'], ['A', 4, 'pal'], ['B', 8, 'pakbhlr'], ['A', 8, 'pakshblc'], ['B', 8, 'pakshblc'], ['C', 4, 'pakshblc'], ['A', 4, 'pal'], ['C', 4, 'pl']],
+};
+const ALL = [...SONGS, ANTHEM];
+export const ANTHEM_I = SONGS.length;
+
 let parsed = false;
 function parseSongs() {
   if (parsed) return;
   parsed = true;
-  for (const s of SONGS) {
+  for (const s of ALL) {
     s.ch = {};
     for (const k in s.prog) s.ch[k] = s.prog[k].split(/\s+/).map(chord);
     for (const k in s.mel) s.mel[k] = mel(s.mel[k]);
@@ -413,6 +438,7 @@ export function createMusic(ctx, dest, opts = {}) {
   let bag = [];
   let fixed = null; // índice escolhido nas opções (null = aleatório)
   let pending = null;
+  let saved = null; // escolha das opções enquanto o hino toca
 
   function pickNext() {
     if (fixed != null) return fixed;
@@ -427,7 +453,7 @@ export function createMusic(ctx, dest, opts = {}) {
   }
   function startSong(i, t) {
     songIdx = i;
-    song = SONGS[i];
+    song = ALL[i];
     si = sbar = st = 0;
     lastLead = null;
     S16 = 60 / song.bpm / 4;
@@ -550,6 +576,21 @@ export function createMusic(ctx, dest, opts = {}) {
       fixed = i;
       bag = [];
       if (i != null && i !== songIdx && song) pending = i;
+    },
+    // hino do final: entra na hora e repete; ao desligar, volta à escolha anterior no próximo compasso
+    anthem(on, t) {
+      if (on) {
+        if (songIdx === ANTHEM_I) return;
+        if (fixed !== ANTHEM_I) saved = fixed;
+        fixed = ANTHEM_I;
+        pending = null;
+        nextTime = Math.max(nextTime, t);
+        startSong(ANTHEM_I, nextTime);
+      } else if (fixed === ANTHEM_I || songIdx === ANTHEM_I) {
+        fixed = saved;
+        bag = [];
+        pending = pickNext();
+      }
     },
     start(i, t) {
       nextTime = t;

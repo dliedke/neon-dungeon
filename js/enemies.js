@@ -15,7 +15,7 @@ import { timeFactor } from './powers.js';
 import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
-import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor } from './run.js';
+import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor, MAX_TIER } from './run.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
 
 export const ETYPES = {
@@ -2130,13 +2130,16 @@ function finalVictory() {
     onEnemyKilled(o);
   }
   const c = arenaCenter();
+  const legend = (G.char.tier | 0) >= MAX_TIER; // venceu o Inferno: final verdadeiro
   sfx.victory();
   G.shake = 1;
-  banner(L('SISTEMA DERRUBADO', 'SYSTEM TAKEN DOWN'), L('A corporação caiu. Suba no elevador!', 'The corporation has fallen. Take the elevator up!'));
-  // fogos de artifício neon com as cores dos 7 chefes
+  if (legend) banner(L('O INFERNO CAIU', 'THE INFERNO HAS FALLEN'), L('A lenda está completa. Suba no elevador!', 'The legend is complete. Take the elevator up!'));
+  else banner(L('SISTEMA DERRUBADO', 'SYSTEM TAKEN DOWN'), L('A corporação caiu. Suba no elevador!', 'The corporation has fallen. Take the elevator up!'));
+  // fogos de artifício neon com as cores dos 7 chefes (o dobro no final verdadeiro)
   const cols = [0xff2244, 0x39ff14, 0xffaa00, 0xb36bff, 0x00f0ff, 0x39ff88, 0xff2bd6, 0xffd23d];
-  for (let k = 0; k < 26; k++) {
-    after(0.3 + k * 0.22, () => {
+  const nFw = legend ? 52 : 26;
+  for (let k = 0; k < nFw; k++) {
+    after(0.3 + k * (legend ? 0.16 : 0.22), () => {
       const x = c.x + rr(-8, 8);
       const z = c.z + rr(-8, 8);
       const col = pick(cols);

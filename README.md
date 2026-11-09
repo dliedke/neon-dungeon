@@ -15,6 +15,7 @@ Items marked with **▲** and a green glow are better than what you have equippe
 After you win, the same character can descend again from floor 1 in **Nightmare ☠️** and then **Inferno 🔥** mode (New Game+).
 You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 31, Inferno floor 1 as floor 61) and enemies also get extra health (×1.25 in Nightmare, ×1.5 in Inferno) and damage (×1.5 and ×1.75). Deep enemies also pierce armor: past the 30th effective floor, the same armor blocks less and less (e.g. 658 armor blocks 87% on floor 30, about 67% on Nightmare floor 10 and about 50% in Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
 Each mode grants its own set of implants and has its own medal.
+Beating the **Inferno** unlocks the **true ending**: a full cinematic (the last red LED is destroyed, the elevator climbs all 90 floors, dawn and fireworks over the city, then the credits) with its own theme song, the golden "Neon Legend" ending screen and a 👑 Legend tag on the character card.
 
 ## Classes
 
@@ -231,7 +232,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     With a gamepad connected, the buttons show which controller button does each action (A store/take, X equip, Y store all mythics, B close).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** levels up to **200** (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 15 per skill, refundable per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).
-- **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses.
+- **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses. A 6th song, Neon Dawn, plays only in the true ending.
 - **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items: from Brutal on (or in Nightmare) common items stop dropping, and from Insane on (or in Inferno) modded items stop dropping too, so the worst drop is rare. Chaos, Apocalypse and Death also raise the item level (+10, +20 and +30). It changes instantly, enemies on the floor included.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).
   When you raise it the reward bonus ramps up over a few seconds, so it can't be flipped up just to open a chest.
@@ -288,6 +289,7 @@ js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
 js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, secret room...)
 js/mythic.js           mythic item powers
+js/finale.js           true-ending cinematic after beating the Inferno (2D canvas)
 js/pets.js             decorative pets that wander each biome
 vendor/three/          Three.js r160 (MIT)
 web.config             IIS Express settings for Visual Studio (ignored by GitHub Pages)
