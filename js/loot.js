@@ -32,7 +32,7 @@ function divChance(o, find) {
   const dr = Math.floor(rewardRank() + 1e-6);
   const k = dr >= 8 ? 1.5 : dr >= 7 ? 1 : t >= 1 && dr >= 6 ? 0.6 : 0;
   if (!k || effFloor() < 10) return 0;
-  const base = o.boss ? 0.008 : o.rift ? 0.006 : o.thief || o.beast ? 0.005 : o.contract ? 0.003 : o.chest ? 0.0015 : o.elite ? 0.0008 : 0.0001;
+  const base = o.boss ? 0.02 : o.rift ? 0.015 : o.thief || o.beast ? 0.0125 : o.contract ? 0.0075 : o.chest ? 0.004 : o.elite ? 0.002 : 0.0003;
   return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }
 let labelRoot = null;

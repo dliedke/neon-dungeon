@@ -214,7 +214,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythics.
   - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, only on Apocalypse and Death difficulty
     (or on Chaos and above in Nightmare/Inferno), from floor 10 onwards. They are much rarer than mythics: bosses are the best source
-    (about 6% per boss on Death, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
+    (about 14% per boss on Death, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
     and the divine power of its slot:
     **Bolt of Zeus** (weapon: hits can cast lightning that jumps to 6 enemies), **Olympian Sight** (implant: +12% crit chance, +60% crit damage),
     **Divine Aegis** (torso: every 8 s a thunder shield blocks one whole hit and releases a shockwave), **Titan Fists** (hands: every 5th hit calls a thunderbolt),
