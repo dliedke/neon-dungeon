@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult, MAX_RANK } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
-import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill, minRank } from './player.js';
+import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
@@ -436,7 +436,8 @@ const barSkills = () => [G.char.atk || 0, ...G.char.slots];
 export function refreshSkillBar() {
   const C = CLASSES[G.char.cls];
   barSkills().forEach((i, k) => {
-    const sk = i == null ? null : C.skills[i];
+    // ⚔ com o ataque básico devolvido (bloqueado) fica vazio
+    const sk = i == null || !(G.char.skills[i] > 0) ? null : C.skills[i];
     const icon = sk ? iconSvg(sk.icon) : '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"><rect x="9" y="14" width="14" height="11" rx="2"/><path d="M12 14v-3a4 4 0 0 1 8 0v3"/></svg>';
     $('sk' + k).querySelector('.icon').innerHTML = icon;
     $('sk' + k).classList.toggle('empty-slot', !sk);
@@ -1278,6 +1279,7 @@ function slotKey(k) {
 }
 // em qual botão o poder está: -1 no ⚔, 0–6 nos 7 botões, null fora da barra
 function slotOf(c, i) {
+  if (!(c.skills[i] > 0)) return null;
   if ((c.atk || 0) === i) return -1;
   const k = c.slots.indexOf(i);
   return k >= 0 ? k : null;
@@ -1306,10 +1308,10 @@ function treeSpend(i) {
 function treeRefund(i) {
   const c = G.char;
   const sk = CLASSES[c.cls].skills[i];
-  const back = (c.skills[i] || 0) - minRank(i);
+  const back = c.skills[i] || 0;
   if (back <= 0) return sfx.deny();
   treeSel = i;
-  const note = minRank(i) ? L(` Ele volta ao nível ${minRank(i)}.`, ` It goes back to level ${minRank(i)}.`) : L(' Ele volta a ficar bloqueado e sai do botão.', ' It becomes locked again and leaves its button.');
+  const note = L(' Ele volta a ficar bloqueado e sai do botão.', ' It becomes locked again and leaves its button.');
   confirmDialog(L('Devolver pontos?', 'Refund points?'), L(`Devolver os ${back} pontos de ${sk.name} para gastar em outros poderes?`, `Refund the ${back} points from ${sk.name} to spend on other powers?`) + note, () => {
     const n = refundSkill(i);
     if (!n) return;
@@ -1376,7 +1378,7 @@ function renderTree() {
   else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
   const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
   // devolver os pontos deste poder para reaplicar em outros
-  const back = r - minRank(i);
+  const back = r;
   // no controle, cada ação mostra o botão que a faz direto do poder selecionado
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');

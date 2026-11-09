@@ -574,6 +574,10 @@ export function updatePlayer(dt) {
     if (wantAttack) tryUseSkill(p, atk, !Input.pressed('primary'));
     const k0 = c.slots.indexOf(0);
     wantAttack = k0 >= 0 && !!Input.held['s' + (k0 + 1)];
+  } else if (!(c.skills[0] > 0)) {
+    // ataque básico devolvido e nada no ⚔: o botão está vazio
+    if (Input.pressed('primary')) emptySlotWarn();
+    wantAttack = false;
   }
 
   // ---------- ataque básico ----------
@@ -831,33 +835,28 @@ export function spendPoint(i) {
   const wasLocked = !(c.skills[i] > 0);
   c.skills[i] = (c.skills[i] || 0) + 1;
   c.skillPoints--;
-  // ao desbloquear, coloca no primeiro espaço livre
-  if (wasLocked && i > 0 && !CLASSES[c.cls].skills[i].passive) {
+  // ao desbloquear, coloca no primeiro espaço livre (o ataque básico volta direto para o ⚔ se ele estiver vazio)
+  if (wasLocked && !CLASSES[c.cls].skills[i].passive && !(i === 0 && !c.atk)) {
     const free = c.slots.indexOf(null);
     if (free >= 0) c.slots[free] = i;
   }
   return true;
 }
 
-// Nível mínimo de um poder: só o ataque básico nunca fica bloqueado. O primeiro poder vem no
-// nível 1 de graça, mas dá para devolver esse ponto também (ele volta a ficar bloqueado)
-export const minRank = (i) => (i === 0 ? 1 : 0);
-
-// Devolve todos os pontos gastos num poder para reaplicar em outros. Se ele volta a ficar
-// bloqueado, sai do botão. Retorna quantos pontos voltaram.
+// Devolve todos os pontos gastos num poder para reaplicar em outros, inclusive o nível 1 que o
+// ataque básico e o primeiro poder ganham de graça. O poder volta a ficar bloqueado e sai do botão.
+// Retorna quantos pontos voltaram.
 export function refundSkill(i) {
   const c = G.char;
-  const back = (c.skills[i] || 0) - minRank(i);
+  const back = c.skills[i] || 0;
   if (back <= 0) return 0;
-  c.skills[i] = minRank(i);
+  c.skills[i] = 0;
   c.skillPoints += back;
-  if (!c.skills[i]) {
-    c.slots = c.slots.map((k) => (k === i ? null : k));
-    // estava no ⚔: o ataque básico volta para ele
-    if (c.atk === i) {
-      c.atk = 0;
-      c.slots = c.slots.map((k) => (k === 0 ? null : k));
-    }
+  c.slots = c.slots.map((k) => (k === i ? null : k));
+  // estava no ⚔: o ataque básico volta para ele (se ele também estiver bloqueado, o ⚔ fica vazio)
+  if (c.atk === i) {
+    c.atk = 0;
+    c.slots = c.slots.map((k) => (k === 0 ? null : k));
   }
   refreshStats();
   return back;
@@ -868,15 +867,17 @@ export function refundSkill(i) {
 // outro botão, troca de lugar com o que estava no destino; o ataque básico não some da barra se houver espaço.
 export function assignSlot(slot, i) {
   const c = G.char;
-  if (i > 0 && !(c.skills[i] > 0)) return;
+  if (!(c.skills[i] > 0)) return;
   if (CLASSES[c.cls].skills[i]?.passive) return;
   const atk = c.atk || 0;
+  // ataque básico bloqueado: o ⚔ com 0 está vazio e não leva nada para outro botão
+  const out = atk === 0 && !(c.skills[0] > 0) ? null : atk;
   const prev = atk === i ? -1 : c.slots.indexOf(i);
   if (prev === slot) return;
   if (slot < 0) {
     // para o ⚔: o que estava nele vai para o botão de onde o poder saiu (ou para um espaço livre)
-    if (prev >= 0) c.slots[prev] = atk;
-    else if (c.slots.includes(null)) c.slots[c.slots.indexOf(null)] = atk;
+    if (prev >= 0) c.slots[prev] = out;
+    else if (out != null && c.slots.includes(null)) c.slots[c.slots.indexOf(null)] = out;
     c.atk = i;
     return;
   }
