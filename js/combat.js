@@ -132,6 +132,8 @@ export function applyStatus(e, o) {
   }
 }
 
+// dano recebido dentro do anel do Guardião (50% menos)
+const WARD_K = 0.5;
 // quanto do atordoamento pega: pesados resistem; o Behemoth resiste muito e não é interrompido no meio de um golpe
 const stunK = (e) => (e.T.big ? (e.bm ? 0 : 0.35) : e.heavy ? 0.5 : 1);
 
@@ -156,7 +158,9 @@ export function damageEnemy(e, amount, crit, o = {}) {
     return 1;
   }
   if (e.vulnerable) amount *= 1.5;
-  if (e.dr) amount *= 1 - e.dr;
+  // reduções de dano (Blindado, Behemoth, anel do Guardião) se multiplicam, mas juntas nunca passam de 60%:
+  // sem esse teto um elite grande blindado dentro de um anel parecia imortal
+  let red = e.dr ? 1 - e.dr : 1;
   // Tropa de Choque: o escudo bloqueia quase tudo que vem pela frente
   if (e.T.shield && e.stun <= 0 && o.kx !== undefined) {
     const ax = o.kx - e.x;
@@ -173,12 +177,12 @@ export function damageEnemy(e, amount, crit, o = {}) {
       }
     }
   }
-  if (e.armorUp) amount *= 0.5;
   // dentro do anel de um elite Guardião
   if (e.wardT > 0) {
-    amount *= 0.4;
+    red *= WARD_K;
     if (!o.dot && Math.random() < 0.15) floatText(e.x, e.height + 0.6, e.z, L('PROTEGIDO', 'WARDED'), 'shield');
   }
+  amount *= Math.max(0.4, red);
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
   if (!o.dot) e.flash = 0.09;

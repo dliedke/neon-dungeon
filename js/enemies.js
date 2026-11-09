@@ -77,7 +77,7 @@ const ELITE = {
   regenerador: { name: L('Regenerador', 'Mender'), color: 0x39ff88, minF: 5, apply: (e) => { e.mender = true; auraRing(e, AURA_R, 0x39ff88); },
     hint: L('Elite <b>Regenerador</b>: cura os inimigos ao redor. Mate-o primeiro!', '<b>Mender</b> elite: heals nearby enemies. Kill it first!') },
   guardiao: { name: L('Guardião', 'Warden'), color: 0x4dd2ff, minF: 6, apply: (e) => { e.warden = true; auraRing(e, AURA_R, 0x4dd2ff); },
-    hint: L('Elite <b>Guardião</b>: inimigos dentro do anel azul recebem 60% menos dano. Derrube-o primeiro!', '<b>Warden</b> elite: enemies inside the blue ring take 60% less damage. Take it down first!') },
+    hint: L('Elite <b>Guardião</b>: inimigos comuns dentro do anel azul recebem 50% menos dano. Derrube-o primeiro!', '<b>Warden</b> elite: regular enemies inside the blue ring take 50% less damage. Take it down first!') },
   artilheiro: { name: L('Artilheiro', 'Bombardier'), color: 0xff3a3a, minF: 8, apply: (e) => { e.artillery = true; },
     hint: L('Elite <b>Artilheiro</b>: chama bombardeios onde você está. Não fique parado!', '<b>Bombardier</b> elite: calls strikes where you stand. Keep moving!') },
 };
@@ -106,7 +106,8 @@ function eliteAura(e, edt, p) {
     e.wardTick = (e.wardTick || 0) - edt;
     if (e.wardTick <= 0) {
       e.wardTick = 0.25;
-      for (const o of G.enemies) if (o !== e && o.alive && !o.inert && !o.boss && Math.hypot(o.x - e.x, o.z - e.z) < AURA_R) o.wardT = 0.4;
+      // não protege outros elites (dois Guardiões juntos ficavam quase imortais)
+      for (const o of G.enemies) if (o !== e && o.alive && !o.inert && !o.boss && !o.elite && Math.hypot(o.x - e.x, o.z - e.z) < AURA_R) o.wardT = 0.4;
     }
   }
   if (e.mender) {
@@ -249,7 +250,8 @@ export function spawnEnemy(type, x, z, o = {}) {
     state: 'idle', bloodColor: T.blood, atkCdMult: 1, name: T.name, spawnX: x, spawnZ: z,
   };
   if (eliteKey) {
-    e.hp *= 4 + 0.6 * (affixes.length - 1);
+    // pesados (mechs, tanques, golens) já têm muita vida: o bônus de elite é menor neles
+    e.hp *= (T.heavy ? 2.6 : 4) + (T.heavy ? 0.4 : 0.6) * (affixes.length - 1);
     e.maxHp = e.hp;
     e.dmg *= 1.4;
     e.xp *= 3 + affixes.length - 1;

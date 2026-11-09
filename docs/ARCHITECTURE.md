@@ -185,6 +185,7 @@ hitEnemy(e, mult, opts)
   → legendary procs ('arc' chain lightning) → mythOnHit
 ```
 
+- In `damageEnemy`, the enemy's damage reductions (`e.dr` from Armored elites or the Behemoth, and the Warden ring `wardT`, which only covers non-elite enemies) multiply together but are capped at 60 % total. The Riot Trooper's front shield block is separate.
 - `damagePlayer(amount)` applies armor, dodge, damage reduction, shields and the phoenix save (`mythSave`).
 - Area helpers: `enemiesInRadius`, `enemiesInCone`, `nearestEnemy`, `explosion`, `chainFrom`.
 - Other entities: projectiles (`spawnProjectile`, `lob`), ground hazards, turrets, barriers and the decoy.

@@ -136,7 +136,7 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 - **Mortar Walker**, which shells you from far away with three marked grenades.
 
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
-Deeper floors add support elites that change the fight: the **Mender** heals nearby enemies (green aura), the **Warden** shields nearby enemies so they take 60% less damage (blue aura), and the **Bombardier** marks your position and strikes it a moment later, so you have to keep moving.
+Deeper floors add support elites that change the fight: the **Mender** heals nearby enemies (green aura), the **Warden** shields nearby regular enemies so they take 50% less damage (blue aura), and the **Bombardier** marks your position and strikes it a moment later, so you have to keep moving.
 Kill them first. From floor 14 onwards elites can have two affixes, and from floor 26 three.
 
 Enemies keep getting tougher faster on deep floors, so a strong character still has to fight.

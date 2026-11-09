@@ -91,7 +91,9 @@ export function rollAnomaly(floor, forced) {
 // regras da anomalia nos inimigos comuns que acabaram de nascer
 export function applyAnomalyToEnemy(e) {
   if (!G.anomaly || e.boss || e.inert || e.decoy || e.type === 'thief' || e.type === 'pylon') return;
-  e.hp = e.maxHp = e.maxHp * amod('hp');
+  // elites já têm muita vida: anomalias que aumentam a vida (Gigantes) pesam só metade neles
+  const kh = amod('hp');
+  e.hp = e.maxHp = e.maxHp * (e.elite && kh > 1 ? 1 + (kh - 1) * 0.5 : kh);
   e.dmg *= amod('dmg');
   e.speed *= amod('speed');
   e.xp = Math.round(e.xp * amod('xp'));
