@@ -1669,16 +1669,23 @@ function updateBoss(e, dt, dist, ux, uz) {
       break;
     }
     case 'spray': {
+      // metralhadora: a mira começa travada (com aviso) e só acompanha o jogador devagar,
+      // então andar para o lado escapa da rajada
       if (e.bt <= 0) {
-        const base = Math.atan2(p.z - e.z, p.x - e.x);
-        for (let k = -2; k <= 2; k++) {
-          const a = base + k * 0.16;
-          spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 1.3, z: e.z + Math.sin(a) * 1.3, y: 1.6, dx: Math.cos(a), dz: Math.sin(a), speed: 11, life: 2.2, dmg: e.dmg * 0.8, color: 0xffaa00, size: 0.14, r: 0.18 });
+        const want = Math.atan2(p.z - e.z, p.x - e.x);
+        let d = want - e.sprayA;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        const turn = e.phase2 ? 0.14 : 0.09;
+        e.sprayA += Math.max(-turn, Math.min(turn, d));
+        const half = e.phase2 ? 2 : 1;
+        for (let k = -half; k <= half; k++) {
+          const a = e.sprayA + k * 0.17;
+          spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * 1.3, z: e.z + Math.sin(a) * 1.3, y: 1.6, dx: Math.cos(a), dz: Math.sin(a), speed: 9.5, life: 2.4, dmg: e.dmg * 0.65, color: 0xffaa00, size: 0.14, r: 0.18 });
         }
         sfx.enemyShot();
         e.wave++;
-        e.bt = 0.22;
-        if (e.wave >= (e.phase2 ? 6 : 4)) toWalk(e);
+        e.bt = 0.3;
+        if (e.wave >= (e.phase2 ? 5 : 3)) toWalk(e);
       }
       break;
     }
@@ -1807,7 +1814,10 @@ function chooseBossAttack(e, dist) {
       break;
     case 'spray':
       e.bstate = 'spray';
-      e.bt = 0.3;
+      e.bt = e.phase2 ? 0.5 : 0.7;
+      e.sprayA = Math.atan2(p.z - e.z, p.x - e.x);
+      lineTelegraph(e.x, e.z, e.sprayA, 10, 2.6, e.bt, 0xffaa00);
+      sfx.telegraph();
       break;
     case 'charge': {
       const dx = p.x - e.x;
@@ -2034,7 +2044,7 @@ export function populateFloor(d, floor, boss) {
     // no Pesadelo/Inferno o primeiro chefe não tem desconto
     if (idx === 0 && !tierOf().off) {
       e.hp = e.maxHp = e.maxHp * 0.9;
-      e.dmg *= 0.62;
+      e.dmg *= 0.55;
       e.tempoK = 0.6;
     } else {
       e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * idx);
