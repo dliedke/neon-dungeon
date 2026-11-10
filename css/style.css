@@ -928,6 +928,13 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .ach-tiers { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
 .ach-play { margin-left: auto; color: var(--cyan); }
 .ach-play b { color: var(--text); text-transform: none; }
+#ach-search {
+  display: block; width: 100%; max-width: 420px; margin: 0 0 12px; padding: 8px 12px; font: inherit; font-size: 14px; color: var(--text);
+  background: rgba(0, 0, 0, 0.45); border: 1px solid var(--line); border-radius: 0; outline: none; pointer-events: auto;
+}
+#ach-search:focus, body.pad #ach-search.gp-focus { border-color: var(--cyan); box-shadow: 0 0 10px color-mix(in srgb, var(--cyan) 40%, transparent); }
+#ach-search::placeholder { color: var(--muted); }
+#ach-none { padding: 16px 4px; color: var(--muted); font-size: 14px; }
 #ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; }
 .ach {
   display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line);

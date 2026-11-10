@@ -51,6 +51,8 @@ export const Input = {
 
 export function initInput(canvas) {
   window.addEventListener('keydown', (e) => {
+    // digitando num campo de texto (busca de medalhas): as teclas não viram comandos do jogo (só o Esc)
+    if (e.target && e.target.tagName === 'INPUT' && (e.target.type === 'search' || e.target.type === 'text') && e.code !== 'Escape') return;
     if (e.code === 'Tab' || e.code === 'Space' || e.code.startsWith('Arrow')) {
       if (e.target === document.body || e.target === canvas) e.preventDefault();
     }

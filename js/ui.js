@@ -68,6 +68,16 @@ export function initUI() {
     else openMedal(el.dataset.ach);
   });
   $('ach-zoom').addEventListener('click', closeMedal);
+  $('ach-search').addEventListener('input', filterAch);
+  $('ach-search').addEventListener('keydown', (e) => {
+    // Esc com texto só limpa a busca (sem texto, fecha o painel como sempre); Enter fecha o teclado do celular
+    if (e.code === 'Escape' && e.target.value) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.target.value = '';
+      filterAch();
+    } else if (e.code === 'Enter' || e.code === 'NumpadEnter') e.target.blur();
+  });
   $('pause-sync').onclick = () => openSync();
   $('sync-close').onclick = () => closeOverlay('panel-sync');
   $('sync-box').addEventListener('click', (e) => {
@@ -318,14 +328,34 @@ function openAch() {
   $('ach-grid').innerHTML = rows.map(({ a, cur, goal, done }) => {
     const t = MEDAL_TIERS[a.tier];
     const bar = !done && goal > 1 ? `<div class="ach-prog"><div style="width:${(cur / goal) * 100}%"></div><span>${(a.show || fmt)(cur)}/${(a.show || fmt)(goal)}</span></div>` : '';
-    return `<div class="ach ${done ? 'done' : ''}" data-nav data-ach="${a.id}" tabindex="-1" style="--t:${t.css}">
+    const q = achNorm(`${a.name} ${a.desc} ${t.name}`).replace(/"/g, '');
+    return `<div class="ach ${done ? 'done' : ''}" data-nav data-ach="${a.id}" data-q="${q}" tabindex="-1" style="--t:${t.css}">
       <div class="ach-ico">${a.icon}</div>
       <div class="ach-txt"><b>${a.name}</b><small>${a.desc}</small>${bar}</div>
       <div class="ach-tier">${done ? '✔' : ''} ${t.name}<br>+${fmt(t.reward)}¢</div>
     </div>`;
   }).join('');
+  const s = $('ach-search');
+  s.value = '';
+  s.placeholder = L('🔍 Buscar medalha...', '🔍 Search medals...');
+  filterAch();
   closeMedal();
   openOverlay('panel-ach');
+}
+
+// busca: ignora maiúsculas, acentos e tags; todas as palavras digitadas precisam aparecer
+const achNorm = (s) => String(s).replace(/<[^>]*>/g, ' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function filterAch() {
+  const words = achNorm($('ach-search').value).split(/\s+/).filter(Boolean);
+  let shown = 0;
+  for (const el of $('ach-grid').children) {
+    const ok = words.every((w) => el.dataset.q.includes(w));
+    el.classList.toggle('hidden', !ok);
+    if (ok) shown++;
+  }
+  const none = $('ach-none');
+  none.classList.toggle('hidden', shown > 0);
+  if (!shown) none.textContent = L('Nenhuma medalha encontrada.', 'No medals found.');
 }
 
 // medalha redonda grande (ícone no centro, raios e fita com o nível)
