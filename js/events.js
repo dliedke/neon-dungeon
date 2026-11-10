@@ -1,6 +1,7 @@
-// Eventos e quebra-cabeças dos andares: no máximo um evento principal e um pequeno por andar.
+// Eventos e quebra-cabeças dos andares: até dois eventos principais e um pequeno por andar.
 // Principais: Sequência de Terminais, Piso de Luzes, Prismas de Laser, Upload de Dados, Bomba-Relógio,
-// Procurado, Caça aos Fragmentos e Prisioneiro. Pequenos: Sala Secreta e Máquina de Apostas.
+// Procurado, Caça aos Fragmentos, Prisioneiro, Circuito Neon, Sinal Perdido, Servidores Corrompidos,
+// Escolta do Drone e Pares de Memória. Pequenos: Sala Secreta e Máquina de Apostas.
 // Tudo funciona só andando (pisar, ficar perto) e com o botão de interagir, então vale para
 // teclado+mouse, controle e toque. O sorteio usa a semente do andar (continuar o andar refaz igual);
 // o estado de cada evento vai no retrato do andar (eventsSnapshot/eventsRestore).
@@ -15,15 +16,15 @@ import { toast, banner } from './ui.js';
 import { spawnEnemy, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion } from './combat.js';
-import { isWalkable, isFinalFloor, tileAt, computeFlow } from './dungeon.js';
+import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { tierOf, effFloor, applyAnomalyToEnemy } from './run.js';
 import { makeItem, MYTHIC, DIVINE, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 
-// eventos principais (no máximo um por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner'];
+// eventos principais (até dois por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs'];
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
@@ -34,15 +35,21 @@ export const EVENT_INFO = {
   wanted: { icon: '🎯', css: '#ffaa00', name: L('Procurado', 'Wanted') },
   shards: { icon: '💠', css: '#7affc8', name: L('Caça aos Fragmentos', 'Shard Hunt'), short: L('Fragmentos', 'Shards') },
   prisoner: { icon: '⛓️', css: '#c08aff', name: L('Prisioneiro', 'Prisoner') },
+  relay: { icon: '🏁', css: '#ff9a3d', name: L('Circuito Neon', 'Neon Circuit'), short: L('Circuito', 'Circuit') },
+  signal: { icon: '📶', css: '#5affd2', name: L('Sinal Perdido', 'Lost Signal'), short: L('Sinal', 'Signal') },
+  servers: { icon: '🗄️', css: '#ff3366', name: L('Servidores Corrompidos', 'Corrupted Servers'), short: L('Servidores', 'Servers') },
+  escort: { icon: '🛸', css: '#5ab8ff', name: L('Escolta do Drone', 'Drone Escort'), short: L('Escolta', 'Escort') },
+  pairs: { icon: '🃏', css: '#e07bff', name: L('Pares de Memória', 'Memory Pairs'), short: L('Pares', 'Pairs') },
   secret: { icon: '🧱', css: '#ffaa33', name: L('Sala Secreta', 'Secret Room') },
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
 };
 
-let lastMain = null;
-// continuar um andar salvo: o evento principal que ele tinha (undefined = sorteia normalmente)
+// principais do andar anterior (não repetem no seguinte)
+let lastMain = [];
+// continuar um andar salvo: os eventos principais que ele tinha (undefined = sorteia normalmente)
 let forcedMain;
 export function eventsResume(h) {
-  forcedMain = h && Array.isArray(h.ev) ? (h.ev.find((s) => MAIN_EVENTS.includes(s.k)) || { k: null }).k : undefined;
+  forcedMain = h && Array.isArray(h.ev) ? h.ev.filter((s) => s && MAIN_EVENTS.includes(s.k)).map((s) => s.k) : undefined;
 }
 
 // ------------------------------------------------------------------
@@ -1331,12 +1338,464 @@ export function useGamble(pr) {
   if (pr && pr.ev && G.events.includes(pr.ev)) gamble.use(pr.ev);
 }
 
+// ==================================================================
+// 11. Circuito Neon: passe pelos portais na ordem; cada portal dá mais tempo no relógio
+// ==================================================================
+const GATES = 6;
+const GATE_COL = 0xff9a3d;
+const relay = {
+  setup(d, floor, rooms) {
+    const all = d.rooms.filter((r) => r !== d.rooms[0] && !r.safe);
+    if (!all.length) return null;
+    const pts = [];
+    for (let t = 0; t < 220 && pts.length < GATES; t++) {
+      const r = pick(all);
+      const x = Math.floor(r.x + rr(1, r.w - 1)) + 0.5;
+      const z = Math.floor(r.y + rr(1, r.h - 1)) + 0.5;
+      if (!spotOk(d, x, z, 1, 1, pts.map((s) => ({ x: s.x, z: s.z, r: 9 })))) continue;
+      pts.push({ x, z });
+    }
+    if (pts.length < GATES) return null;
+    // ordem: sempre o portal mais perto do anterior, começando pelo mais perto da entrada
+    const list = [];
+    let x = d.start.x;
+    let z = d.start.z;
+    while (pts.length) {
+      pts.sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
+      const g = pts.shift();
+      list.push(g);
+      x = g.x;
+      z = g.z;
+    }
+    list.forEach((g, i) => {
+      const o = list[i + 1] || list[i - 1];
+      g.g = groupAt(g.x, g.z);
+      // o arco fica de frente para o próximo portal
+      g.g.rotation.y = Math.atan2(o.x - g.x, o.z - g.z);
+      g.mat = lightMat(GATE_COL, 0.4);
+      put(g.g, box(0.16, 1.9, 0.16), mats().metal, -0.95, 0.95, 0);
+      put(g.g, box(0.16, 1.9, 0.16), mats().metal, 0.95, 0.95, 0);
+      put(g.g, box(2.06, 0.14, 0.18), g.mat, 0, 1.92, 0);
+      put(g.g, box(0.08, 1.7, 0.2), g.mat, -0.95, 0.95, 0);
+      put(g.g, box(0.08, 1.7, 0.2), g.mat, 0.95, 0.95, 0);
+      put(g.g, mats().ring, g.mat, 0, 0.03, 0, 1.05, 1, 1.05);
+    });
+    const E = { kind: 'relay', x: null, z: null, list, idx: 0, st: 'idle', t: 0, beep: -1 };
+    relay.paint(E);
+    return E;
+  },
+  paint(E) {
+    E.list.forEach((g, i) => {
+      if (i < E.idx) setLight(g.mat, 0x39ff88, 1);
+      else if (E.st === 'failed') setLight(g.mat, 0x333344, 0.3);
+      else setLight(g.mat, GATE_COL, i === E.idx ? 2 : 0.4);
+    });
+  },
+  update(E, dt) {
+    if (E.st === 'done' || E.st === 'failed') return;
+    const p = G.player;
+    const cur = E.list[E.idx];
+    setLight(cur.mat, GATE_COL, 1.8 + Math.sin(G.t * 7) * 0.7);
+    if (p.alive && Math.hypot(p.x - cur.x, p.z - cur.z) < 1.25) {
+      E.idx++;
+      setLight(cur.mat, 0x39ff88, 1);
+      sfx.seq(E.idx % 4);
+      burst(cur.x, 1, cur.z, GATE_COL, 18, 4, 0.07, 0.5, { up: 1.2 });
+      ringFx(cur.x, cur.z, 1.6, 0x39ff88, 0.35);
+      floatText(cur.x, 2.5, cur.z, `${E.idx}/${GATES}`, 'up');
+      if (E.idx >= GATES) {
+        complete(E, 1.5, L('CIRCUITO COMPLETO!', 'CIRCUIT COMPLETE!'), L(`Com ${mmss(E.t)} de sobra`, `With ${mmss(E.t)} to spare`), p.x, p.z, { extra: E.t >= 10 });
+        return;
+      }
+      // tempo para o próximo: reta com folga para corredores e lutas
+      const nx = E.list[E.idx];
+      const add = Math.round(5 + (Math.hypot(nx.x - cur.x, nx.z - cur.z) * 1.7) / 4.6);
+      if (E.st === 'idle') {
+        E.st = 'run';
+        E.t = add;
+        toast(L(`🏁 Valendo! Corra para o próximo portal (seta na borda da tela). Cada portal dá mais tempo.`, `🏁 Go! Run to the next gate (arrow at the screen edge). Each gate gives you more time.`), 'leg', 'ev');
+      } else {
+        E.t += add;
+        floatText(cur.x, 1.9, cur.z, `+${add}s`, 'info');
+      }
+      return;
+    }
+    if (E.st !== 'run' || !p.alive || G.mode !== 'play') return;
+    E.t -= dt;
+    if (E.t < 5 && Math.floor(E.t) !== E.beep) {
+      E.beep = Math.floor(E.t);
+      sfx.telegraph();
+    }
+    if (E.t > 0) return;
+    E.t = 0;
+    E.st = 'failed';
+    relay.paint(E);
+    failed(E, L('O tempo acabou: o circuito desligou.', 'Time is up: the circuit shut down.'));
+  },
+  hud: (E) => (E.st === 'idle' ? L('ache o 1º portal', 'find gate 1') : `${E.idx}/${GATES} · <span style="color:${E.t < 8 ? '#ff4466' : 'inherit'}">${mmss(E.t)}</span>`),
+  save: (E) => ({ idx: E.idx, t: Math.round(E.t) }),
+  load(E, s) {
+    E.idx = Math.max(0, Math.min(GATES - 1, s.idx | 0));
+    E.t = +s.t || 0;
+    if (s.st === 'run' || s.st === 'done' || s.st === 'failed') E.st = s.st;
+    if (E.st === 'done') E.idx = GATES;
+    if (E.st === 'run') E.t = Math.max(15, E.t);
+    relay.paint(E);
+  },
+  intro: () => L(`${GATES} portais formam um circuito pelo andar (o próximo fica marcado no mapa). Passe pelo primeiro e o relógio começa: cada portal dá mais tempo.`, `${GATES} gates form a circuit across the floor (the next one is marked on the map). Go through the first and the clock starts: every gate adds time.`),
+};
+
+// ==================================================================
+// 12. Sinal Perdido: um cofre de dados enterrado numa área do mapa; o bipe acelera quando você chega perto
+// ==================================================================
+const SIG_COL = 0x5affd2;
+const SIG_HOLD = 3;
+const SIG_R = 7; // raio da área marcada no mapa
+const signal = {
+  setup(d, floor, rooms) {
+    const far = rooms.filter((r) => Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 14);
+    const s = findSpot(d, far.length ? far : rooms, 1);
+    if (!s) return null;
+    // a área do mapa não fica centrada no esconderijo
+    const a = rr(0, Math.PI * 2);
+    const off = rr(2, 4.5);
+    const cx = s.x + Math.cos(a) * off;
+    const cz = s.z + Math.sin(a) * off;
+    const g = groupAt(s.x, s.z);
+    put(g, box(0.55, 0.1, 0.55), mats().dark, 0, 0.05, 0);
+    put(g, mats().cyl, mats().metal, 0, 0.35, 0, 0.03, 0.55, 0.03);
+    const tip = lightMat(SIG_COL, 0.3);
+    put(g, mats().oct, tip, 0, 0.68, 0, 0.07, 0.1, 0.07);
+    const ringMat = flatMat(SIG_COL, 0);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, 1.1, 1, 1.1);
+    const fill = put(g, mats().disc, flatMat(SIG_COL, 0.3), 0, 0.025, 0, 0.001, 1, 0.001);
+    return { kind: 'signal', x: s.x, z: s.z, cx, cz, g, tip, ringMat, fill, st: 'search', hold: 0, beepT: 0, flash: 0, dist: 99, amb: false };
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    if (!p.alive) return;
+    const dist = Math.hypot(p.x - E.x, p.z - E.z);
+    E.dist = dist;
+    // bipe (e a antena pisca) mais rápido quanto mais perto
+    E.flash -= dt;
+    if (dist < 18) {
+      E.beepT -= dt;
+      if (E.beepT <= 0) {
+        E.beepT = 0.16 + dist * 0.07;
+        E.flash = 0.09;
+        sfx.click();
+      }
+    }
+    setLight(E.tip, SIG_COL, E.flash > 0 ? 3 : dist < 5 ? 1.2 : 0.3);
+    E.ringMat.opacity = dist < 6 ? 0.55 : 0;
+    const on = dist < 1.15;
+    if (on && !E.amb) {
+      // desenterrar faz barulho: catadores aparecem
+      E.amb = true;
+      spawnWave(E, Math.min(6, 2 + Math.floor(G.floor / 6)), E.x, E.z, 4, 7, SIG_COL);
+      sfx.alarm();
+      toast(L('📶 Achou! Fique em cima para desenterrar o cofre... e cuidado com os catadores!', '📶 Found it! Stand on it to dig up the cache... and watch out for scavengers!'), 'leg', 'ev');
+    }
+    E.hold = on ? E.hold + dt : Math.max(0, E.hold - dt * 0.5);
+    const k = Math.min(1, E.hold / SIG_HOLD) * 1.1;
+    E.fill.scale.set(Math.max(0.001, k), 1, Math.max(0.001, k));
+    if (on && Math.random() < dt * 10) burst(E.x, 0.2, E.z, 0x8a6a44, 1, 2, 0.06, 0.4, { up: 1 });
+    if (E.hold >= SIG_HOLD) {
+      setLight(E.tip, 0x39ff88, 2);
+      E.ringMat.opacity = 0;
+      E.fill.scale.set(0.001, 1, 0.001);
+      complete(E, 1.4, L('SINAL RECUPERADO', 'SIGNAL RECOVERED'), L('O cofre de dados estava enterrado aqui', 'The data cache was buried here'), E.x, E.z, { extra: true });
+    }
+  },
+  hud(E) {
+    if (E.hold > 0) return `${Math.floor((E.hold / SIG_HOLD) * 100)}%`;
+    const d = E.dist;
+    return d < 5 ? `<span style="color:#ff4466">${L('fervendo!', 'burning hot!')}</span>` : d < 12 ? L('quente', 'warm') : d < 22 ? L('morno', 'lukewarm') : L('frio', 'cold');
+  },
+  save: (E) => ({ amb: E.amb ? 1 : 0 }),
+  load(E, s) {
+    E.amb = !!s.amb;
+    if (s.st === 'done') {
+      E.st = 'done';
+      setLight(E.tip, 0x39ff88, 2);
+    }
+  },
+  intro: () => L('um cofre de dados está enterrado em algum lugar dentro do círculo do mapa. Siga o bipe: quanto mais perto, mais rápido ele toca.', 'a data cache is buried somewhere inside the circle on the map. Follow the beep: the closer you get, the faster it goes.'),
+};
+
+// ==================================================================
+// 13. Servidores Corrompidos: 3 torres que chamam defensores; destrua as 3
+// ==================================================================
+const SRV = 3;
+const SRV_COL = 0xff3366;
+const servers = {
+  setup(d, floor, rooms) {
+    const pts = [];
+    for (let k = 0; k < SRV; k++) {
+      const s = findSpot(d, rooms, 1, 1, pts.map((o) => ({ x: o.x, z: o.z, r: 13 })));
+      if (!s) return null;
+      pts.push({ x: s.x, z: s.z });
+    }
+    const list = pts.map((s) => {
+      const e = spawnEnemy('pylon', s.x, s.z, {});
+      e.hp = e.maxHp = e.maxHp * 6;
+      e.xp = Math.round(e.xp * 4);
+      e.name = L('Servidor Corrompido', 'Corrupted Server');
+      e.server = true;
+      const g = groupAt(s.x, s.z);
+      const ring = lightMat(SRV_COL, 1.4);
+      put(g, mats().ring, ring, 0, 0.03, 0, 1.3, 1, 1.3);
+      return { x: s.x, z: s.z, e, g, ring, t: rr(1, 3) };
+    });
+    return { kind: 'servers', x: null, z: null, list, st: 'idle' };
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    for (const s of E.list) {
+      if (!s.e.alive) continue;
+      if (Math.random() < dt * 5) burst(s.x, rr(0.6, 2.2), s.z, SRV_COL, 1, 1.2, 0.05, 0.4, { grav: -3 });
+      if (!p.alive || Math.hypot(p.x - s.x, p.z - s.z) > 10) continue;
+      if (E.st === 'idle') {
+        E.st = 'active';
+        toast(L('🗄️ O servidor detectou você e está chamando defensores! Destrua as torres rápido.', '🗄️ The server spotted you and is calling defenders! Destroy the towers fast.'), 'leg', 'ev');
+      }
+      s.t -= dt;
+      if (s.t > 0) continue;
+      s.t = rr(8, 11);
+      spawnWave(E, Math.min(4, 1 + Math.floor(G.floor / 8)), s.x, s.z, 1.6, 3.5, SRV_COL);
+      sfx.telegraph();
+    }
+  },
+  kill(E, e) {
+    const s = E.list.find((o) => o.e === e);
+    if (!s || E.st === 'done') return;
+    setLight(s.ring, 0x333344, 0.3);
+    G.shake = Math.max(G.shake, 0.3);
+    const n = E.list.filter((o) => !o.e.alive).length;
+    floatText(e.x, 2.8, e.z, L(`SERVIDOR ${n}/${SRV}`, `SERVER ${n}/${SRV}`), 'up');
+    if (n >= SRV) complete(E, 1.8, L('REDE LIMPA!', 'NETWORK PURGED!'), L('Os 3 servidores caíram', 'All 3 servers are down'), e.x, e.z);
+  },
+  hud: (E) => `${E.list.filter((o) => !o.e.alive).length}/${SRV}`,
+  save: () => ({}),
+  load(E, s) {
+    for (const o of E.list) if (!o.e.alive) setLight(o.ring, 0x333344, 0.3);
+    if (s.st === 'done' || E.list.every((o) => !o.e.alive)) E.st = 'done';
+  },
+  intro: () => L(`${SRV} servidores corrompidos estão neste andar (marcados no mapa). Eles chamam defensores quando você chega perto: destrua os ${SRV}.`, `${SRV} corrupted servers are on this floor (marked on the map). They call defenders when you get close: destroy all ${SRV}.`),
+};
+
+// ==================================================================
+// 14. Escolta do Drone: o drone só anda com você por perto; ondas tentam pará-lo
+// ==================================================================
+const ESC_COL = 0x5ab8ff;
+const ESC_R = 4.5;
+const ESC_SPEED = 1.7;
+const escort = {
+  setup(d, floor, rooms) {
+    const a = findSpot(d, rooms, 1);
+    if (!a) return null;
+    let b = null;
+    for (const r of shuffle(rooms.slice())) {
+      const x = Math.floor(r.x + r.w / 2) + 0.5;
+      const z = Math.floor(r.y + r.h / 2) + 0.5;
+      const dd = Math.hypot(x - a.x, z - a.z);
+      if (dd < 16 || dd > 42 || !spotOk(d, x, z, 1, 1, [{ x: a.x, z: a.z, r: 12 }])) continue;
+      b = { x, z };
+      break;
+    }
+    if (!b) return null;
+    const path = findPath(d, a.x, a.z, b.x, b.z, 12000);
+    if (!path || !path.length) return null;
+    const pts = [{ x: a.x, z: a.z }, ...path];
+    let tot = 0;
+    for (let i = 1; i < pts.length; i++) tot += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
+    const g = groupAt(a.x, a.z);
+    const bob = new THREE.Group();
+    g.add(bob);
+    put(bob, box(0.7, 0.26, 0.7), mats().metal, 0, 1.35, 0);
+    put(bob, box(1.1, 0.06, 0.12), mats().dark, 0, 1.45, 0);
+    put(bob, box(0.12, 0.06, 1.1), mats().dark, 0, 1.45, 0);
+    put(bob, mats().oct, glowMat(ESC_COL, 2.6), 0, 1.05, 0, 0.17, 0.24, 0.17);
+    const rmat = lightMat(ESC_COL, 1.2);
+    put(g, mats().ring, rmat, 0, 0.03, 0, ESC_R, 1, ESC_R);
+    const tg = groupAt(b.x, b.z);
+    put(tg, mats().ring, lightMat(ESC_COL, 1.6), 0, 0.03, 0, 1.3, 1, 1.3);
+    put(tg, mats().cyl, flatMat(ESC_COL, 0.18), 0, 2.5, 0, 0.6, 5, 0.6);
+    return { kind: 'escort', x: a.x, z: a.z, g, bob, tg, rmat, pts, tot, prog: 0, tx: b.x, tz: b.z, st: 'idle', waveT: 3, stall: false, tipT: 0 };
+  },
+  place(E) {
+    let left = E.prog;
+    for (let i = 1; i < E.pts.length; i++) {
+      const p0 = E.pts[i - 1];
+      const p1 = E.pts[i];
+      const L0 = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+      if (left <= L0 || i === E.pts.length - 1) {
+        const k = L0 > 0 ? Math.min(1, left / L0) : 1;
+        E.x = p0.x + (p1.x - p0.x) * k;
+        E.z = p0.z + (p1.z - p0.z) * k;
+        E.bob.rotation.y = Math.atan2(p1.x - p0.x, p1.z - p0.z);
+        break;
+      }
+      left -= L0;
+    }
+    E.g.position.set(E.x, 0, E.z);
+  },
+  update(E, dt) {
+    E.bob.position.y = Math.sin(G.t * 2.4) * 0.1;
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      if (!near(E, 3)) return;
+      E.st = 'move';
+      banner(L('ESCOLTA INICIADA', 'ESCORT STARTED'), L('Fique dentro do círculo: o drone só anda com você por perto', 'Stay inside the circle: the drone only moves with you nearby'));
+      sfx.deploy();
+    }
+    const inside = near(E, ESC_R);
+    if (inside === E.stall) {
+      E.stall = !inside;
+      setLight(E.rmat, inside ? ESC_COL : 0xff4466, inside ? 1.2 : 1.8);
+    }
+    E.tipT -= dt;
+    if (inside) {
+      E.prog = Math.min(E.tot, E.prog + dt * ESC_SPEED);
+      escort.place(E);
+      if (Math.random() < dt * 6) burst(E.x, 0.9, E.z, ESC_COL, 1, 1.2, 0.05, 0.4, { grav: 4 });
+    } else if (E.tipT <= 0) {
+      E.tipT = 2.5;
+      floatText(E.x, 2.3, E.z, L('ESPERANDO VOCÊ', 'WAITING FOR YOU'), 'shield');
+    }
+    E.waveT -= dt;
+    if (E.waveT <= 0) {
+      E.waveT = 7 + Math.random() * 2.5;
+      spawnWave(E, Math.min(6, 2 + Math.floor(G.floor / 6)), E.x, E.z, 6, 9, ESC_COL);
+      sfx.telegraph();
+    }
+    if (E.prog < E.tot) return;
+    E.tg.visible = false;
+    setLight(E.rmat, 0x39ff88, 1.2);
+    complete(E, 1.6, L('ENTREGA CONCLUÍDA', 'DELIVERY COMPLETE'), L('O drone chegou inteiro', 'The drone made it in one piece'), E.tx, E.tz);
+  },
+  hud: (E) => (E.st === 'idle' ? L('vá até o drone', 'reach the drone') : `${Math.floor((E.prog / E.tot) * 100)}%${E.stall ? ' ⏸' : ''}`),
+  save: (E) => ({ prog: Math.round(E.prog * 10) / 10 }),
+  load(E, s) {
+    E.prog = Math.max(0, Math.min(E.tot, +s.prog || 0));
+    if (s.st === 'move') E.st = 'move';
+    if (s.st === 'done') {
+      E.st = 'done';
+      E.prog = E.tot;
+      E.tg.visible = false;
+      setLight(E.rmat, 0x39ff88, 1.2);
+    }
+    escort.place(E);
+  },
+  busy: (E) => E.st === 'move',
+  intro: () => L('leve o drone até o destino (marcado no mapa). Ele só anda com você dentro do círculo, e ondas de inimigos vão atacar no caminho.', 'escort the drone to its destination (marked on the map). It only moves while you are inside its circle, and waves of enemies will attack along the way.'),
+};
+
+// ==================================================================
+// 15. Pares de Memória: placas escondem cores; pise em duas para revelar e ache todos os pares
+// ==================================================================
+const PAIR_COL = [0xff3355, 0x39ff88, 0x3d8bff, 0xffd23d, 0xff2bd6, 0x00f0ff];
+const PCS = 1.75;
+const pairs = {
+  setup(d, floor, rooms) {
+    const n = floor >= 12 ? 6 : 4;
+    const rows = n / 2;
+    const s = findSpot(d, rooms, 3.4, rows === 3 ? 2.6 : 1.7);
+    if (!s) return null;
+    const vals = shuffle([...Array(n).keys(), ...Array(n).keys()]);
+    const g = groupAt(s.x, s.z);
+    const tiles = vals.map((v, k) => {
+      const ox = ((k % 4) - 1.5) * PCS;
+      const oz = (Math.floor(k / 4) - (rows - 1) / 2) * PCS;
+      put(g, box(1.22, 0.04, 1.22), mats().dark, ox, 0.02, oz);
+      const m = put(g, box(1.06, 0.07, 1.06), mats().plateOff, ox, 0.035, oz);
+      return { x: s.x + ox, z: s.z + oz, m, v };
+    });
+    return { kind: 'pairs', x: s.x, z: s.z, g, n, tiles, matched: tiles.map(() => 0), open: [], miss: 0, hideT: 0, last: -1, st: 'play', hinted: false };
+  },
+  paint(E) {
+    E.tiles.forEach((t, k) => {
+      t.m.material = E.matched[k] ? glowMat(PAIR_COL[t.v], E.st === 'done' ? 1.3 : 0.9) : E.open.includes(k) ? glowMat(PAIR_COL[t.v], 1.8) : mats().plateOff;
+    });
+  },
+  under(E) {
+    const p = G.player;
+    if (!p.alive) return -1;
+    for (let k = 0; k < E.tiles.length; k++) if (Math.abs(p.x - E.tiles[k].x) < 0.55 && Math.abs(p.z - E.tiles[k].z) < 0.55) return k;
+    return -1;
+  },
+  update(E, dt) {
+    if (E.st !== 'play') return;
+    if (!E.hinted && near(E, 5.5)) {
+      E.hinted = true;
+      toast(L('🃏 Pise numa placa para ver a cor dela e depois em outra: se as cores forem iguais, o par fica aceso. Ache todos os pares!', '🃏 Step on a plate to see its color, then on another: if the colors match, the pair stays lit. Find every pair!'), 'leg', 'ev');
+    }
+    if (E.hideT > 0) {
+      E.hideT -= dt;
+      if (E.hideT <= 0) {
+        E.open = [];
+        pairs.paint(E);
+      }
+    }
+    const k = pairs.under(E);
+    if (k === E.last) return;
+    E.last = k;
+    if (k < 0 || E.hideT > 0 || E.matched[k] || E.open.includes(k)) return;
+    const t = E.tiles[k];
+    E.open.push(k);
+    pairs.paint(E);
+    sfx.seq(t.v % 4);
+    burst(t.x, 0.2, t.z, PAIR_COL[t.v], 8, 2, 0.05, 0.4, { up: 1 });
+    if (E.open.length < 2) return;
+    const [a, b] = E.open;
+    if (E.tiles[a].v === E.tiles[b].v) {
+      E.matched[a] = E.matched[b] = 1;
+      E.open = [];
+      sfx.upgrade();
+      floatText(t.x, 1.6, t.z, L('PAR!', 'PAIR!'), 'up');
+      if (E.matched.every((m) => m)) {
+        E.st = 'done';
+        pairs.paint(E);
+        const perfect = E.miss <= E.n / 2;
+        complete(E, 1.1 + E.n * 0.05, L('MEMÓRIA PERFEITA', 'TOTAL RECALL'), L(`${E.n} pares com ${E.miss} erros`, `${E.n} pairs with ${E.miss} misses`), E.x, E.z, { extra: perfect });
+        return;
+      }
+      pairs.paint(E);
+      return;
+    }
+    // errou: as duas ficam à mostra um instante e apagam; muitos erros chamam inimigos
+    E.miss++;
+    E.hideT = 0.9;
+    sfx.deny();
+    floatText(t.x, 1.6, t.z, '✖', 'hurt');
+    if (E.miss > E.n && E.miss % 2 === 0) {
+      spawnWave(E, 2, E.x, E.z, 4.5, 7, 0xff2244);
+      floatText(E.x, 2.2, E.z, L('ALARME!', 'ALARM!'), 'hurt');
+    }
+  },
+  hud: (E) => `${E.matched.filter((m) => m).length / 2}/${E.n}${E.miss ? ` <span style="color:#ff4466">✖${E.miss}</span>` : ''}`,
+  save: (E) => ({ m: E.matched.join(''), miss: E.miss }),
+  load(E, s) {
+    if (typeof s.m === 'string' && s.m.length === E.tiles.length) E.matched = s.m.split('').map(Number);
+    E.miss = s.miss | 0;
+    if (s.st === 'done') {
+      E.st = 'done';
+      E.matched = E.tiles.map(() => 1);
+    }
+    pairs.paint(E);
+  },
+  intro: (E) => L(`${E.n * 2} placas escondem ${E.n} pares de cores (marcado no mapa). Revele duas de cada vez e ache todos os pares; quem erra menos ganha um cofre extra.`, `${E.n * 2} plates hide ${E.n} pairs of colors (marked on the map). Reveal two at a time and find every pair; few misses earn an extra cache.`),
+};
+
 // ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, secret, gamble };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, secret, gamble };
 
-// Andar novo (etapa 5, com a semente do andar): sorteia o evento principal e o pequeno
+// Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (um sempre, o segundo
+// com a mesma chance que o único tinha antes) e o pequeno
 export function setupEvents(d, floor, boss, rooms) {
   if (!G.events) G.events = [];
   const forced = forcedMain;
@@ -1345,16 +1804,23 @@ export function setupEvents(d, floor, boss, rooms) {
   const free = rooms.filter((r) => !r.safe);
   // sempre gasta os mesmos sorteios (continuar o andar refaz igual)
   const roll = chance(floor < 4 ? 0.55 : 0.7);
-  const first = pick(MAIN_EVENTS.filter((k) => k !== lastMain));
+  const fresh = MAIN_EVENTS.filter((k) => !lastMain.includes(k));
+  const first = pick(fresh);
+  const second = pick(fresh.filter((k) => k !== first));
+  const want = boss || !free.length ? 0 : roll ? 2 : 1;
   // cada tentativa começa do mesmo ponto da semente: se uma não couber, a próxima sai igual ao continuar
-  const order = forced !== undefined ? (forced ? [forced] : []) : !boss && roll && free.length ? [first, ...MAIN_EVENTS.filter((k) => k !== first && k !== lastMain)] : [];
+  // embaralha a lista inteira (mesmo número de sorteios com ou sem andar salvo)
+  const rest = shuffle(MAIN_EVENTS.slice()).filter((k) => k !== first && k !== second && fresh.includes(k));
+  const order = forced !== undefined ? forced : [first, second, ...rest];
+  const got = [];
   for (const k of order) {
+    if (forced === undefined && got.length >= want) break;
     const E = isolateRandom(() => KIND[k].setup(d, floor, free));
     if (!E) continue;
     G.events.push(E);
-    if (forced === undefined) lastMain = k;
-    break;
+    got.push(k);
   }
+  if (forced === undefined) lastMain = got;
   // pequeno: Sala Secreta (já escavada) ou Máquina de Apostas
   if (d.secret) {
     const E = secret.setup(d);
@@ -1372,8 +1838,8 @@ export function updateEvents(dt) {
 
 // inimigo derrotado pelo jogador
 export function eventKill(e) {
-  if (!e.wanted || !G.events) return;
-  for (const E of G.events) if (E.kind === 'wanted') wanted.kill(E, e);
+  if (!(e.wanted || e.server) || !G.events) return;
+  for (const E of G.events) if (KIND[E.kind].kill) KIND[E.kind].kill(E, e);
 }
 
 // evento que ainda manda ondas: o andar só conta como limpo depois
@@ -1402,7 +1868,7 @@ export function eventsHud() {
     if (!K.hud) continue;
     const I = EVENT_INFO[E.kind];
     const st = E.st === 'done' ? 'done' : E.st === 'failed' ? 'fail' : '';
-    h += `<div class="ri-con ri-ev ${st}" style="--c:${I.css}">${I.icon} ${I.short || I.name}<b>${E.st === 'done' ? ' ✔' : E.st === 'failed' ? ' ✖' : ' · ' + K.hud(E)}</b></div>`;
+    h += `<div class="ri-con ri-ev ${st}" style="--c:${I.css}">${I.icon}<span class="ri-nm"> ${I.short || I.name}${E.st === 'done' || E.st === 'failed' ? '' : ' ·'}</span><b>${E.st === 'done' ? ' ✔' : E.st === 'failed' ? ' ✖' : ' ' + K.hud(E)}</b></div>`;
   }
   return h;
 }
@@ -1452,6 +1918,31 @@ export function drawEventMarks(ctx, d) {
       ctx.moveTo(e.x, e.z - 3);
       ctx.lineTo(e.x, e.z + 3);
       ctx.stroke();
+    } else if (E.kind === 'relay') {
+      const g = E.list[E.idx];
+      if (!g) continue;
+      ctx.strokeStyle = I.css;
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.arc(g.x, g.z, 1.8 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
+      diamond(ctx, g.x, g.z, 1, I.css);
+    } else if (E.kind === 'signal') {
+      // só a área aproximada
+      ctx.strokeStyle = I.css;
+      ctx.lineWidth = 0.6;
+      ctx.setLineDash([1.5, 1.2]);
+      ctx.beginPath();
+      ctx.arc(E.cx, E.cz, SIG_R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (E.kind === 'servers') {
+      for (const s of E.list) if (s.e.alive) diamond(ctx, s.x, s.z, 1.2 * pulse, I.css);
+    } else if (E.kind === 'escort') {
+      diamond(ctx, E.x, E.z, 1.1, I.css);
+      ctx.strokeStyle = I.css;
+      ctx.lineWidth = 0.7;
+      ctx.strokeRect(E.tx - 1.6 * pulse, E.tz - 1.6 * pulse, 3.2 * pulse, 3.2 * pulse);
     } else if (E.kind === 'secret') {
       continue; // segredo não aparece no mapa
     } else if (E.kind === 'gamble') {
@@ -1472,5 +1963,7 @@ export function eventArrows(arrow) {
     if (E.kind === 'wanted' && E.e.alive) arrow(E.e.x, E.e.z, '#ffaa00', 1);
     else if (E.kind === 'bomb') for (const c of E.cons) !c.off && arrow(c.x, c.z, '#ff7a1a', 0.85);
     else if (E.kind === 'shards' && E.st === 'run') for (const s of E.list) !s.got && arrow(s.x, s.z, '#7affc8', 0.7);
+    else if (E.kind === 'relay' && E.st === 'run' && E.list[E.idx]) arrow(E.list[E.idx].x, E.list[E.idx].z, '#ff9a3d', 1);
+    else if (E.kind === 'escort' && E.st === 'move') arrow(E.stall ? E.x : E.tx, E.stall ? E.z : E.tz, '#5ab8ff', 0.85);
   }
 }

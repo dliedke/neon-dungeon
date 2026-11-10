@@ -1,6 +1,6 @@
 // Personagem do jogador: atributos, movimento, ataques e progressão.
 import * as THREE from 'three';
-import { G } from './state.js';
+import { G, TILE } from './state.js';
 import { Input } from './input.js';
 import { CLASSES, SKILL_FN, passiveMods, updateAura, MAX_RANK } from './classes.js';
 import { starterWeapon, SLOTS } from './items.js';
@@ -274,7 +274,8 @@ export function respawn() {
   p.buffs = {};
   p.model.root.rotation.x = 0;
   p.model.root.position.y = 0;
-  placePlayer(G.dungeon.start.x, G.dungeon.start.z);
+  const spot = bossRespawnSpot();
+  placePlayer(spot ? spot.x : G.dungeon.start.x, spot ? spot.z : G.dungeon.start.z);
   for (const e of G.enemies) {
     e.aggro = false;
     if (e.boss) {
@@ -294,6 +295,50 @@ export function respawn() {
   for (const h of G.hazards) h.t = 0;
   if (lost > 0) toast(L(`Você perdeu ${lost}¢ no resgate.`, `You lost ${lost}¢ in the rescue.`), 'warn');
   return lost;
+}
+
+// Morreu num andar de chefe com o chefe vivo: volta perto da arena (do lado de fora,
+// para a luta recomeçar com a introdução) em vez de atravessar o mapa todo de novo.
+// Busca em largura a partir da entrada, então o ponto sempre é alcançável.
+function bossRespawnSpot() {
+  const d = G.dungeon;
+  const a = d.arena;
+  if (!a || !G.enemies.some((e) => e.alive && e.boss)) return null;
+  const { W, H, grid } = d;
+  const FLOOR = TILE.FLOOR;
+  const SAFE_FEAT = [0, 2, 14]; // chão normal, gelo e neve (sem lodo, espinhos, lava, radiação ou obstáculos)
+  const margin = 4; // distância mínima da borda da arena
+  const outside = (i, j) => i < a.x - margin || i > a.x + a.w - 1 + margin || j < a.y - margin || j > a.y + a.h - 1 + margin;
+  const clear = (i, j) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const k = (j + dy) * W + i + dx;
+      if (grid[k] !== FLOOR || (d.feat && !SAFE_FEAT.includes(d.feat[k]))) return false;
+    }
+    return true;
+  };
+  const seen = new Uint8Array(W * H);
+  const q = new Int32Array(W * H);
+  let h = 0, t = 0, best = -1, bestD = Infinity;
+  const s0 = Math.floor(d.start.z) * W + Math.floor(d.start.x);
+  q[t++] = s0;
+  seen[s0] = 1;
+  while (h < t) {
+    const k = q[h++];
+    const i = k % W, j = (k / W) | 0;
+    if (outside(i, j) && i > 1 && j > 1 && i < W - 2 && j < H - 2 && clear(i, j)) {
+      const dd = Math.hypot(i + 0.5 - a.cx, j + 0.5 - a.cz);
+      if (dd < bestD) { bestD = dd; best = k; }
+    }
+    for (const n of [k - 1, k + 1, k - W, k + W]) {
+      if (n < 0 || n >= W * H || seen[n] || grid[n] !== FLOOR) continue;
+      seen[n] = 1;
+      q[t++] = n;
+    }
+  }
+  if (best < 0) return null;
+  const sd = Math.hypot(d.start.x - a.cx, d.start.z - a.cz);
+  if (sd <= bestD + 2) return null; // a entrada já é tão perto quanto
+  return { x: (best % W) + 0.5, z: ((best / W) | 0) + 0.5 };
 }
 
 // ------------------------------------------------------------------

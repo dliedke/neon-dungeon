@@ -68,21 +68,23 @@ button { font-family: inherit; }
 .bar.en .fill { background: linear-gradient(90deg, #005bff, #00c8ff); box-shadow: 0 0 10px #00c8ff; }
 /* XP para o próximo nível: faixa fina na borda de baixo da tela, de ponta a ponta, com os números no meio */
 #xp-bar {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 12px; overflow: hidden;
-  background: rgba(6, 6, 18, 0.75); border-top: 1px solid rgba(194, 123, 255, 0.25);
+  position: absolute; left: 0; right: 0; bottom: 0; height: 17px; overflow: hidden;
+  background: rgba(6, 6, 18, 0.85); border-top: 1px solid rgba(194, 123, 255, 0.35);
 }
 #xp-bar .fill {
   position: absolute; inset: 0; transform-origin: left;
-  background: linear-gradient(90deg, #8a3dff, #c27bff); box-shadow: 0 0 8px #a35cff;
+  /* roxo escuro: o texto branco por cima fica legível na parte cheia e na vazia */
+  background: linear-gradient(90deg, #3a128a, #6a2ad0); box-shadow: 0 0 8px #7a3aff;
 }
 /* marcas a cada 10% */
 #xp-bar::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.55) calc(10% - 1px) 10%);
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.4) calc(10% - 1px) 10%);
 }
 #xp-bar span {
-  position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-size: 10px; line-height: 1; font-weight: 700;
-  letter-spacing: 0.5px; color: #f1e6ff; text-shadow: 0 0 2px #000, 0 0 3px #000, 0 1px 1px #000; white-space: nowrap;
+  position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-size: 13px; line-height: 1; font-weight: 700;
+  letter-spacing: 0.8px; color: #fff; white-space: nowrap;
+  text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 0 0 4px #000;
 }
 .bar span {
   position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; line-height: 1;
@@ -186,7 +188,7 @@ body.touch #diff-range::-webkit-slider-thumb { width: 18px; height: 18px; margin
 .bar.tgt .fill { background: #ff2b5a; }
 
 #skillbar {
-  position: absolute; bottom: calc(16px + var(--safe-b)); left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: calc(22px + var(--safe-b)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 8px; pointer-events: none;
 }
 .skill {
@@ -1047,6 +1049,15 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
   #combo { top: 50%; }
   #combo b { font-size: 28px; }
   #run-info { max-width: 170px; }
+  /* toque: objetivo e créditos encostados na borda, longe dos botões de poder */
+  body.touch #run-info { max-width: 160px; margin-right: calc(-10px - var(--safe-r) * 0.5); }
+  body.touch #credits { margin-right: calc(-8px - var(--safe-r) * 0.5); }
+  /* toque: créditos logo abaixo do minimapa e eventos só com ícone + progresso (sobra espaço para os botões) */
+  body.touch #credits { order: 1; }
+  body.touch #run-info { order: 2; }
+  body.touch .ri-ev .ri-nm { display: none; }
+  #xp-bar { height: 15px; }
+  #xp-bar span { font-size: 12px; }
   .ri-con, .ri-anom { font-size: 10px; }
   body.touch #combo { right: auto; left: calc(16px + var(--safe-l, 0px)); top: 30%; text-align: left; }
   body.touch #combo .combo-bar { margin: 4px auto 0 0; }

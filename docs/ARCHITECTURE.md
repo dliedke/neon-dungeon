@@ -214,7 +214,7 @@ hitEnemy(e, mult, opts)
 
 ## Floor events (`events.js`)
 
-Puzzles and challenges. Each floor gets at most one main event (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner) and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor.
+Puzzles and challenges. Each floor gets up to two main events (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs) and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor.
 
 - Each kind is an object registered in `KIND`:
   - `setup(d, floor, rooms)` builds the meshes and returns the event object, or `null` if it doesn't fit.

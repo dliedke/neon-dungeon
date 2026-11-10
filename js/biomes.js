@@ -192,15 +192,9 @@ export function placeFeatures(d, theme) {
           }
         }
         break;
-      case 'merchant': {
-        const r = rooms.filter((x) => x !== d.exitRoom).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
-        if (r) {
-          r.safe = true;
-          const pt = openSpot(d, r, reachMap(d)) || { x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5 };
-          d.props.push({ type: 'merchant', x: pt.x, z: pt.z, near: false });
-        }
+      case 'merchant':
+        placeMerchant(d, rooms);
         break;
-      }
       case 'trees':
       case 'pines':
       case 'boulders':
@@ -309,10 +303,22 @@ export function placeFeatures(d, theme) {
         break;
     }
   }
+  // andares fora do Mercado Noturno que também têm loja (o 22 fica longe demais dos mercados 13 e 25)
+  if (EXTRA_SHOP_FLOORS.includes(d.floor) && !d.props.some((p) => p.type === 'merchant')) placeMerchant(d, rooms);
   // o estoque depende do equipamento atual: não pode mexer na sequência da semente do andar
   if (G.char && d.props.some((p) => p.type === 'merchant')) d.shop = isolateRandom(() => makeShopStock(d.floor));
   placeStash(d);
   placeSmith(d, rooms);
+}
+
+// Mercador na maior sala (fora a da saída), que vira sala segura
+const EXTRA_SHOP_FLOORS = [22];
+function placeMerchant(d, rooms) {
+  const r = rooms.filter((x) => x !== d.exitRoom).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
+  if (!r) return;
+  r.safe = true;
+  const pt = openSpot(d, r, reachMap(d)) || { x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5 };
+  d.props.push({ type: 'merchant', x: pt.x, z: pt.z, near: false });
 }
 
 // Mercador ou ferreiro a menos de `rad` do ponto (fendas, santuários e cofres não podem ficar em cima deles)

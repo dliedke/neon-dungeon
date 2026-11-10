@@ -230,6 +230,11 @@ export function achList() {
     wanted: ['🎯', 1, L('Xerife Neon', 'Neon Sheriff'), L('Capture um Procurado', 'Bring down a Wanted target')],
     shards: ['💠', 0, L('Colecionador de Dados', 'Data Collector'), L('Recupere todos os fragmentos numa Caça aos Fragmentos', 'Recover every shard in a Shard Hunt')],
     prisoner: ['⛓️', 0, L('Libertador', 'Liberator'), L('Liberte um Prisioneiro', 'Free a Prisoner')],
+    relay: ['🏁', 0, L('Piloto de Circuito', 'Circuit Racer'), L('Complete um Circuito Neon', 'Finish a Neon Circuit')],
+    signal: ['📶', 0, L('Caçador de Sinais', 'Signal Hunter'), L('Desenterre o cofre de um Sinal Perdido', 'Dig up the cache of a Lost Signal')],
+    servers: ['🗄️', 1, L('Formatador', 'Hard Reset'), L('Destrua os Servidores Corrompidos', 'Destroy the Corrupted Servers')],
+    escort: ['🛸', 0, L('Guarda-Costas', 'Bodyguard'), L('Leve o drone até o destino numa Escolta do Drone', 'Get the drone to its destination in a Drone Escort')],
+    pairs: ['🃏', 0, L('Memória de Elefante', 'Elephant Memory'), L('Ache todos os pares em Pares de Memória', 'Find every pair in Memory Pairs')],
     secret: ['🧱', 0, L('Olho Clínico', 'Keen Eye'), L('Encontre uma Sala Secreta', 'Find a Secret Room')],
     gamble: ['🎰', 0, L('Apostador', 'High Roller'), L('Jogue na Máquina de Apostas', 'Play a Slot Machine')],
   };

@@ -113,7 +113,7 @@ Every floor changes biome (13 in total), each with its own map layout, lighting 
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Grid of rooms | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one) |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one). Floor 22 has a merchant too |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 
@@ -167,7 +167,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 ### Puzzles and challenges
 
-From floor 2 on, most floors (not boss floors) get one **main event**, and some also get a **small event**. Each one is announced when you arrive, shown in the HUD and marked on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Completing one pays credits and items, and each kind has its own medal.
+From floor 2 on, most floors (not boss floors) get one or two **main events**, and some also get a **small event**. Each one is announced when you arrive, shown in the HUD and marked on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Completing one pays credits and items, and each kind has its own medal.
 
 | Event | What to do |
 |---|---|
@@ -179,6 +179,11 @@ From floor 2 on, most floors (not boss floors) get one **main event**, and some 
 | **Wanted** | A named elite with a bounty. When it is badly hurt it flees and hides on the other side of the floor, twice. Hunt it down for a big reward. |
 | **Shard Hunt** | The first shard starts a timer. Collect all 6 before time runs out. |
 | **Prisoner** | A caged prisoner watched by guards. Defeat the guards and open the cage: the prisoner thanks you with Fury and Haste. |
+| **Neon Circuit** | Run through 6 gates in order before the clock runs out. Every gate adds time; finish with time to spare for an extra chest. |
+| **Lost Signal** | A buried antenna beeps faster the closer you get (the map only shows a rough area). Stand on it for 3 seconds to dig it up while an ambush attacks. |
+| **Corrupted Servers** | Three armored servers keep sending waves of enemies while you are near. Destroy all three. |
+| **Drone Escort** | A drone flies to a point across the floor, but only while you stay close. Protect it from the waves on the way. |
+| **Memory Pairs** | Step on tiles to reveal their symbols and find all the pairs. Too many misses call in enemies; few misses earn an extra chest. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic). Each bet costs more than the last. |
 
@@ -186,7 +191,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**142 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**147 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
@@ -287,7 +292,7 @@ js/ui.js               menus, inventory, shop and gamepad navigation
 js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
-js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, secret room...)
+js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, circuit, escort, secret room...)
 js/mythic.js           mythic item powers
 js/finale.js           true-ending cinematic after beating the Inferno (2D canvas)
 js/pets.js             decorative pets that wander each biome
