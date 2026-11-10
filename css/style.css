@@ -538,6 +538,19 @@ body.pad .cell.empty { pointer-events: auto; }
 .cmp-cur .it-cmp { margin-top: 0; }
 .cmp-new + .cmp-cur { margin-top: 10px; }
 #skill-list { display: grid; gap: 10px; }
+/* desktop largo: coluna de detalhes larga com o item selecionado e o equipado lado a lado (a janela não fica crescendo e encolhendo) */
+@media (min-width: 1500px) and (min-height: 521px) {
+  #panel-char .panel.wide { max-width: 1680px; }
+  #tab-equip.tab-body { grid-template-columns: 240px minmax(0, 1fr) minmax(0, 640px); }
+  .cmp-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+  .cmp-new + .cmp-cur { margin-top: 0; }
+  .cmp-cur .it-cmp { margin-bottom: 4px; }
+  .cmp-wrap .it-name { font-size: 16px; }
+  .cmp-wrap .it-aff, .cmp-wrap .it-diff { font-size: 14px; }
+  .cmp-wrap .it-myth, .cmp-wrap .it-div { font-size: 13px; }
+  .cmp-wrap .detail-actions { margin: 8px 0 0; }
+  #tab-equip .detail-col > #item-detail > .item-card { max-width: 400px; }
+}
 .srow { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
 .srow .sicon { width: 54px; height: 54px; padding: 10px; border: 1px solid var(--line); color: var(--accent); }
 .srow .sname { font-size: 17px; font-weight: 700; }
