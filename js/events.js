@@ -16,7 +16,7 @@ import { toast, banner } from './ui.js';
 import { spawnEnemy, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion } from './combat.js';
-import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath } from './dungeon.js';
+import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { tierOf, effFloor, applyAnomalyToEnemy } from './run.js';
@@ -128,10 +128,16 @@ function spotOk(d, x, z, hx, hz, avoid = []) {
   return true;
 }
 function findSpot(d, rooms, hx, hz = hx, avoid) {
-  for (const r of shuffle(rooms.slice())) {
-    for (let t = 0; t < 5; t++) {
-      const x = Math.floor(r.x + r.w / 2 + rr(-r.w / 4, r.w / 4)) + 0.5;
-      const z = Math.floor(r.y + r.h / 2 + rr(-r.h / 4, r.h / 4)) + 0.5;
+  // praça do labirinto: primeiro para as peças grandes, por último para as pequenas
+  const big = Math.max(hx, hz) >= 2.4;
+  const list = shuffle(rooms.slice()).sort((a, b) => (big ? (b.plaza ? 1 : 0) - (a.plaza ? 1 : 0) : (a.plaza ? 1 : 0) - (b.plaza ? 1 : 0)));
+  for (const r of list) {
+    for (let t = 0; t < 11; t++) {
+      // primeiro perto do meio; depois em qualquer canto da sala onde a peça caiba
+      const ax = t < 5 ? r.w / 4 : Math.max(0, r.w / 2 - hx - 1);
+      const az = t < 5 ? r.h / 4 : Math.max(0, r.h / 2 - hz - 1);
+      const x = Math.floor(r.x + r.w / 2 + rr(-ax, ax)) + 0.5;
+      const z = Math.floor(r.y + r.h / 2 + rr(-az, az)) + 0.5;
       if (spotOk(d, x, z, hx, hz, avoid)) return { x, z, r };
     }
   }
@@ -682,19 +688,9 @@ const bomb = {
       if (!s) return null;
       cons.push({ x: s.x, z: s.z });
     }
-    // tempo: volta mais curta passando pelos 3 (em linha reta, com folga para corredores e lutas)
-    let x = d.start.x;
-    let z = d.start.z;
-    let dist = 0;
-    const left = cons.slice();
-    while (left.length) {
-      left.sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
-      const c = left.shift();
-      dist += Math.hypot(c.x - x, c.z - z);
-      x = c.x;
-      z = c.z;
-    }
-    const limit = Math.round(Math.min(240, Math.max(75, 35 + (dist * 1.6) / 4.6 + 3 * HOLD)) / 5) * 5;
+    // tempo: volta mais curta passando pelos 3 pelo caminho de verdade (com folga para lutas e,
+    // no labirinto, para os becos)
+    const limit = Math.round(Math.min(d.maze ? 480 : 300, Math.max(75, 35 + routeTime(d, d.start.x, d.start.z, cons) + 3 * HOLD)) / 5) * 5;
     const E = { kind: 'bomb', x: null, z: null, cons, t: limit, limit, delay: 8, st: 'armed', beep: 0, tipT: 0, hinted: false };
     for (const c of cons) {
       c.g = groupAt(c.x, c.z);
@@ -986,19 +982,9 @@ const shards = {
       const n = E.list.filter((o) => o.got).length;
       floatText(s.x, 1.8, s.z, `${n}/${SHARDS}`, 'up');
       if (E.st === 'idle') {
-        // o relógio começa no primeiro: volta mais curta pelos que faltam + folga
-        let x = s.x;
-        let z = s.z;
-        let dist = 0;
-        const left = E.list.filter((o) => !o.got);
-        while (left.length) {
-          left.sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
-          const c = left.shift();
-          dist += Math.hypot(c.x - x, c.z - z);
-          x = c.x;
-          z = c.z;
-        }
-        E.limit = E.t = Math.round(Math.min(200, 35 + (dist * 1.6) / 4.6) / 5) * 5;
+        // o relógio começa no primeiro: volta mais curta pelos que faltam (caminho de verdade) + folga
+        const d = G.dungeon;
+        E.limit = E.t = Math.round(Math.min(d.maze ? 420 : 260, 35 + routeTime(d, s.x, s.z, E.list.filter((o) => !o.got))) / 5) * 5;
         E.st = 'run';
         toast(L(`💠 O relógio começou: pegue os outros ${SHARDS - 1} fragmentos em <b>${mmss(E.t)}</b> (setas no mapa).`, `💠 The clock is ticking: grab the other ${SHARDS - 1} shards within <b>${mmss(E.t)}</b> (arrows on the map).`), 'leg', 'ev');
       }
@@ -1356,17 +1342,11 @@ const relay = {
       pts.push({ x, z });
     }
     if (pts.length < GATES) return null;
-    // ordem: sempre o portal mais perto do anterior, começando pelo mais perto da entrada
-    const list = [];
-    let x = d.start.x;
-    let z = d.start.z;
-    while (pts.length) {
-      pts.sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
-      const g = pts.shift();
-      list.push(g);
-      x = g.x;
-      z = g.z;
-    }
+    // ordem: sempre o portal mais perto (pelo caminho) do anterior, começando pelo mais perto da
+    // entrada; cada portal guarda os segundos que dá para chegar ao próximo
+    const { legs } = routeTime(d, d.start.x, d.start.z, pts, true);
+    const list = legs.map((l) => l.p);
+    legs.forEach((l, i) => i && (list[i - 1].add = Math.round(5 + l.s)));
     list.forEach((g, i) => {
       const o = list[i + 1] || list[i - 1];
       g.g = groupAt(g.x, g.z);
@@ -1407,9 +1387,8 @@ const relay = {
         complete(E, 1.5, L('CIRCUITO COMPLETO!', 'CIRCUIT COMPLETE!'), L(`Com ${mmss(E.t)} de sobra`, `With ${mmss(E.t)} to spare`), p.x, p.z, { extra: E.t >= 10 });
         return;
       }
-      // tempo para o próximo: reta com folga para corredores e lutas
-      const nx = E.list[E.idx];
-      const add = Math.round(5 + (Math.hypot(nx.x - cur.x, nx.z - cur.z) * 1.7) / 4.6);
+      // tempo para o próximo: caminho de verdade com folga para lutas (e becos, no labirinto)
+      const add = cur.add;
       if (E.st === 'idle') {
         E.st = 'run';
         E.t = add;
@@ -1596,21 +1575,29 @@ const escort = {
   setup(d, floor, rooms) {
     const a = findSpot(d, rooms, 1);
     if (!a) return null;
+    // destino: a reta entre 16 e 42 e o caminho de verdade até 75 (no labirinto a reta engana)
     let b = null;
+    let pts = null;
+    let tot = 0;
+    let tries = 0;
     for (const r of shuffle(rooms.slice())) {
       const x = Math.floor(r.x + r.w / 2) + 0.5;
       const z = Math.floor(r.y + r.h / 2) + 0.5;
       const dd = Math.hypot(x - a.x, z - a.z);
       if (dd < 16 || dd > 42 || !spotOk(d, x, z, 1, 1, [{ x: a.x, z: a.z, r: 12 }])) continue;
+      if (++tries > 10) break;
+      const path = findPath(d, a.x, a.z, x, z, 12000);
+      if (!path || !path.length) continue;
+      const p2 = [{ x: a.x, z: a.z }, ...path];
+      let len = 0;
+      for (let i = 1; i < p2.length; i++) len += Math.hypot(p2[i].x - p2[i - 1].x, p2[i].z - p2[i - 1].z);
+      if (len > 75) continue;
       b = { x, z };
+      pts = p2;
+      tot = len;
       break;
     }
     if (!b) return null;
-    const path = findPath(d, a.x, a.z, b.x, b.z, 12000);
-    if (!path || !path.length) return null;
-    const pts = [{ x: a.x, z: a.z }, ...path];
-    let tot = 0;
-    for (let i = 1; i < pts.length; i++) tot += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
     const g = groupAt(a.x, a.z);
     const bob = new THREE.Group();
     g.add(bob);

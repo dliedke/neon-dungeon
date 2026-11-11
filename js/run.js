@@ -109,19 +109,23 @@ export function applyAnomalyToEnemy(e) {
 // ------------------------------------------------------------------
 const CONTRACTS = {
   elites: (f, n) => (n.elites >= 2 ? { goal: Math.min(n.elites, 3), text: (g) => L(`Derrote ${g} inimigos de elite`, `Defeat ${g} elite enemies`) } : null),
-  blitz: (f) => ({ goal: Math.min(22, 10 + Math.floor(f / 2)), window: 40, text: (g) => L(`Derrote ${g} inimigos em 40 segundos`, `Defeat ${g} enemies within 40 seconds`) }),
+  blitz: (f, n) => ({ goal: Math.min(22, 10 + Math.floor(f / 2)), window: n.blitz, text: (g) => L(`Derrote ${g} inimigos em ${n.blitz} segundos`, `Defeat ${g} enemies within ${n.blitz} seconds`) }),
   combo: (f) => ({ goal: Math.min(30, 10 + Math.floor(f / 2)), text: (g) => L(`Faça um combo de ${g} abates`, `Reach a ${g}-kill combo`) }),
   sweep: (f, n) => (n.regular >= 12 ? { goal: Math.round(n.regular * 0.8), text: (g) => L(`Limpe o andar: derrote ${g} inimigos`, `Clear the floor: defeat ${g} enemies`) } : null),
   flawless: (f) => ({ goal: Math.min(16, 7 + Math.floor(f / 3)), text: (g) => L(`Derrote ${g} inimigos seguidos sem levar dano`, `Defeat ${g} enemies in a row without taking damage`) }),
-  speed: (f, n) => (n.regular >= 20 ? { goal: Math.min(40, 16 + f), limit: 150, text: (g) => L(`Derrote ${g} inimigos em 2:30`, `Defeat ${g} enemies within 2:30`) } : null),
+  speed: (f, n) => (n.regular >= 20 ? { goal: Math.min(40, 16 + f), limit: n.speed, text: (g) => L(`Derrote ${g} inimigos em ${clock(n.speed)}`, `Defeat ${g} enemies within ${clock(n.speed)}`) } : null),
   thief: (f, n) => (n.thief ? { goal: 1, text: () => L('Derrube o Ladrão de Dados antes que ele fuja', 'Take down the Data Thief before it escapes') } : null),
   rift: (f, n) => (n.rift ? { goal: 1, text: () => L('Feche a Fenda de Desafio', 'Close the Challenge Rift') } : null),
 };
 
+const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
 function rollContract(floor) {
   G.contract = null;
   if (floor < 2 || isFinalFloor(floor)) return;
-  const n = { elites: 0, regular: 0, thief: false, rift: G.pickups.some((pk) => pk.type === 'rift') };
+  // no labirinto os inimigos ficam espalhados pelos corredores: os contratos com relógio dão mais tempo
+  const mz = G.dungeon && G.dungeon.maze;
+  const n = { elites: 0, regular: 0, thief: false, rift: G.pickups.some((pk) => pk.type === 'rift'), speed: mz === 'L' ? 240 : mz ? 210 : 150, blitz: mz ? 55 : 40 };
   for (const e of G.enemies) {
     if (!e.alive || e.inert || e.boss || e.type === 'pylon') continue;
     if (e.type === 'thief') n.thief = true;
@@ -329,7 +333,7 @@ export function setupFloorEvents(d, floor, boss, rooms) {
   if (floor < 2 || isFinalFloor(floor)) return;
   // Fendas de Desafio em salas longe do início (não aparecem em andar de chefe): quase sempre uma,
   // às vezes duas (e até três nos andares fundos); nunca na sala do mercador/ferreiro (sala segura) nem perto deles
-  const free = rooms.filter((r) => !r.safe);
+  const free = rooms.filter((r) => !r.safe && !r.plaza);
   const nRifts = boss || !free.length ? 0 : (chance(floor < 4 ? 0.6 : 0.85) ? 1 : 0) + (floor >= 4 && chance(0.4) ? 1 : 0) + (floor >= 12 && chance(0.25) ? 1 : 0);
   for (let j = 0; j < nRifts; j++) {
     for (let k = 0; k < 12; k++) {

@@ -163,6 +163,9 @@ export function placeFeatures(d, theme) {
             const w = (a, b) => grid[b * W + a] === TILE.WALL;
             if (f(i, j) && f(i, j + 1) && w(i, j - 1) && w(i, j + 2) && f(i - 1, j) && f(i + 1, j)) cands.push({ x1: i + 0.5, z1: j - 0.05, x2: i + 0.5, z2: j + 2.05 });
             if (f(i, j) && f(i + 1, j) && w(i - 1, j) && w(i + 2, j) && f(i, j - 1) && f(i, j + 1)) cands.push({ x1: i - 0.05, z1: j + 0.5, x2: i + 2.05, z2: j + 0.5 });
+            // corredores de 3 (labirinto)
+            if (f(i, j) && f(i, j + 1) && f(i, j + 2) && w(i, j - 1) && w(i, j + 3) && f(i - 1, j + 1) && f(i + 1, j + 1)) cands.push({ x1: i + 0.5, z1: j - 0.05, x2: i + 0.5, z2: j + 3.05 });
+            if (f(i, j) && f(i + 1, j) && f(i + 2, j) && w(i - 1, j) && w(i + 3, j) && f(i + 1, j - 1) && f(i + 1, j + 1)) cands.push({ x1: i - 0.05, z1: j + 0.5, x2: i + 3.05, z2: j + 0.5 });
           }
         const chosen = [];
         for (const c of shuffle(cands)) {
@@ -178,7 +181,7 @@ export function placeFeatures(d, theme) {
       }
       case 'stalls':
         for (const r of d.rooms) {
-          if (r.arena) continue;
+          if (r.arena || r.hall || r.plaza) continue; // nos corredores do labirinto a barraca fecharia a passagem
           for (let k = 0; k < Math.floor((r.w * r.h) / 30); k++) {
             const i = ri(r.x + 2, r.x + r.w - 4);
             const j = ri(r.y + 2, r.y + r.h - 3);
@@ -212,15 +215,18 @@ export function placeFeatures(d, theme) {
       case 'wrecks':
       case 'bladetrees':
       case 'statues': {
-        // obstáculos isolados (nunca bloqueiam a passagem)
+        // obstáculos isolados (nunca bloqueiam a passagem); no labirinto só nas salas, não nos corredores
+        const ring = d.maze ? 2 : 1;
+        const plazas = d.rooms.filter((r) => r.plaza);
         const WILD_OBST = { deadtrees: [FEAT.TREE, 0.04], ribs: [FEAT.BONE, 0.035], crystals: [FEAT.CRYSTAL, 0.03], waves: [FEAT.WAVE, 0.03], wrecks: [FEAT.WRECK, 0.008], bladetrees: [FEAT.BLADETREE, 0.045], statues: [FEAT.STATUE, 0.014] }[f];
         const kind = WILD_OBST ? WILD_OBST[0] : f === 'trees' || f === 'pines' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
         const dens = WILD_OBST ? WILD_OBST[1] : f === 'trees' ? 0.07 : f === 'pines' ? 0.05 : f === 'boulders' ? (theme.id === 'mountain' ? 0.045 : 0.025) : 0.03;
         for (let j = 3; j < H - 3; j++)
           for (let i = 3; i < W - 3; i++) {
             if (grid[j * W + i] !== TILE.FLOOR || rnd() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
+            if (plazas.some((r) => i >= r.x && i < r.x + r.w && j >= r.y && j < r.y + r.h)) continue;
             let free = true;
-            for (let dy = -1; dy <= 1 && free; dy++) for (let dx = -1; dx <= 1 && free; dx++) if (grid[(j + dy) * W + i + dx] !== TILE.FLOOR || d.feat[(j + dy) * W + i + dx] >= 9) free = false;
+            for (let dy = -ring; dy <= ring && free; dy++) for (let dx = -ring; dx <= ring && free; dx++) if (grid[(j + dy) * W + i + dx] !== TILE.FLOOR || d.feat[(j + dy) * W + i + dx] >= 9) free = false;
             if (!free) continue;
             grid[j * W + i] = TILE.OBST;
             d.feat[j * W + i] = kind;
@@ -321,7 +327,7 @@ export function placeFeatures(d, theme) {
         placeWild(d, theme, f, { set, rooms, nearKey });
         break;
       case 'lanterns':
-        for (const r of d.rooms) for (let k = 0; k < Math.floor((r.w * r.h) / 25); k++) d.props.push({ type: 'lantern', x: r.x + rr(1, r.w - 1), z: r.y + rr(1, r.h - 1), y: rr(2.2, 3), color: pick([theme.a, theme.b, 0xff6a00]) });
+        for (const r of d.rooms) for (let k = 0; !r.hall && !r.plaza && k < Math.floor((r.w * r.h) / 25); k++) d.props.push({ type: 'lantern', x: r.x + rr(1, r.w - 1), z: r.y + rr(1, r.h - 1), y: rr(2.2, 3), color: pick([theme.a, theme.b, 0xff6a00]) });
         break;
     }
   }
@@ -336,7 +342,7 @@ export function placeFeatures(d, theme) {
 // Mercador na maior sala (fora a da saída), que vira sala segura
 const EXTRA_SHOP_FLOORS = [22];
 function placeMerchant(d, rooms) {
-  const r = rooms.filter((x) => x !== d.exitRoom).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
+  const r = rooms.filter((x) => x !== d.exitRoom && !x.hall && !x.plaza).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
   if (!r) return;
   r.safe = true;
   const pt = openSpot(d, r, reachMap(d)) || { x: Math.floor(r.cx) + 0.5, z: Math.floor(r.cy) + 0.5 };
@@ -485,7 +491,10 @@ function openSpot(d, r, seen) {
 function carvePits(d, rooms, shape) {
   const { W, grid } = d;
   d.pits = [];
+  // no labirinto, buracos só nas salas: num corredor eles poderiam isolar um pedaço do mapa
+  if (d.maze) rooms = rooms.filter((r) => !r.hall && !r.plaza);
   const n = Math.min(rooms.length, shape === 'blob' ? 6 : 5);
+  let reach = reachable(d);
   for (const r of shuffle(rooms.slice()).slice(0, n)) {
     const c = randomFloorInRoom(d, r, 2);
     const changed = [];
@@ -513,10 +522,13 @@ function carvePits(d, rooms, shape) {
     }
     if (changed.length < 3) continue;
     for (const k of changed) grid[k] = TILE.PIT;
-    if (!stillConnected(d)) {
+    // tudo que dava para alcançar antes continua alcançável (menos o próprio buraco)
+    const now = reachable(d);
+    if (now !== reach - changed.length) {
       for (const k of changed) grid[k] = TILE.FLOOR;
       continue;
     }
+    reach = now;
     let sx = 0;
     let sz = 0;
     for (const k of changed) {
@@ -528,7 +540,8 @@ function carvePits(d, rooms, shape) {
 }
 
 // O fim do andar continua alcançável a partir do início?
-function stillConnected(d) {
+// quantos blocos de chão dá para alcançar a partir do início (-1 se a saída ficou isolada)
+function reachable(d) {
   const { W, H, grid } = d;
   const seen = new Uint8Array(W * H);
   const s = Math.floor(d.start.z) * W + Math.floor(d.start.x);
@@ -546,10 +559,7 @@ function stillConnected(d) {
       q.push(nb);
     }
   }
-  const e = Math.floor(d.exit.z) * W + Math.floor(d.exit.x);
-  if (!seen[e]) return false;
-  // nenhuma sala pode ficar isolada
-  return d.rooms.every((r) => seen[Math.floor(r.cy) * W + Math.floor(r.cx)] || grid[Math.floor(r.cy) * W + Math.floor(r.cx)] !== TILE.FLOOR);
+  return seen[Math.floor(d.exit.z) * W + Math.floor(d.exit.x)] ? n : -1;
 }
 
 function makeShopStock(floor) {

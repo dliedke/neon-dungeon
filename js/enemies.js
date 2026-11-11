@@ -1968,7 +1968,7 @@ export function populateFloor(d, floor, boss) {
   G.nest = null;
   let nestRoom = null;
   if (floor >= 4 && !final && !boss && chance(NEST_CHANCE)) {
-    const big = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom && !r.safe && r.w >= 8 && r.h >= 8 && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 16);
+    const big = d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom && !r.safe && !r.hall && !r.plaza && r.w >= 8 && r.h >= 8 && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 16);
     if (big.length) nestRoom = pick(big);
   }
   const quotas = new Map();
@@ -2038,7 +2038,9 @@ export function populateFloor(d, floor, boss) {
   }
   // biomas selvagens: pilhas de ossos, cristais de sal e sentinelas da colmeia
   if (d.wild) wildPopulate(d, floor);
-  const chestRooms = shuffle(d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
+  // no labirinto, cofres e santuários ficam pelos corredores: as salas sobram para lutas e eventos
+  const hallsFar = d.maze ? d.rooms.filter((r) => r.hall && Math.hypot(r.cx - d.start.x, r.cy - d.start.z) > 12) : [];
+  const chestRooms = shuffle(hallsFar.length >= 2 ? hallsFar.slice() : d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
   // eventos: Ladrão de Dados e Santuário Neon em salas longe do início
   const far = d.rooms.filter((r) => r !== d.rooms[0] && !(boss && r === d.exitRoom) && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
   if (floor >= 2 && !final && far.length && chance(boss ? 0.15 : 0.35)) {
@@ -2046,7 +2048,7 @@ export function populateFloor(d, floor, boss) {
     spawnEnemy('thief', pt.x, pt.z);
   }
   // Behemoth Furioso: aparece de vez em quando (não nos andares de chefe), numa sala grande longe do início e da saída
-  const beastRooms = far.filter((r) => !r.safe && r.w >= 7 && r.h >= 7 && r !== d.exitRoom && r !== nestRoom);
+  const beastRooms = far.filter((r) => !r.safe && !r.hall && r.w >= 7 && r.h >= 7 && r !== d.exitRoom && r !== nestRoom);
   if ((floor >= 3 || tierOf().off) && !final && !boss && beastRooms.length && chance(BEAST_CHANCE)) {
     const pt = spotAwayFromNpc(d, pick(beastRooms), 2.5);
     if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 5 && Math.hypot(pt.x - d.start.x, pt.z - d.start.z) > 16) spawnEnemy('behemoth', pt.x, pt.z);
@@ -2054,7 +2056,7 @@ export function populateFloor(d, floor, boss) {
   // Santuários Neon: 2 ou 3 por andar, de tipos diferentes e em salas diferentes
   if (!final) {
     const kinds = shuffle(Object.keys(SHRINES));
-    const rooms = shuffle((far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice());
+    const rooms = shuffle((hallsFar.length >= 3 ? hallsFar : far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice());
     const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 3 : 2);
     for (let k = 0; k < n; k++) {
       const pt = spotAwayFromNpc(d, rooms[k], 2);

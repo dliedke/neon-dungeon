@@ -97,27 +97,29 @@ The merchant, the blacksmith and the shared stash only open when you ask: **clic
 
 ## Biomes
 
-Every floor changes biome (23 in total), each with its own map layout, lighting and hazards:
+Floors cycle through three shapes: a **small maze**, an **open field** and a **large maze** (the boss floor). Mission timers are based on the real walking route, so they stay fair inside the mazes.
+
+Every floor changes biome (23 in total), each with its own lighting and hazards. The layout below is used on open-field floors:
 
 | Biome | Layout | Environment |
 | --- | --- | --- |
-| **Neon District** | Rooms and corridors | Rain and electric puddles that shock anyone standing in them |
+| **Neon District** | Plazas and wide streets | Rain and electric puddles that shock anyone standing in them |
 | **Dark Forest** | Organic clearings | Dense fog, trees, glowing mushrooms, fireflies, thorn patches; **ghosts** that pass through walls and exploding **wisps** |
-| **Corporate Factory** | Rooms and corridors | Conveyor belts and hydraulic presses (they crush enemies too) |
+| **Corporate Factory** | Plazas and wide streets | Conveyor belts and hydraulic presses (they crush enemies too) |
 | **Snowy Peaks** | Open snowfields | Snowfall, pine trees, ice and deep snow that slows you; blizzards cut your vision; **cyber yetis** that throw snowballs and **frost wolves** whose bites chill |
 | **Mutant Meadow** | Open fields | Daylight, grass, flowers, lakes and boulders; charging **mutant boars** and acid-spitting **toads** |
-| **Toxic Sewers** | Wide sewer corridors | Toxic sludge rivers that slow you down and hurt |
+| **Toxic Sewers** | Wide sewer plazas | Toxic sludge rivers that slow you down and hurt |
 | **Mountain Pass** | Rocky canyons | Tall cliffs, bottomless chasms and falling rocks; charging **armored rams** and diving **bionic eagles** |
-| **Orbital Station** | Rooms over open space | Holes into space, vacuum airlocks that pull everything in; pouncing **xeno stalkers** |
+| **Orbital Station** | Plazas over open space | Holes into space, vacuum airlocks that pull everything in; pouncing **xeno stalkers** |
 | **Cryo Lab** | Organic caves | Slippery ice and cryo vents that freeze enemies and chill you |
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
-| **Data Core** | Grid of rooms | Laser grids that switch on and off |
+| **Data Core** | Large server halls | Laser grids that switch on and off |
 | **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one). Floor 22 has a merchant too |
 | **Bone Forest** | Organic clearings | Giant ribs and dead trees; **bone piles** you can smash for healing marrow, but the noise draws predators. Enemies standing in marrow pools heal; stalking **bone stalkers** |
 | **Glass Desert** | Open dunes | A glass floor that cracks into cutting shards under explosions and heavy blows, crystal spires and shard storms; **glass golems** vanish into reflections, leaving fake copies behind |
 | **Fallen Star Swamp** | Organic caves | Black water and low-gravity craters where you run faster and shots slow down; creatures race you for **star fragments** (grab one for Fury, or they get empowered); exploding **star sparks** |
-| **Hive City** | Rooms and corridors | Sticky resin that slows your feet; fire and explosions burn it away, but the smoke wakes the swarm. **Hive sentinels** stop to signal: kill them before they finish or **soldier wasps** arrive |
+| **Hive City** | Plazas and wide streets | Sticky resin that slows your feet; fire and explosions burn it away, but the smoke wakes the swarm. **Hive sentinels** stop to signal: kill them before they finish or **soldier wasps** arrive |
 | **Petrified Sea** | Open fields | Stone waves and shipwrecks; areas briefly **turn back into sea**, dragging and slowing everyone and changing routes mid-fight; armored **fossil crabs** |
 | **Weapon Garden** | Open fields | Blade trees and swords stuck in the ground: enemies pull them out and hit harder, so grab them first for Fury; **blade knights** |
 | **Sleeping God Mountain** | Flesh caves | The mountain breathes and the wind pushes everyone; veins burn on every heartbeat; too much destruction wakes the body's defenses and **antibodies** swarm you |
