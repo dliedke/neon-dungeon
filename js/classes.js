@@ -12,7 +12,7 @@ import * as PW from './powers.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 // nível máximo de cada poder
-export const MAX_RANK = 20;
+export const MAX_RANK = 30;
 const pct = (v) => `${Math.round(v * 100)}%`;
 
 export const ICONS = {
