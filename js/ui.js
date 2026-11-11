@@ -1834,13 +1834,16 @@ function renderShop() {
   const price = stimPrice();
   let html = `<div class="shop-row stim-row"><div><b>Stim</b> · ${L('cura 60% da vida', 'heals 60% health')} · ${c.stims}/${MAX_STIMS}</div>
     <button class="btn small" data-nav data-buy="stim" ${c.credits < price || c.stims >= MAX_STIMS ? 'disabled' : ''}>${price}¢</button></div>`;
+  // inventário cheio: o botão de comprar continua ativo (clicar avisa), e o motivo fica escrito aqui
+  const full = c.inv.length >= INV_SIZE;
+  if (full) html += `<div class="shop-row shop-full">⚠ ${L(`Inventário cheio (${c.inv.length}/${INV_SIZE}): recicle itens ou guarde no baú para poder comprar.`, `Inventory full (${c.inv.length}/${INV_SIZE}): recycle items or store them in the stash to buy.`)}</div>`;
   html += '<div class="shop-grid">';
   shopStock.forEach((it, k) => {
     const better = !it.sold && isUpgrade(it, c.equip);
     const tag = better ? `<div class="it-cmp" style="color:#39ff88">▲ ${L('Melhor que o equipado', 'Better than equipped')}</div>` : '';
     const btn = it.sold
       ? `<button class="btn small ghost" disabled>${L('Vendido', 'Sold')}</button>`
-      : `<button class="btn small" data-nav data-buy="${k}" ${c.credits < it.price || c.inv.length >= INV_SIZE ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
+      : `<button class="btn small${full ? ' ghost' : ''}" data-nav data-buy="${k}" ${c.credits < it.price ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
     html += `<div class="shop-item${better ? ' better-card' : ''}${it.sold ? ' sold' : ''}">${itemCardHtml(it, tag)}${btn}</div>`;
   });
   html += '</div>';
