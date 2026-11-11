@@ -14,6 +14,7 @@ const KB = {
 };
 const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 'stim', 'inv', 'skills', 'pause', 'map', 'interact'];
 const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb', 'rt'];
+const DIRS = ['up', 'down', 'left', 'right'];
 
 const src = { kb: {}, mouse: {}, touch: {}, pad: {} };
 const latch = {}; // garante que toques rápidos (apertar e soltar no mesmo quadro) sejam vistos
@@ -36,6 +37,10 @@ export const Input = {
     return !!held[a] && !prev[a];
   },
   nav(n) {
+    return !!navHeld[n] && (!navPrev[n] || (navRepeat[n] && DIRS.includes(n)));
+  },
+  // como nav(), mas segurar o botão também repete (aprimorar no ferreiro, pontos na árvore)
+  navHold(n) {
     return !!navHeld[n] && (!navPrev[n] || navRepeat[n]);
   },
   update,
@@ -291,8 +296,10 @@ function update(dt) {
   for (const n of NAV) {
     navPrev[n] = navHeld[n];
     navHeld[n] = !!padNav[n];
-    if (navHeld[n] && navPrev[n] && ['up', 'down', 'left', 'right'].includes(n)) {
-      navRepeat[n] = (navRepeat[n + 'T'] = (navRepeat[n + 'T'] || 0) + dt) > 0.35 && ((navRepeat[n + 'C'] = (navRepeat[n + 'C'] || 0) + dt) > 0.09);
+    if (navHeld[n] && navPrev[n]) {
+      // direções repetem sozinhas; os botões só repetem via navHold() (ex.: segurar {A} no ferreiro)
+      const dir = DIRS.includes(n);
+      navRepeat[n] = (navRepeat[n + 'T'] = (navRepeat[n + 'T'] || 0) + dt) > (dir ? 0.35 : 0.45) && ((navRepeat[n + 'C'] = (navRepeat[n + 'C'] || 0) + dt) > (dir ? 0.09 : 0.12));
       if (navRepeat[n]) navRepeat[n + 'C'] = 0;
     } else {
       navRepeat[n] = false;

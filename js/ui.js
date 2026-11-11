@@ -26,6 +26,8 @@ const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
 let focused = null;
 let lastPanel = null;
+let aHoldOk = false; // segurar {A} só repete enquanto a ação continua dando certo
+let aHoldEl = ''; // e só no mesmo item (não pula para o próximo ao chegar no máximo)
 
 // ------------------------------------------------------------------
 // Inicialização
@@ -1318,7 +1320,8 @@ function slotOf(c, i) {
 // Desbloqueia ou evolui o poder (botão de confirmar do controle ou clique duplo)
 function treeSpend(i) {
   treeSel = i;
-  if (spendPoint(i)) {
+  const ok = spendPoint(i);
+  if (ok) {
     sfx.levelup();
     const sk = CLASSES[G.char.cls].skills[i];
     toast(`${sk.name}: ${L('nível', 'level')} ${G.char.skills[i]}`, 'up', 'tree');
@@ -1332,6 +1335,7 @@ function treeSpend(i) {
   }
   renderChar();
   restoreFocus(`[data-node="${i}"]`);
+  return ok;
 }
 
 // Devolve todos os pontos do poder (com confirmação) para reaplicar em outros
@@ -1732,14 +1736,24 @@ export function uiPadUpdate() {
     moveFocus(dir, list);
   }
   if (Input.nav('a') && focused) {
+    aHoldOk = false;
     if (focused.matches('[data-node]')) {
-      treeSpend(+focused.dataset.node);
+      aHoldOk = treeSpend(+focused.dataset.node);
+    } else if (focused.matches('[data-forge]')) {
+      aHoldOk = !focused.disabled;
+      aHoldEl = focused.dataset.forge;
+      focused.click();
     } else if (focused.matches('.cell[data-swhere]')) {
       stashMove(focused.dataset.swhere, focused.dataset.uid); // baú: guarda ou pega
     } else if (focused.matches('.cell[data-uid]')) {
       if (focused.dataset.where === 'inv') equipItem(focused.dataset.uid);
       else unequip(focused.dataset.slot);
     } else focused.click();
+  } else if (aHoldOk && focused && Input.navHold('a')) {
+    // segurar {A}: continua aprimorando no ferreiro / pondo pontos no poder até chegar no máximo ou acabar
+    if (focused.matches('[data-forge]') && focused.dataset.forge === aHoldEl && !focused.disabled) focused.click();
+    else if (focused.matches('[data-node]') && G.char.skillPoints > 0) aHoldOk = treeSpend(+focused.dataset.node);
+    else aHoldOk = false;
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
   if (root.id === 'panel-stash') {
