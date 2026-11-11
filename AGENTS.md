@@ -35,6 +35,8 @@ There are no automated tests. Check changes in a real browser:
 
 ## Deploy: always report when the Pages build is live
 
+**Default workflow:** when a change is done, commit it and push to `main` without asking (commit message in Portuguese, see Conventions). Then wait for the Pages build and report it as below.
+
 After every push to `main`, **always** wait for the GitHub Pages build and tell the user when the site is live. Don't stop at "pushed".
 Pages uses the legacy "build from branch" mode, which runs the `pages-build-deployment` workflow (usually 30s–1.5min):
 
