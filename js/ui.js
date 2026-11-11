@@ -231,10 +231,6 @@ export function initUI() {
   // cliques nos itens (delegação)
   $('panel-char').addEventListener('click', onCharClick);
   $('panel-char').addEventListener('dblclick', onCharDblClick);
-  $('panel-char').addEventListener('mouseover', (e) => {
-    const c = e.target.closest('.cell[data-uid]');
-    if (c && G.lastInput === 'kb') selectCell(c, false);
-  });
 
   refreshPadLabels();
   window.addEventListener('padtypechange', () => {
