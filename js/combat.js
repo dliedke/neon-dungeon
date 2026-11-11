@@ -2,7 +2,7 @@ import { formMods, timeFactor, shieldCatch } from './powers.js';
 // Dano, projéteis, explosões, torres e temporizadores.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr, chance, fmt } from './utils.js';
+import { rr, chance, fmt, short } from './utils.js';
 import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
 import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
@@ -334,13 +334,13 @@ export function damagePlayer(amount) {
     const ab = Math.min(p.shield, amount);
     p.shield -= ab;
     amount -= ab;
-    floatText(p.x, 1.8, p.z, `-${Math.round(ab)}`, 'shield');
+    floatText(p.x, 1.8, p.z, `-${short(ab)}`, 'shield');
     if (amount <= 0) return;
   }
   p.hp -= amount;
   runHurt();
   p.hurtT = 0.12;
-  floatText(p.x, 1.8, p.z, `-${amount}`, 'hurt');
+  floatText(p.x, 1.8, p.z, `-${short(amount)}`, 'hurt');
   sfx.hurt();
   hurtFlash(amount / p.stats.maxHp);
   G.shake = Math.max(G.shake, Math.min(0.35, 0.08 + (amount / p.stats.maxHp) * 1.5));
@@ -376,7 +376,7 @@ export function healPlayer(a, show = true) {
   const before = p.hp;
   p.hp = Math.min(p.stats.maxHp, p.hp + a);
   const got = p.hp - before;
-  if (show && got >= 1) floatText(p.x, 1.9, p.z, `+${Math.round(got)}`, 'heal');
+  if (show && got >= 1) floatText(p.x, 1.9, p.z, `+${short(got)}`, 'heal');
 }
 
 // ---------------- projéteis ----------------

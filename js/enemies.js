@@ -1,7 +1,7 @@
 // Tipos de inimigos, elites, IA e o chefe ARC-9.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr, pick, chance, weightedPick, shuffle } from './utils.js';
+import { rr, pick, chance, weightedPick, shuffle, short } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
 import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor } from './dungeon.js';
 import { spawnProjectile, damagePlayer, after, enemyExplosion, damageEnemy } from './combat.js';
@@ -381,7 +381,7 @@ function meleeHit(e, dmg) {
   if (e.T.chill && G.player.invuln <= 0) G.player.chillT = Math.max(G.player.chillT || 0, 1.4);
   if (e.vamp) {
     e.hp = Math.min(e.maxHp, e.hp + dmg * 1.5);
-    floatText(e.x, e.height + 0.4, e.z, `+${Math.round(dmg * 1.5)}`, 'heal');
+    floatText(e.x, e.height + 0.4, e.z, `+${short(dmg * 1.5)}`, 'heal');
   }
 }
 
@@ -1011,7 +1011,7 @@ export function updateEnemies(dt, cam) {
               const amt = o.maxHp * (o.boss ? 0.03 : 0.15);
               o.hp = Math.min(o.maxHp, o.hp + amt);
               beamFx(e.x, 1.15, e.z, o.x, o.height * 0.6, o.z, 0x39ff88, 0.3);
-              floatText(o.x, o.height + 0.3, o.z, `+${Math.round(amt)}`, 'heal');
+              floatText(o.x, o.height + 0.3, o.z, `+${short(amt)}`, 'heal');
               healed = true;
             }
             if (healed) sfx.heal();

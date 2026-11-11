@@ -47,6 +47,21 @@ export function shuffle(arr) {
 
 export const fmt = (n) => Math.round(n).toLocaleString(LANG === 'pt' ? 'pt-BR' : 'en-US');
 
+// número curto para os números de dano/cura: 950, 1,2K, 15K, 30M, 66B, 4T
+const SHORT = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+export function short(n) {
+  const a = Math.abs(n);
+  if (a < 1000) return String(Math.round(n));
+  for (const [v, s] of SHORT) {
+    if (a < v) continue;
+    const x = n / v;
+    // até 10 mostra uma casa (1,5K); acima, só o inteiro (15K)
+    let t = Math.abs(x) < 10 ? (Math.floor(x * 10) / 10).toFixed(1).replace(/\.0$/, '') : String(Math.floor(x));
+    if (LANG === 'pt') t = t.replace('.', ',');
+    return t + s;
+  }
+}
+
 // Converte um vetor de tela (x = direita, y = cima) para o plano do mundo,
 // considerando a câmera isométrica posicionada em +x/+z olhando para -x/-z.
 const S = Math.SQRT1_2;

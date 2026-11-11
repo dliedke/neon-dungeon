@@ -1,7 +1,7 @@
 // Itens no chão: créditos, stims, orbes de vida, equipamentos e cofres.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr, chance } from './utils.js';
+import { rr, chance, short } from './utils.js';
 import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText, beamFx } from './fx.js';
@@ -46,7 +46,7 @@ export function killBounty(e) {
   if (cr < 1) return;
   c.credits += cr;
   achAdd('credits', cr);
-  floatText(e.x, e.height + 0.9, e.z, `+${cr}¢`, 'cr');
+  floatText(e.x, e.height + 0.9, e.z, `+${short(cr)}¢`, 'cr');
 }
 
 export function dropLoot(x, z, o = {}) {

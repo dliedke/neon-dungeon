@@ -1,6 +1,7 @@
 // Partículas, cortes, anéis, raios e números flutuantes.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
+import { short } from './utils.js';
 // sorteio só visual: não gasta o sorteio da lógica (que tem semente enquanto o andar é montado)
 const rr = (a, b) => a + Math.random() * (b - a);
 
@@ -270,7 +271,7 @@ export function floatText(x, y, z, text, cls = 'dmg') {
   f.t = 0;
   f.dur = cls === 'crit' ? 1.0 : cls === 'info' ? 1.4 : 0.8;
   f.el.className = 'floater ' + cls;
-  f.el.textContent = text;
+  f.el.textContent = typeof text === 'number' ? short(text) : text;
   f.el.style.display = 'block';
 }
 

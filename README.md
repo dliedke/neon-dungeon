@@ -183,7 +183,7 @@ From floor 2 on, most floors (not boss floors) get one or two **main events**, a
 
 | Event | What to do |
 |---|---|
-| **Terminal Sequence** | Four terminals light up in a sequence (3 steps, up to 7 on deeper floors). Step on the matching plates in the same order. A mistake sounds the alarm, sends a wave of enemies and replays the sequence. Three mistakes lock the terminals. |
+| **Terminal Sequence** | Four terminals light up in a sequence (3 steps, up to 7 on deeper floors). Step on the matching plates in the same order. A mistake sounds the alarm, sends a wave of enemies and replays the sequence. Attempts are unlimited. |
 | **Light Floor** | A 3×3 grid of plates. Stepping on one flips it and its neighbours. Light all nine. A reset plate restores the starting pattern. |
 | **Laser Prisms** | Step on a prism to rotate it and guide the laser from the emitter to the receiver. |
 | **Data Upload** | Stand inside the circle for 45 seconds while waves of enemies attack. Progress pauses when you step out. |

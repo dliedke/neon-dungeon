@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { rr, ri, chance, pick, shuffle } from './utils.js';
+import { rr, ri, chance, pick, shuffle, short } from './utils.js';
 import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -172,7 +172,7 @@ function completeContract() {
   sfx.legendary();
   ringFx(p.x, p.z, 3, 0xffd23d, 0.6);
   burst(p.x, 1.2, p.z, 0xffd23d, 40, 6, 0.08, 0.8, { up: 1.5 });
-  floatText(p.x, 2.2, p.z, `+${cr}¢`, 'up');
+  floatText(p.x, 2.2, p.z, `+${short(cr)}¢`, 'up');
   dropLoot(p.x, p.z, { contract: true });
 }
 
@@ -501,7 +501,7 @@ function updateClear(dt) {
     sfx.legendary();
     ringFx(p.x, p.z, 4, 0x39ff88, 0.7);
     burst(p.x, 1.2, p.z, 0x39ff88, 46, 7, 0.08, 0.9, { up: 1.6 });
-    floatText(p.x, 2.4, p.z, `+${cr}¢`, 'up');
+    floatText(p.x, 2.4, p.z, `+${short(cr)}¢`, 'up');
     saveGame();
   });
 }

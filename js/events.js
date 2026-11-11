@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
 import { L } from './i18n.js';
-import { rr, ri, pick, chance, shuffle, fmt, isolateRandom } from './utils.js';
+import { rr, ri, pick, chance, shuffle, fmt, short, isolateRandom } from './utils.js';
 import { glowMat, box, makePlayerModel } from './models.js';
 import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
@@ -307,31 +307,21 @@ const terminals = {
       }
       return;
     }
-    // erro: alarme com inimigos e a sequência recomeça
+    // erro: alarme com inimigos e a sequência recomeça (tentativas ilimitadas)
     E.err++;
     sfx.alarm();
     G.shake = Math.max(G.shake, 0.3);
     ringFx(E.x, E.z, 5, 0xff2244, 0.5);
-    if (E.err >= 3) {
-      for (const pd of E.pads) {
-        setLight(pd.ring, 0x333344, 0.3);
-        setLight(pd.scr, 0x333344, 0.3);
-        pd.fill.opacity = 0.04;
-      }
-      E.litT = 0;
-      failed(E, L('Três erros: os terminais travaram.', 'Three mistakes: the terminals locked up.'));
-    } else {
-      floatText(E.x, 2.2, E.z, L('ALARME!', 'ALARM!'), 'hurt');
-      toast(L(`🚨 Ordem errada! O alarme chamou reforços. A sequência vai repetir (erros: ${E.err}/3).`, `🚨 Wrong order! The alarm called reinforcements. The sequence will repeat (mistakes: ${E.err}/3).`), 'warn');
-      E.st = 'show';
-      E.step = 0;
-      E.t = 2.4;
-    }
+    floatText(E.x, 2.2, E.z, L('ALARME!', 'ALARM!'), 'hurt');
+    toast(L('🚨 Ordem errada! O alarme chamou reforços. A sequência vai repetir: tente de novo quantas vezes precisar.', '🚨 Wrong order! The alarm called reinforcements. The sequence will repeat: try again as many times as you need.'), 'warn');
+    E.st = 'show';
+    E.step = 0;
+    E.t = 2.4;
     spawnWave(E, Math.min(8, 3 + Math.floor(G.floor / 5)), E.x, E.z, 4.5, 8, 0xff2244);
   },
   hud(E) {
     if (E.st === 'idle') return L('vá até lá', 'go there');
-    const x = E.err ? ` <span style="color:#ff4466">${'✖'.repeat(E.err)}</span>` : '';
+    const x = E.err ? ` <span style="color:#ff4466">${E.err > 3 ? '✖×' + E.err : '✖'.repeat(E.err)}</span>` : '';
     if (E.st === 'show') return L('observe', 'watch') + x;
     return `${E.step}/${E.seq.length}${x}`;
   },
@@ -765,7 +755,7 @@ const bomb = {
     G.shake = Math.max(G.shake, 0.9);
     const loss = Math.round(p.stats.maxHp * 0.2);
     p.hp = Math.max(1, p.hp - loss);
-    floatText(p.x, 2.2, p.z, `-${loss}`, 'hurt');
+    floatText(p.x, 2.2, p.z, `-${short(loss)}`, 'hurt');
     banner(L('BOOM!', 'BOOM!'), L('A bomba explodiu e o bônus foi perdido', 'The bomb went off and the bonus is lost'));
     E.st = 'failed';
     sfx.deny();
