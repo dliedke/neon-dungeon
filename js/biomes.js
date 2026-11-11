@@ -163,7 +163,7 @@ export function placeFeatures(d, theme) {
             const w = (a, b) => grid[b * W + a] === TILE.WALL;
             if (f(i, j) && f(i, j + 1) && w(i, j - 1) && w(i, j + 2) && f(i - 1, j) && f(i + 1, j)) cands.push({ x1: i + 0.5, z1: j - 0.05, x2: i + 0.5, z2: j + 2.05 });
             if (f(i, j) && f(i + 1, j) && w(i - 1, j) && w(i + 2, j) && f(i, j - 1) && f(i, j + 1)) cands.push({ x1: i - 0.05, z1: j + 0.5, x2: i + 2.05, z2: j + 0.5 });
-            // corredores de 3 (labirinto)
+            // corredores de 3 (masmorra)
             if (f(i, j) && f(i, j + 1) && f(i, j + 2) && w(i, j - 1) && w(i, j + 3) && f(i - 1, j + 1) && f(i + 1, j + 1)) cands.push({ x1: i + 0.5, z1: j - 0.05, x2: i + 0.5, z2: j + 3.05 });
             if (f(i, j) && f(i + 1, j) && f(i + 2, j) && w(i - 1, j) && w(i + 3, j) && f(i + 1, j - 1) && f(i + 1, j + 1)) cands.push({ x1: i - 0.05, z1: j + 0.5, x2: i + 3.05, z2: j + 0.5 });
           }
@@ -181,7 +181,7 @@ export function placeFeatures(d, theme) {
       }
       case 'stalls':
         for (const r of d.rooms) {
-          if (r.arena || r.hall || r.plaza) continue; // nos corredores do labirinto a barraca fecharia a passagem
+          if (r.arena || r.hall || r.plaza) continue; // nos corredores da masmorra a barraca fecharia a passagem
           for (let k = 0; k < Math.floor((r.w * r.h) / 30); k++) {
             const i = ri(r.x + 2, r.x + r.w - 4);
             const j = ri(r.y + 2, r.y + r.h - 3);
@@ -215,7 +215,7 @@ export function placeFeatures(d, theme) {
       case 'wrecks':
       case 'bladetrees':
       case 'statues': {
-        // obstáculos isolados (nunca bloqueiam a passagem); no labirinto só nas salas, não nos corredores
+        // obstáculos isolados (nunca bloqueiam a passagem); na masmorra só nas salas, não nos corredores
         const ring = d.maze ? 2 : 1;
         const plazas = d.rooms.filter((r) => r.plaza);
         const WILD_OBST = { deadtrees: [FEAT.TREE, 0.04], ribs: [FEAT.BONE, 0.035], crystals: [FEAT.CRYSTAL, 0.03], waves: [FEAT.WAVE, 0.03], wrecks: [FEAT.WRECK, 0.008], bladetrees: [FEAT.BLADETREE, 0.045], statues: [FEAT.STATUE, 0.014] }[f];
@@ -491,7 +491,7 @@ function openSpot(d, r, seen) {
 function carvePits(d, rooms, shape) {
   const { W, grid } = d;
   d.pits = [];
-  // no labirinto, buracos só nas salas: num corredor eles poderiam isolar um pedaço do mapa
+  // na masmorra, buracos só nas salas: num corredor eles poderiam isolar um pedaço do mapa
   if (d.maze) rooms = rooms.filter((r) => !r.hall && !r.plaza);
   const n = Math.min(rooms.length, shape === 'blob' ? 6 : 5);
   let reach = reachable(d);

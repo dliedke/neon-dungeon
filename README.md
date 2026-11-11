@@ -97,7 +97,7 @@ The merchant, the blacksmith and the shared stash only open when you ask: **clic
 
 ## Biomes
 
-Floors cycle through three shapes: a **small maze**, an **open field** and a **large maze** (the boss floor). Mission timers are based on the real walking route, so they stay fair inside the mazes.
+Floors cycle through three shapes: a **small dungeon** (rooms and corridors), an **open field** and a **large dungeon** (the boss floor). Mission timers are based on the real walking route, so they stay fair inside the dungeons.
 
 Every floor changes biome (23 in total), each with its own lighting and hazards. The layout below is used on open-field floors:
 

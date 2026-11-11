@@ -2038,7 +2038,7 @@ export function populateFloor(d, floor, boss) {
   }
   // biomas selvagens: pilhas de ossos, cristais de sal e sentinelas da colmeia
   if (d.wild) wildPopulate(d, floor);
-  // no labirinto, cofres e santuários ficam pelos corredores: as salas sobram para lutas e eventos
+  // na masmorra, cofres e santuários ficam pelos corredores: as salas sobram para lutas e eventos
   const hallsFar = d.maze ? d.rooms.filter((r) => r.hall && Math.hypot(r.cx - d.start.x, r.cy - d.start.z) > 12) : [];
   const chestRooms = shuffle(hallsFar.length >= 2 ? hallsFar.slice() : d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
   // eventos: Ladrão de Dados e Santuário Neon em salas longe do início

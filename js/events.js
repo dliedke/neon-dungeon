@@ -128,7 +128,7 @@ function spotOk(d, x, z, hx, hz, avoid = []) {
   return true;
 }
 function findSpot(d, rooms, hx, hz = hx, avoid) {
-  // praça do labirinto: primeiro para as peças grandes, por último para as pequenas
+  // praça da masmorra: primeiro para as peças grandes, por último para as pequenas
   const big = Math.max(hx, hz) >= 2.4;
   const list = shuffle(rooms.slice()).sort((a, b) => (big ? (b.plaza ? 1 : 0) - (a.plaza ? 1 : 0) : (a.plaza ? 1 : 0) - (b.plaza ? 1 : 0)));
   for (const r of list) {
@@ -689,7 +689,7 @@ const bomb = {
       cons.push({ x: s.x, z: s.z });
     }
     // tempo: volta mais curta passando pelos 3 pelo caminho de verdade (com folga para lutas e,
-    // no labirinto, para os becos)
+    // na masmorra, para os desvios)
     const limit = Math.round(Math.min(d.maze ? 480 : 300, Math.max(75, 35 + routeTime(d, d.start.x, d.start.z, cons) + 3 * HOLD)) / 5) * 5;
     const E = { kind: 'bomb', x: null, z: null, cons, t: limit, limit, delay: 8, st: 'armed', beep: 0, tipT: 0, hinted: false };
     for (const c of cons) {
@@ -1387,7 +1387,7 @@ const relay = {
         complete(E, 1.5, L('CIRCUITO COMPLETO!', 'CIRCUIT COMPLETE!'), L(`Com ${mmss(E.t)} de sobra`, `With ${mmss(E.t)} to spare`), p.x, p.z, { extra: E.t >= 10 });
         return;
       }
-      // tempo para o próximo: caminho de verdade com folga para lutas (e becos, no labirinto)
+      // tempo para o próximo: caminho de verdade com folga para lutas (e desvios, na masmorra)
       const add = cur.add;
       if (E.st === 'idle') {
         E.st = 'run';
@@ -1575,7 +1575,7 @@ const escort = {
   setup(d, floor, rooms) {
     const a = findSpot(d, rooms, 1);
     if (!a) return null;
-    // destino: a reta entre 16 e 42 e o caminho de verdade até 75 (no labirinto a reta engana)
+    // destino: a reta entre 16 e 42 e o caminho de verdade até 75 (na masmorra a reta engana)
     let b = null;
     let pts = null;
     let tot = 0;

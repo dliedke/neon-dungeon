@@ -123,7 +123,7 @@ const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 function rollContract(floor) {
   G.contract = null;
   if (floor < 2 || isFinalFloor(floor)) return;
-  // no labirinto os inimigos ficam espalhados pelos corredores: os contratos com relógio dão mais tempo
+  // na masmorra os inimigos ficam espalhados pelos corredores: os contratos com relógio dão mais tempo
   const mz = G.dungeon && G.dungeon.maze;
   const n = { elites: 0, regular: 0, thief: false, rift: G.pickups.some((pk) => pk.type === 'rift'), speed: mz === 'L' ? 240 : mz ? 210 : 150, blitz: mz ? 55 : 40 };
   for (const e of G.enemies) {

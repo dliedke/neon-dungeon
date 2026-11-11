@@ -118,13 +118,13 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 
 ### Map generation
 
-Floors cycle through three shapes (`floorShape(floor)`, from `(floor - 1) % 3`): **small maze** (`mazeS`, floors 1, 4, 7…), **open field** (floors 2, 5, 8…) and **large maze** (`mazeL`, floors 3, 6, 9…, which are also the boss floors). The biome sets the look, features and enemies; the shape picks the generator. On open-field floors, `cave`, `meadow` and `market` biomes keep their own layout and the others use `plaza`.
+Floors cycle through three shapes (`floorShape(floor)`, from `(floor - 1) % 3`): **small dungeon** (`dungS`, floors 1, 4, 7…), **open field** (floors 2, 5, 8…) and **large dungeon** (`dungL`, floors 3, 6, 9…, which are also the boss floors). The biome sets the look, features and enemies; the shape picks the generator. On open-field floors, `cave`, `meadow` and `market` biomes keep their own layout and the others use `plaza`.
 
-`generateDungeon(floor)` retries `tryGenerate` until it gets a connected map. Base width is `min(46 + floor * 3, 92)` (+6 for markets); small mazes use 72% of it (37–64), large mazes +12 (up to 96). Layouts:
+`generateDungeon(floor)` retries `tryGenerate` until it gets a connected map. Base width is `min(46 + floor * 3, 92)` (+6 for markets); small dungeons use 80% of it (42–70), large dungeons +12 (up to 96). Layouts:
 
 | `layout` | Generator |
 |---|---|
-| `mazeS` / `mazeL` | `genMaze`: 3-wide corridors on a 4-tile pitch (DFS plus extra links so there are loops), with rooms carved out of whole cells. `d.maze` is `'S'` or `'L'`. Real rooms come first in `rooms` (start room at index 0); then come virtual corridor stretches (`hall: true`) used to spread enemies, chests and shrines. On small mazes the biggest room gets `plaza: true`: no pillars, pits, stalls or obstacles, so the big puzzles (lights, prisms, pairs, upload) fit. The exit never goes in a hall. |
+| `dungS` / `dungL` | `genDungeon`: big rooms packed close together (walls between them), each linked to its nearest neighbours by wide corridors (3 tiles, 4 in the large one) with extra links so there are loops and few dead ends. The start room sits in a corner and the second room in the opposite one. `d.maze` is `'S'` or `'L'` (it marks dungeon floors). Real rooms come first in `rooms` (start room at index 0); then come virtual corridor stretches (`hall: true`) used to spread enemies, chests and shrines. On small dungeons the biggest room gets `plaza: true`: no pillars, pits, stalls or obstacles, so the big puzzles (lights, prisms, pairs, upload) fit. The exit never goes in a hall. |
 | `plaza` | `genPlaza`: big squares and wide streets (open field for the `rooms`, `sewer` and `grid` biomes). |
 | `rooms` | `genRooms`: rectangular rooms and corridors. |
 | `sewer` | `genRooms` with wide corridors and small rooms. |
@@ -137,7 +137,7 @@ The map object is `d = { W, H, grid: Uint8Array, rooms, floor, layout, start, ex
 
 Navigation helpers:
 
-- `distFrom(d, x, z)` is a BFS walking distance to every tile. `routeTime(d, x, z, pts, each)` turns a route through several points into seconds (real path x1.3, x1.7 in mazes because players take dead ends; never less than the old straight-line x1.6). Timed events (bomb, shards, relay) and the speed/blitz contracts use it, so the timers stay fair in mazes.
+- `distFrom(d, x, z)` is a BFS walking distance to every tile. `routeTime(d, x, z, pts, each)` turns a route through several points into seconds (real path x1.3, x1.5 in dungeons because players don't know the way; never less than the old straight-line x1.6). Timed events (bomb, shards, relay) and the speed/blitz contracts use it, so the timers stay fair in dungeons.
 - `computeFlow` builds a flow field toward the player every 0.25 s. Enemies follow `flowDir`.
 - `findPath` is 8-direction A* with smoothing (click-to-move). Shortcuts use `walkClear`, which checks the body width over floor tiles only, so paths never cut across pits, lakes or chasms (which don't block sight).
 - `resolveCircle` handles collision against walls. `lineOfSight` / `blocksSight` handle vision (pits don't block sight or shots).

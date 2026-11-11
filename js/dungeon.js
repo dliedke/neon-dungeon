@@ -52,11 +52,11 @@ export function themeFor(floor) {
 // ------------------------------------------------------------------
 // Geração
 // ------------------------------------------------------------------
-// Formato do andar, alternando em ciclos de 3: labirinto pequeno, campo aberto, labirinto grande
-// (o labirinto grande cai nos andares de chefe, com a arena no fim do caminho)
+// Formato do andar, alternando em ciclos de 3: masmorra pequena, campo aberto, masmorra grande
+// (a masmorra grande cai nos andares de chefe, com a arena no fim do caminho). `d.maze` marca as masmorras.
 export function floorShape(floor) {
   const k = (floor - 1) % 3;
-  return k === 0 ? 'mazeS' : k === 1 ? 'open' : 'mazeL';
+  return k === 0 ? 'dungS' : k === 1 ? 'open' : 'dungL';
 }
 
 export function generateDungeon(floor) {
@@ -65,11 +65,11 @@ export function generateDungeon(floor) {
   const base = Math.min(46 + floor * 3, 92);
   let layout = theme.layout;
   let W = base + (layout === 'market' ? 6 : 0);
-  if (shape === 'mazeS') {
-    layout = 'mazeS';
-    W = clamp(Math.round(base * 0.72), 37, 64);
-  } else if (shape === 'mazeL') {
-    layout = 'mazeL';
+  if (shape === 'dungS') {
+    layout = 'dungS';
+    W = clamp(Math.round(base * 0.8), 42, 70);
+  } else if (shape === 'dungL') {
+    layout = 'dungL';
     W = Math.min(base + 12, 96);
   } else if (!['cave', 'meadow', 'market'].includes(layout)) layout = 'plaza'; // campo aberto nos biomas de cidade: praças grandes
   const H = W;
@@ -256,108 +256,93 @@ function genGrid(W, H) {
   return { grid, rooms };
 }
 
-// Labirinto: corredores de 3 blocos e paredes finas (backtracker, que faz corredores longos e
-// sinuosos), alguns atalhos para não ter só becos, e salas abertas para lutas e eventos.
-// As salas de verdade vêm primeiro em `rooms` (a do início na frente); depois vêm trechos de
-// corredor (`hall`) para espalhar inimigos, cofres e santuários pelo labirinto.
-const MAZE_CW = 3;
-function genMaze(W, H, big) {
-  const P = MAZE_CW + 1;
-  const cols = Math.floor((W - 5) / P);
-  const rows = Math.floor((H - 5) / P);
-  if (cols < 6 || rows < 6) return null;
-  const ox = 2 + Math.floor((W - 4 - (cols * P + 1)) / 2);
-  const oy = 2 + Math.floor((H - 4 - (rows * P + 1)) / 2);
-  const cx0 = (c) => ox + 1 + c * P; // primeiro bloco livre da célula
-  const cy0 = (r) => oy + 1 + r * P;
+// Masmorra: salas grandes bem juntas (paredes entre elas), ligadas às vizinhas mais próximas por
+// corredores largos, com vários ciclos para não ter becos. As salas de verdade vêm primeiro em
+// `rooms` (a do início na frente, num canto; a segunda no canto oposto, para a saída ficar longe);
+// depois vêm trechos de corredor (`hall`) para espalhar inimigos, cofres e santuários.
+function genDungeon(W, H, big) {
   const grid = new Uint8Array(W * H);
-  const open = (x, y, w, h) => {
+  const rooms = [];
+  const gap = 3;
+  const [mn, mx] = big ? [9, 17] : [8, 14];
+  const add = (x, y, w, h) => {
+    const r = { x, y, w, h, cx: x + w / 2, cy: y + h / 2 };
+    rooms.push(r);
     for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) grid[j * W + i] = TILE.FLOOR;
+    return r;
   };
-  const link = (c, r, dc, dr) => {
-    if (dc) open(cx0(Math.max(c, c + dc)) - 1, cy0(r), 1, MAZE_CW);
-    else open(cx0(c), cy0(Math.max(r, r + dr)) - 1, MAZE_CW, 1);
-  };
-  const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) open(cx0(c), cy0(r), MAZE_CW, MAZE_CW);
-  // labirinto perfeito (busca em profundidade com pilha)
-  const seen = new Uint8Array(cols * rows);
-  const stack = [[ri(0, cols - 1), ri(0, rows - 1)]];
-  seen[stack[0][1] * cols + stack[0][0]] = 1;
-  while (stack.length) {
-    const [c, r] = stack[stack.length - 1];
-    const opts = N4.filter(([dc, dr]) => {
-      const nc = c + dc;
-      const nr = r + dr;
-      return nc >= 0 && nr >= 0 && nc < cols && nr < rows && !seen[nr * cols + nc];
-    });
-    if (!opts.length) {
-      stack.pop();
-      continue;
-    }
-    const [dc, dr] = pick(opts);
-    link(c, r, dc, dr);
-    seen[(r + dr) * cols + c + dc] = 1;
-    stack.push([c + dc, r + dr]);
-  }
-  // atalhos: abre algumas paredes a mais (o pequeno tem mais, para não cansar)
-  const extra = Math.round(cols * rows * (big ? 0.07 : 0.1));
-  for (let k = 0; k < extra; k++) {
-    const c = ri(0, cols - 2);
-    const r = ri(0, rows - 2);
-    if (chance(0.5)) link(c, r, 1, 0);
-    else link(c, r, 0, 1);
-  }
-  // salas: retângulos de células abertos por inteiro; a do início fica num canto
-  const cells = [];
-  const fits = (c, r, w, h) => c >= 0 && r >= 0 && c + w <= cols && r + h <= rows && !cells.some((o) => c < o.c + o.w + 1 && c + w + 1 > o.c && r < o.r + o.h + 1 && r + h + 1 > o.r);
   const corner = ri(0, 3);
-  const sw = 2;
-  cells.push({ c: corner & 1 ? cols - sw : 0, r: corner & 2 ? rows - sw : 0, w: sw, h: sw });
-  // uma sala no canto oposto, para a saída ficar longe de verdade
-  cells.push({ c: corner & 1 ? 0 : cols - 3, r: corner & 2 ? 0 : rows - 3, w: 3, h: 3 });
-  const target = big ? 6 + Math.floor((cols * rows) / 90) : 4 + Math.floor((cols * rows) / 80);
-  const maxS = big ? 4 : 3;
-  for (let t = 0; t < 400 && cells.length < target + 1; t++) {
-    // as primeiras são grandes (3 a 4 células = 11 a 15 blocos): cabem os quebra-cabeças (luzes, prismas, pares, upload)
-    const first = cells.length < 5 && t < 250;
-    const w = first ? ri(3, 4) : ri(2, maxS);
-    const h = first ? ri(3, 4) : ri(2, maxS);
-    const c = ri(0, cols - w);
-    const r = ri(0, rows - h);
-    if (fits(c, r, w, h)) cells.push({ c, r, w, h });
+  const sw = 9;
+  add(corner & 1 ? W - 3 - sw : 3, corner & 2 ? H - 3 - sw : 3, sw, sw);
+  const ew = big ? 14 : 12;
+  add(corner & 1 ? 3 : W - 3 - ew, corner & 2 ? 3 : H - 3 - ew, ew, ew);
+  // as primeiras sorteadas são grandes: cabem os quebra-cabeças (luzes, prismas, pares, upload)
+  for (let t = 0; t < 2500 && rooms.length < 40; t++) {
+    const first = rooms.length < 5 && t < 400;
+    const w = first ? ri(13, mx + 1) : ri(mn, mx);
+    const h = first ? ri(13, mx + 1) : ri(mn, mx);
+    const x = ri(3, W - w - 3);
+    const y = ri(3, H - h - 3);
+    if (overlaps(rooms, x, y, w, h, gap)) continue;
+    add(x, y, w, h);
   }
-  const rooms = cells.map(({ c, r, w, h }) => {
-    const x = cx0(c);
-    const y = cy0(r);
-    const rw = w * P - 1;
-    const rh = h * P - 1;
-    open(x, y, rw, rh);
-    return { x, y, w: rw, h: rh, cx: x + rw / 2, cy: y + rh / 2 };
+  // ligações: árvore pelas vizinhas mais próximas + cada sala liga também à segunda mais próxima (ciclos)
+  const dist = (p, q) => Math.hypot(p.cx - q.cx, p.cy - q.cy);
+  const edges = new Set();
+  const key = (i, j) => (i < j ? i * 100 + j : j * 100 + i);
+  const inTree = [0];
+  const rest = rooms.map((_, i) => i).slice(1);
+  while (rest.length) {
+    let bi = -1;
+    let bj = -1;
+    let bd = Infinity;
+    for (const i of rest)
+      for (const j of inTree) {
+        const dd = dist(rooms[i], rooms[j]);
+        if (dd < bd) {
+          bd = dd;
+          bi = i;
+          bj = j;
+        }
+      }
+    edges.add(key(bi, bj));
+    inTree.push(bi);
+    rest.splice(rest.indexOf(bi), 1);
+  }
+  rooms.forEach((r, i) => {
+    const near = rooms.map((o, j) => [dist(r, o), j]).filter(([, j]) => j !== i).sort((p, q) => p[0] - q[0]);
+    if (near[1] && near[1][0] < (big ? 34 : 28) && chance(0.7)) edges.add(key(i, near[1][1]));
   });
+  const cw = big ? 4 : 3;
+  for (const k of edges) {
+    const p = rooms[Math.floor(k / 100)];
+    const q = rooms[k % 100];
+    carveCorridor(grid, W, H, Math.floor(p.cx) - 1, Math.floor(p.cy) - 1, Math.floor(q.cx) - 1, Math.floor(q.cy) - 1, cw);
+  }
   // no pequeno, a maior sala sorteada fica livre de obstáculos, buracos e lojas (praça para os quebra-cabeças)
-  if (!big && rooms.length > 2) rooms.slice(2).reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a)).plaza = true;
-  // trechos de corredor longe das salas (para espalhar inimigos e achados pelo labirinto)
-  const B = 12;
+  if (!big && rooms.length > 2) rooms.slice(2).reduce((p, q) => (q.w * q.h > p.w * p.h ? q : p)).plaza = true;
+  // trechos de corredor longe das salas (para espalhar inimigos e achados pelos corredores)
+  const B = 10;
   const halls = [];
-  for (let by = oy; by + B <= oy + rows * P + 1; by += B)
-    for (let bx = ox; bx + B <= ox + cols * P + 1; bx += B) {
+  for (let by = 2; by + B <= H - 2; by += B)
+    for (let bx = 2; bx + B <= W - 2; bx += B) {
       if (rooms.some((o) => bx < o.x + o.w && bx + B > o.x && by < o.y + o.h && by + B > o.y)) continue;
+      let n = 0;
       let best = null;
       let bd = Infinity;
       for (let j = by; j < by + B; j++)
         for (let i = bx; i < bx + B; i++) {
           if (grid[j * W + i] !== TILE.FLOOR) continue;
+          n++;
           const dd = (i - bx - B / 2) ** 2 + (j - by - B / 2) ** 2;
           if (dd < bd) {
             bd = dd;
             best = [i, j];
           }
         }
-      if (best) halls.push({ x: bx, y: by, w: B, h: B, cx: best[0] + 0.5, cy: best[1] + 0.5, cave: true, hall: true });
+      if (n >= 12) halls.push({ x: bx, y: by, w: B, h: B, cx: best[0] + 0.5, cy: best[1] + 0.5, cave: true, hall: true });
     }
-  const keepHalls = shuffle(halls).slice(0, Math.ceil(halls.length * 0.6));
-  return { grid, rooms: [...rooms, ...keepHalls] };
+  return { grid, rooms: [...rooms, ...shuffle(halls).slice(0, Math.ceil(halls.length * 0.6))] };
 }
 
 // Praças: salas grandes e corredores largos (campo aberto nos biomas de cidade)
@@ -367,7 +352,7 @@ function genPlaza(W, H, floor) {
 
 function tryGenerate(floor, W, H, layout, force) {
   let base;
-  if (layout === 'mazeS' || layout === 'mazeL') base = genMaze(W, H, layout === 'mazeL');
+  if (layout === 'dungS' || layout === 'dungL') base = genDungeon(W, H, layout === 'dungL');
   else if (layout === 'plaza') base = genPlaza(W, H, floor);
   else if (layout === 'cave') base = genCave(W, H);
   else if (layout === 'meadow') base = genCave(W, H, 0.64);
@@ -378,7 +363,7 @@ function tryGenerate(floor, W, H, layout, force) {
   if (!base) return null;
   const { grid, rooms } = base;
   if (rooms.length < (layout === 'market' ? 3 : 5) && !force) return null;
-  const d = { W, H, grid, rooms, floor, layout, maze: layout === 'mazeS' ? 'S' : layout === 'mazeL' ? 'L' : null };
+  const d = { W, H, grid, rooms, floor, layout, maze: layout === 'dungS' ? 'S' : layout === 'dungL' ? 'L' : null };
   const start = rooms[0];
   d.start = { x: Math.floor(start.cx) + 0.5, z: Math.floor(start.cy) + 0.5 };
 
@@ -387,7 +372,7 @@ function tryGenerate(floor, W, H, layout, force) {
   let exitRoom = rooms[1];
   let bestD = -1;
   for (const r of rooms) {
-    if (r === start || r.hall) continue; // no labirinto a saída fica numa sala de verdade
+    if (r === start || r.hall) continue; // na masmorra a saída fica numa sala de verdade
     const v = dist[Math.floor(r.cy) * W + Math.floor(r.cx)];
     if (v > bestD) {
       bestD = v;
@@ -564,10 +549,10 @@ export function distFrom(d, x, z) {
 
 // Segundos para percorrer, partindo de (x, z), todos os pontos (na ordem gulosa do mais perto), com
 // folga para lutas e erros de caminho: o maior entre a reta x1,6 (o cálculo antigo) e o caminho de
-// verdade x1,3 (no labirinto x1,7, porque o jogador não conhece o caminho e entra em becos).
+// verdade x1,3 (na masmorra x1,5, porque o jogador não conhece o caminho e erra algumas portas).
 // Com `each`, devolve também os segundos de cada trecho, na ordem visitada.
 export function routeTime(d, x, z, pts, each) {
-  const k = d.maze ? 1.7 : 1.3;
+  const k = d.maze ? 1.5 : 1.3;
   const left = pts.slice();
   const legs = [];
   let tot = 0;
