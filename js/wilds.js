@@ -371,8 +371,8 @@ export function buildWilds(d, theme, group, B) {
     return Lr;
   };
   W.marrow = add(layer(d, FEAT.MARROW, basic(0xc02a3a, 0.95, 0.72), 0.02));
-  W.glass = add(layer(d, FEAT.GLASS, basic(0xd8f4ff, 1.1, 0.24, true), 0.02));
-  if (W.glass) W.shard = add(layer(d, null, basic(0x9af0ff, 1.5, 0.6, true), 0.025, W.glass.cap));
+  W.glass = add(layer(d, FEAT.GLASS, basic(0x6ad0f0, 1.0, 0.24), 0.02));
+  if (W.glass) W.shard = add(layer(d, null, basic(0x9af0ff, 0.95, 0.6, true), 0.025, W.glass.cap));
   W.resin = add(layer(d, FEAT.RESIN, basic(0xffa21a, 0.75, 0.85), 0.022));
   W.vein = add(layer(d, FEAT.VEIN, basic(0xff3a5a, 1.2, 0.85), 0.02));
   W.ember = add(layer(d, FEAT.EMBER, basic(0xff6a1a, 1.6, 0.05, true), 0.02));
