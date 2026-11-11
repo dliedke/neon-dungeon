@@ -33,7 +33,7 @@ Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `
 | `dungeon`, `theme`, `floor` | Current map object, biome definition and floor number. |
 | `player` | Runtime player entity (position, hp/en, cooldowns `cds[]`, `stats`, `buffs`, model). |
 | `char` | The persistent character (what is saved). See [Saves](#saves-and-cloud-sync). |
-| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 500 items, all classes; one flat array, sorted best-first and shown in 5 tabs of 100). |
+| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 500 items, all classes; one flat array, sorted by item level (highest first, any slot) and shown in 5 tabs of 100). |
 | `settings` | Options (`music`, `sfx`, `track`, `quality`, `shake`, `difficulty`, `glow`, `sv`). |
 | `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
 | `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |
@@ -197,7 +197,7 @@ hitEnemy(e, mult, opts)
 - `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`). Divine items get a random `myth` plus `div`, the divine power of their slot (`DIVINES`, one per slot; `DIV_SET` is the 6-piece bonus). `computeStats` collects them in `p.stats.divs`.
 - Optional item fields: `plus` (forge level) with `base` (the pre-forge stats that `forgeItem` scales from; every 4th level adds or boosts an affix), and `fav` (favorite, protected from recycling).
 - `itemScore` ranks items. `isUpgrade` (more than 3 % better than equipped) drives the ▲ marker and the shop stock.
-- `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (50).
+- `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (100).
 - Divine drops: `divChance` in `loot.js` (0 below Apocalypse, except Brutal+ in Nightmare/Inferno; needs effective floor 10).
 - `mythic.js` runs the mythic and divine powers each frame and hooks into hits (`mythOnHit`, `divOnHit`), kills, damage taken (`divBlock` before armor, `divAmbrosia` after the hit) and death.
 
@@ -264,7 +264,7 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
 ## UI (`ui.js`, `index.html`, `css/style.css`)
 
 - All panels already exist in `index.html` and are shown and hidden with classes. `ui.js` fills them (`renderChar`, `renderClassCards`, `openShop`, `openForge`, `openAch`, …).
-- **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the stash `{A}` stores or takes the item. In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
+- **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the stash `{A}` stores or takes the item, `{X}` equips it from the stash and `{RT}` recycles it (stash items log the withdrawal in `stashOut`). In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
 - Feedback: `toast(html, cls, key)` (a `key` replaces the previous toast with the same key), `banner(title, sub)`, `confirmDialog(title, text, onYes)`, `floatText`.
 - HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()`, `mythHud()`.
 - Layout must work from phone landscape (around 640×360) up to desktop. The `max-width: 760px` and `max-height: 520px` media queries handle small screens.

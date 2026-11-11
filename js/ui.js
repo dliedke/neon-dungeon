@@ -1612,18 +1612,15 @@ function recycleAll() {
   const n = list.length;
   const kept = c.inv.length - n;
   const total = list.reduce((s, it) => s + recycleValue(it), 0);
-  const ups = list.filter((it) => isUpgrade(it, c.equip)).length;
-  const warn = ups ? L(` Atenção: ${ups} ${ups > 1 ? 'são melhores' : 'é melhor'} que o equipado (▲).`, ` Warning: ${ups} ${ups > 1 ? 'are' : 'is'} better than what you have equipped (▲).`) : '';
-  const keep = kept ? L(` Os míticos, divinos e favoritos (★) ficam.`, ` Mythic, divine and favorite (★) items are kept.`) : '';
-  confirmDialog(L('Reciclar tudo?', 'Recycle all?'), L(`Reciclar os ${n} itens do inventário por ${fmt(total)}¢? Os equipados ficam.`, `Recycle all ${n} inventory items for ${fmt(total)}¢? Equipped items are kept.`) + keep + warn, () => {
-    c.inv = c.inv.filter((it) => !canBulkRecycle(it));
-    c.credits += total;
-    sfx.coin();
-    toast(L(`Inventário reciclado: +${fmt(total)}¢`, `Inventory recycled: +${fmt(total)}¢`));
-    selected = null;
-    renderChar();
-    saveGame();
-  });
+  // sem confirmação: recicla na hora e avisa quantos foram (e o que ficou)
+  c.inv = c.inv.filter((it) => !canBulkRecycle(it));
+  c.credits += total;
+  sfx.coin();
+  const keep = kept ? `<br><small>${L(`${kept} ${kept === 1 ? 'mítico, divino ou favorito (★) ficou' : 'míticos, divinos ou favoritos (★) ficaram'}.`, `${kept} mythic, divine or favorite (★) ${kept === 1 ? 'item was' : 'items were'} kept.`)}</small>` : '';
+  toast(L(`♻ ${n} ${n === 1 ? 'item reciclado' : 'itens reciclados'}: +${fmt(total)}¢`, `♻ ${n} ${n === 1 ? 'item' : 'items'} recycled: +${fmt(total)}¢`) + keep);
+  selected = null;
+  renderChar();
+  saveGame();
 }
 
 function buyStim() {
@@ -1747,6 +1744,7 @@ export function uiPadUpdate() {
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
   if (root.id === 'panel-stash') {
     if (Input.nav('x') && focused && focused.matches('.cell[data-swhere="stash"]')) stashEquip(focused.dataset.uid); // {X}: equipar do baú
+    if (Input.nav('rt') && focused && focused.matches('.cell[data-swhere]')) stashRecycle(focused.dataset.swhere, focused.dataset.uid); // {RT}: reciclar
     if (Input.nav('y')) stashPutMythics(); // {Y}: guardar todos os míticos
     if (Input.nav('lb')) stashSetTab(stashTab - 1); // {LB}/{RB}: aba anterior/próxima
     if (Input.nav('rb')) stashSetTab(stashTab + 1);
@@ -1967,7 +1965,7 @@ function doForge(slot) {
 
 // ------------------------------------------------------------------
 // Baú compartilhado: até 500 itens para todos os personagens (fica no save, fora do personagem).
-// É uma lista só, sempre ordenada do melhor para o pior e mostrada em 5 abas de 100.
+// É uma lista só, sempre ordenada do nível maior para o menor (sem olhar o tipo) e mostrada em 5 abas de 100.
 // Cada item guardado leva `st` (quando entrou) e cada retirada fica em save.stashOut[uid],
 // para a sincronização na nuvem não duplicar nem perder itens (ver mergeStash em sync.js).
 // ------------------------------------------------------------------
@@ -2027,17 +2025,18 @@ function stashCell(it, where) {
   // ▲ só para o personagem atual: personagens mais fracos marcavam quase tudo e confundia.
   // Quem mais ganha com o item aparece nos detalhes (e no title).
   const up = better ? '<span class="up">▲</span>' : '';
+  // no baú (ordenado por nível) cada casa mostra o nível do item
+  const lvl = where === 'stash' ? `<span class="lvl">${it.ilvl | 0}</span>` : '';
   const tip = bf.length ? ` title="${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => CLASSES[k].name).join(', ')}"` : '';
-  return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}</div>`;
+  return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}${lvl}</div>`;
 }
 
-// Ordena o baú do melhor para o pior para o personagem atual: melhorias primeiro, depois raridade
-// e pontuação (sem o aprimoramento do ferreiro, como na comparação)
+// Ordena o baú do nível maior para o menor, sem olhar o tipo do item; no mesmo nível vem a
+// raridade e depois a pontuação (sem o aprimoramento do ferreiro, como na comparação)
 function sortStash() {
-  const c = G.char;
   const st = stashList();
-  const key = new Map(st.map((it) => [it, { up: !otherClassWeapon(it) && isUpgrade(it, c.equip) ? 1 : 0, s: itemScore(unforged(it)) }]));
-  st.sort((a, b) => key.get(b).up - key.get(a).up || b.rarity - a.rarity || key.get(b).s - key.get(a).s);
+  const key = new Map(st.map((it) => [it, itemScore(unforged(it))]));
+  st.sort((a, b) => (b.ilvl | 0) - (a.ilvl | 0) || b.rarity - a.rarity || key.get(b) - key.get(a));
 }
 
 // aba onde está o item (para mostrar o que acabou de entrar no baú)
@@ -2143,7 +2142,7 @@ function renderStashDetail() {
   if (stashSel.where === 'sinv') {
     const full = stashList().length >= STASH_SIZE;
     btn = `<button class="btn small" data-nav data-sact="put" ${full ? 'disabled' : ''}>📦 ${L('Guardar no baú', 'Store in stash')}${padKey('a')}</button>`;
-    hint = `<b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L(`o baú está cheio (${STASH_SIZE} itens).`, `the stash is full (${STASH_SIZE} items).`) : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}`;
+    hint = `<div><b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L(`o baú está cheio (${STASH_SIZE} itens).`, `the stash is full (${STASH_SIZE} items).`) : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}</div>`;
   } else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else {
     // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
@@ -2154,13 +2153,57 @@ function renderStashDetail() {
     hint = `<div><b>${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}:</b> ${old ? L(`veste este item agora; o seu <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> vai para o lugar dele no baú.`, `wears this item now; your <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> goes into its place in the stash.`) : L('veste este item agora.', 'wears this item now.')}</div>`;
     hint += `<div><b>${L('Pegar', 'Take')}:</b> ${full ? L(`seu inventário está cheio (${INV_SIZE}/${INV_SIZE}); use Equipar ou libere espaço.`, `your inventory is full (${INV_SIZE}/${INV_SIZE}); use Equip or free up space.`) : L('leva o item para o seu inventário.', 'moves the item to your inventory.')}</div>`;
   }
+  // reciclar direto daqui (do baú ou do inventário); favoritos ficam protegidos
+  btn += it.fav
+    ? `<button class="btn small danger" disabled>🔒 ${L('Favorito', 'Favorite')}</button>`
+    : `<button class="btn small danger" data-nav data-sact="recycle">${L('Reciclar', 'Recycle')} (+${fmt(recycleValue(it))}¢)${padKey('rt')}</button>`;
+  hint += `<div><b>${L('Reciclar', 'Recycle')}:</b> ${it.fav ? L('itens favoritos (★) não podem ser reciclados.', 'favorite (★) items can\'t be recycled.') : L(`desmonta o item e dá ${fmt(recycleValue(it))}¢ para este personagem.`, `breaks the item down and gives ${fmt(recycleValue(it))}¢ to this character.`)}</div>`;
   if (hint) btn += `<div class="sact-hint">${hint}</div>`;
   const bf = betterFor(it);
   const note = (lock ? `<div class="it-cmp">${onlyClassMsg(it)}</div>` : '') + (bf.length ? `<div class="it-cmp better-for">▲ ${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => `<b style="color:${CLASSES[k].css}">${CLASSES[k].name}</b>`).join(', ')}</div>` : '');
   const cur = lock ? null : c.equip[it.slot];
   // o botão vem antes do cartão: no celular deitado ele fica sempre à vista
   el.innerHTML = `<div class="detail-actions">${btn}</div>` + note + itemCardHtml(it, cur ? itemDiffHtml(it, cur) : '', { base: !!cur });
-  el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => (b.dataset.sact === 'equip' ? stashEquip(it.uid) : stashMove(stashSel.where, it.uid))));
+  el.querySelectorAll('[data-sact]').forEach((b) => (b.onclick = () => {
+    const a = b.dataset.sact;
+    if (a === 'equip') stashEquip(it.uid);
+    else if (a === 'recycle') stashRecycle(stashSel.where, it.uid);
+    else stashMove(stashSel.where, it.uid);
+  }));
+}
+
+// Recicla um item direto do baú ('stash') ou do inventário ('sinv'); os créditos vão para o personagem atual.
+// Favoritos não são reciclados.
+function stashRecycle(where, uid) {
+  const c = G.char;
+  const st = stashList();
+  const from = where === 'stash' ? st : c.inv;
+  const it = from.find((i) => i.uid === uid);
+  if (!it) return;
+  if (it.fav) {
+    sfx.deny();
+    toast(L('Item favorito (★) não pode ser reciclado. Desfavorite antes.', 'Favorite items (★) can\'t be recycled. Unfavorite it first.'), 'warn');
+    return;
+  }
+  const v = recycleValue(it);
+  const idx = from.indexOf(it);
+  from.splice(idx, 1);
+  if (where === 'stash') {
+    // saída do baú registrada para a sincronização não trazer o item de volta
+    if (!G.save.stashOut) G.save.stashOut = {};
+    G.save.stashOut[uid] = Date.now();
+  }
+  c.credits += v;
+  sfx.coin();
+  toast(L(`Reciclado: +${fmt(v)}¢`, `Recycled: +${fmt(v)}¢`));
+  stashSel = null;
+  saveGame();
+  renderStash();
+  // controle: o seletor fica na mesma casa
+  const cells = document.querySelectorAll(where === 'stash' ? '#stash-grid > .cell' : '#stash-inv > .cell');
+  const ci = where === 'stash' ? idx - stashTab * STASH_TAB : idx;
+  if (G.lastInput === 'pad' && cells.length) restoreFocus(cells[Math.max(0, Math.min(ci, cells.length - 1))]);
+  else clearFocus();
 }
 
 // Equipa um item do baú; o que estava equipado ocupa a mesma casa no baú

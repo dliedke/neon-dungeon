@@ -14,7 +14,7 @@ import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
 import { rewardK, rewardRank, diffIlvl } from './enemies.js';
 
-export const INV_SIZE = 50;
+export const INV_SIZE = 100;
 const UP_COLOR = 0x39ff88;
 const MYTH_COLOR = 0xb04dff;
 const DIV_COLOR = 0xffd84d;

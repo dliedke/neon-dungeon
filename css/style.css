@@ -386,7 +386,7 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
 }
 .panel.narrow { max-width: 420px; text-align: center; }
 .panel.wide { max-width: 1100px; }
-/* inventário de 50 casas (10 x 5): painel do personagem mais largo para as casas não ficarem miúdas */
+/* inventário de 100 casas (10 por linha, a grade rola): painel do personagem mais largo para as casas não ficarem miúdas */
 #panel-char .panel.wide { max-width: 1320px; }
 .panel h2 { font-family: Orbitron, sans-serif; letter-spacing: 4px; margin: 4px 0 16px; color: var(--accent); text-shadow: 0 0 12px var(--accent); }
 .stack { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
@@ -502,7 +502,7 @@ body.pad .cell.empty { pointer-events: auto; }
 #stat-list .leg.div { color: var(--r5); text-shadow: 0 0 6px rgba(255, 216, 77, 0.6); }
 .inv-head { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 8px; }
 .cr-line b { color: var(--yellow); }
-#inv-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+#inv-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; max-height: min(58vh, 560px); overflow-y: auto; padding: 3px; scrollbar-width: thin; scrollbar-color: rgba(0, 240, 255, 0.45) transparent; }
 .inv-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .item-card { border: 1px solid var(--line); padding: 12px; background: rgba(0, 0, 0, 0.35); }
 .item-card.r1 { border-color: rgba(77, 155, 255, 0.5); }
@@ -699,7 +699,7 @@ body.pad .pad-hints { display: block; }
   .detail-col { grid-column: auto; position: sticky; top: 0; align-self: start; }
   #equip-slots { grid-template-columns: repeat(6, 1fr); gap: 5px; }
   .eslot { font-size: 9px; }
-  #inv-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  #inv-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: calc(100vh - 150px); }
   /* coluna estreita: equipado embaixo; o resumo ▲▼ já fica no topo */
   .cmp-wrap { display: block; }
   .cmp-new + .cmp-cur { margin-top: 8px; }
@@ -746,7 +746,9 @@ body.pad .pad-hints { display: block; }
 #stash-inv { grid-template-columns: repeat(10, 1fr); }
 .stash-detail-col { position: sticky; top: 0; }
 .cell.locked { opacity: 0.55; }
-.cell .cls-dot { position: absolute; right: 3px; bottom: 3px; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 4px #000; pointer-events: none; }
+/* nível do item no canto (o baú é ordenado por nível) */
+.cell .lvl { position: absolute; right: 2px; bottom: 1px; color: #dfe6ff; font-size: 10px; font-weight: 700; line-height: 1; text-shadow: 0 0 2px #000, 0 0 3px #000; pointer-events: none; }
+.cell .cls-dot { position: absolute; right: 3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 4px #000; pointer-events: none; }
 @media (max-width: 980px) {
   .stash-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .stash-detail-col { grid-column: 1 / -1; position: static; }
