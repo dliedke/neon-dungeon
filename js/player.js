@@ -306,7 +306,7 @@ function bossRespawnSpot() {
   if (!a || !G.enemies.some((e) => e.alive && e.boss)) return null;
   const { W, H, grid } = d;
   const FLOOR = TILE.FLOOR;
-  const SAFE_FEAT = [0, 2, 14]; // chão normal, gelo e neve (sem lodo, espinhos, lava, radiação ou obstáculos)
+  const SAFE_FEAT = [0, 2, 14, 16, 26]; // chão normal, gelo, neve, vidro e cratera (sem lodo, espinhos, lava, radiação ou obstáculos)
   const margin = 4; // distância mínima da borda da arena
   const outside = (i, j) => i < a.x - margin || i > a.x + a.w - 1 + margin || j < a.y - margin || j > a.y + a.h - 1 + margin;
   const clear = (i, j) => {

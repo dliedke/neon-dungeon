@@ -69,8 +69,9 @@ Module map (`js/`):
 |---|---|
 | `main.js` | Entry point. Renderer, bloom, camera, game loop (`frame` → `logic(dt)`), floor lifecycle (`buildFloor` / `startFloor` / `nextFloor`), `startGame`, `sanitizeChar`, save/load, `boot()`. |
 | `state.js` | The shared global object `G`, `TILE`, `GLOW` and `gk()`. |
-| `dungeon.js` | `THEMES` (13 biomes), `themeFor(floor)`, `BOSS_EVERY` / `FINAL_FLOOR`, layout generators (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`), floor/wall meshes, collision, flow field, A*. |
+| `dungeon.js` | `THEMES` (23 biomes), `themeFor(floor)`, `BOSS_EVERY` / `FINAL_FLOOR`, layout generators (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`), floor/wall meshes, collision, flow field, A*. |
 | `biomes.js` | Biome features (`FEAT` floor tiles, hazards, mechanisms, decoration), the merchant and the blacksmith. |
+| `wilds.js` | The 10 "wild" biomes (bones, glass, starswamp, hive, stonesea, armory, titan, ashwinter, uprain, salt): their floor tiles (`FEAT` 15+), placement, instanced meshes, breakable props, and runtime rules (shattering glass, tides, updrafts, sentinels, breath/heartbeat, gusts). |
 | `classes.js` | `CLASSES` (10 classes), `CLASS_ORDER`, passives, the shared Teleport skill, `SKILL_FN` (skill logic) and the inline-SVG `ICONS`. |
 | `powers.js` | Advanced tree powers: summons, orbitals, black holes, storms, transformations. |
 | `player.js` | The player entity, `newCharacter`, `computeStats`, XP/levels, skill use. |
@@ -123,6 +124,6 @@ Module map (`js/`):
 - **Commit messages are in Portuguese:** a short summary of the player-visible change (see `git log`).
 - **Keep public docs in sync with content changes.** When you add or remove classes, bosses, biomes, enemies or features, update:
   - `README.md` (English) tables and counts.
-  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 13 biomas, 30 andares").
+  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 23 biomas, 30 andares").
   - The counts baked into `img/og-image.png` (needs regenerating).
   - `docs/ARCHITECTURE.md` and `docs/CONTENT.md` if the structure or a recipe changed.

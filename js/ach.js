@@ -83,7 +83,7 @@ export function achKill(e) {
 // ---------- definições ----------
 const chars = () => Object.values(G.save.slots || {});
 const maxOf = (f) => chars().reduce((m, c) => Math.max(m, f(c) || 0), 0);
-const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief', 'behemoth', 'crack'].includes(k));
+const BESTIARY = () => Object.keys(ETYPES).filter((k) => !ETYPES[k].boss && !['barrel', 'pylon', 'thief', 'behemoth', 'crack', 'bonepile', 'saltcrystal'].includes(k));
 
 // tier: 0 bronze, 1 prata, 2 ouro, 3 platina
 const TIERS = [

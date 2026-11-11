@@ -14,10 +14,13 @@ import { Input } from './input.js';
 import { padText } from './padglyphs.js';
 import { useGamble, gambleCost } from './events.js';
 import { fmt } from './utils.js';
+import { placeWild, buildWilds, updateWilds, wildGround, wildObstStyle, WILD_IDS } from './wilds.js';
 
 // Tipos de piso especial (d.feat)
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
-export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12, LAVA: 13, SNOW: 14 };
+export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12, LAVA: 13, SNOW: 14,
+  // biomas selvagens (wilds.js): 15..20, 26 e 27 são pisos; 21..25 e 28 são obstáculos
+  MARROW: 15, GLASS: 16, SHARD: 17, RESIN: 18, VEIN: 19, EMBER: 20, BONE: 21, CRYSTAL: 22, WAVE: 23, BLADETREE: 24, STATUE: 25, GRAV: 26, TIDE: 27, WRECK: 28 };
 const isConv = (f) => f >= 3 && f <= 6;
 const CONV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
@@ -37,6 +40,7 @@ export function groundEffect(d, x, z) {
   if (f === FEAT.ICE) return { speed: 1.1, ice: true };
   if (f === FEAT.LAVA) return { speed: 0.7, hurt: 0xff5a1a, mult: 2.6 };
   if (f === FEAT.SNOW) return { speed: 0.62 };
+  if (f >= 15) return wildGround(d, f, x, z);
   if (isConv(f)) {
     const [dx, dz] = CONV_DIRS[f - FEAT.CONV];
     return { speed: 1, push: { x: dx * 2.6, z: dz * 2.6 } };
@@ -59,6 +63,7 @@ export function placeFeatures(d, theme) {
     if (nearKey(d, i + 0.5, j + 0.5, 3)) return;
     d.feat[j * W + i] = v;
   };
+  d.wild = WILD_IDS.includes(theme.id);
   for (const f of theme.features) {
     switch (f) {
       case 'rain':
@@ -75,9 +80,10 @@ export function placeFeatures(d, theme) {
         }
         break;
       case 'sludge':
+      case 'veins':
       case 'lava': {
         // rios de lodo tóxico (ou de lava) que atravessam o mapa (também abrem passagens)
-        const riverFeat = f === 'lava' ? FEAT.LAVA : FEAT.SLUDGE;
+        const riverFeat = f === 'lava' ? FEAT.LAVA : f === 'veins' ? FEAT.VEIN : FEAT.SLUDGE;
         const n = 2 + Math.floor(W / 30);
         for (let k = 0; k < n; k++) {
           const r = pick(rooms);
@@ -198,10 +204,18 @@ export function placeFeatures(d, theme) {
       case 'trees':
       case 'pines':
       case 'boulders':
-      case 'cacti': {
+      case 'cacti':
+      case 'deadtrees':
+      case 'ribs':
+      case 'crystals':
+      case 'waves':
+      case 'wrecks':
+      case 'bladetrees':
+      case 'statues': {
         // obstáculos isolados (nunca bloqueiam a passagem)
-        const kind = f === 'trees' || f === 'pines' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
-        const dens = f === 'trees' ? 0.07 : f === 'pines' ? 0.05 : f === 'boulders' ? (theme.id === 'mountain' ? 0.045 : 0.025) : 0.03;
+        const WILD_OBST = { deadtrees: [FEAT.TREE, 0.04], ribs: [FEAT.BONE, 0.035], crystals: [FEAT.CRYSTAL, 0.03], waves: [FEAT.WAVE, 0.03], wrecks: [FEAT.WRECK, 0.008], bladetrees: [FEAT.BLADETREE, 0.045], statues: [FEAT.STATUE, 0.014] }[f];
+        const kind = WILD_OBST ? WILD_OBST[0] : f === 'trees' || f === 'pines' ? FEAT.TREE : f === 'boulders' ? FEAT.BOULDER : FEAT.CACTUS;
+        const dens = WILD_OBST ? WILD_OBST[1] : f === 'trees' ? 0.07 : f === 'pines' ? 0.05 : f === 'boulders' ? (theme.id === 'mountain' ? 0.045 : 0.025) : 0.03;
         for (let j = 3; j < H - 3; j++)
           for (let i = 3; i < W - 3; i++) {
             if (grid[j * W + i] !== TILE.FLOOR || rnd() > dens || nearKey(d, i + 0.5, j + 0.5, 3.5)) continue;
@@ -276,7 +290,12 @@ export function placeFeatures(d, theme) {
         }
         break;
       case 'lakes':
+      case 'blackwater':
+      case 'brine':
         d.pitStyle = 'water';
+        // pântano: água escura com brilho de estrelas; salinas: salmoura turquesa
+        if (f === 'blackwater') d.water = { color: 0x2a1a4a, emissive: 0x1a0a3a, glint: 0xd8b0ff };
+        if (f === 'brine') d.water = { color: 0x5ad8d0, emissive: 0x0a3a3a, glint: 0xffffff };
         carvePits(d, rooms, 'blob');
         break;
       case 'void':
@@ -297,6 +316,9 @@ export function placeFeatures(d, theme) {
         break;
       case 'sandstorm':
         d.sandstorm = { t: rr(10, 18), on: false };
+        break;
+      default:
+        placeWild(d, theme, f, { set, rooms, nearKey });
         break;
       case 'lanterns':
         for (const r of d.rooms) for (let k = 0; k < Math.floor((r.w * r.h) / 25); k++) d.props.push({ type: 'lantern', x: r.x + rr(1, r.w - 1), z: r.y + rr(1, r.h - 1), y: rr(2.2, 3), color: pick([theme.a, theme.b, 0xff6a00]) });
@@ -888,6 +910,7 @@ export function buildFeatures(d, theme, group) {
     group.add(g);
     p.group = g;
   }
+  buildWilds(d, theme, group, B);
 }
 
 // ------------------------------------------------------------------
@@ -926,13 +949,14 @@ function buildNature(d, theme, group, B) {
   for (let k = 0; k < W * H; k++) if (grid[k] === TILE.PIT) pitTiles.push(k);
   // água dos lagos
   if (d.pitStyle === 'water' && pitTiles.length) {
-    const mat = new THREE.MeshLambertMaterial({ color: 0x2a7ac8, transparent: true, opacity: 0.85, emissive: new THREE.Color(0x0a3a6a) });
+    const wc = d.water || { color: 0x2a7ac8, emissive: 0x0a3a6a, glint: 0xbfe8ff };
+    const mat = new THREE.MeshLambertMaterial({ color: wc.color, transparent: true, opacity: 0.85, emissive: new THREE.Color(wc.emissive) });
     const im = new THREE.InstancedMesh(planeGeo, mat, pitTiles.length);
     pitTiles.forEach((k, n) => im.setMatrixAt(n, m4.makeTranslation((k % W) + 0.5, -0.06, Math.floor(k / W) + 0.5)));
     group.add(im);
     B.water = mat;
     // brilho na água
-    const glint = new THREE.MeshBasicMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
+    const glint = new THREE.MeshBasicMaterial({ color: wc.glint, transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending });
     const gm = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.5, 0.06).rotateX(-Math.PI / 2), glint, Math.min(200, pitTiles.length));
     for (let n = 0; n < gm.count; n++) {
       const k = pick(pitTiles);
@@ -1014,7 +1038,7 @@ function buildNature(d, theme, group, B) {
   }
   // obstáculos: árvores, pedras e cactos
   for (const p of d.props) {
-    if (p.type !== 'obst') continue;
+    if (p.type !== 'obst' || (d.wild && wildObstStyle(p, theme))) continue;
     const g = new THREE.Group();
     g.position.set(p.x, 0, p.z);
     g.rotation.y = p.rot;
@@ -1178,6 +1202,7 @@ export function updateBiome(dt, camera) {
       }
     }
   }
+  if (d.wild) updateWilds(dt, p);
   updateNpcInteract(d, p, camera);
 }
 
@@ -1306,14 +1331,14 @@ function ambientParticles(d, dt) {
     const far = st.on ? 18 : L2.fogFar * (dark ? 0.5 : 1);
     fog.near += (near - fog.near) * Math.min(1, dt);
     fog.far += (far - fog.far) * Math.min(1, dt);
-    if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), st.snow ? pick([0xffffff, 0xdde8f4]) : pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);
+    if (st.on) for (let k = 0; k < 6; k++) particle(cx + rr(-12, 4), rr(0.2, 2.5), cz + rr(-12, 12), rr(9, 14), rr(-0.5, 0.5), rr(3, 6), st.snow ? pick([0xffffff, 0xdde8f4]) : st.glass ? pick([0xc8f4ff, 0xff9ae8, 0xffffff]) : pick([0xd8b088, 0xc8a070]), rr(0.04, 0.08), 0.9, 0, 0);
     // na nevasca o frio deixa o jogador mais lento
     if (st.on && st.snow && G.player && G.player.alive) G.player.chillT = Math.max(G.player.chillT || 0, 0.15);
   }
 }
 function toastStorm() {
-  const snow = G.dungeon && G.dungeon.sandstorm && G.dungeon.sandstorm.snow;
-  floatText(G.player.x, 2.2, G.player.z, snow ? L('NEVASCA!', 'BLIZZARD!') : L('TEMPESTADE DE AREIA!', 'SANDSTORM!'), 'info');
+  const st = (G.dungeon && G.dungeon.sandstorm) || {};
+  floatText(G.player.x, 2.2, G.player.z, st.snow ? L('NEVASCA!', 'BLIZZARD!') : st.glass ? L('TEMPESTADE DE CACOS!', 'SHARD STORM!') : L('TEMPESTADE DE AREIA!', 'SANDSTORM!'), 'info');
 }
 
 // Montanha: pedras rolam dos penhascos perto do jogador (com aviso no chão)

@@ -19,6 +19,17 @@ export const THEMES = [
   { id: 'volcano', name: L('Caldeira Vulcânica', 'Volcanic Caldera'), a: 0xff5a1a, b: 0xffd23d, floor: 0x3a2a26, wall: 0x2a1a16, cap: 0x4a2a1e, fog: 0x1a0805, layout: 'cave', ground: 'ash', walls: 'natural', wallH: [1.4, 3.2], natural: true, fauna: ['salamander', 'magmagolem'], features: ['lava', 'geysers', 'embers', 'boulders'], light: { sky: 0xff8a5a, ground: 0x2a0a04, hemi: 1.1, dir: 0xffa070, dirI: 1.2, fogNear: 14, fogFar: 34 }, hint: L('Rios de lava queimam muito; gêiseres avisam antes de jorrar.', 'Lava rivers burn badly; geysers flash before they erupt.') },
   { id: 'data', name: L('Núcleo de Dados', 'Data Core'), a: 0xff2244, b: 0x00f0ff, floor: 0x35202c, wall: 0x261420, fog: 0x0d040a, layout: 'grid', features: ['lasers'], hint: L('Grades de laser ligam e desligam: espere o momento certo.', 'Laser grids switch on and off: time your crossing.') },
   { id: 'market', name: L('Mercado Noturno', 'Night Market'), a: 0xffd23d, b: 0xff2bd6, floor: 0x3a2a30, wall: 0x2a1a22, fog: 0x100608, layout: 'market', features: ['stalls', 'merchant', 'lanterns'], hint: L('Há um mercador escondido em alguma praça.', 'A merchant is hiding in one of the plazas.') },
+  // biomas selvagens (mecânicas em wilds.js)
+  { id: 'bones', name: L('Floresta de Ossos', 'Bone Forest'), a: 0xff4d6a, b: 0x7affc8, floor: 0x8a8070, wall: 0x5a5244, cap: 0xd8cfb8, fog: 0x1a1410, layout: 'cave', ground: 'bone', walls: 'natural', wallH: [1.6, 3.4], natural: true, fauna: ['bonestalker', 'ghost'], features: ['ribs', 'trees', 'bonepiles', 'marrow', 'fireflies'], light: { sky: 0xd8c8b0, ground: 0x2a1e14, hemi: 1.25, dir: 0xffe8c8, dirI: 1.2, fogNear: 14, fogFar: 34 }, hint: L('Pilhas de ossos guardam medula que cura, mas quebrá-las faz barulho e atrai predadores. Inimigos na poça de medula se curam.', 'Bone piles hold healing marrow, but breaking them is loud and draws predators. Enemies standing in marrow pools heal.') },
+  { id: 'glass', name: L('Deserto de Vidro', 'Glass Desert'), a: 0x6af0ff, b: 0xff6ad5, floor: 0xa8c8d0, wall: 0x7a9aa8, cap: 0xc8e8f0, fog: 0xb8d8e8, layout: 'meadow', ground: 'glass', walls: 'natural', wallH: [1.0, 2.6], natural: true, fauna: ['shardling', 'eagle'], features: ['crystals', 'glassfloor', 'shardstorm'], light: { sky: 0xe0f4ff, ground: 0x4a6a7a, hemi: 1.9, dir: 0xfff4e0, dirI: 2.0, fogNear: 24, fogFar: 52 }, hint: L('Explosões e golpes pesados racham o chão de vidro e deixam cacos cortantes. Golems de vidro somem nos reflexos e reaparecem ao seu lado.', 'Explosions and heavy blows crack the glass floor into cutting shards. Glass golems vanish into reflections and reappear beside you.') },
+  { id: 'starswamp', name: L('Pântano de Estrelas Caídas', 'Fallen Star Swamp'), a: 0xb36bff, b: 0x6af0ff, floor: 0x2c3448, wall: 0x1c2230, cap: 0x2a3a2e, fog: 0x05060c, layout: 'cave', ground: 'mud', walls: 'natural', wallH: [1.2, 2.6], natural: true, fauna: ['starwisp', 'toad'], features: ['blackwater', 'craters', 'starshards', 'fireflies'], light: { sky: 0x7a6ac0, ground: 0x14142a, hemi: 1.4, dir: 0xb8b0ff, dirI: 1.2, fogNear: 14, fogFar: 34 }, hint: L('Nas crateras a gravidade é fraca: você corre mais e os tiros ficam lentos. Pegue os fragmentos estelares antes que as criaturas se energizem com eles.', 'Gravity is weak inside the craters: you run faster and shots slow down. Grab the star fragments before the creatures feed on them.') },
+  { id: 'hive', name: L('Cidade-Colmeia', 'Hive City'), a: 0xffc21a, b: 0xff6a00, floor: 0x5a4220, wall: 0x6a4814, cap: 0xd8a040, fog: 0x1a0e02, layout: 'rooms', ground: 'wax', fauna: ['wasp'], features: ['resin', 'honey', 'sentinels'], light: { sky: 0xffc870, ground: 0x2a1404, hemi: 1.3, dir: 0xffd890, dirI: 1.4, fogNear: 18, fogFar: 40 }, hint: L('A resina prende os pés: explosões e fogo a queimam, mas a fumaça alerta o enxame. Mate as sentinelas antes que terminem de chamar reforços!', 'Resin glues your feet: explosions and fire burn it away, but the smoke alerts the swarm. Kill the sentinels before they finish calling reinforcements!') },
+  { id: 'stonesea', name: L('Mar Petrificado', 'Petrified Sea'), a: 0x3ad8ff, b: 0xffd23d, floor: 0x6a7078, wall: 0x4a525c, cap: 0x8a96a0, fog: 0x3a4a5a, layout: 'meadow', ground: 'stone', walls: 'natural', wallH: [1.8, 3.6], natural: true, fauna: ['fossilcrab', 'eagle'], features: ['waves', 'wrecks', 'fossils', 'tides'], light: { sky: 0xb8d0e8, ground: 0x2a3440, hemi: 1.6, dir: 0xe8f0ff, dirI: 1.6, fogNear: 20, fogFar: 46 }, hint: L('Algumas áreas voltam a ser mar por alguns segundos: a correnteza arrasta todo mundo e deixa lento. Fique de olho nos círculos azuis.', 'Some areas turn back into sea for a few seconds: the current drags everyone and slows them down. Watch the blue circles.') },
+  { id: 'armory', name: L('Jardim de Armas', 'Weapon Garden'), a: 0xff3a5a, b: 0xc8d8ff, floor: 0x3a4a34, wall: 0x2a3626, cap: 0x4a6a3a, fog: 0x0c140c, layout: 'meadow', ground: 'grass', walls: 'natural', wallH: [1.0, 1.8], natural: true, fauna: ['bladeknight', 'boar'], features: ['bladetrees', 'swordplants', 'shieldflowers', 'steelgrass'], light: { sky: 0xc8d8ff, ground: 0x2a3a2a, hemi: 1.6, dir: 0xfff0e0, dirI: 1.7, fogNear: 22, fogFar: 50 }, hint: L('Os inimigos arrancam espadas do chão e ficam mais fortes. Chegue antes: pegar uma espada dá Fúria a você.', 'Enemies pull swords out of the ground and grow stronger. Get there first: taking a sword gives you Fury.') },
+  { id: 'titan', name: L('Montanha do Deus Adormecido', 'Sleeping God Mountain'), a: 0xff3a5a, b: 0xffb35a, floor: 0x7a4a48, wall: 0x5a3030, cap: 0x8a5a54, fog: 0x1a0808, layout: 'cave', ground: 'flesh', walls: 'natural', wallH: [2.0, 4.2], natural: true, fauna: ['antibody', 'toad'], features: ['veins', 'breath', 'heartbeat'], light: { sky: 0xffa090, ground: 0x2a0a0a, hemi: 1.2, dir: 0xffc0a8, dirI: 1.3, fogNear: 14, fogFar: 34 }, hint: L('A montanha respira e o vento empurra todos. As veias queimam a cada batida do coração. Destruição demais desperta as defesas do corpo!', 'The mountain breathes and the wind pushes everyone. The veins burn on every heartbeat. Too much destruction wakes the body\'s defenses!') },
+  { id: 'ashwinter', name: L('Inverno de Cinzas', 'Ash Winter'), a: 0xff6a1a, b: 0xd8d8e0, floor: 0x8a8888, wall: 0x5a5656, cap: 0xb8b4b0, fog: 0x5a5454, layout: 'meadow', ground: 'ashsnow', walls: 'natural', wallH: [1.2, 2.6], natural: true, fauna: ['ashwolf', 'salamander'], features: ['deadtrees', 'ashfall', 'hiddenembers', 'gusts'], light: { sky: 0xc8c0b8, ground: 0x3a2a24, hemi: 1.35, dir: 0xffd8c0, dirI: 1.2, fogNear: 16, fogFar: 38 }, hint: L('Parece neve, mas é cinza: brasas escondidas queimam quem pisa. As rajadas de vento revelam as brasas e reacendem o fogo.', 'It looks like snow, but it is ash: hidden embers burn whoever steps on them. Wind gusts reveal the embers and rekindle the fire.') },
+  { id: 'uprain', name: L('Floresta da Chuva Invertida', 'Upside-Down Rain Forest'), a: 0x4dd2ff, b: 0x9dff3a, floor: 0x2a4038, wall: 0x1a3028, cap: 0x2a5a3a, fog: 0x0a1a1e, layout: 'cave', ground: 'moss', walls: 'natural', wallH: [1.6, 3.2], natural: true, fauna: ['skyray', 'wisp'], features: ['trees', 'mushrooms', 'uprain', 'updrafts', 'skylakes'], light: { sky: 0x8ac8e8, ground: 0x0a2018, hemi: 1.25, dir: 0xc8e8ff, dirI: 1.1, fogNear: 14, fogFar: 34 }, hint: L('Entre numa corrente de chuva subindo para ser lançado ao alto e cair com um golpe no inimigo mais próximo. Tiros não atravessam as correntes.', 'Step into a rising rain current to be lifted up and slam down on the nearest enemy. Shots can\'t pass through the currents.') },
+  { id: 'salt', name: L('Salinas dos Esquecidos', 'Salt Flats of the Forgotten'), a: 0xff4d6a, b: 0x3ad8d0, floor: 0xd8d4cc, wall: 0xb8b0a4, cap: 0xf0ece4, fog: 0xd8d4cc, layout: 'meadow', ground: 'salt', walls: 'natural', wallH: [1.0, 2.2], natural: true, fauna: ['saltwraith', 'scorpion'], features: ['statues', 'brine', 'saltcrystals'], light: { sky: 0xfff4ec, ground: 0x6a5a54, hemi: 2.0, dir: 0xfff0e0, dirI: 2.0, fogNear: 24, fogFar: 54 }, hint: L('Cristais de sal guardam tesouros (brilho dourado) ou esquecidos antigos (brilho vermelho). Escolha o que libertar antes de enfrentar a sala.', 'Salt crystals hold treasure (golden glow) or ancient forgotten ones (red glow). Choose what to release before taking on the room.') },
 ];
 THEMES.forEach((t) => (t.light = t.light || NEON_LIGHT));
 THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
@@ -29,12 +40,13 @@ export const isBossFloor = (f) => f % BOSS_EVERY === 0;
 export const FINAL_FLOOR = 30;
 export const isFinalFloor = (f) => f >= FINAL_FLOOR;
 
-// Cada andar tem um bioma diferente
-// (a rotação muda a cada ciclo para que os chefes apareçam em biomas diferentes)
+// Bioma de cada andar (1 a 29): os mais fáceis no começo e todos aparecem até o andar 23
+// (medalha de visitar todos). Mercados no 13 e no 25 (o 22 tem loja extra em biomes.js).
+const FLOOR_THEMES = [null, 'neon', 'forest', 'factory', 'meadow', 'bones', 'sewer', 'snow', 'glass', 'mountain', 'armory', 'starswamp', 'space', 'market', 'cryo', 'hive', 'stonesea', 'desert', 'uprain', 'ashwinter', 'volcano', 'titan', 'salt', 'data', 'hive', 'market', 'glass', 'ashwinter', 'starswamp', 'titan'];
 export function themeFor(floor) {
   if (isFinalFloor(floor)) return THEMES.find((t) => t.id === 'data'); // o coração da corporação
-  const n = THEMES.length;
-  return THEMES[(floor - 1 + Math.floor((floor - 1) / n)) % n];
+  const id = FLOOR_THEMES[floor];
+  return (id && THEMES.find((t) => t.id === id)) || THEMES[(floor - 1) % THEMES.length];
 }
 
 // ------------------------------------------------------------------
@@ -577,7 +589,7 @@ function naturalTexture(style) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
-  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8', snow: '#d4dce8', rock: '#9a968e', ash: '#6a5e5a' }[style];
+  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8', snow: '#d4dce8', rock: '#9a968e', ash: '#6a5e5a', bone: '#c8bca4', glass: '#c8e0e8', mud: '#3a4048', wax: '#c89a48', stone: '#8a9098', flesh: '#b87a74', ashsnow: '#b0acaa', moss: '#7a9a80', salt: '#ece8e0' }[style];
   g.fillStyle = base;
   g.fillRect(0, 0, 128, 128);
   for (let k = 0; k < 900; k++) {
@@ -638,9 +650,147 @@ function naturalTexture(style) {
       g.stroke();
     }
   }
+  wildTexture(g, style);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+// detalhes dos pisos dos biomas selvagens
+function wildTexture(g, style) {
+  const R = Math.random;
+  const crack = (n, len, col, w = 1) => {
+    g.strokeStyle = col;
+    g.lineWidth = w;
+    for (let k = 0; k < n; k++) {
+      g.beginPath();
+      let x = R() * 128;
+      let y = R() * 128;
+      g.moveTo(x, y);
+      for (let s2 = 0; s2 < 4; s2++) g.lineTo((x += (R() - 0.5) * len), (y += (R() - 0.5) * len));
+      g.stroke();
+    }
+  };
+  if (style === 'bone') {
+    // lascas de osso e manchas de medula
+    for (let k = 0; k < 18; k++) {
+      g.fillStyle = 'rgba(245,238,220,0.55)';
+      g.save();
+      g.translate(R() * 128, R() * 128);
+      g.rotate(R() * 3);
+      g.fillRect(-5, -1, 10, 2.5);
+      g.beginPath();
+      g.arc(-5, 0, 2, 0, 7);
+      g.arc(5, 0, 2, 0, 7);
+      g.fill();
+      g.restore();
+    }
+    for (let k = 0; k < 6; k++) {
+      g.fillStyle = 'rgba(160,40,50,0.18)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 3 + R() * 5, 0, 7);
+      g.fill();
+    }
+  } else if (style === 'glass') {
+    // facetas de vidro com reflexo
+    crack(10, 40, 'rgba(255,255,255,0.55)');
+    crack(6, 30, 'rgba(60,110,140,0.35)');
+    for (let k = 0; k < 12; k++) {
+      g.fillStyle = `rgba(${R() < 0.5 ? '255,140,230' : '120,240,255'},0.18)`;
+      g.beginPath();
+      const x = R() * 128;
+      const y = R() * 128;
+      g.moveTo(x, y);
+      g.lineTo(x + 8 + R() * 10, y + R() * 6);
+      g.lineTo(x + R() * 6, y + 8 + R() * 10);
+      g.fill();
+    }
+  } else if (style === 'mud') {
+    // lama escura com pontinhos de poeira estelar
+    for (let k = 0; k < 10; k++) {
+      g.fillStyle = 'rgba(0,0,0,0.25)';
+      g.beginPath();
+      g.ellipse(R() * 128, R() * 128, 6 + R() * 8, 3 + R() * 4, R() * 3, 0, 7);
+      g.fill();
+    }
+    for (let k = 0; k < 30; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(180,120,255,0.5)' : 'rgba(120,240,255,0.45)';
+      g.fillRect(R() * 128, R() * 128, 1.5, 1.5);
+    }
+  } else if (style === 'wax') {
+    // favos hexagonais
+    g.strokeStyle = 'rgba(90,50,10,0.45)';
+    g.lineWidth = 1.5;
+    const r = 8;
+    for (let row = -1; row < 10; row++)
+      for (let col = -1; col < 10; col++) {
+        const cx = col * r * 1.5;
+        const cy = row * r * 1.732 + (col % 2 ? r * 0.866 : 0);
+        g.beginPath();
+        for (let a = 0; a < 6; a++) g.lineTo(cx + Math.cos((a * Math.PI) / 3) * r, cy + Math.sin((a * Math.PI) / 3) * r);
+        g.closePath();
+        g.stroke();
+        if (R() < 0.15) {
+          g.fillStyle = 'rgba(255,190,40,0.35)';
+          g.fill();
+        }
+      }
+  } else if (style === 'stone') {
+    // ondas congeladas na pedra
+    g.strokeStyle = 'rgba(40,50,60,0.3)';
+    g.lineWidth = 2;
+    for (let y = 6; y < 128; y += 14) {
+      g.beginPath();
+      for (let x = 0; x <= 128; x += 6) g.lineTo(x, y + Math.sin(x / 9 + y * 0.7) * 4);
+      g.stroke();
+    }
+    g.strokeStyle = 'rgba(220,235,255,0.2)';
+    g.lineWidth = 1;
+    for (let y = 9; y < 128; y += 14) {
+      g.beginPath();
+      for (let x = 0; x <= 128; x += 6) g.lineTo(x, y + Math.sin(x / 9 + y * 0.7) * 4);
+      g.stroke();
+    }
+  } else if (style === 'flesh') {
+    // pele com poros e veias
+    for (let k = 0; k < 60; k++) {
+      g.fillStyle = 'rgba(90,30,30,0.3)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 0.8 + R() * 1.2, 0, 7);
+      g.fill();
+    }
+    crack(6, 34, 'rgba(160,30,60,0.4)', 2);
+  } else if (style === 'ashsnow') {
+    // cinza fofa com brasas fracas por baixo
+    for (let k = 0; k < 50; k++) {
+      g.fillStyle = 'rgba(230,226,222,0.3)';
+      g.fillRect(R() * 128, R() * 128, 2, 2);
+    }
+    for (let k = 0; k < 10; k++) {
+      g.fillStyle = 'rgba(255,110,30,0.22)';
+      g.fillRect(R() * 128, R() * 128, 1.5, 1.5);
+    }
+  } else if (style === 'moss') {
+    for (let k = 0; k < 120; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(40,90,50,0.35)' : 'rgba(160,220,170,0.2)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 1 + R() * 2, 0, 7);
+      g.fill();
+    }
+    for (let k = 0; k < 12; k++) {
+      g.fillStyle = 'rgba(120,200,255,0.35)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 1.2, 0, 7);
+      g.fill();
+    }
+  } else if (style === 'salt') {
+    // crosta de sal em polígonos
+    crack(14, 36, 'rgba(150,140,128,0.4)');
+    for (let k = 0; k < 40; k++) {
+      g.fillStyle = 'rgba(255,255,255,0.6)';
+      g.fillRect(R() * 128, R() * 128, 1.5, 1.5);
+    }
+  }
 }
 
 function deckTexture() {
@@ -667,7 +817,7 @@ function deckTexture() {
 }
 
 function floorTexture(theme) {
-  if (['soil', 'grass', 'sand', 'snow', 'rock', 'ash'].includes(theme.ground)) return naturalTexture(theme.ground);
+  if (['soil', 'grass', 'sand', 'snow', 'rock', 'ash', 'bone', 'glass', 'mud', 'wax', 'stone', 'flesh', 'ashsnow', 'moss', 'salt'].includes(theme.ground)) return naturalTexture(theme.ground);
   if (theme.ground === 'deck') return deckTexture();
   const c = document.createElement('canvas');
   c.width = c.height = 128;

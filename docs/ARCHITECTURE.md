@@ -106,7 +106,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 
 ### Biomes (`dungeon.js` `THEMES`)
 
-`THEMES` is an array of 13 biomes: neon, forest, factory, snow, meadow, sewer, mountain, space, cryo, desert, volcano, data, market. Each entry has:
+`THEMES` is an array of 23 biomes: neon, forest, factory, snow, meadow, sewer, mountain, space, cryo, desert, volcano, data, market, plus 10 "wild" biomes (bones, glass, starswamp, hive, stonesea, armory, titan, ashwinter, uprain, salt) whose rules live in `wilds.js`. Each entry has:
 
 - `id`, `name`, and the colors `a` (main accent), `b` (second accent), `floor`, `wall`, `fog` and optional `cap` (wall tops).
 - `layout`: which generator to use.
@@ -114,7 +114,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 - `hint`: the tip shown on arrival.
 - Optional: `light` (otherwise `NEON_LIGHT`), `ground` (floor texture style), `walls: 'natural'` and `wallH`, `natural`, `sky`, and `fauna` (enemy types that spawn more often there).
 
-`themeFor(floor)` uses `data` for the final floor. Otherwise it is `THEMES[(floor - 1 + floor((floor - 1) / n)) % n]`, so the biome order shifts each lap.
+`themeFor(floor)` uses `data` for the final floor. Otherwise it reads the hand-ordered `FLOOR_THEMES` table (every biome shows up at least once in floors 1–29, mixing tech and wild ones), falling back to `THEMES[(floor - 1) % n]`.
 
 ### Map generation
 
@@ -129,7 +129,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 | `meadow` | `genCave(0.64)`: open fields. |
 | `grid` | `genGrid`: data-center blocks. |
 
-The map object is `d = { W, H, grid: Uint8Array, rooms, floor, layout, start, exitRoom, exit, props, meshes }`. `biomes.js` adds `d.feat` (a `FEAT` value per tile: sludge, ice, conveyors, thorns, radiation, lava, snow, plus decorative obstacles 9+). The exit goes in the room farthest from the start (BFS).
+The map object is `d = { W, H, grid: Uint8Array, rooms, floor, layout, start, exitRoom, exit, props, meshes }`. `biomes.js` adds `d.feat` (a `FEAT` value per tile: sludge, ice, conveyors, thorns, radiation, lava, snow, plus decorative obstacles 9+; the wild biomes add 15+: marrow, glass, shards, resin, veins, embers, gravity craters and tides, plus their own obstacles). The exit goes in the room farthest from the start (BFS).
 
 Navigation helpers:
 
@@ -138,7 +138,7 @@ Navigation helpers:
 - `resolveCircle` handles collision against walls. `lineOfSight` / `blocksSight` handle vision (pits don't block sight or shots).
 - `revealAround` reveals the minimap fog.
 
-`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). It also places the merchant (`refreshShopStock`), the shared stash (`placeStash`, a few steps from the start of every floor) and then the blacksmith (on every floor; `placeSmithAtStart` puts him next to the stash, outside the arena, falling back to near the start or a random room). `npcNear(d, x, z, r)` keeps rifts, shrines and chests away from all three. None of them opens by proximity: `updateNpcInteract` shows the `#interact` prompt above the closest one in range, and the `interact` input action (Enter, pad {A} when no enemy is close, or tapping/clicking the prompt) opens it. Clicking the NPC with the mouse (`G.hoverNpc`, computed in `updateMouseWorld`) sets `p.npcGo` and walks there; it opens on arrival.
+`biomes.js` then runs `placeFeatures(d, theme)` (data), `buildFeatures(d, theme, group)` (meshes) and `updateBiome(dt)` (hazards: electric puddles, presses, laser grids, geysers, rockfall, airlocks, cryo vents, weather). On wild biomes (`d.wild`) it delegates to `wilds.js`: `placeWild`, `buildWilds` (instanced tile layers in `d.biome.wild`), `updateWilds` and `wildGround` (floor effects for `FEAT` 15+). `wildPopulate` adds breakable props (bone piles, salt crystals: inert 1-HP enemies with `breakable: true`) and hive sentinels; `combat.js` calls `wildBlast` on explosions (shatter glass, burn resin, wake the sleeping god), `wildKill` on deaths and `projZone` for projectiles (slow in craters, blocked by updrafts). It also places the merchant (`refreshShopStock`), the shared stash (`placeStash`, a few steps from the start of every floor) and then the blacksmith (on every floor; `placeSmithAtStart` puts him next to the stash, outside the arena, falling back to near the start or a random room). `npcNear(d, x, z, r)` keeps rifts, shrines and chests away from all three. None of them opens by proximity: `updateNpcInteract` shows the `#interact` prompt above the closest one in range, and the `interact` input action (Enter, pad {A} when no enemy is close, or tapping/clicking the prompt) opens it. Clicking the NPC with the mouse (`G.hoverNpc`, computed in `updateMouseWorld`) sets `p.npcGo` and walks there; it opens on arrival.
 
 ## Entities
 

@@ -16,6 +16,7 @@ import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
 import { propBroken } from './events.js';
+import { wildBlast, wildKill, projZone } from './wilds.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -222,7 +223,7 @@ export function killEnemy(e) {
   e.hp = 0;
   const p = G.player;
   sfx.die();
-  if (!e.selfDestruct && !e.decoy && !e.T.prop) achKill(e);
+  if (!e.selfDestruct && !e.decoy && !e.T.prop && !e.T.breakable) achKill(e);
   burst(e.x, e.height * 0.5, e.z, e.bloodColor, e.boss ? 80 : e.elite ? 30 : 16, e.boss ? 9 : 5, 0.08, 0.7);
   if (e.T.prop) {
     // parede da Sala Secreta
@@ -236,6 +237,8 @@ export function killEnemy(e) {
       const p = G.player;
       if (Math.hypot(p.x - x, p.z - z) < 2.8 + p.r) damagePlayer(e.dmg);
     });
+  } else if (e.T.breakable) {
+    // pilha de ossos / cristal de sal: o efeito fica em wildKill
   } else if (!e.selfDestruct && !e.decoy) {
     gainXp(e.xp);
     const credits = dropLoot(e.x, e.z, { elite: !!e.elite, boss: !!e.boss, thief: e.type === 'thief', beast: !!e.T.big });
@@ -266,6 +269,7 @@ export function killEnemy(e) {
     telegraphFx(x, z, 2.4, 0.7, 0xff5500);
     after(0.7, () => enemyExplosion(x, z, 2.4, e.dmg * 1.6, 0xff5500));
   }
+  if (G.dungeon && G.dungeon.wild) wildKill(e);
   onEnemyKilled(e);
 }
 
@@ -291,6 +295,7 @@ export function explosion(x, z, radius, mult, o = {}) {
   burst(x, 0.5, z, 0xffffff, o.small ? 4 : 10, 4, 0.06, 0.3);
   sfx.explode();
   G.shake = Math.max(G.shake, o.small ? 0.12 : 0.35);
+  if (G.dungeon && G.dungeon.wild) wildBlast(x, z, radius, true);
 }
 
 export function enemyExplosion(x, z, radius, dmg, color) {
@@ -300,6 +305,7 @@ export function enemyExplosion(x, z, radius, dmg, color) {
   burst(x, 0.5, z, color, 30, 7, 0.09, 0.5);
   sfx.explode();
   G.shake = Math.max(G.shake, 0.25);
+  if (G.dungeon && G.dungeon.wild) wildBlast(x, z, radius, false);
 }
 
 // ---------------- dano no jogador ----------------
@@ -432,7 +438,17 @@ export function updateProjectiles(dt) {
     }
     const pos = pr.mesh.position;
     // tiros inimigos ficam lentos dentro de uma dobra temporal
-    const tf = pr.from === 'enemy' && G.warps.length ? timeFactor(pos.x, pos.z) : 1;
+    let tf = pr.from === 'enemy' && G.warps.length ? timeFactor(pos.x, pos.z) : 1;
+    // biomas selvagens: crateras deixam os tiros lentos; correntes de chuva barram tiros inimigos
+    if (d.wild) {
+      const wz = projZone(pr, pos.x, pos.z);
+      if (wz < 0) {
+        pr.alive = false;
+        burst(pos.x, pos.y, pos.z, 0x9ae4ff, 6, 3, 0.05, 0.3, { up: 3 });
+        continue;
+      }
+      tf *= wz;
+    }
     pos.x += pr.dx * pr.speed * dt * tf;
     pos.z += pr.dz * pr.speed * dt * tf;
     if (pr.from === 'enemy' && shieldCatch(pr)) {

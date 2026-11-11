@@ -18,6 +18,12 @@ export function glowMat(color, k = 2.3) {
   return glowCache[key];
 }
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
+// malha com rotação (modelos dos biomas selvagens)
+function meshR(geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
+  const m = mesh(geo, mat, x, y, z);
+  m.rotation.set(rx, ry, rz);
+  return m;
+}
 function mesh(geo, mat, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geo, mat);
   m.position.set(x, y, z);
@@ -815,13 +821,15 @@ export function makeEnemyModel(type, eliteColor) {
       m = { root, body, sheet, mats: [mSheet], kind: 'ghost' };
       break;
     }
+    case 'starwisp':
     case 'wisp': {
       const root = new THREE.Group();
       const body = new THREE.Group();
       root.add(body);
-      const mCore = lambert(0x2a5a4a);
-      body.add(mesh(cached('wcore', () => new THREE.SphereGeometry(0.16, 10, 8)), glowMat(0x7affc8, 3)));
-      body.add(mesh(cached('whalo', () => new THREE.SphereGeometry(0.28, 10, 8)), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x7affc8).multiplyScalar(gk(1.2)), transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending })));
+      const wc = type === 'starwisp' ? 0xc88aff : 0x7affc8;
+      const mCore = lambert(type === 'starwisp' ? 0x3a2a5a : 0x2a5a4a);
+      body.add(mesh(cached(type === 'starwisp' ? 'wcore_s' : 'wcore', () => (type === 'starwisp' ? new THREE.OctahedronGeometry(0.2, 0) : new THREE.SphereGeometry(0.16, 10, 8))), glowMat(wc, 3)));
+      body.add(mesh(cached('whalo', () => new THREE.SphereGeometry(0.28, 10, 8)), new THREE.MeshBasicMaterial({ color: new THREE.Color(wc).multiplyScalar(gk(1.2)), transparent: true, opacity: 0.25, depthWrite: false, blending: THREE.AdditiveBlending })));
       body.position.y = 1.1;
       m = { root, body, mats: [mCore], kind: 'wisp' };
       break;
@@ -1225,15 +1233,21 @@ export function makeEnemyModel(type, eliteColor) {
       break;
     }
     case 'icewolf':
+    case 'ashwolf':
+    case 'bonestalker':
     case 'hound': {
       const root = new THREE.Group();
       const body = new THREE.Group();
       root.add(body);
-      const ice = type === 'icewolf';
-      const mFur = lambert(ice ? 0xc8d8e8 : 0x3a3e4a);
-      const mDark = lambert(ice ? 0x7a8aa0 : 0x1a1c24);
-      const eye = glowMat(ice ? 0x8ad8ff : 0xff2244, 2.8);
+      // paletas: lobo de gelo, lobo de cinzas, espreitador de ossos e cão cibernético
+      const PAL = { icewolf: [0xc8d8e8, 0x7a8aa0, 0x8ad8ff], ashwolf: [0x5a5654, 0x2a2624, 0xff6a1a], bonestalker: [0xe0d6c0, 0x6a5e4a, 0xff4d6a], hound: [0x3a3e4a, 0x1a1c24, 0xff2244] }[type];
+      const ice = type !== 'hound';
+      const mFur = lambert(PAL[0]);
+      const mDark = lambert(PAL[1]);
+      const eye = glowMat(PAL[2], 2.8);
       body.add(mesh(box(0.36, 0.38, 0.9), mFur, 0, 0.6, 0));
+      if (type === 'ashwolf') body.add(mesh(box(0.05, 0.05, 0.75), eye, 0, 0.8, 0)); // brasas nas costas
+      if (type === 'bonestalker') for (let k = 0; k < 4; k++) body.add(mesh(box(0.42, 0.06, 0.06), mFur, 0, 0.62, -0.3 + k * 0.18)); // costelas
       if (!ice) body.add(mesh(box(0.06, 0.06, 0.8), eye, 0, 0.8, 0)); // espinha de led
       const head = mesh(box(0.32, 0.3, 0.36), mFur, 0, 0.72, 0.55);
       body.add(head);
@@ -1463,6 +1477,165 @@ export function makeEnemyModel(type, eliteColor) {
       body.add(mesh(box(0.24, 0.04, 0.3), mFeather, 0, 0, -0.42)); // cauda
       body.position.y = 1.6;
       m = { root, body, wings, mats: [mFeather, mMetal], kind: 'bird' };
+      break;
+    }
+    // ---------------- biomas selvagens ----------------
+    case 'shardling':
+    case 'bladeknight':
+    case 'hivesentinel':
+    case 'saltwraith': {
+      const P = {
+        shardling: { body: 0x9ad8e8, dark: 0x4a7a8a, accent: 0x9af0ff },
+        bladeknight: { body: 0x8a94a8, dark: 0x3a4250, accent: 0xff3a5a, wide: 1.1 },
+        hivesentinel: { body: 0xc89a30, dark: 0x4a3010, accent: 0xffc21a },
+        saltwraith: { body: 0xe8e4dc, dark: 0x9a948a, accent: 0xff4d6a },
+      }[type];
+      m = humanoid(P);
+      if (type === 'shardling') {
+        // espinhos de cristal nos ombros e na cabeça
+        const cr = lambert(0xcff4ff);
+        for (const sx of [-1, 1]) m.torso.add(meshR(cached('sh_sp', () => new THREE.OctahedronGeometry(0.14, 0)), cr, sx * 0.28, 0.5, 0, 0, 0, sx * 0.5));
+        m.head.add(meshR(cached('sh_hd', () => new THREE.ConeGeometry(0.08, 0.3, 4)), cr, 0, 0.26, 0));
+        m.mats.push(cr);
+      } else if (type === 'bladeknight') {
+        // espada longa e elmo com crista
+        m.handR.add(meshR(box(0.05, 0.9, 0.14), lambert(0xc8d0e0), 0, -0.45, 0.1));
+        m.handR.add(meshR(box(0.02, 0.8, 0.02), m.glow, 0, -0.45, 0.18));
+        m.head.add(meshR(box(0.05, 0.14, 0.32), m.glow, 0, 0.22, 0));
+      } else if (type === 'hivesentinel') {
+        // antenas que giram quando ela sinaliza
+        const antenna = new THREE.Group();
+        antenna.position.y = 0.2;
+        for (const sx of [-1, 1]) {
+          antenna.add(meshR(box(0.03, 0.34, 0.03), m.mats[1], sx * 0.09, 0.15, 0, 0, 0, -sx * 0.4));
+          antenna.add(meshR(cached('hs_tip', () => new THREE.SphereGeometry(0.05, 6, 4)), m.glow, sx * 0.16, 0.31, 0));
+        }
+        m.head.add(antenna);
+        m.antenna = antenna;
+        m.torso.add(meshR(box(0.5, 0.22, 0.04), m.glow, 0, 0.1, -0.22));
+      } else {
+        // esquecido de sal: coroa de cristais
+        for (let k = 0; k < 5; k++) m.head.add(meshR(cached('sw_cr', () => new THREE.ConeGeometry(0.04, 0.18, 4)), m.mats[0], Math.cos(k * 1.26) * 0.14, 0.2, Math.sin(k * 1.26) * 0.14));
+      }
+      m.kind = 'humanoid';
+      break;
+    }
+    case 'wasp':
+    case 'skyray': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const ray = type === 'skyray';
+      const mMain = lambert(ray ? 0x2a6a8a : 0xffb21a);
+      const mDark = lambert(ray ? 0x0a2a3a : 0x2a1a0a);
+      const glow = glowMat(ray ? 0x4dd2ff : 0xff3a1a, 2.6);
+      const wings = [];
+      if (ray) {
+        // arraia: corpo achatado, asas largas e cauda comprida
+        const torso = meshR(cached('sr_body', () => new THREE.SphereGeometry(0.3, 10, 6)), mMain);
+        torso.scale.set(1, 0.3, 1.3);
+        body.add(torso);
+        body.add(meshR(box(0.04, 0.04, 0.8), mDark, 0, 0, -0.7));
+        body.add(meshR(box(0.3, 0.03, 0.04), glow, 0, 0.08, 0.25));
+        for (const sx of [-1, 1]) {
+          const w = new THREE.Group();
+          w.position.set(sx * 0.22, 0, 0);
+          w.add(meshR(box(0.7, 0.03, 0.5), mMain, sx * 0.35, 0, -0.05));
+          w.add(meshR(box(0.5, 0.035, 0.04), glow, sx * 0.3, 0.01, 0.2));
+          body.add(w);
+          wings.push(w);
+        }
+      } else {
+        // vespa: abdômen listrado com ferrão
+        body.add(meshR(cached('wa_th', () => new THREE.SphereGeometry(0.17, 8, 6)), mMain, 0, 0, 0.12));
+        const abd = meshR(cached('wa_ab', () => new THREE.SphereGeometry(0.2, 8, 6)), mMain, 0, -0.05, -0.22);
+        abd.scale.set(0.9, 0.9, 1.4);
+        body.add(abd);
+        for (const z of [-0.12, -0.26, -0.4]) body.add(meshR(box(0.34, 0.06, 0.06), mDark, 0, -0.04, z));
+        body.add(meshR(cached('wa_st', () => new THREE.ConeGeometry(0.05, 0.22, 5).rotateX(-Math.PI / 2)), glow, 0, -0.08, -0.58));
+        body.add(meshR(box(0.2, 0.05, 0.05), glow, 0, 0.05, 0.28));
+        const wm = new THREE.MeshLambertMaterial({ color: 0xe8f4ff, transparent: true, opacity: 0.45, depthWrite: false });
+        for (const sx of [-1, 1]) {
+          const w = new THREE.Group();
+          w.position.set(sx * 0.12, 0.12, 0.05);
+          w.add(meshR(box(0.5, 0.02, 0.2), wm, sx * 0.25, 0, 0));
+          body.add(w);
+          wings.push(w);
+        }
+      }
+      body.position.y = 1.6;
+      m = { root, body, wings, mats: [mMain, mDark], kind: 'bird' };
+      break;
+    }
+    case 'fossilcrab': {
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mShell = lambert(0x8a8478);
+      const mDark = lambert(0x3a3630);
+      const eye = glowMat(0x3ad8ff, 2.6);
+      const shell = meshR(cached('fc_sh', () => new THREE.SphereGeometry(0.45, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)), mShell, 0, 0.35, 0);
+      shell.scale.set(1.2, 0.6, 1);
+      body.add(shell);
+      for (let k = 0; k < 3; k++) body.add(meshR(box(0.9 - k * 0.2, 0.04, 0.05), mDark, 0, 0.45 + k * 0.06, -0.2 + k * 0.2));
+      for (const sx of [-1, 1]) {
+        body.add(meshR(box(0.05, 0.12, 0.05), eye, sx * 0.12, 0.6, 0.38));
+        const claw = meshR(box(0.22, 0.14, 0.3), mShell, sx * 0.55, 0.35, 0.4);
+        claw.rotation.y = -sx * 0.4;
+        body.add(claw);
+      }
+      const legs = [];
+      for (const z of [0.2, 0, -0.2])
+        for (const sx of [-1, 1]) {
+          const lg = new THREE.Group();
+          lg.position.set(sx * 0.42, 0.32, z);
+          lg.add(meshR(box(0.3, 0.06, 0.06), mDark, sx * 0.15, -0.1, 0, 0, 0, sx * -0.6));
+          body.add(lg);
+          legs.push(lg);
+        }
+      m = { root, body, legs, mats: [mShell, mDark], kind: 'quad' };
+      break;
+    }
+    case 'antibody': {
+      // célula de defesa flutuante cheia de espinhos
+      const root = new THREE.Group();
+      const body = new THREE.Group();
+      root.add(body);
+      const mCell = lambert(0xe87a8a);
+      body.add(meshR(cached('ab_cell', () => new THREE.SphereGeometry(0.3, 10, 8)), mCell));
+      body.add(meshR(cached('ab_core', () => new THREE.SphereGeometry(0.12, 8, 6)), glowMat(0xff8aa0, 2.6), 0, 0, 0.2));
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        body.add(meshR(cached('ab_sp', () => new THREE.ConeGeometry(0.05, 0.22, 4)), mCell, Math.cos(a) * 0.33, Math.sin(a * 2) * 0.12, Math.sin(a) * 0.33, Math.PI / 2, 0, -a + Math.PI / 2));
+      }
+      body.position.y = 1.1;
+      m = { root, body, mats: [mCell], kind: 'wisp' };
+      break;
+    }
+    case 'bonepile': {
+      const root = new THREE.Group();
+      const mBone = lambert(0xe8dcc0);
+      for (let k = 0; k < 6; k++) {
+        const b = meshR(cached('bp_b', () => new THREE.CylinderGeometry(0.05, 0.05, 0.6, 5)), mBone, Math.cos(k * 2.1) * 0.15, 0.1 + (k % 3) * 0.1, Math.sin(k * 2.1) * 0.15);
+        b.rotation.set(Math.PI / 2, k * 1.1, 0.3 * k);
+        root.add(b);
+      }
+      root.add(meshR(cached('bp_sk', () => new THREE.SphereGeometry(0.16, 8, 6)), mBone, 0, 0.38, 0));
+      root.add(meshR(box(0.06, 0.04, 0.02), glowMat(0xff4d6a, 2.4), 0.05, 0.4, 0.15));
+      root.add(meshR(box(0.06, 0.04, 0.02), glowMat(0xff4d6a, 2.4), -0.05, 0.4, 0.15));
+      m = { root, body: root, mats: [mBone], kind: 'static' };
+      break;
+    }
+    case 'saltcrystal': {
+      const root = new THREE.Group();
+      const mSalt = new THREE.MeshLambertMaterial({ color: 0xf4f0ea, emissive: new THREE.Color(0x2a2824), transparent: true, opacity: 0.85 });
+      root.add(meshR(cached('sc_main', () => new THREE.ConeGeometry(0.32, 1.5, 6)), mSalt, 0, 0.75, 0));
+      root.add(meshR(cached('sc_side', () => new THREE.ConeGeometry(0.18, 0.9, 6)), mSalt, 0.28, 0.42, 0.05, 0, 0, -0.4));
+      root.add(meshR(cached('sc_side', () => new THREE.ConeGeometry(0.18, 0.9, 6)), mSalt, -0.24, 0.4, -0.1, 0.3, 0, 0.45));
+      // brilho do que está preso lá dentro (a cor muda em wilds.js)
+      const gem = meshR(cached('sc_gem', () => new THREE.OctahedronGeometry(0.16, 0)), glowMat(0xffd23d, 2.4), 0, 0.7, 0);
+      root.add(gem);
+      m = { root, body: root, gem, mats: [mSalt], kind: 'static' };
       break;
     }
     case 'boss': {

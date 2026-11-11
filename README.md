@@ -97,7 +97,7 @@ The merchant, the blacksmith and the shared stash only open when you ask: **clic
 
 ## Biomes
 
-Every floor changes biome (13 in total), each with its own map layout, lighting and hazards:
+Every floor changes biome (23 in total), each with its own map layout, lighting and hazards:
 
 | Biome | Layout | Environment |
 | --- | --- | --- |
@@ -114,12 +114,22 @@ Every floor changes biome (13 in total), each with its own map layout, lighting 
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Grid of rooms | Laser grids that switch on and off |
 | **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one). Floor 22 has a merchant too |
+| **Bone Forest** | Organic clearings | Giant ribs and dead trees; **bone piles** you can smash for healing marrow, but the noise draws predators. Enemies standing in marrow pools heal; stalking **bone stalkers** |
+| **Glass Desert** | Open dunes | A glass floor that cracks into cutting shards under explosions and heavy blows, crystal spires and shard storms; **glass golems** vanish into reflections, leaving fake copies behind |
+| **Fallen Star Swamp** | Organic caves | Black water and low-gravity craters where you run faster and shots slow down; creatures race you for **star fragments** (grab one for Fury, or they get empowered); exploding **star sparks** |
+| **Hive City** | Rooms and corridors | Sticky resin that slows your feet; fire and explosions burn it away, but the smoke wakes the swarm. **Hive sentinels** stop to signal: kill them before they finish or **soldier wasps** arrive |
+| **Petrified Sea** | Open fields | Stone waves and shipwrecks; areas briefly **turn back into sea**, dragging and slowing everyone and changing routes mid-fight; armored **fossil crabs** |
+| **Weapon Garden** | Open fields | Blade trees and swords stuck in the ground: enemies pull them out and hit harder, so grab them first for Fury; **blade knights** |
+| **Sleeping God Mountain** | Flesh caves | The mountain breathes and the wind pushes everyone; veins burn on every heartbeat; too much destruction wakes the body's defenses and **antibodies** swarm you |
+| **Ash Winter** | Open ash fields | It looks like snow but it is ash: hidden embers burn whoever steps on them, and wind gusts reveal and reignite them; **ash wolves** |
+| **Upside-Down Rain Forest** | Organic clearings | Rain falls upwards; step into a rising current to be launched and slam down on the nearest enemy. Enemy shots can't pass through the currents; gliding **sky rays** |
+| **Salt Flats of the Forgotten** | Open salt flats | Salt statues and brine pools; **salt crystals** hold treasure (golden glow) or an ancient elite (red glow), so you choose what to free before the fight; **salt forgotten** |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 ## Enemies
 
-**29 enemy types** (17 roaming the tech biomes plus 12 biome creatures):
+**40 enemy types** (17 roaming the tech biomes plus 23 biome creatures):
 
 - Street Punk, Watcher Drone, Corporate Agent, Bomb Spider and Brute Mech.
 - **Sentry Turret.**
@@ -275,6 +285,7 @@ js/utils.js            random, math and formatting helpers
 js/i18n.js             translations (English / Portuguese)
 js/dungeon.js          procedural map layouts, collision and pathfinding
 js/biomes.js           biome hazards, mechanisms, decoration, merchant and blacksmith
+js/wilds.js            the 10 wild biomes: glass that shatters, tides, updrafts, hive sentinels, breathing mountain...
 js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)

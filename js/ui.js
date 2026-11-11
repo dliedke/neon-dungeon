@@ -894,7 +894,7 @@ function drawMapMarks(ctx, d, p, near) {
     if (near && (Math.abs(e.x - p.x) > near || Math.abs(e.z - p.z) > near)) continue;
     if (e.inert) {
       if (e.T.prop || !d.explored[Math.floor(e.z) * d.W + Math.floor(e.x)]) continue;
-      ctx.fillStyle = '#ff7a1a';
+      ctx.fillStyle = e.T.mapColor || '#ff7a1a';
       ctx.fillRect(e.x - 0.3, e.z - 0.3, 0.6, 0.6);
       continue;
     }

@@ -17,6 +17,7 @@ import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
 import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor, MAX_TIER } from './run.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
+import { wildPopulate, mirrorDecoy, sentinelCall } from './wilds.js';
 
 export const ETYPES = {
   punk: { name: L('Punk de Rua', 'Street Punk'), hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
@@ -65,6 +66,20 @@ export const ETYPES = {
   pylon: { name: L('Pilar de Escudo', 'Shield Pylon'), hp: 38, dmg: 0, speed: 0, r: 0.45, h: 2.4, xp: 15, minFloor: 99, weight: 0, ai: 'pylon', heavy: true, static: true, blood: 0x00f0ff },
   boss: { name: 'Executor ARC-9', boss: true, hp: 560, dmg: 11, speed: 2.5, r: 1.15, h: 3.0, xp: 450, minFloor: 99, weight: 0, ai: 'boss', heavy: true, blood: 0xff2244 },
   queen: { name: L('Matriarca Aracnídea', 'Arachnid Matriarch'), boss: true, hp: 520, dmg: 11, speed: 3.0, r: 1.3, h: 2.0, xp: 500, minFloor: 99, weight: 0, ai: 'queen', heavy: true, blood: 0x39ff14 },
+  // biomas selvagens (fauna dos biomas e criaturas de wilds.js)
+  bonestalker: { name: L('Espreitador de Ossos', 'Bone Stalker'), hp: 40, dmg: 11, speed: 4.8, r: 0.4, h: 1.0, xp: 14, minFloor: 99, weight: 0, ai: 'alien', range: 0.9, atkCd: 2.3, blood: 0xe8dcc0 },
+  bonepile: { name: L('Pilha de Ossos', 'Bone Pile'), hp: 1, dmg: 0, speed: 0, r: 0.42, h: 0.8, xp: 0, minFloor: 99, weight: 0, ai: 'inert', inert: true, static: true, breakable: true, mapColor: '#e8dcc0', blood: 0xe8dcc0 },
+  shardling: { name: L('Golem de Vidro', 'Glass Golem'), hp: 46, dmg: 11, speed: 3.6, r: 0.38, h: 1.6, xp: 16, minFloor: 99, weight: 0, ai: 'melee', blink: true, mirror: true, blinkColor: 0x9af0ff, range: 1.0, atkCd: 1.2, blood: 0x9af0ff },
+  starwisp: { name: L('Centelha Estelar', 'Star Spark'), fly: true, hp: 14, dmg: 13, speed: 4.6, r: 0.26, h: 1.2, xp: 7, minFloor: 99, weight: 0, ai: 'wisp', wispColor: 0xc88aff, blood: 0xc88aff },
+  wasp: { name: L('Vespa-Soldado', 'Soldier Wasp'), fly: true, hp: 22, dmg: 9, speed: 5.4, r: 0.34, h: 1.5, xp: 10, minFloor: 99, weight: 0, ai: 'eagle', atkCd: 2.4, blood: 0xffc21a },
+  hivesentinel: { name: L('Sentinela da Colmeia', 'Hive Sentinel'), hp: 48, dmg: 8, speed: 2.6, r: 0.42, h: 1.5, xp: 20, minFloor: 99, weight: 0, ai: 'sentinel', range: 1.0, atkCd: 1.4, solo: true, blood: 0xffc21a },
+  fossilcrab: { name: L('Caranguejo Fóssil', 'Fossil Crab'), hp: 64, dmg: 11, speed: 2.8, r: 0.48, h: 0.8, xp: 15, minFloor: 99, weight: 0, ai: 'melee', range: 1.1, atkCd: 1.4, dr: 0.25, blood: 0x3ad8ff },
+  bladeknight: { name: L('Cavaleiro das Lâminas', 'Blade Knight'), hp: 58, dmg: 12, speed: 3.2, r: 0.38, h: 1.6, xp: 16, minFloor: 99, weight: 0, ai: 'melee', range: 1.1, atkCd: 1.3, blood: 0xc8d8ff },
+  antibody: { name: L('Anticorpo', 'Antibody'), hp: 26, dmg: 9, speed: 5.0, r: 0.34, h: 1.0, xp: 9, minFloor: 99, weight: 0, ai: 'melee', range: 0.9, atkCd: 1.0, blood: 0xff8aa0 },
+  ashwolf: { name: L('Lobo de Cinzas', 'Ash Wolf'), hp: 34, dmg: 10, speed: 5.0, r: 0.36, h: 0.9, xp: 11, minFloor: 99, weight: 0, ai: 'alien', range: 0.9, atkCd: 2.0, fireproof: true, blood: 0xff6a1a },
+  skyray: { name: L('Arraia Celeste', 'Sky Ray'), fly: true, hp: 30, dmg: 11, speed: 5.0, r: 0.45, h: 1.7, xp: 13, minFloor: 99, weight: 0, ai: 'eagle', atkCd: 2.8, blood: 0x4dd2ff },
+  saltwraith: { name: L('Esquecido de Sal', 'Salt Forgotten'), hp: 60, dmg: 12, speed: 3.0, r: 0.4, h: 1.6, xp: 18, minFloor: 99, weight: 0, ai: 'melee', range: 1.0, atkCd: 1.3, dr: 0.15, blood: 0xf0ece4 },
+  saltcrystal: { name: L('Cristal de Sal', 'Salt Crystal'), hp: 1, dmg: 0, speed: 0, r: 0.45, h: 1.4, xp: 0, minFloor: 99, weight: 0, ai: 'inert', inert: true, static: true, breakable: true, mapColor: '#ffd23d', blood: 0xf0ece4 },
 };
 
 // Afixos de elite. minF: andar (efetivo) a partir do qual aparece.
@@ -360,6 +375,7 @@ function enemyShoot(e, dx, dz, spread = 0) {
 }
 
 function meleeHit(e, dmg) {
+  if (e.decoy) return; // reflexo do golem de vidro não machuca
   damagePlayer(dmg);
   if (e.T.poison && G.player.invuln <= 0) G.player.poisonT = 4;
   if (e.T.chill && G.player.invuln <= 0) G.player.chillT = Math.max(G.player.chillT || 0, 1.4);
@@ -445,6 +461,28 @@ export function updateEnemies(dt, cam) {
         return flowDir(d, e.x, e.z) || (e.los ? { x: ux, z: uz } : null);
       };
       switch (e.T.ai) {
+        case 'sentinel':
+          if (!e.called) {
+            // fica parada sinalizando; se não morrer a tempo, chama o enxame
+            speed = 0;
+            e.callT = (e.callT || 0) + edt;
+            e.sigT = (e.sigT ?? 0) - edt;
+            if (e.sigT <= 0) {
+              e.sigT = 1.1;
+              ringFx(e.x, e.z, 2.6, 0xffc21a, 0.5, { from: 0.3 });
+              floatText(e.x, e.height + 0.5, e.z, L('SINALIZANDO!', 'SIGNALING!'), 'hurt');
+              sfx.alarm();
+            }
+            if (e.model.antenna) e.model.antenna.rotation.y += edt * 12;
+            if (e.callT >= 3.2) {
+              e.called = true;
+              sentinelCall(e);
+            }
+            e.faceX = ux;
+            e.faceZ = uz;
+            break;
+          }
+        // falls through
         case 'melee': {
           if (e.T.blink) {
             e.blinkT = (e.blinkT ?? rr(1, 3)) - edt;
@@ -453,10 +491,12 @@ export function updateEnemies(dt, cam) {
               const bx = p.x - Math.sin(p.facing) * 1.3;
               const bz = p.z - Math.cos(p.facing) * 1.3;
               if (isWalkable(d, bx, bz)) {
-                burst(e.x, 0.8, e.z, 0xb36bff, 16, 4, 0.07, 0.4);
+                const bc = e.T.blinkColor || 0xb36bff;
+                burst(e.x, 0.8, e.z, bc, 16, 4, 0.07, 0.4);
+                if (e.T.mirror && !e.decoy) mirrorDecoy(e, e.x, e.z);
                 e.x = bx;
                 e.z = bz;
-                burst(bx, 0.8, bz, 0xb36bff, 16, 4, 0.07, 0.4);
+                burst(bx, 0.8, bz, bc, 16, 4, 0.07, 0.4);
                 sfx.zap();
                 e.atkT = Math.min(e.atkT, 0.25);
               }
@@ -602,7 +642,7 @@ export function updateEnemies(dt, cam) {
           mvz = uz + Math.sin(e.wob) * 0.8;
           if (dist < 1.1) {
             e.selfDestruct = true;
-            enemyExplosion(e.x, e.z, 1.8, e.dmg, 0x7affc8);
+            enemyExplosion(e.x, e.z, 1.8, e.dmg, e.T.wispColor || 0x7affc8);
             if (Math.hypot(p.x - e.x, p.z - e.z) < 2) p.chillT = 2;
             e.hp = 0;
             e.alive = false;
@@ -1250,6 +1290,7 @@ export function updateEnemies(dt, cam) {
     // movimento
     const ge = !e.T.fly && !e.static ? groundEffect(d, e.x, e.z) : null;
     if (ge && ge.hurt && !e.T.fireproof) speed *= 0.75;
+    if (ge && ge.eSpeed) speed *= ge.eSpeed;
     const push = ge && ge.push ? ge.push : { x: 0, z: 0 };
     e.x += (mvx * speed + e.kx + push.x) * edt;
     e.z += (mvz * speed + e.kz + push.z) * edt;
@@ -1378,7 +1419,7 @@ export function updateEnemies(dt, cam) {
       m.mats[0].opacity = (near ? 0.6 : 0.35) + Math.sin(G.t * 4 + e.phase) * 0.1;
     } else if (m.kind === 'wisp') {
       m.body.position.y = 1.1 + Math.sin(G.t * 6 + e.phase) * 0.2;
-      if (Math.random() < 0.5) burst(e.x, m.body.position.y, e.z, 0x7affc8, 1, 0.5, 0.06, 0.4, { grav: -1 });
+      if (Math.random() < 0.5) burst(e.x, m.body.position.y, e.z, e.T.wispColor || 0x7affc8, 1, 0.5, 0.06, 0.4, { grav: -1 });
     } else if (m.kind === 'quad') {
       m.legs.forEach((l, k) => (l.rotation.x = e.moving ? Math.sin(e.phase * 2 + (k % 2) * Math.PI) * 0.6 : 0));
       if (m.tail) m.tail.rotation.x = -0.6 + Math.sin(G.t * 3 + e.phase) * 0.15;
@@ -1995,6 +2036,8 @@ export function populateFloor(d, floor, boss) {
       if (Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 2.5) spawnEnemy('barrel', pt.x, pt.z);
     }
   }
+  // biomas selvagens: pilhas de ossos, cristais de sal e sentinelas da colmeia
+  if (d.wild) wildPopulate(d, floor);
   const chestRooms = shuffle(d.rooms.filter((r) => r !== d.rooms[0] && r !== d.exitRoom));
   // eventos: Ladrão de Dados e Santuário Neon em salas longe do início
   const far = d.rooms.filter((r) => r !== d.rooms[0] && !(boss && r === d.exitRoom) && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
@@ -2341,7 +2384,7 @@ function updateQueen(e, dt, dist, ux, uz) {
 // =====================================================================
 // Chefes novos
 // =====================================================================
-function killQuiet(o) {
+export function killQuiet(o) {
   o.alive = false;
   o.selfDestruct = true;
   burst(o.x, 1, o.z, o.bloodColor, 16, 4, 0.07, 0.4);
