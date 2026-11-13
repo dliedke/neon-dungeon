@@ -10,7 +10,7 @@ import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping } from '.
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
 import { skipFinale } from './finale.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
-import { fmt, fmtPlay } from './utils.js';
+import { fmt, fmtPlay, short } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
@@ -128,7 +128,7 @@ export function initUI() {
   $('stash-put-myth').onclick = () => stashPutMythics();
   $('stash-bank').addEventListener('click', (e) => {
     const b = e.target.closest('[data-bank]');
-    if (b && !b.disabled) bankMove(b.dataset.bank);
+    if (b && !b.disabled) bankAction(b.dataset.bank);
   });
   $('stash-tabs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-stab]');
@@ -1808,7 +1808,7 @@ export function uiBack(root = activePanel()) {
       closeForge();
       break;
     case 'panel-stash':
-      closeStash();
+      if (!bankEditClose()) closeStash(); // {B}/Esc fecha antes o valor customizado
       break;
     case 'panel-pause':
       closePause();
@@ -2002,6 +2002,7 @@ export function openStash() {
   G.save.stashSeen = true;
   stashSel = null;
   stashTab = 0;
+  bankEdit = null;
   $('panel-stash').classList.remove('hidden');
   clearFocus();
   sfx.pickup();
@@ -2324,25 +2325,115 @@ function bankMine() {
   return v;
 }
 
+// valor escolhido pela pessoa: null ou { put: guardar/pegar, amt: quanto, step: passo do − / + }
+let bankEdit = null;
+const BANK_STEPS = [100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+const bankMax = (put) => (put ? Math.floor(G.char.credits || 0) : bankBalance());
+
 function renderBank() {
   const c = G.char;
   const bal = bankBalance();
   const cr = Math.floor(c.credits || 0);
   const put = cr <= 0 ? 'disabled' : '';
   const take = bal <= 0 ? 'disabled' : '';
-  $('stash-bank').innerHTML = `<div class="bank-row"><span>💰 ${L('No baú', 'In stash')}</span><b class="bank-val">${fmt(bal)}¢</b></div>
-<div class="bank-row bank-mine"><span>${L('Seus créditos', 'Your credits')}</span><b>${fmt(cr)}¢</b></div>
-<div class="bank-btns"><span class="bank-lbl">📥 ${L('Guardar', 'Store')}</span><button class="btn small" data-nav data-bank="put-half" ${put}>½</button><button class="btn small" data-nav data-bank="put-all" ${put}>${L('Tudo', 'All')}</button></div>
-<div class="bank-btns"><span class="bank-lbl">📤 ${L('Pegar', 'Take')}</span><button class="btn small" data-nav data-bank="take-half" ${take}>½</button><button class="btn small" data-nav data-bank="take-all" ${take}>${L('Tudo', 'All')}</button></div>`;
+  let h = `<div class="bank-row"><span>💰 ${L('No baú', 'In stash')}</span><b class="bank-val">${fmt(bal)}¢</b></div>
+<div class="bank-row bank-mine"><span>${L('Seus créditos', 'Your credits')}</span><b>${fmt(cr)}¢</b></div>`;
+  if (bankEdit) {
+    // valor customizado: digita no campo (teclado/toque) ou ajusta com − / + (o botão do meio troca o passo)
+    const E = bankEdit;
+    const max = bankMax(E.put);
+    E.amt = Math.max(0, Math.min(max, Math.floor(E.amt) || 0));
+    h += `<div class="bank-row bank-lbl"><span>${E.put ? `📥 ${L('Guardar quanto?', 'Store how much?')}` : `📤 ${L('Pegar quanto?', 'Take how much?')}`}</span><span>${L('máx.', 'max')} ${fmt(max)}¢</span></div>
+<input type="text" id="bank-amt" class="bank-amt" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="done" data-nav value="${fmt(E.amt)}" />
+<div class="bank-btns bank-steps"><button class="btn small" data-nav data-bank="dec">−</button><button class="btn small" data-nav data-bank="step" title="${L('Trocar o passo do − / +', 'Change the − / + step')}">± ${short(E.step)}</button><button class="btn small" data-nav data-bank="inc">+</button><button class="btn small" data-nav data-bank="max">${L('Máx.', 'Max')}</button></div>
+<div class="bank-btns"><button class="btn small" data-nav data-bank="ok" ${E.amt > 0 ? '' : 'disabled'}>✔ ${E.put ? L('Guardar', 'Store') : L('Pegar', 'Take')}</button><button class="btn small ghost" data-nav data-bank="cancel">✕</button></div>`;
+  } else {
+    h += `<div class="bank-btns"><span class="bank-lbl">📥 ${L('Guardar', 'Store')}</span><button class="btn small" data-nav data-bank="put-half" ${put}>½</button><button class="btn small" data-nav data-bank="put-all" ${put}>${L('Tudo', 'All')}</button><button class="btn small" data-nav data-bank="put-custom" title="${L('Escolher o valor', 'Choose the amount')}" ${put}>✏️</button></div>
+<div class="bank-btns"><span class="bank-lbl">📤 ${L('Pegar', 'Take')}</span><button class="btn small" data-nav data-bank="take-half" ${take}>½</button><button class="btn small" data-nav data-bank="take-all" ${take}>${L('Tudo', 'All')}</button><button class="btn small" data-nav data-bank="take-custom" title="${L('Escolher o valor', 'Choose the amount')}" ${take}>✏️</button></div>`;
+  }
+  $('stash-bank').innerHTML = h;
+  const inp = $('bank-amt');
+  if (inp) {
+    // só dígitos; o valor passa do máximo vira o máximo
+    inp.addEventListener('input', () => {
+      bankEdit.amt = Math.min(bankMax(bankEdit.put), +inp.value.replace(/\D/g, '') || 0);
+      const ok = $('stash-bank').querySelector('[data-bank="ok"]');
+      if (ok) ok.disabled = !(bankEdit.amt > 0);
+    });
+    // sem redesenhar aqui: o clique em ✔ logo depois cairia num botão já trocado
+    inp.addEventListener('blur', () => (inp.value = fmt(bankEdit ? bankEdit.amt : 0)));
+    inp.addEventListener('focus', () => inp.select());
+    inp.addEventListener('keydown', (e) => {
+      if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+        e.preventDefault();
+        bankAction('ok');
+      } else if (e.code === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        bankAction('cancel');
+      }
+    });
+  }
 }
 
-// act: 'put-half' | 'put-all' | 'take-half' | 'take-all'
-function bankMove(act) {
+// redesenha mantendo o seletor do controle (ou o foco do campo) no mesmo lugar
+function renderBankKeep(sel) {
+  renderBank();
+  if (G.lastInput === 'pad') restoreFocus(document.querySelector(`${sel}:not(:disabled)`) || document.querySelector('#stash-bank [data-bank]:not(:disabled)') || $('stash-close'));
+}
+
+// fecha o valor customizado (Esc / {B}); devolve true se estava aberto
+export function bankEditClose() {
+  if (!bankEdit) return false;
+  const put = bankEdit.put;
+  bankEdit = null;
+  sfx.click();
+  renderBankKeep(`[data-bank="${put ? 'put' : 'take'}-custom"]`);
+  return true;
+}
+
+function bankAction(act) {
+  if (act === 'put-custom' || act === 'take-custom') {
+    const put = act === 'put-custom';
+    const max = bankMax(put);
+    if (max <= 0) return sfx.deny();
+    // passo inicial: uns 10% do máximo, arredondado para uma potência de 10
+    const step = BANK_STEPS.reduce((s, x) => (x <= max / 10 ? x : s), BANK_STEPS[0]);
+    bankEdit = { put, amt: Math.ceil(max / 2), step };
+    sfx.click();
+    renderBank();
+    if (G.lastInput === 'pad') restoreFocus('[data-bank="inc"]');
+    else if (!G.isTouch) {
+      const inp = $('bank-amt');
+      if (inp) inp.focus();
+    }
+    return;
+  }
+  if (!bankEdit) return bankMove(act);
+  const E = bankEdit;
+  if (act === 'cancel') return bankEditClose();
+  if (act === 'ok') {
+    if (!(E.amt > 0)) return sfx.deny();
+    const amt = E.amt;
+    bankEdit = null;
+    return bankMove(E.put ? 'put' : 'take', amt);
+  }
+  if (act === 'step') E.step = BANK_STEPS[(BANK_STEPS.indexOf(E.step) + 1) % BANK_STEPS.length] || BANK_STEPS[0];
+  else if (act === 'inc') E.amt += E.step;
+  else if (act === 'dec') E.amt -= E.step;
+  else if (act === 'max') E.amt = bankMax(E.put);
+  sfx.click();
+  renderBankKeep(`[data-bank="${act}"]`);
+}
+
+// act: 'put-half' | 'put-all' | 'take-half' | 'take-all' | 'put' / 'take' com o valor em amt
+function bankMove(act, amt) {
   const c = G.char;
   const put = act.startsWith('put');
-  const have = put ? Math.floor(c.credits || 0) : bankBalance();
+  const have = bankMax(put);
   if (have <= 0) return sfx.deny();
-  const n = act.endsWith('all') ? have : Math.ceil(have / 2);
+  const n = amt ? Math.min(have, Math.floor(amt)) : act.endsWith('all') ? have : Math.ceil(have / 2);
+  if (n <= 0) return sfx.deny();
   const me = bankMine();
   if (put) {
     c.credits -= n;
@@ -2354,8 +2445,7 @@ function bankMove(act) {
   sfx.coin();
   toast(put ? `📥 ${L(`${fmt(n)}¢ guardados no baú`, `${fmt(n)}¢ stored in the stash`)}` : `📤 ${L(`${fmt(n)}¢ retirados do baú`, `${fmt(n)}¢ taken from the stash`)}`, 'item');
   saveGame();
-  renderBank();
-  if (G.lastInput === 'pad') restoreFocus(document.querySelector(`[data-bank="${act}"]:not(:disabled)`) || document.querySelector('[data-bank]:not(:disabled)') || $('stash-close'));
+  renderBankKeep(amt ? `[data-bank="${act}-custom"]` : `[data-bank="${act}"]`);
 }
 
 // ------------------------------------------------------------------
