@@ -18,7 +18,7 @@ import { fmtPlay } from './utils.js';
 
 const K_DEV = 'neon-dungeon:device';
 let DEV = null;
-function devId() {
+export function devId() {
   if (DEV) return DEV;
   try {
     DEV = localStorage.getItem(K_DEV);

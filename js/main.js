@@ -68,6 +68,8 @@ function loadSave() {
   // baú compartilhado entre os personagens (saves antigos não têm)
   if (!Array.isArray(save.stash)) save.stash = [];
   if (!save.stashOut || typeof save.stashOut !== 'object') save.stashOut = {};
+  // créditos guardados no baú: { aparelho: { in, out } } (saves antigos não têm)
+  if (!save.bank || typeof save.bank !== 'object' || Array.isArray(save.bank)) save.bank = {};
   ensureAch(save);
   G.save = save;
   try {

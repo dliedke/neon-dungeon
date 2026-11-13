@@ -43,7 +43,7 @@ const DICT = {
   forgeTitle: ['FERREIRO', 'BLACKSMITH'],
   forgeSub: ['“Traga o que você está usando que eu deixo melhor. A cada 4 níveis o item ganha um atributo novo.”', '“Bring me what you’re wearing and I’ll make it better. Every 4 levels the item gains a new stat.”'],
   stashTitle: ['BAÚ COMPARTILHADO', 'SHARED STASH'],
-  stashSub: ['Guarde aqui até 500 itens (5 abas de 100): eles ficam para todos os seus personagens. Armas só podem ser pegas pela classe delas.', 'Store up to 500 items here (5 tabs of 100): they are shared by all your characters. Weapons can only be taken by their own class.'],
+  stashSub: ['Guarde aqui até 500 itens (5 abas de 100) e seus créditos: tudo fica para todos os seus personagens. Armas só podem ser pegas pela classe delas.', 'Store up to 500 items here (5 tabs of 100) and your credits: everything is shared by all your characters. Weapons can only be taken by their own class.'],
   stashSort: ['▼ Ordenado do nível maior para o menor', '▼ Sorted from highest to lowest level'],
   stashBox: ['Baú', 'Stash'],
   stashInv: ['Inventário', 'Inventory'],

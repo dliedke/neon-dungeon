@@ -16,7 +16,7 @@ import { glyph, glyphText, padText, padName } from './padglyphs.js';
 import { refreshShopStock } from './biomes.js';
 import { itemName, isUpgrade, unforged, AFFIXES, forgeItem, forgeCost, forgeMax, isMilestone } from './items.js';
 import { sync, syncAuthRedirect, syncNow, syncSignOut, syncBoxHtml } from './sync.js';
-import { achAdd, achList, achProgress, playTotal, TIERS as MEDAL_TIERS } from './ach.js';
+import { achAdd, achList, achProgress, playTotal, devId, TIERS as MEDAL_TIERS } from './ach.js';
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
@@ -126,6 +126,10 @@ export function initUI() {
   $('forge-close').onclick = () => closeForge();
   $('stash-close').onclick = () => closeStash();
   $('stash-put-myth').onclick = () => stashPutMythics();
+  $('stash-bank').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bank]');
+    if (b && !b.disabled) bankMove(b.dataset.bank);
+  });
   $('stash-tabs').addEventListener('click', (e) => {
     const b = e.target.closest('[data-stab]');
     if (b) stashSetTab(+b.dataset.stab);
@@ -2097,6 +2101,7 @@ function renderStash() {
   pm.disabled = !nm || st.length >= STASH_SIZE;
   pm.title = L('Manda todos os itens míticos (e divinos) do inventário para o baú', 'Sends every mythic (and divine) item in your inventory to the stash');
   renderStashDetail();
+  renderBank();
 }
 
 // Ícone do botão do controle dentro de um botão da tela (só aparece com controle conectado: body.pad / body.padc)
@@ -2296,6 +2301,61 @@ function stashMove(where, uid) {
   const ci = where === 'stash' ? idx - stashTab * STASH_TAB : idx;
   if (G.lastInput === 'pad' && cells.length) restoreFocus(cells[Math.max(0, Math.min(ci, cells.length - 1))]);
   else clearFocus();
+}
+
+// ------------------------------------------------------------------
+// Créditos no baú: dinheiro compartilhado entre todos os personagens.
+// save.bank = { aparelho: { in: total guardado, out: total retirado } }; os contadores só crescem,
+// então a sincronização junta aparelhos sem perder nem duplicar (ver mergeBank em sync.js).
+// ------------------------------------------------------------------
+const bankData = () => (G.save.bank && typeof G.save.bank === 'object' ? G.save.bank : (G.save.bank = {}));
+export function bankBalance() {
+  let n = 0;
+  for (const v of Object.values(bankData())) if (v) n += (Number(v.in) || 0) - (Number(v.out) || 0);
+  return Math.max(0, Math.floor(n));
+}
+function bankMine() {
+  const b = bankData();
+  const d = devId();
+  const v = b[d];
+  if (!v || typeof v !== 'object') return (b[d] = { in: 0, out: 0 });
+  v.in = Number(v.in) || 0;
+  v.out = Number(v.out) || 0;
+  return v;
+}
+
+function renderBank() {
+  const c = G.char;
+  const bal = bankBalance();
+  const cr = Math.floor(c.credits || 0);
+  const put = cr <= 0 ? 'disabled' : '';
+  const take = bal <= 0 ? 'disabled' : '';
+  $('stash-bank').innerHTML = `<div class="bank-row"><span>💰 ${L('No baú', 'In stash')}</span><b class="bank-val">${fmt(bal)}¢</b></div>
+<div class="bank-row bank-mine"><span>${L('Seus créditos', 'Your credits')}</span><b>${fmt(cr)}¢</b></div>
+<div class="bank-btns"><span class="bank-lbl">📥 ${L('Guardar', 'Store')}</span><button class="btn small" data-nav data-bank="put-half" ${put}>½</button><button class="btn small" data-nav data-bank="put-all" ${put}>${L('Tudo', 'All')}</button></div>
+<div class="bank-btns"><span class="bank-lbl">📤 ${L('Pegar', 'Take')}</span><button class="btn small" data-nav data-bank="take-half" ${take}>½</button><button class="btn small" data-nav data-bank="take-all" ${take}>${L('Tudo', 'All')}</button></div>`;
+}
+
+// act: 'put-half' | 'put-all' | 'take-half' | 'take-all'
+function bankMove(act) {
+  const c = G.char;
+  const put = act.startsWith('put');
+  const have = put ? Math.floor(c.credits || 0) : bankBalance();
+  if (have <= 0) return sfx.deny();
+  const n = act.endsWith('all') ? have : Math.ceil(have / 2);
+  const me = bankMine();
+  if (put) {
+    c.credits -= n;
+    me.in += n;
+  } else {
+    me.out += n;
+    c.credits += n;
+  }
+  sfx.coin();
+  toast(put ? `📥 ${L(`${fmt(n)}¢ guardados no baú`, `${fmt(n)}¢ stored in the stash`)}` : `📤 ${L(`${fmt(n)}¢ retirados do baú`, `${fmt(n)}¢ taken from the stash`)}`, 'item');
+  saveGame();
+  renderBank();
+  if (G.lastInput === 'pad') restoreFocus(document.querySelector(`[data-bank="${act}"]:not(:disabled)`) || document.querySelector('[data-bank]:not(:disabled)') || $('stash-close'));
 }
 
 // ------------------------------------------------------------------

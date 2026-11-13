@@ -748,6 +748,14 @@ body.pad .pad-hints { display: block; }
 .stash-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; max-height: min(52vh, 460px); overflow-y: auto; padding: 3px; scrollbar-width: thin; scrollbar-color: rgba(0, 240, 255, 0.45) transparent; }
 #stash-inv { grid-template-columns: repeat(10, 1fr); }
 .stash-detail-col { position: sticky; top: 0; }
+/* créditos guardados no baú (compartilhados entre os personagens) */
+.stash-bank { border: 1px solid rgba(255, 214, 90, 0.45); background: rgba(255, 214, 90, 0.06); padding: 8px 10px; margin-bottom: 10px; display: grid; gap: 5px; font-size: 14px; }
+.bank-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.bank-val { color: #ffd65a; font-size: 18px; text-shadow: 0 0 8px rgba(255, 214, 90, 0.55); }
+.bank-mine { color: var(--muted); font-size: 13px; }
+.bank-btns { display: flex; align-items: center; gap: 6px; }
+.bank-lbl { flex: 1; color: var(--muted); font-size: 13px; }
+.bank-btns .btn { min-width: 52px; padding: 3px 10px; }
 .cell.locked { opacity: 0.55; }
 /* nível do item no canto (o baú é ordenado por nível) */
 .cell .lvl { position: absolute; right: 2px; bottom: 1px; color: #dfe6ff; font-size: 10px; font-weight: 700; line-height: 1; text-shadow: 0 0 2px #000, 0 0 3px #000; pointer-events: none; }
@@ -766,6 +774,10 @@ body.pad .pad-hints { display: block; }
   .stash-grid, #stash-inv { grid-template-columns: repeat(6, 1fr); gap: 4px; max-height: calc(100vh - 150px); }
   .stash-detail-col { grid-column: auto; position: sticky; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; }
   #stash-detail .detail-actions { margin: 0 0 6px; }
+  .stash-bank { padding: 5px 7px; margin-bottom: 6px; gap: 3px; font-size: 12px; }
+  .bank-val { font-size: 15px; }
+  .bank-mine, .bank-lbl { font-size: 11px; }
+  .bank-btns .btn { min-width: 40px; padding: 2px 6px; }
   #panel-stash .shop-sub, .sact-hint { display: none; }
   .stash-tabs { margin: 0 0 4px; gap: 4px; }
   #stash-tabs { gap: 3px; }

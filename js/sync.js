@@ -99,6 +99,22 @@ function mergeStash(a, b) {
   return { stash, stashOut: out };
 }
 
+// Créditos do baú: contador por aparelho { in: total guardado, out: total retirado }, que só cresce.
+// A mescla fica com o maior de cada aparelho, então nada se perde nem duplica; o saldo é a soma
+// de tudo que entrou menos tudo que saiu (ver bankBalance em ui.js).
+function mergeBank(a = {}, b = {}) {
+  const out = {};
+  for (const src of [a, b]) {
+    for (const [dev, v] of Object.entries(src || {})) {
+      if (!v || typeof v !== 'object') continue;
+      const o = (out[dev] = out[dev] || { in: 0, out: 0 });
+      o.in = Math.max(o.in, Number(v.in) || 0);
+      o.out = Math.max(o.out, Number(v.out) || 0);
+    }
+  }
+  return out;
+}
+
 // local (a) + nuvem (b)
 export function mergeProgress(a, b) {
   if (!b || !b.slots) return a;
@@ -106,12 +122,12 @@ export function mergeProgress(a, b) {
   for (const cls of new Set([...Object.keys(a.slots || {}), ...Object.keys(b.slots || {})])) {
     slots[cls] = mergeChar(a.slots[cls], b.slots[cls]);
   }
-  return { v: 1, slots, stats: mergeStats(a.stats, b.stats), ach: mergeAch(a.ach, b.ach), ...mergeStash(a, b) };
+  return { v: 1, slots, stats: mergeStats(a.stats, b.stats), ach: mergeAch(a.ach, b.ach), ...mergeStash(a, b), bank: mergeBank(a.bank, b.bank) };
 }
 
 function snapshot() {
   ensureAch(G.save);
-  return { v: 1, slots: G.save.slots, stats: G.save.stats, ach: G.save.ach, stash: G.save.stash || [], stashOut: G.save.stashOut || {} };
+  return { v: 1, slots: G.save.slots, stats: G.save.stats, ach: G.save.ach, stash: G.save.stash || [], stashOut: G.save.stashOut || {}, bank: G.save.bank || {} };
 }
 
 // a nuvem recebe sempre a mescla completa; aqui só não se troca o personagem em jogo
@@ -136,6 +152,11 @@ function syncMerge(cloud) {
   if (G.mode !== 'stash' && (canon(merged.stash) !== canon(local.stash) || canon(merged.stashOut) !== canon(local.stashOut))) {
     G.save.stash = merged.stash;
     G.save.stashOut = merged.stashOut;
+    changed = true;
+  }
+  // créditos do baú: o contador só cresce, então pode trocar mesmo com o painel aberto
+  if (canon(merged.bank) !== canon(local.bank)) {
+    G.save.bank = merged.bank;
     changed = true;
   }
   if (changed) {

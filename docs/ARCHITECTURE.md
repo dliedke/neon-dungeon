@@ -33,7 +33,7 @@ Modules import each other freely, including cycles (`combat` ↔ `enemies` ↔ `
 | `dungeon`, `theme`, `floor` | Current map object, biome definition and floor number. |
 | `player` | Runtime player entity (position, hp/en, cooldowns `cds[]`, `stats`, `buffs`, model). |
 | `char` | The persistent character (what is saved). See [Saves](#saves-and-cloud-sync). |
-| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut }`. `stash` is the shared chest (up to 500 items, all classes; one flat array, sorted by item level (highest first, any slot) and shown in 5 tabs of 100). |
+| `save` | Whole save: `{ v, slots: { [cls]: char }, stats, ach, stash, stashOut, bank }`. `stash` is the shared chest (up to 500 items, all classes; one flat array, sorted by item level (highest first, any slot) and shown in 5 tabs of 100). `bank` holds the credits stored in the stash as per-device counters `{ [device]: { in, out } }`; the balance is the sum of `in - out` (`bankBalance` in `ui.js`). |
 | `settings` | Options (`music`, `sfx`, `track`, `quality`, `shake`, `difficulty`, `glow`, `sv`). |
 | `enemies`, `projectiles`, `pickups`, `turrets`, `timers`, `hazards`, `barriers`, `allies`, `orbiters`, `warps`, `lasers`, `holes`, `storms` | Entity lists, updated each logic tick. |
 | `boss`, `bosses`, `final` | Active bosses (2 at a time in the final battle) and final-battle state. |
@@ -239,7 +239,7 @@ Puzzles and challenges. Each floor gets up to two main events (`MAIN_EVENTS`: te
 ## Saves and cloud sync
 
 ```
-localStorage['neon-dungeon-save-v1']     = { v: 1, slots: { blade: char, gunner: char, … }, stats, ach, stash, stashOut }
+localStorage['neon-dungeon-save-v1']     = { v: 1, slots: { blade: char, gunner: char, … }, stats, ach, stash, stashOut, bank }
 localStorage['neon-dungeon-settings-v1'] = G.settings
 localStorage['neon-dungeon:device']      = random device id (medal counters)
 sessionStorage['neon-dungeon-resume']    = class that was playing when the page unloaded (pagehide); boot() resumes it, so a reload goes straight back into the game
@@ -255,6 +255,7 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
   - Medal counters are per device and summed (`stats.dev`); sets (`stats.sets`) and unlocks (`ach`) are unioned.
   - A "New character" reset (`resetAt`) wins over an older character.
   - Shared stash (`mergeStash`): every stored item carries `st` (when it went in) and every withdrawal is logged in `stashOut[uid]` (when it came out). Items are unioned by uid and an item stays only if it went in after its last withdrawal, so nothing is lost and nothing is duplicated. The merge never trims the stash, even above 100.
+  - Stash credits (`mergeBank`): each device only ever increases its own `in` (stored) and `out` (taken) totals, so the merge keeps the max per device per counter. Deposits from every device add up and a withdrawal never comes back.
 - The character in play is never replaced mid-run; merged slots apply when the player returns to the menu.
 
 ## Input (`input.js`, `padglyphs.js`)
