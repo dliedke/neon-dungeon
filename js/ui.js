@@ -1407,7 +1407,8 @@ const TIERS = [
   { label: [1, 1], idx: [0, 1] },
   { label: [2, 4], idx: [2, 9, 12, 3] },
   { label: [5, 9], idx: [4, 5, 10, 6] },
-  { label: [12, 15], idx: [7, 11, 8] },
+  // + Passos Velozes (nível 10), que vem pela marca swift
+  { label: [10, 15], idx: [7, 11, 8], mark: 'swift' },
   // passivos avançados: a posição muda por classe (o Netrunner não tem o Teleporte), então vêm pela marca late
   { label: [20, 36], mark: 'late' },
   // poderes avançados (2 de ataque e 2 de defesa), também pela marca adv
@@ -1416,8 +1417,8 @@ const TIERS = [
   { label: [72, 96], mark: 'sup' },
   { label: [76, 100], mark: 'apex' },
 ];
-const MARKS = ['late', 'adv', 'sup', 'apex'];
-const tierIdx = (C, t) => (t.mark ? C.skills.map((sk, i) => (sk[t.mark] ? i : -1)).filter((i) => i >= 0) : t.idx);
+const MARKS = ['late', 'adv', 'sup', 'apex', 'swift'];
+const tierIdx = (C, t) => [...(t.idx || []), ...(t.mark ? C.skills.map((sk, i) => (sk[t.mark] ? i : -1)).filter((i) => i >= 0) : [])];
 // k = -1 é o ⚔ (botão de ataque: A no controle, Espaço/clique no teclado)
 function slotKey(k) {
   if (G.lastInput === 'pad') return glyphText(['a', 'x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k + 1]);

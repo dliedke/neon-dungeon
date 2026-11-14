@@ -192,7 +192,10 @@ export function skillCost(i) {
 }
 
 export function skillCd(i) {
-  return CLASSES[G.char.cls].skills[i].cd * (1 - G.player.stats.cdr / 100) * amod('cd');
+  const sk = CLASSES[G.char.cls].skills[i];
+  // Passos Velozes: o Teleporte (e o Salto de Rede) recarregam mais rápido
+  const warp = sk.id === 'warp' || sk.id === 'blink' ? 1 - Math.min(G.player.stats.warpCd || 0, 50) / 100 : 1;
+  return sk.cd * (1 - G.player.stats.cdr / 100) * warp * amod('cd');
 }
 
 export function gainXp(n) {

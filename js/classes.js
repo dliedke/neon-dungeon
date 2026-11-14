@@ -101,6 +101,7 @@ export const ICONS = {
   // ícones dos poderes passivos
   pHeart: '<path d="M16 27C8 21 4 17 4 12a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 5-4 9-12 15z"/><path d="M9 15h4l2-3 3 6 2-3h3"/>',
   pTarget: '<circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="3"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6"/>',
+  pSwift: '<path d="M14 5h7v12l6 3a2 2 0 0 1 1 2v3H13z"/><path d="M13 25h15M3 11h7M5 16h6M3 21h8"/>',
   pWind: '<path d="M3 11h16a4 4 0 1 0-4-4M3 17h22a4 4 0 1 1-4 4M3 23h10"/>',
   pDrop: '<path d="M16 3c5 7 9 12 9 17a9 9 0 0 1-18 0c0-5 4-10 9-17z"/><path d="M12 20a4 4 0 0 0 4 4"/>',
   pBattery: '<rect x="5" y="9" width="20" height="14" rx="2"/><path d="M25 13h3v6h-3M14 11l-3 6h5l-3 5"/>',
@@ -437,6 +438,7 @@ const PFMT = {
   dmgPct: (v) => L(`+${nfmt(v)}% de dano`, `+${nfmt(v)}% damage`),
   atkSpd: (v) => L(`+${nfmt(v)}% de velocidade de ataque`, `+${nfmt(v)}% attack speed`),
   moveSpd: (v) => L(`+${nfmt(v)}% de velocidade de movimento`, `+${nfmt(v)}% movement speed`),
+  warpCd: (v) => L(`-${nfmt(v)}% de recarga do teletransporte`, `-${nfmt(v)}% teleport cooldown`),
   hpPct: (v) => L(`+${nfmt(v)}% de vida máxima`, `+${nfmt(v)}% max health`),
   armorPct: (v) => L(`+${nfmt(v)}% de blindagem`, `+${nfmt(v)}% armor`),
   maxEn: (v) => L(`+${nfmt(v)} de energia máxima`, `+${nfmt(v)} max energy`),
@@ -759,6 +761,13 @@ const APEX_POWERS = {
 };
 for (const [id, list] of Object.entries(SUP_PASSIVES)) CLASSES[id].skills.push(...list);
 for (const [id, list] of Object.entries(APEX_POWERS)) CLASSES[id].skills.push(...list);
+
+// Passos Velozes: passivo de mobilidade igual para todas as classes (caminhada mais rápida e Teleporte/Salto de Rede
+// recarregando antes). Fica no fim da lista para não mudar a posição dos poderes nos saves (swift: entra no andar 10–15).
+// ATENÇÃO: os supremos que ainda faltam (lancer e biohacker) têm de ser empurrados DEPOIS deste, nunca antes.
+for (const id of Object.keys(CLASSES)) {
+  CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ moveSpd: 3 + r, warpCd: r1(3 + 1.5 * r) })), swift: true });
+}
 
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
