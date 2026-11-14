@@ -4,14 +4,14 @@
 // Conjuntos (biomas vistos, tipos abatidos, chefes...) ficam em stats.sets e se unem.
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { ETYPES, BOSS_ORDER, diffRank } from './enemies.js';
+import { ETYPES, BOSS_ORDER, diffRank, abyssLvl, abyssUnlocked, abyssBest } from './enemies.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
 import { SHRINES } from './loot.js';
 import { PET_KINDS } from './pets.js';
 import { ANOMALIES } from './run.js';
-import { toast, medalPopup } from './ui.js';
+import { toast, medalPopup, abyssUnlockedFx } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
 import { fmtPlay } from './utils.js';
@@ -76,7 +76,14 @@ export function achKill(e) {
     if (e.fightT0 != null && G.t - e.fightT0 < 60) achMark('flags', 'fastBoss');
     if (diffRank() >= 2) achMark('flags', 'hardBoss');
     if (diffRank() >= 6) achMark('flags', 'chaosBoss');
+    // Morte (e Abismo): abre o próximo nível do Abismo. Vale o menor nível usado durante a luta
+    // (subir o Abismo no fim da luta não conta)
+    const before = abyssUnlocked();
     if (diffRank() >= 8) achMark('flags', 'deathBoss');
+    const ab = Math.min(abyssLvl(), e.abyMin ?? abyssLvl());
+    if (ab) achMark('abyss', String(ab));
+    const now = abyssUnlocked();
+    if (now > before) abyssUnlockedFx(now);
   }
 }
 
@@ -124,6 +131,9 @@ export function achList() {
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
   add('chaosBoss', '🌀', 2, L('Senhor do Caos', 'Lord of Chaos'), L('Derrote um chefe no Caos ou acima', 'Defeat a boss on Chaos or above'), () => (has('flags', 'chaosBoss') ? 1 : 0));
   add('deathBoss', '⚰️', 3, L('Dança com a Morte', 'Dance with Death'), L('Derrote um chefe no Morte', 'Defeat a boss on Death'), () => (has('flags', 'deathBoss') ? 1 : 0));
+  add('abyss1', '🕳️', 3, L('Olhando o Abismo', 'Gazing into the Abyss'), L('Derrote um chefe no Abismo I ou acima', 'Defeat a boss on Abyss I or above'), () => (abyssBest() >= 1 ? 1 : 0));
+  add('abyss5', '🌑', 3, L('O Abismo Olha de Volta', 'The Abyss Gazes Back'), L('Derrote um chefe no Abismo V ou acima', 'Defeat a boss on Abyss V or above'), () => (abyssBest() >= 5 ? 1 : 0));
+  add('abyss10', '👁️', 3, L('Senhor do Abismo', 'Lord of the Abyss'), L('Derrote um chefe no Abismo X', 'Defeat a boss on Abyss X'), () => (abyssBest() >= 10 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 30)
@@ -137,6 +147,7 @@ export function achList() {
     ['winChaos', '🌀', 'Mestre do Caos', 'Master of Chaos', 'no Caos ou acima', 'on Chaos or above'],
     ['winApocalypse', '☄️', 'Sobrevivente do Apocalipse', 'Apocalypse Survivor', 'no Apocalipse ou acima', 'on Apocalypse or above'],
     ['winDeath', '💀', 'A Morte Perdeu', 'Death Lost', 'no Morte', 'on Death'],
+    ['winAbyss', '🕳️', 'Do Fundo do Abismo', 'From the Depths of the Abyss', 'no Abismo X', 'on Abyss X'],
   ]) add(id, ic, 3, L(pt, en), L(`Vença a batalha final ${dpt}`, `Win the final battle ${den}`), () => (has('flags', id) ? 1 : 0));
   add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));

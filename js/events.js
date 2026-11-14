@@ -19,7 +19,7 @@ import { explosion } from './combat.js';
 import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
-import { tierOf, effFloor, applyAnomalyToEnemy } from './run.js';
+import { tierOf, tierFloor, applyAnomalyToEnemy } from './run.js';
 import { makeItem, MYTHIC, DIVINE, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 
@@ -1219,7 +1219,7 @@ export function propBroken(e) {
 const REEL_COL = [0xff2bd6, 0x00f0ff, 0xffd23d];
 export function gambleCost(E) {
   const c = G.char;
-  return Math.round((50 + effFloor() * 15 + (c ? c.level : 1) * 3) * tierOf().credits * Math.pow(1.25, E.uses));
+  return Math.round((50 + tierFloor() * 15 + (c ? c.level : 1) * 3) * tierOf().credits * Math.pow(1.25, E.uses));
 }
 const gamble = {
   setup(d, floor, rooms) {
@@ -1265,7 +1265,7 @@ const gamble = {
     // mesmo piso de raridade dos drops: do Insano para cima (ou no Inferno) não sai modificado
     const minR = rewardRank() >= 5 || tierOf().off >= 60 ? 2 : 1;
     const rarity = Math.max(minR, top && r < 0.025 ? DIVINE : r < 0.05 ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
-    const it = makeItem({ ilvl: effFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
+    const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
     const d = G.dungeon;
     const fx = E.x + 0.8;
     const fz = E.z + 0.8;

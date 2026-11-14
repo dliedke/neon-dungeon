@@ -58,7 +58,7 @@
       <div id="floor-label"></div>
       <div id="run-info"></div>
       <div id="credits"><span class="cr">¢</span> <span id="credits-val">0</span></div>
-      <div id="diff-ctl" data-i18n-title="diffTitle"><div id="diff-top"><span id="diff-name"></span><span id="diff-rew"></span></div><input type="range" id="diff-range" min="0" max="8" step="1" value="1" /></div>
+      <div id="diff-ctl" data-i18n-title="diffTitle"><div id="diff-top"><span id="diff-name"></span><span id="diff-rew"></span></div><input type="range" id="diff-range" min="0" max="8" step="1" value="1" /><div id="abyss-row" class="hidden"><button id="abyss-dn" aria-label="-">−</button><div id="abyss-pips"></div><button id="abyss-up" aria-label="+">+</button><span id="abyss-lock" class="hidden"></span></div></div>
     </div>
 
     <div id="top-center">
@@ -107,6 +107,7 @@
   <div id="medal-pop"></div>
   <div id="ach-zoom" class="hidden"></div>
   <div id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+  <div id="abyss-vig"></div>
   <div id="hurt"></div>
 
   <!-- MENU PRINCIPAL -->
@@ -241,6 +242,7 @@
       <div class="opt"><span data-i18n="track">Trilha</span> <button class="btn small" id="opt-track" data-nav></button></div>
       <label class="opt"><span data-i18n="sfx">Efeitos</span> <input type="range" min="0" max="1" step="0.05" id="opt-sfx" data-nav /></label>
       <div class="opt"><span data-i18n="difficulty">Dificuldade</span> <button class="btn small" id="opt-diff" data-nav></button></div>
+      <div class="opt" id="opt-abyss-row"><span data-i18n="abyss">Abismo</span> <button class="btn small" id="opt-abyss" data-nav></button></div>
       <div class="opt"><span data-i18n="glow">Brilho neon</span> <button class="btn small" id="opt-glow" data-nav></button></div>
       <div class="opt"><span data-i18n="graphics">Gráficos</span> <button class="btn small" id="opt-quality" data-nav></button></div>
       <div class="opt"><span data-i18n="shake">Tremor de tela</span> <button class="btn small" id="opt-shake" data-nav></button></div>

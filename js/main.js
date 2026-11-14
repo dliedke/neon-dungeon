@@ -10,7 +10,7 @@ import { initAudio, applyVolumes, sfx } from './audio.js';
 import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight, isWalkable } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
-import { populateFloor, updateEnemies, spawnEnemy, tickReward } from './enemies.js';
+import { populateFloor, updateEnemies, spawnEnemy, tickReward, abyssUnlocked } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL, SLOT_N } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
@@ -88,6 +88,9 @@ function loadSave() {
       Object.assign(G.settings, s);
     }
   } catch (_) {}
+  // Abismo: só existe no Morte e até o nível já desbloqueado
+  const ab = G.settings.difficulty === 'death' ? Math.min(G.settings.abyss | 0, abyssUnlocked()) : 0;
+  G.settings.abyss = Math.max(0, ab);
 }
 
 // fromSync: gravação feita pela própria sincronização (não reenvia para a nuvem)

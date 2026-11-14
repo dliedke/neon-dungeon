@@ -27,10 +27,11 @@ function mythChance(o, find) {
 }
 // Chance de um item virar divino (acima do mítico): só no Apocalipse e na Morte, ou no Pesadelo/Inferno
 // a partir do Brutal. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
+// No Abismo sobe +10% da chance da Morte por nível (Abismo X: o dobro da Morte).
 function divChance(o, find) {
   const t = G.char.tier | 0;
   const dr = Math.floor(rewardRank() + 1e-6);
-  const k = dr >= 8 ? 1.5 : dr >= 7 ? 1 : t < 1 ? 0 : dr >= 6 ? 0.6 : dr >= 5 ? 0.5 : dr >= 4 ? 0.4 : 0;
+  const k = dr >= 8 ? 1.5 * (1 + 0.1 * (dr - 8)) : dr >= 7 ? 1 : t < 1 ? 0 : dr >= 6 ? 0.6 : dr >= 5 ? 0.5 : dr >= 4 ? 0.4 : 0;
   if (!k || effFloor() < 10) return 0;
   const base = o.boss ? 0.02 : o.rift ? 0.015 : o.thief || o.beast ? 0.0125 : o.contract ? 0.0075 : o.chest ? 0.004 : o.elite ? 0.002 : 0.0003;
   return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
@@ -80,7 +81,8 @@ export function dropLoot(x, z, o = {}) {
   } else if (o.elite) {
     items = 2;
     bonus += 18;
-  } else if (chance(0.14 * find * (rich ? 2.5 : 1) * Math.sqrt(lk))) {
+  } else if (chance(0.14 * find * (rich ? 2.5 : 1) * Math.sqrt(Math.min(lk, 5.6)))) {
+    // inimigos comuns: no Abismo cai a mesma quantidade da Morte (a recompensa a mais vem na qualidade)
     items = 1;
   }
   // quando os míticos já caem bastante, não cai mais item fraco: do Brutal (ou no Pesadelo/Inferno) sem
@@ -89,6 +91,8 @@ export function dropLoot(x, z, o = {}) {
   const minR = rk >= 5 || T.off >= 60 ? 2 : rk >= 4 || T.off >= 30 ? 1 : 0;
   // Muito Difícil para cima: chefes, feras, elites e baús dão um item a mais
   if (items && !o.rift && lk >= 2 && (o.boss || o.beast || o.thief || o.elite || o.chest || o.contract)) items++;
+  // Abismo V para cima: baús e chefes dão mais um
+  if (items && !o.rift && rk >= 13 && (o.boss || o.chest)) items++;
   for (let i = 0; i < items; i++) {
     let rarity = Math.max(minR, rollRarity(bonus));
     if ((o.boss || o.chest || o.thief || o.beast || o.contract) && i === 0) rarity = Math.max(rarity, o.boss || o.thief || o.beast || o.contract ? 2 : 1);

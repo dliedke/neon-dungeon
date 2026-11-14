@@ -178,13 +178,65 @@ export const DIFFICULTY = {
 };
 export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane', 'chaos', 'apocalypse', 'death'];
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
-export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty));
+
+// ------------------------------------------------------------------
+// Abismo: 10 níveis abaixo da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Cada nível leva a masmorra ABYSS_STEP andares mais fundo (vida, dano, elites com mais afixos,
+// inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
+// O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
+// O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
+// ------------------------------------------------------------------
+export const ABYSS_MAX = 10;
+export const ABYSS_STEP = 6;
+export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+// regra que cada nível liga (índice 0 = Abismo I)
+export const ABYSS_RULES = [
+  { icon: '⭐', name: L('Horda de Elites', 'Elite Horde'), desc: L('muito mais elites, até no andar 1', 'far more elites, even on floor 1') },
+  { icon: '💨', name: L('Caçadores Velozes', 'Swift Hunters'), desc: L('inimigos 15% mais rápidos', 'enemies move 15% faster') },
+  { icon: '🩸', name: L('Feridas Profundas', 'Deep Wounds'), desc: L('toda cura 30% mais fraca', 'all healing is 30% weaker') },
+  { icon: '✳️', name: L('Afixo Extra', 'Extra Affix'), desc: L('elites ganham mais um afixo', 'elites gain one more affix') },
+  { icon: '😡', name: L('Fúria Precoce', 'Early Fury'), desc: L('chefes se enfurecem com 60% de vida (antes 30%)', 'bosses enrage at 60% health (was 30%)') },
+  { icon: '💥', name: L('Elites Instáveis', 'Unstable Elites'), desc: L('elites explodem ao morrer: saia do círculo', 'elites explode on death: leave the circle') },
+  { icon: '☄️', name: L('Tiros Acelerados', 'Faster Shots'), desc: L('tiros inimigos 25% mais rápidos', 'enemy shots fly 25% faster') },
+  { icon: '⚡', name: L('Frenesi', 'Frenzy'), desc: L('inimigos atacam 20% mais rápido', 'enemies attack 20% faster') },
+  { icon: '🐜', name: L('Enxame', 'Swarm'), desc: L('+20% de inimigos', '+20% enemies') },
+  { icon: '👑', name: L('Senhores do Abismo', 'Abyss Lords'), desc: L('chefes e elites com +50% de vida', 'bosses and elites have +50% health') },
+];
+// nível do Abismo em uso (0 = desligado; só existe na Morte)
+export const abyssLvl = () => (G.settings.difficulty === 'death' ? Math.max(0, Math.min(ABYSS_MAX, G.settings.abyss | 0)) : 0);
+// a regra do Abismo n está ligada?
+export const abyssOn = (n) => abyssLvl() >= n;
+// maior nível já liberado na conta (0 = fechado)
+export function abyssUnlocked() {
+  const sets = G.save && G.save.stats && G.save.stats.sets;
+  if (!sets || !(sets.flags || {}).deathBoss) return 0;
+  let n = 1;
+  for (const k in sets.abyss || {}) n = Math.max(n, Math.min(ABYSS_MAX, (+k | 0) + 1));
+  return n;
+}
+// maior Abismo em que um chefe já caiu (medalhas)
+export function abyssBest() {
+  let n = 0;
+  for (const k in (G.save && G.save.stats && G.save.stats.sets.abyss) || {}) n = Math.max(n, +k | 0);
+  return n;
+}
+export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ROMAN[n] || ''}`;
+// cor de cada nível: do violeta (I) ao vermelho-sangue (X)
+export const abyssColor = (n) => `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)`;
+
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo X = 18
+export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
 // Ao subir a dificuldade a recompensa sobe aos poucos (1 nível a cada 15s): assim não dá para
 // subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
+// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1)
+for (let n = 1; n <= ABYSS_MAX; n++) {
+  REWARD.cr.push(7.2 + n);
+  REWARD.loot.push(5.6 + 0.25 * n);
+}
 let rewardLvl = -1;
 export function tickReward(dt) {
   const r = diffRank();
@@ -200,23 +252,59 @@ export function rewardK(kind) {
 export const rewardRamping = () => rewardLvl >= 0 && rewardLvl < diffRank();
 // nível de recompensa atual (sobe aos poucos, como o rewardK)
 export const rewardRank = () => Math.max(0, Math.min(diffRank(), rewardLvl < 0 ? 1 : rewardLvl));
-// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30
-export const diffIlvl = () => Math.round(Math.max(0, rewardRank() - 5) * 10);
+// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30 e cada Abismo mais ABYSS_STEP
+// (os itens acompanham a profundidade dos inimigos, mas sobem aos poucos como o resto da recompensa)
+export const diffIlvl = () => {
+  const r = rewardRank();
+  return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + Math.max(0, r - 8) * ABYSS_STEP);
+};
 
-// Troca de dificuldade no meio do andar: os inimigos vivos mudam na hora (vida proporcional e dano)
+// Troca de dificuldade (ou de Abismo) no meio do andar: os inimigos vivos mudam na hora
+// (vida proporcional, dano, velocidade e ritmo de ataque das regras do Abismo)
+function liveScale(e) {
+  const D = diff();
+  const ab = abyssLvl();
+  const f = floorScale(effFloor());
+  return {
+    hp: f.hp * (e.boss ? D.bossHp : 1) * (ab >= 10 && (e.boss || e.elite) ? 1.5 : 1),
+    dmg: f.dmg * (e.boss ? D.bossDmg : 1),
+    speed: ab >= 2 && !e.boss ? 1.15 : 1,
+    atk: ab >= 8 && !e.boss ? 0.8 : 1,
+  };
+}
+function rescaleLive(change) {
+  const list = (G.enemies || []).filter((e) => e.alive && !e.inert && !e.decoy && e.maxHp > 1);
+  const before = list.map(liveScale);
+  change();
+  list.forEach((e, i) => {
+    const A = before[i];
+    const B = liveScale(e);
+    e.maxHp *= B.hp / A.hp;
+    e.hp *= B.hp / A.hp;
+    e.dmg *= B.dmg / A.dmg;
+    e.speed *= B.speed / A.speed;
+    e.atkCdMult *= B.atk / A.atk;
+    // chefe: vale para liberar o próximo Abismo só o nível mais baixo usado durante a luta
+    if (e.boss) e.abyMin = Math.min(e.abyMin ?? ABYSS_MAX, abyssLvl());
+  });
+}
 export function setDifficulty(key) {
-  const A = diff();
   if (!DIFFICULTY[key] || key === G.settings.difficulty) return false;
-  G.settings.difficulty = key;
-  const B = diff();
-  for (const e of G.enemies || []) {
-    if (!e.alive || e.inert || e.decoy || !(e.maxHp > 1)) continue;
-    const kh = (B.hp / A.hp) * (e.boss ? B.bossHp / A.bossHp : 1);
-    const kd = (B.dmg / A.dmg) * (e.boss ? B.bossDmg / A.bossDmg : 1);
-    e.maxHp *= kh;
-    e.hp *= kh;
-    e.dmg *= kd;
-  }
+  rescaleLive(() => {
+    G.settings.difficulty = key;
+    // o Abismo fica embaixo da Morte: saindo dela, desliga
+    if (key !== 'death') G.settings.abyss = 0;
+  });
+  return true;
+}
+// escolhe o nível do Abismo (liga a Morte junto, se precisar); só até o nível liberado
+export function setAbyss(n) {
+  n = Math.max(0, Math.min(abyssUnlocked(), n | 0));
+  if (n === abyssLvl()) return false;
+  rescaleLive(() => {
+    if (n > 0) G.settings.difficulty = 'death';
+    G.settings.abyss = n;
+  });
   return true;
 }
 
@@ -243,11 +331,11 @@ export function spawnEnemy(type, x, z, o = {}) {
   const T = ETYPES[type];
   const ef = effFloor();
   const sc = floorScale(ef);
-  // elites fundos acumulam afixos: 2 a partir do andar efetivo 14, 3 a partir do 26
+  // elites fundos acumulam afixos: 2 a partir do andar efetivo 14, 3 a partir do 26 (+1 no Abismo IV)
   let affixes = null;
   if (o.elite) {
     const pool = shuffle(Object.keys(ELITE).filter((k) => ELITE[k].minF <= ef));
-    affixes = pool.slice(0, 1 + (ef >= 14 ? 1 : 0) + (ef >= 26 ? 1 : 0));
+    affixes = pool.slice(0, 1 + (ef >= 14 ? 1 : 0) + (ef >= 26 ? 1 : 0) + (abyssOn(4) ? 1 : 0));
   }
   const eliteKey = affixes ? affixes[0] : null;
   const model = makeEnemyModel(type, eliteKey ? ELITE[eliteKey].color : null);
@@ -300,6 +388,13 @@ export function spawnEnemy(type, x, z, o = {}) {
     e.bt = 1.2;
     e.phase2 = false;
     e.lastAtk = null;
+    e.abyMin = abyssLvl();
+  }
+  // regras do Abismo: mais rápidos (II), atacam mais rápido (VIII), chefes e elites com mais vida (X)
+  if (abyssLvl() && !o.decoy && !T.inert) {
+    if (abyssOn(2) && !e.boss) e.speed *= 1.15;
+    if (abyssOn(8) && !e.boss) e.atkCdMult *= 0.8;
+    if (abyssOn(10) && (e.boss || eliteKey)) e.hp = e.maxHp = e.hp * 1.5;
   }
   addShadow(model.root, e.r / (eliteKey ? 1.2 : 1));
   const bar = makeHpBar(e.boss || T.inert ? 0 : T.big ? 1.8 : 0.8, !!eliteKey || !!T.big);
@@ -1805,10 +1900,10 @@ function toWalk(e) {
   e.bt = e.phase2 ? rr(0.45, 0.85) : rr(0.8, 1.3);
 }
 
-// Pressão extra de todo chefe: com 30% de vida fica enfurecido (mais rápido e forte),
+// Pressão extra de todo chefe: com 30% de vida (60% no Abismo V) fica enfurecido (mais rápido e forte),
 // e entre os ataques dispara rajadas mirando o jogador (com aviso, para continuar justo)
 function bossPressure(e, dt, tgt) {
-  if (!e.enraged && e.hp < e.maxHp * 0.3 && e.bstate !== 'intro') {
+  if (!e.enraged && e.hp < e.maxHp * (abyssOn(5) ? 0.6 : 0.3) && e.bstate !== 'intro') {
     e.enraged = true;
     e.speed *= 1.15;
     e.dmg *= 1.15;
@@ -1952,8 +2047,11 @@ function spotAwayFromNpc(d, r, margin) {
 }
 
 export function populateFloor(d, floor, boss) {
-  const D = diff();
-  const eliteChance = floor <= 1 && !tierOf().off ? 0 : Math.min(0.6, (Math.min(0.3, 0.04 + floor * 0.025) + tierOf().elite) * amod('elite'));
+  // Abismo IX (Enxame): +20% de inimigos
+  const D = abyssOn(9) ? { ...diff(), count: diff().count * 1.2 } : diff();
+  // Abismo I (Horda de Elites): +15% de chance de elite, já no andar 1
+  const ab1 = abyssOn(1);
+  const eliteChance = floor <= 1 && !tierOf().off && !ab1 ? 0 : Math.min(ab1 ? 0.75 : 0.6, (Math.min(0.3, 0.04 + floor * 0.025) + tierOf().elite + (ab1 ? 0.15 : 0)) * amod('elite'));
   const emptyChance = Math.max(0, 0.15 - floor * 0.05); // algumas salas vazias nos primeiros andares
   const perPack = Math.max(32, 52 - floor * 5); // área por grupo (menor = mais grupos)
   // mapas abertos (deserto, floresta, pradaria...) são 2-4x maiores: mais inimigos para não ficarem vazios
@@ -2218,6 +2316,7 @@ function finalVictory() {
   if (diffRank() >= 6) achMark('flags', 'winChaos');
   if (diffRank() >= 7) achMark('flags', 'winApocalypse');
   if (diffRank() >= 8) achMark('flags', 'winDeath');
+  if (abyssLvl() >= 10) achMark('flags', 'winAbyss');
   if (F.time < 600) achMark('flags', 'winFast');
   if (ch.tier >= 1) achMark('flags', 'winNightmare');
   if (ch.tier >= 2) achMark('flags', 'winInferno');

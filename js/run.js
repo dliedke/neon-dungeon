@@ -10,7 +10,7 @@ import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, pickEnemyType, ETYPES } from './enemies.js';
+import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, ABYSS_STEP } from './enemies.js';
 import { dropLoot, spawnPickup } from './loot.js';
 import { after, explosion, damagePlayer, healPlayer, capHeal } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
@@ -59,8 +59,10 @@ export const TIERS = [
 ];
 export const MAX_TIER = TIERS.length - 1;
 export const tierOf = (c = G.char) => TIERS[Math.min(MAX_TIER, (c && c.tier) | 0)];
-// andar "efetivo" dos inimigos e dos itens
-export const effFloor = (f = G.floor) => f + tierOf().off;
+// andar do modo (Pesadelo/Inferno), sem o Abismo: base do nível dos itens (o Abismo entra aos poucos pelo diffIlvl)
+export const tierFloor = (f = G.floor) => f + tierOf().off;
+// andar "efetivo" dos inimigos: o modo e o Abismo (cada nível desce ABYSS_STEP andares) levam mais fundo
+export const effFloor = (f = G.floor) => f + tierOf().off + abyssLvl() * ABYSS_STEP;
 // blindagem: fração do dano que passa. Depois do andar efetivo 30 (Pesadelo/Inferno) os inimigos
 // perfuram blindagem: a constante cresce no mesmo ritmo da blindagem dos itens, senão ela chega a ~90%
 export const armorK = (f = G.floor) => 100 + 22 * Math.max(0, (effFloor(f) || 0) - 30);
@@ -400,14 +402,19 @@ export function runKill(e) {
   // anomalias
   const kh = amod('killHeal', 0);
   if (kh) healPlayer(capHeal('moon', (p.stats.maxHp * kh) / 100, (p.stats.maxHp * kh * 1.5) / 100), false);
-  if (amod('explode', false) && !e.boss && !e.explodeOnDeath && !e.rift) {
+  // Reação em Cadeia (todos) ou Abismo VI (elites): explode ao morrer, com aviso no chão
+  const abBoom = abyssOn(6) && e.elite;
+  if ((amod('explode', false) || abBoom) && !e.boss && !e.explodeOnDeath && !e.rift) {
     const x = e.x;
     const z = e.z;
     const dmg = e.dmg * 0.8;
-    telegraphFx(x, z, 2.3, 0.55, 0xff7a1a);
-    after(0.55, () => {
-      explosion(x, z, 2.3, 0.7, { color: 0xff7a1a, noProc: true, small: true, knock: 4 });
-      if (Math.hypot(G.player.x - x, G.player.z - z) < 2.3 + G.player.r) damagePlayer(dmg);
+    const R = abBoom ? 3 : 2.3;
+    const col = abBoom ? 0xb04dff : 0xff7a1a;
+    const t = abBoom ? 0.75 : 0.55;
+    telegraphFx(x, z, R, t, col);
+    after(t, () => {
+      explosion(x, z, R, 0.7, { color: col, noProc: true, small: !abBoom, knock: 4 });
+      if (Math.hypot(G.player.x - x, G.player.z - z) < R + G.player.r) damagePlayer(dmg);
     });
   }
   // contrato

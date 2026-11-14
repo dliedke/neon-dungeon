@@ -171,6 +171,30 @@ body.touch #diff-ctl { position: fixed; top: calc(66px + var(--safe-t)); left: c
 body.touch #diff-top { gap: 4px; }
 body.touch #diff-range { height: 22px; }
 body.touch #diff-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -7px; }
+/* Abismo: linha extra no controle de dificuldade (só no Morte). --ac = cor do nível */
+#abyss-row { display: flex; align-items: center; gap: 4px; margin: 1px 0 3px; }
+#abyss-row button { flex: none; width: 18px; height: 16px; padding: 0; border: 1px solid var(--ac, #b04dff); border-radius: 4px; background: rgba(40, 0, 70, 0.6); color: #e9d8ff; font-family: inherit; font-weight: 700; font-size: 13px; line-height: 1; cursor: pointer; }
+#abyss-row button:disabled { opacity: 0.3; cursor: default; }
+#abyss-pips { flex: 1; display: flex; gap: 2px; height: 10px; }
+#abyss-pips i { flex: 1; border-radius: 2px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; }
+#abyss-pips i.open { border-color: rgba(197, 107, 255, 0.55); }
+#abyss-pips i.on { background: var(--pc); border-color: var(--pc); box-shadow: 0 0 6px var(--pc); }
+#abyss-lock { flex: 1; font-size: 11px; color: #9a8ab8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#abyss-row.locked button, #abyss-row.locked #abyss-pips { display: none; }
+/* moldura com brilho girando quando o Abismo está ligado */
+#diff-ctl { position: relative; overflow: hidden; }
+#diff-ctl > * { position: relative; z-index: 1; }
+#diff-ctl.abyss { border-color: transparent; background: rgba(10, 2, 22, 0.78); box-shadow: 0 0 12px var(--ac); }
+#diff-ctl.abyss::before { content: ''; position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; background: conic-gradient(transparent 0 55%, var(--ac) 75%, #fff 80%, transparent 85%); animation: abyssSpin 3.2s linear infinite; }
+#diff-ctl.abyss::after { content: ''; position: absolute; inset: 1px; border-radius: 5px; background: rgba(8, 2, 20, 0.92); }
+#diff-ctl.abyss #diff-name { color: var(--ac); text-shadow: 0 0 8px var(--ac); }
+@keyframes abyssSpin { to { transform: rotate(360deg); } }
+/* borda da tela escurece em roxo conforme o nível */
+#abyss-vig { position: fixed; inset: 0; pointer-events: none; z-index: 3; opacity: 0; transition: opacity 0.6s; background: radial-gradient(ellipse at center, transparent 58%, rgba(60, 0, 110, 0.5) 88%, rgba(20, 0, 40, 0.75)); }
+body.abyss #abyss-vig { opacity: var(--abv, 0.2); }
+#opt-abyss.on { color: #e3c4ff; border-color: #b04dff; box-shadow: 0 0 10px rgba(176, 77, 255, 0.6); }
+body.touch #abyss-row button { width: 30px; height: 26px; font-size: 17px; }
+body.touch #abyss-pips { height: 16px; gap: 2px; }
 
 #top-center {
   position: absolute; top: calc(12px + var(--safe-t)); left: 50%; transform: translateX(-50%);
