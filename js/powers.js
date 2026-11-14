@@ -66,6 +66,7 @@ const ALLY = {
   mutant: { speed: 4.0, r: 0.65, range: 1.9, atk: 1.1, mult: 2.0, melee: true, color: 0xc8ff3d, slam: true },
   hacked: { speed: 3.8, r: 0.4, range: 1.5, atk: 0.8, mult: 1.2, melee: true, color: 0x39ff14 },
   shade: { speed: 6.2, r: 0.35, range: 1.5, atk: 0.5, mult: 1.4, melee: true, color: 0x9b4dff },
+  drone: { speed: 7, r: 0.3, range: 7.5, atk: 0.45, mult: 0.8, melee: false, color: 0x39ff14, fly: true },
 };
 
 function allyModel(kind, color) {
@@ -80,6 +81,18 @@ function allyModel(kind, color) {
     const m = makePlayerModel('blade', color);
     for (const mt of m.mats || []) mt.color && mt.color.multiplyScalar(0.25);
     return m;
+  }
+  if (kind === 'drone') {
+    // drone de combate do Netrunner: corpo quadrado, 4 hélices de neon e um olho
+    const root = new THREE.Group();
+    const body = new THREE.Group();
+    root.add(body);
+    const mb = lam(0x2a3040);
+    body.add(mesh(box(0.34, 0.12, 0.34), mb));
+    body.add(mesh(box(0.14, 0.06, 0.06), glowMat(color, 3), 0, 0, 0.19));
+    for (const [x, z] of [[0.26, 0.26], [-0.26, 0.26], [0.26, -0.26], [-0.26, -0.26]]) body.add(mesh(new THREE.TorusGeometry(0.11, 0.02, 4, 12).rotateX(Math.PI / 2), glowMat(color, 1.6), x, 0.04, z));
+    body.position.y = 1.3;
+    return { root, body, mats: [mb], floaty: true };
   }
   if (kind === 'oni') {
     const m = humanoid({ body: 0x8a1a2a, dark: 0x2a0a10, accent: 0xff2244, scale: 1.2, wide: 1.2 });
@@ -406,7 +419,7 @@ function allyAttack(a, tgt) {
   const dx = tgt.x - a.x;
   const dz = tgt.z - a.z;
   const l = Math.hypot(dx, dz) || 1;
-  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.kind === 'daemon' ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, quiet: a.kind === 'clone' });
+  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.model.floaty ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, quiet: a.kind === 'clone' || a.kind === 'drone' });
   if (a.kind === 'daemon') sfx.orb();
 }
 

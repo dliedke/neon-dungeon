@@ -155,14 +155,14 @@ Da lista original, 4 ideias repetiam eventos que já existem: Corrida de Checkpo
 
 Estrutura atual (`classes.js`): `skills` base → `PASSIVES` → Teleporte (exceto Netrunner) → `LATE_PASSIVES` (níveis 20/28/36, marca `late`) → `ADV_POWERS` (40/50/60/70, marca `adv`, lógica em `SKILL_FN`). A árvore em `ui.js` (`TIERS`, `tierIdx`) agrupa pelas marcas. Nível máximo do personagem é infinito (`MAX_LEVEL`), XP `45·lvl^1.5`, `MAX_RANK = 30`. `sanitizeChar` já completa `c.skills` com zeros, então **só acrescentar no fim** (índices são save).
 
-Progresso: **blade + gunner feitos** (28 habilidades cada: sup = índices 20–23, apex = 24–27). Próximo: netrunner + brawler, depois pyro + frost, heavy + hunter, lancer + biohacker. Para cada par: `SUP_PASSIVES[cls]`, `APEX_POWERS[cls]` (descs bilíngues), ícones novos, `SKILL_FN` num bloco `Object.assign` novo, teste com `__dbg` (todos causam dano, sem erro) e screenshot.
+Progresso: **blade + gunner feitos** (28 habilidades cada: sup = índices 20–23, apex = 24–27). **netrunner + brawler feitos** (netrunner tem 27: sup = 19–22, apex = 23–26; brawler 28). Próximo: pyro + frost, depois heavy + hunter, lancer + biohacker. Para cada par: `SUP_PASSIVES[cls]`, `APEX_POWERS[cls]` (descs bilíngues), ícones novos, `SKILL_FN` num bloco `Object.assign` novo, teste com `__dbg` (todos causam dano, sem erro) e screenshot.
 
 - [x] Duas fileiras novas na árvore (marcas `sup` e `apex`). Níveis escolhidos (mais baixos que o plano, porque o XP `45·lvl^1.5` sobe rápido):
   - Passivos Supremos: níveis 72, 80, 88, 96.
   - Ataques Supremos: níveis 76, 84, 92, 100.
 - [x] `TIERS` em `ui.js`: `{ label: [75, 105], sup: true }`, `{ label: [80, 110], apex: true }`; generalizar `tierIdx` para a marca do tier (`t.mark`). Conferir layout no desktop, toque (paisagem, celular pequeno, rolagem) e navegação do controle.
 - [x] Passivos: chaves novas `bossDmg`, `execDmg` (<30% vida), `fullHpDmg` (>90% vida), `xpPct`, lidas em `hitEnemy` (combat.js). Medalhas `supTree` e `apexTree` (total 169). `PFMT` pode ganhar chaves novas (ex.: `bossDmg`, `skillDmg`, `aoePct`), sempre somadas em `computeStats` (`passiveMods`).
-- [x] (blade, gunner) Ataques: `adv(...)`-like com `desc(r)` bilíngue, ícone novo em `ICONS` (SVG em linhas), função em `SKILL_FN` (reaproveitar `powers.js`: invocações, orbitais, buracos negros, tempestades), fx e som. Teste de cada um: usar via `__dbg` com inimigos spawnados e conferir dano/sem erro.
+- [x] (blade, gunner, netrunner, brawler) Ataques: `adv(...)`-like com `desc(r)` bilíngue, ícone novo em `ICONS` (SVG em linhas), função em `SKILL_FN` (reaproveitar `powers.js`: invocações, orbitais, buracos negros, tempestades), fx e som. Teste de cada um: usar via `__dbg` com inimigos spawnados e conferir dano/sem erro.
 - [ ] Fazer **2 classes por commit** (5 commits), na ordem do `CLASS_ORDER`, para caber nos créditos e manter o jogo sempre funcionando.
 
 Sugestões de tema (ajuste livre; nomes em pt/en):

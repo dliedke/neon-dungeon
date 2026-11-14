@@ -73,12 +73,14 @@ The advanced powers, in order (levels 40 / 50 / 60 / 70, attack / defense / atta
 
 The defenses cut the damage you take, heal over time, add dodge or life steal, or wrap you in an aura that hurts nearby enemies.
 
-Two **supreme rows** sit at the top of the tree: four supreme passives (levels 72, 80, 88 and 96) and four apex attacks (levels 76, 84, 92 and 100). The supreme passives add new bonuses such as extra damage to bosses, to enemies below 30% health or above 90% health, and more XP. So far the Blade and the Gunslinger have them (the other classes are coming):
+Two **supreme rows** sit at the top of the tree: four supreme passives (levels 72, 80, 88 and 96) and four apex attacks (levels 76, 84, 92 and 100). The supreme passives add new bonuses such as extra damage to bosses, to enemies below 30% health or above 90% health, and more XP. So far the Blade, the Gunslinger, the Netrunner and the Iron Fist have them (the other classes are coming):
 
 | Class | Supreme passives | Apex attacks (76 / 84 / 92 / 100) |
 | --- | --- | --- |
 | Blade | Ancestral Blade, Endless Kata, Ronin Spirit, Shogun | Petal Storm, Absolute Iaijutsu, Shadow Clones, Dimension Cut |
 | Gunslinger | Hot Barrel, Ghost Sight, Cold Blood, Wild West Legend | Rail Shot, Cluster Grenade, Bullet Dance, Orbital Cannon |
+| Netrunner | Quantum Encryption, Botnet, Kernel Zero, God of the Net | Chain Virus, Offensive Firewall, Drone Army, Total Blackout |
+| Iron Fist | Pure Steel Fists, Hydraulic Plating, Unbreakable Fury, Ring Legend | Tectonic Rift, Rocket Hook, Hundred Fists, Fist of Heaven |
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 

@@ -637,14 +637,14 @@ export function updateHazards(dt) {
 
 // ---------------- Barreiras de energia (Colosso) ----------------
 const barrierGeo = new THREE.PlaneGeometry(1, 1.6).translate(0, 0.8, 0);
-export function spawnBarrier(x, z, dx, dz, half, dur) {
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd23d).multiplyScalar(gk(1.4)), transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+export function spawnBarrier(x, z, dx, dz, half, dur, color = 0xffd23d) {
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.4)), transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
   const m = new THREE.Mesh(barrierGeo, mat);
   m.scale.x = half * 2;
   m.position.set(x, 0, z);
   m.rotation.y = -Math.atan2(dz, dx);
   G.world.add(m);
-  ringFx(x, z, half, 0xffd23d, 0.35);
+  ringFx(x, z, half, color, 0.35);
   G.barriers.push({ x, z, dx, dz, half, t: dur, mesh: m, mat });
 }
 

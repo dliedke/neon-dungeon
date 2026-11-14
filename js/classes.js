@@ -9,6 +9,7 @@ import { isWalkable, lineOfSight } from './dungeon.js';
 import { clamp, rr, pick } from './utils.js';
 import { L } from './i18n.js';
 import * as PW from './powers.js';
+import { merged } from './models.js';
 import { shrineBlink } from './loot.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
@@ -111,6 +112,8 @@ export const ICONS = {
   pChip: '<rect x="9" y="9" width="14" height="14" rx="2"/><path d="M13 4v5M19 4v5M13 23v5M19 23v5M4 13h5M4 19h5M23 13h5M23 19h5"/><circle cx="16" cy="16" r="3"/>',
   pEye: '<path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z"/><circle cx="16" cy="16" r="4"/>',
   pSword: '<path d="M27 4L12 19M27 4l-1 6M27 4l-6 1"/><path d="M8 15l9 9M10 21l-5 5"/>',
+  pFist: '<path d="M9 14V9a2 2 0 0 1 4 0v4M13 13V8a2 2 0 0 1 4 0v5M17 13V9a2 2 0 0 1 4 0v5M21 14v-3a2 2 0 0 1 4 0v7c0 6-4 10-9 10s-9-3-9-8v-4a2 2 0 0 1 4 0"/>',
+  pNet: '<circle cx="16" cy="6" r="3"/><circle cx="6" cy="24" r="3"/><circle cx="26" cy="24" r="3"/><circle cx="16" cy="17" r="2"/><path d="M16 9v6M8 22l6.5-4M24 22l-6.5-4M9 24h14"/>',
   pStar: '<path d="M16 3l3.8 8.2 8.7.9-6.5 5.9 1.9 8.6L16 22.2 8.1 26.6 10 18 3.5 12.1l8.7-.9z"/>',
   // poderes avançados (níveis 40–70)
   crescent: '<path d="M5 27C8 13 18 5 28 5c-7 5-11 12-12 22z"/><path d="M4 20c2-5 5-9 9-12" opacity=".5"/>',
@@ -159,6 +162,14 @@ export const ICONS = {
   rail: '<path d="M2 16h28"/><path d="M6 11h3M12 11h3M18 11h3M24 11h3M6 21h3M12 21h3M18 21h3M24 21h3" opacity=".6"/><circle cx="4" cy="16" r="2"/>',
   cluster: '<circle cx="16" cy="16" r="5"/><circle cx="6" cy="7" r="2"/><circle cx="26" cy="7" r="2"/><circle cx="6" cy="25" r="2"/><circle cx="26" cy="25" r="2"/><path d="M12 12L8 9M20 12l4-3M12 20l-4 3M20 20l4 3" opacity=".6"/>',
   dance: '<circle cx="16" cy="16" r="3"/><path d="M16 4a12 12 0 0 1 12 12M16 28A12 12 0 0 1 4 16"/><path d="M28 16l-3-3M28 16l3-3M4 16l-3 3M4 16l3 3"/>',
+  virus: '<circle cx="16" cy="16" r="6"/><path d="M16 4v6M16 22v6M4 16h6M22 16h6M7.5 7.5l4.2 4.2M20.3 20.3l4.2 4.2M24.5 7.5l-4.2 4.2M11.7 20.3l-4.2 4.2"/>',
+  fwall: '<path d="M3 26h26M3 20h26M3 14h26M8 14v6M16 20v6M24 14v6M16 26v0"/><path d="M10 14c0-4 3-5 3-9 3 2 3 5 3 6 1-2 2-3 2-5 3 3 4 5 4 8" opacity=".6"/>',
+  drones: '<rect x="12" y="11" width="8" height="5" rx="1"/><path d="M8 9h6M18 9h6"/><rect x="3" y="22" width="6" height="4" rx="1"/><path d="M1 20h4M7 20h4"/><rect x="23" y="22" width="6" height="4" rx="1"/><path d="M21 20h4M27 20h4"/>',
+  blackout: '<path d="M10 7a11 11 0 1 0 12 0"/><path d="M16 3v11"/><path d="M4 4l24 24" opacity=".6"/>',
+  tectonic: '<path d="M2 27h28"/><path d="M16 27l-2-6 3-4-2-5 2-7M16 27l-7-5-2-7M16 27l7-4 3-8"/>',
+  hook: '<path d="M3 16h15"/><path d="M18 10v12M18 10c6 0 9 3 9 6s-3 6-9 6"/><path d="M3 12v8" opacity=".6"/>',
+  hundred: '<circle cx="10" cy="10" r="4"/><circle cx="22" cy="12" r="4"/><circle cx="14" cy="22" r="4"/><path d="M2 5l4 2M2 15l4-1M25 25l3 3M27 19h4" opacity=".6"/>',
+  heaven: '<path d="M10 2v8h12V2"/><path d="M9 10h14v7a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><path d="M13 10v4M17 10v4"/><path d="M3 28h26M8 24l-3-2M24 24l3-2" opacity=".6"/>',
   satellite: '<rect x="12" y="3" width="8" height="6" rx="1"/><path d="M4 6h8M20 6h8"/><path d="M16 9v4"/><path d="M13 13h6l3 15H10z" opacity=".6"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -641,6 +652,18 @@ const SUP_PASSIVES = {
     sup('pColdBlood', 88, L('Sangue Frio', 'Cold Blood'), 'pTarget', (r) => ({ execDmg: 4 * r, killEn: r1(0.6 * r) })),
     sup('pWestMyth', 96, L('Mito do Velho Oeste', 'Wild West Legend'), 'pStar', (r) => ({ bossDmg: 5 * r, findPct: 3 * r, xpPct: 2 * r })),
   ],
+  netrunner: [
+    sup('pQuantum', 72, L('Criptografia Quântica', 'Quantum Encryption'), 'pChip', (r) => ({ maxEn: 6 * r, dmgPct: 2 * r })),
+    sup('pBotnet', 80, 'Botnet', 'pNet', (r) => ({ fullHpDmg: 4 * r, enRegen: r1(0.4 * r) })),
+    sup('pKernel', 88, L('Kernel Zero', 'Kernel Zero'), 'pSkull', (r) => ({ execDmg: 4 * r, killEn: r1(0.6 * r) })),
+    sup('pNetGod', 96, L('Deus da Rede', 'God of the Net'), 'pCrown', (r) => ({ bossDmg: 5 * r, critDmg: 6 * r, xpPct: 2 * r })),
+  ],
+  brawler: [
+    sup('pPureSteel', 72, L('Punhos de Aço Puro', 'Pure Steel Fists'), 'pFist', (r) => ({ dmgPct: 3 * r, critDmg: 6 * r })),
+    sup('pHydraulic', 80, L('Couraça Hidráulica', 'Hydraulic Plating'), 'pPlate', (r) => ({ armorPct: 6 * r, hpRegen: r1(1.0 * r) })),
+    sup('pUnbreakable', 88, L('Fúria Inquebrável', 'Unbreakable Fury'), 'pRage', (r) => ({ execDmg: 4 * r, killHeal: r1(0.3 * r) })),
+    sup('pRingLegend', 96, L('Lenda do Ringue', 'Ring Legend'), 'pCrown', (r) => ({ bossDmg: 5 * r, atkSpd: 2 * r, xpPct: 2 * r })),
+  ],
 };
 const APEX_POWERS = {
   blade: [
@@ -654,6 +677,18 @@ const APEX_POWERS = {
     apex('clusterGrenade', 84, L('Granada Cluster', 'Cluster Grenade'), 'cluster', 50, 12, (r) => L(`Arremessa uma granada que explode causando ${pct(4.0 * rankMult(r))} em 3,5m e espalha 8 minibombas de ${pct(2.0 * rankMult(r))} cada.`, `Throws a grenade that explodes for ${pct(4.0 * rankMult(r))} within 3.5m and scatters 8 bomblets dealing ${pct(2.0 * rankMult(r))} each.`)),
     apex('bulletDance', 92, L('Dança das Balas', 'Bullet Dance'), 'dance', 60, 18, (r) => L(`Por 3s você gira atirando em espiral: 90 balas de ${pct(0.8 * rankMult(r))} cada, e esquiva de 50% dos golpes.`, `For 3s you spin firing in a spiral: 90 bullets dealing ${pct(0.8 * rankMult(r))} each, and dodge 50% of hits.`)),
     apex('orbitalCannon', 100, L('Canhão Orbital', 'Orbital Cannon'), 'satellite', 85, 24, (r) => L(`Marca o chão onde você mira; 1,2s depois um canhão orbital dispara um feixe gigante que causa ${pct(10 * rankMult(r))} em 5m e deixa o chão em chamas.`, `Marks the ground where you aim; 1.2s later an orbital cannon fires a giant beam dealing ${pct(10 * rankMult(r))} within 5m and setting the ground ablaze.`)),
+  ],
+  netrunner: [
+    apex('chainVirus', 76, L('Vírus em Cadeia', 'Chain Virus'), 'virus', 45, 9, (r) => L(`Dispara um vírus teleguiado que causa ${pct(2.5 * rankMult(r))} e salta por até 10 inimigos (${pct(1.8 * rankMult(r))} cada), corroendo e deixando todos lentos.`, `Fires a homing virus that deals ${pct(2.5 * rankMult(r))} and jumps across up to 10 enemies (${pct(1.8 * rankMult(r))} each), corroding and slowing them all.`)),
+    apex('offFirewall', 84, L('Firewall Ofensivo', 'Offensive Firewall'), 'fwall', 50, 16, (r) => L(`Ergue uma muralha de dados de 8m onde você mira por 6s: bloqueia tiros inimigos e quem encostar sofre ${pct(1.3 * rankMult(r))} a cada 0,5s, é atordoado e empurrado.`, `Raises an 8m data wall where you aim for 6s: it blocks enemy shots, and anything touching it takes ${pct(1.3 * rankMult(r))} every 0.5s, is stunned and pushed back.`)),
+    apex('droneArmy', 92, L('Exército de Drones', 'Drone Army'), 'drones', 60, 24, (r) => L(`Lança 6 drones de combate que voam com você e atiram por 15s (${pct(0.8 * rankMult(r))} por tiro).`, `Launches 6 combat drones that fly with you and shoot for 15s (${pct(0.8 * rankMult(r))} per shot).`)),
+    apex('blackout', 100, L('Apagão Total', 'Total Blackout'), 'blackout', 85, 26, (r) => L(`Derruba a rede inteira em 14m: apaga todos os tiros inimigos, causa ${pct(5.0 * rankMult(r))} e atordoa os inimigos por 3s (menos em chefes).`, `Crashes the whole network within 14m: erases every enemy shot, deals ${pct(5.0 * rankMult(r))} and stuns enemies for 3s (less on bosses).`)),
+  ],
+  brawler: [
+    apex('tectonicRift', 76, L('Fenda Tectônica', 'Tectonic Rift'), 'tectonic', 45, 9, (r) => L(`Soca o chão e abre 3 fendas de 10m em leque: cada inimigo atingido sofre ${pct(3.5 * rankMult(r))} e fica atordoado.`, `Punches the ground and opens 3 cracks 10m long in a fan: every enemy hit takes ${pct(3.5 * rankMult(r))} and is stunned.`)),
+    apex('rocketHook', 84, L('Gancho Foguete', 'Rocket Hook'), 'hook', 45, 10, (r) => L(`Dispara um gancho de 12m que puxa todos os inimigos da linha até você (${pct(1.5 * rankMult(r))}) e emenda um soco em cone de ${pct(4.0 * rankMult(r))}.`, `Fires a 12m hook that drags every enemy in the line to you (${pct(1.5 * rankMult(r))}) and follows up with a cone punch dealing ${pct(4.0 * rankMult(r))}.`)),
+    apex('hundredFists', 92, L('Cem Socos', 'Hundred Fists'), 'hundred', 60, 16, (r) => L(`100 socos em 2,5s à sua frente (${pct(0.45 * rankMult(r))} cada) e um soco final de ${pct(5.0 * rankMult(r))}. Enquanto isso você recebe metade do dano.`, `100 punches in 2.5s in front of you (${pct(0.45 * rankMult(r))} each) and a final punch dealing ${pct(5.0 * rankMult(r))}. Meanwhile you take half damage.`)),
+    apex('heavenFist', 100, L('Punho do Céu', 'Fist of Heaven'), 'heaven', 85, 22, (r) => L(`Marca o chão onde você mira; 1s depois um punho gigante cai do céu causando ${pct(9.0 * rankMult(r))} em 5,5m e atordoando, e a onda de choque causa ${pct(2.0 * rankMult(r))} em 9m.`, `Marks the ground where you aim; 1s later a giant fist falls from the sky dealing ${pct(9.0 * rankMult(r))} within 5.5m and stunning, and the shockwave deals ${pct(2.0 * rankMult(r))} within 9m.`)),
   ],
 };
 for (const [id, list] of Object.entries(SUP_PASSIVES)) CLASSES[id].skills.push(...list);
@@ -2001,6 +2036,232 @@ Object.assign(SKILL_FN, {
       spawnHazard(t.x, t.z, 4, 4, 0, { faction: 'player', mult: 0.5 * rankMult(r), burn: 0.5, color: col, opacity: 0.4 });
       G.shake = Math.max(G.shake, 0.7);
       sfx.laser();
+    });
+    return true;
+  },
+});
+
+// punho gigante do Punho do Céu (geometria fundida em cache)
+const heavenFistGeo = () => merged('heavenFist', (b) => {
+  b(1.6, 1.3, 1.3, 0, 0, 0);
+  for (let k = 0; k < 4; k++) b(0.36, 0.5, 0.5, -0.57 + k * 0.38, -0.8, 0.25);
+  b(0.4, 0.8, 0.4, 0.95, -0.2, 0.3);
+  b(1.1, 1.6, 1.0, 0, 1.4, 0);
+});
+
+Object.assign(SKILL_FN, {
+  // Netrunner
+  chainVirus(p, r) {
+    const rm = rankMult(r);
+    const col = 0x39ff14;
+    // o vírus salta de inimigo em inimigo, um de cada vez
+    const spread = (from, hit, left) => {
+      if (left <= 0) return;
+      const n = nearestEnemy(from.x, from.z, 8, true, hit);
+      if (!n) return;
+      hit.add(n);
+      beamFx(from.x, (from.height || 1.6) * 0.6, from.z, n.x, n.height * 0.6, n.z, col, 0.3, 4);
+      hitEnemy(n, 1.8 * rm, { burn: 1.0, slow: 1.5, noProc: true });
+      burst(n.x, 1, n.z, col, 8, 3, 0.07, 0.4);
+      after(0.08, () => spread(n, hit, left - 1));
+    };
+    spawnProjectile({ from: 'player', x: p.x + p.aim.dx * 0.5, z: p.z + p.aim.dz * 0.5, y: 1.2, dx: p.aim.dx, dz: p.aim.dz, speed: 24, life: 0.8, mult: 2.5 * rm, color: col, size: 0.22, r: 0.32, homing: 6, burn: 1.0, slow: 1.5, onHit: (e) => {
+      spread(e, new Set([e]), 10);
+      sfx.zap();
+    } });
+    sfx.orb();
+    p.swing = 1;
+    return true;
+  },
+  offFirewall(p, r) {
+    const rm = rankMult(r);
+    const col = C_('netrunner');
+    const t = targetPoint(p, 7);
+    const nx = -p.aim.dz;
+    const nz = p.aim.dx;
+    const half = 4;
+    spawnBarrier(t.x, t.z, nx, nz, half, 6, col);
+    const x1 = t.x - nx * half;
+    const z1 = t.z - nz * half;
+    const x2 = t.x + nx * half;
+    const z2 = t.z + nz * half;
+    const kx = p.x;
+    const kz = p.z;
+    for (let k = 0; k < 12; k++) {
+      after(k * 0.5, () => {
+        for (const e of enemiesOnSegment(x1, z1, x2, z2, 1.0)) hitEnemy(e, 1.3 * rm, { stun: 0.4, knock: 2.5, kx, kz, noProc: k % 2 === 1 });
+        streakFx(x1, z1, x2, z2, col, 0.25, 0.35, 0.3);
+        burst(t.x + nx * rr(-half, half), rr(0.3, 2), t.z + nz * rr(-half, half), col, 4, 2, 0.06, 0.4, { up: 1 });
+      });
+    }
+    sfx.deploy();
+    sfx.zap();
+    p.swing = 1;
+    return true;
+  },
+  droneArmy(p, r) {
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      let x = p.x + Math.cos(a) * 1.3;
+      let z = p.z + Math.sin(a) * 1.3;
+      if (!isWalkable(G.dungeon, x, z)) {
+        x = p.x;
+        z = p.z;
+      }
+      after(k * 0.08, () => PW.spawnAlly('drone', x, z, { dur: 15, mult: 0.8 * rankMult(r) }));
+    }
+    sfx.deploy();
+    return true;
+  },
+  blackout(p, r) {
+    const rm = rankMult(r);
+    const col = C_('netrunner');
+    // apaga os tiros inimigos
+    for (const pr of G.projectiles) {
+      if (pr.from !== 'enemy' || !pr.alive) continue;
+      pr.alive = false;
+      burst(pr.mesh.position.x, pr.mesh.position.y, pr.mesh.position.z, col, 3, 2, 0.05, 0.3);
+    }
+    ringFx(p.x, p.z, 14, col, 0.8, { from: 0.5 });
+    ringFx(p.x, p.z, 14, 0xffffff, 0.5, { from: 0.5 });
+    burst(p.x, 1, p.z, col, 40, 10, 0.08, 0.7);
+    const x = p.x;
+    const z = p.z;
+    after(0.25, () => {
+      for (const e of enemiesInRadius(x, z, 14)) {
+        hitEnemy(e, 5.0 * rm, { stun: 3, knock: 1, kx: x, kz: z });
+        beamFx(e.x, 6, e.z, e.x, 0.2, e.z, col, 0.25, 4);
+        burst(e.x, e.height * 0.7, e.z, 0x000000, 6, 2, 0.12, 0.6);
+        burst(e.x, e.height * 0.7, e.z, col, 6, 3, 0.06, 0.4);
+      }
+      G.shake = Math.max(G.shake, 0.5);
+      sfx.zap();
+    });
+    sfx.nova();
+    return true;
+  },
+
+  // Punho de Aço
+  tectonicRift(p, r) {
+    const rm = rankMult(r);
+    const col = C_('brawler');
+    const base = angleOf(p.aim.dx, p.aim.dz);
+    const sx = p.x;
+    const sz = p.z;
+    const hit = new Set();
+    for (const off of [-0.4, 0, 0.4]) {
+      const dx = Math.cos(base + off);
+      const dz = Math.sin(base + off);
+      for (let k = 1; k <= 7; k++) {
+        const x = sx + dx * k * 1.45;
+        const z = sz + dz * k * 1.45;
+        if (!isWalkable(G.dungeon, x, z)) break;
+        after(k * 0.07, () => {
+          for (const e of enemiesInRadius(x, z, 1.5)) {
+            if (hit.has(e)) continue;
+            hit.add(e);
+            hitEnemy(e, 3.5 * rm, { stun: 1.2, knock: 2, kx: sx, kz: sz });
+          }
+          burst(x, 0.3, z, 0xb8915a, 8, 4, 0.13, 0.6, { up: 2 });
+          burst(x, 0.2, z, col, 5, 3, 0.07, 0.4, { up: 1 });
+          ringFx(x, z, 1.2, col, 0.3);
+        });
+      }
+    }
+    ringFx(sx, sz, 2, col, 0.4);
+    G.shake = Math.max(G.shake, 0.5);
+    sfx.punchHeavy();
+    sfx.explode();
+    p.swing = 1;
+    return true;
+  },
+  rocketHook(p, r) {
+    const rm = rankMult(r);
+    const col = C_('brawler');
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    let len = 0;
+    while (len < 12 && isWalkable(G.dungeon, p.x + dx * (len + 0.25), p.z + dz * (len + 0.25))) len += 0.25;
+    const ex = p.x + dx * len;
+    const ez = p.z + dz * len;
+    streakFx(p.x, p.z, ex, ez, 0xffffff, 0.08, 0.5);
+    streakFx(p.x, p.z, ex, ez, col, 0.3, 0.4);
+    burst(ex, 1, ez, col, 14, 4, 0.08, 0.4);
+    for (const e of enemiesOnSegment(p.x, p.z, ex, ez, 1.3)) {
+      const d = Math.hypot(e.x - p.x, e.z - p.z);
+      // puxa: o empurrão vem de um ponto atrás do inimigo
+      hitEnemy(e, 1.5 * rm, { knock: Math.min(12, Math.max(0, d - 1.4) * 1.6), kx: e.x + dx * 2, kz: e.z + dz * 2, stun: 0.8, noProc: true });
+    }
+    sfx.dash();
+    sfx.zap();
+    p.swing = 1;
+    after(0.4, () => {
+      const pl = G.player;
+      if (!pl || !pl.alive) return;
+      coneBlast(pl, 3.8, Math.PI * 0.6, 4.0 * rm, col, { knock: 7, stun: 1 });
+      ringFx(pl.x + pl.aim.dx * 1.5, pl.z + pl.aim.dz * 1.5, 1.8, col, 0.35);
+      G.shake = Math.max(G.shake, 0.4);
+      sfx.punchHeavy();
+    });
+    return true;
+  },
+  hundredFists(p, r) {
+    const rm = rankMult(r);
+    const col = C_('brawler');
+    guard(p, 2.6, 0.5, col);
+    for (let k = 0; k <= 100; k++) {
+      after(k * 0.025, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const last = k === 100;
+        const range = last ? 3 : 2.5;
+        for (const e of enemiesInCone(pl.x, pl.z, pl.aim.dx, pl.aim.dz, range, Math.PI * 0.55)) hitEnemy(e, (last ? 5.0 : 0.45) * rm, { knock: last ? 9 : 0.15, stun: last ? 1 : 0, noProc: !last && k % 5 !== 0, quiet: !last });
+        if (k % 2 === 0) burst(pl.x + pl.aim.dx * 1.2 + rr(-0.6, 0.6), 0.9 + rr(-0.4, 0.4), pl.z + pl.aim.dz * 1.2 + rr(-0.6, 0.6), k % 4 ? col : 0xffffff, last ? 20 : 3, 3, 0.06, 0.2);
+        pl.swing = 1;
+        pl.hand = 1 - pl.hand;
+        if (last) {
+          ringFx(pl.x + pl.aim.dx * 1.4, pl.z + pl.aim.dz * 1.4, 2, col, 0.35);
+          G.shake = Math.max(G.shake, 0.45);
+          sfx.punchHeavy();
+        } else if (k % 3 === 0) sfx.punch();
+      });
+    }
+    return true;
+  },
+  heavenFist(p, r) {
+    const rm = rankMult(r);
+    const col = C_('brawler');
+    const t = targetPoint(p, 10);
+    telegraphFx(t.x, t.z, 5.5, 1.0, col);
+    sfx.telegraph();
+    p.swing = 1;
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffb060, emissive: new THREE.Color(col).multiplyScalar(gk(0.7)), transparent: true, opacity: 0.9 });
+    const fist = new THREE.Mesh(heavenFistGeo(), mat);
+    fist.position.set(t.x, 13, t.z);
+    fist.scale.setScalar(1.2);
+    fist.rotation.y = -angleOf(p.aim.dx, p.aim.dz) + Math.PI / 2;
+    tempMesh(fist, 1.6, (e, k) => {
+      const tt = k * 1.6;
+      if (tt < 1) {
+        fist.position.y = 13 - 11.5 * tt * tt;
+        if (Math.random() < 0.6) burst(t.x + rr(-1, 1), fist.position.y + 2, t.z + rr(-1, 1), col, 2, 1, 0.1, 0.4, { grav: 0 });
+      }
+      else {
+        fist.position.y = 1.5;
+        mat.opacity = 0.9 * Math.max(0, 1 - (tt - 1) / 0.6);
+      }
+    });
+    after(1.0, () => {
+      if (!G.player || !G.player.alive) return;
+      explosion(t.x, t.z, 5.5, 9.0 * rm, { color: col, stun: 2, knock: 10 });
+      ringFx(t.x, t.z, 6, 0xffffff, 0.5, { from: 1 });
+      burst(t.x, 0.4, t.z, 0xb8915a, 40, 8, 0.15, 0.9, { up: 3 });
+      G.shake = Math.max(G.shake, 0.8);
+      sfx.punchHeavy();
+      after(0.25, () => {
+        for (const e of enemiesInRadius(t.x, t.z, 9)) hitEnemy(e, 2.0 * rm, { knock: 6, kx: t.x, kz: t.z, noProc: true, quiet: true });
+        ringFx(t.x, t.z, 9, col, 0.6, { from: 4 });
+      });
     });
     return true;
   },
