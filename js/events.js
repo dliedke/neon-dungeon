@@ -389,7 +389,8 @@ const lights = {
     const rmat = lightMat(0xff4466, 1.2);
     put(g, mats().ring, rmat, rx, 0.03, rz, 0.45, 1, 0.45);
     put(g, mats().disc, flatMat(0xff4466, 0.15), rx, 0.025, rz, 0.4, 1, 0.4);
-    const E = { kind: 'lights', x: s.x, z: s.z, g, bits, init: bits.slice(), plates, reset: { x: s.x + rx, z: s.z + rz }, st: 'play', last: -1, hinted: false };
+    const hint = put(g, mats().ring, lightMat(0xffd23d, 1.6), 0, 0.13, 0, 0.78, 1, 0.78);
+    const E = { kind: 'lights', x: s.x, z: s.z, g, bits, init: bits.slice(), plates, hint, reset: { x: s.x + rx, z: s.z + rz }, st: 'play', last: -1, hinted: false };
     lights.paint(E);
     return E;
   },
@@ -405,6 +406,33 @@ const lights = {
   paint(E) {
     const on = glowMat(E.st === 'done' ? 0x39ff88 : 0x7affc8, 1.3);
     E.plates.forEach((pl, k) => (pl.m.material = E.bits[k] ? on : mats().plateOff));
+    // Só nove placas: procura a solução com menos passos quando o tabuleiro muda.
+    let best = 0;
+    let count = 10;
+    if (E.st === 'play') for (let mask = 1; mask < 512; mask++) {
+      const bits = E.bits.slice();
+      let n = 0;
+      for (let k = 0; k < 9; k++) if (mask & (1 << k)) {
+        lights.toggle(bits, k);
+        n++;
+      }
+      if (n < count && bits.every((b) => b)) {
+        best = mask;
+        count = n;
+      }
+    }
+    E.hint.visible = best !== 0;
+    if (best) {
+      // Prefere a placa mais próxima para reduzir travessias sobre as outras.
+      let next = -1;
+      let dist = Infinity;
+      for (let k = 0; k < 9; k++) if (best & (1 << k)) {
+        const pl = E.plates[k];
+        const d = G.player ? Math.hypot(pl.x - G.player.x, pl.z - G.player.z) : k;
+        if (d < dist) { next = k; dist = d; }
+      }
+      E.hint.position.set(E.plates[next].x - E.x, 0.13, E.plates[next].z - E.z);
+    }
   },
   under(E) {
     const p = G.player;
@@ -417,7 +445,7 @@ const lights = {
     if (E.st !== 'play') return;
     if (!E.hinted && near(E, 5.5)) {
       E.hinted = true;
-      toast(L('💡 Pise nas placas: cada uma <b>inverte ela e as vizinhas</b>. Acenda as 9! (dá para andar entre elas; a placa vermelha recomeça)', '💡 Step on the plates: each one <b>flips itself and its neighbors</b>. Light all 9! (you can walk between them; the red pad resets)'), 'leg', 'ev');
+      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. <b>O anel dourado indica o próximo passo.</b> Ande pelos espaços entre as placas; o círculo vermelho recomeça.', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. <b>The gold ring shows your next step.</b> Walk through the gaps between plates; the red circle resets.'), 'leg', 'ev');
     }
     const k = lights.under(E);
     if (k === E.last) return;
@@ -441,14 +469,14 @@ const lights = {
       complete(E, 1.1, L('PISO ACESO!', 'FLOOR LIT!'), L('Um cofre especial apareceu', 'A special cache appeared'), E.x, E.z, { extra: true });
     }
   },
-  hud: (E) => `${E.bits.filter((b) => b).length}/9`,
+  hud: (E) => `${E.bits.filter((b) => b).length}/9${near(E, 6) ? L(' · siga o dourado', ' · follow gold') : ''}`,
   save: (E) => ({ bits: E.bits.join('') }),
   load(E, s) {
     if (typeof s.bits === 'string' && s.bits.length === 9) E.bits = s.bits.split('').map(Number);
     if (s.st === 'done') E.st = 'done';
     lights.paint(E);
   },
-  intro: () => L('acenda as 9 placas do piso (marcado no mapa) por um cofre especial.', 'light all 9 floor plates (marked on the map) for a special cache.'),
+  intro: () => L('acenda as 9 placas por um cofre especial. O anel dourado indica a próxima placa; ande pelos espaços entre elas.', 'light all 9 plates for a special cache. The gold ring marks the next plate; walk through the gaps between them.'),
 };
 
 // ==================================================================
