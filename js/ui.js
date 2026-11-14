@@ -294,7 +294,8 @@ export function renderClassCards() {
     const C = CLASSES[id];
     const save = G.save.slots[id];
     const card = document.createElement('div');
-    card.className = 'ccard';
+    const lastPlayed = !!save && G.settings.lastClass === id;
+    card.className = lastPlayed ? 'ccard last-played' : 'ccard';
     card.style.setProperty('--c', C.css);
     card.innerHTML = `
       <div class="cname">${C.name.toUpperCase()}</div>
@@ -302,6 +303,7 @@ export function renderClassCards() {
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
       <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + ((save.bestTier | 0) > MAX_TIER ? ` · <span class="nowrap" style="color:#ffd23d" title="${L('Venceu o Inferno: final verdadeiro', 'Beat the Inferno: true ending')}">👑 ${L('Lenda', 'Legend')}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') : L('Novo personagem', 'New character')}</div>
+      ${lastPlayed ? `<div class="clast">● ${L('Última jogada', 'Last played')}</div>` : ''}
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
         ${save ? `<button class="btn ghost" data-nav data-new="${id}" title="${L('Recomeçar do zero', 'Start over')}">${L('Novo', 'New')}</button>` : ''}

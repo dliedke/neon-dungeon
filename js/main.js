@@ -527,6 +527,8 @@ export function startGame(cls, fresh) {
   showHUD();
   G.mode = 'play';
   if (fresh || !resumeFloor(G.char)) startFloor(G.char.floor || 1);
+  G.settings.lastClass = cls;
+  saveSettings();
   if (G.char.level === 1 && G.char.kills === 0) {
     setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} {RT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} {RT} powers')) : L('Clique para mover/atacar · 1–7 poderes · F stim · I inventário', 'Click to move/attack · 1–7 powers · F stim · I inventory')), 2800);
   }
