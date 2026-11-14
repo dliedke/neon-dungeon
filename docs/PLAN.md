@@ -109,23 +109,39 @@ Antes (`loot.js` `SHRINES`): 11 buffs de números, 30s, 2–3 por andar.
 - [x] Timbres novos em `LEADS` (`pulse`, `pluck`, com `fe`/`fd` próprios) e `BASSES` (`saw`, `tri`, `reese`); músicas antigas inalteradas.
 - [x] Volume igualado renderizando offline (RMS ~0,075–0,08); seletor nas Opções mostra as 7; README, AGENTS e `docs/CONTENT.md`.
 
-## Fase 6 — 10 eventos novos, ~5 por andar
+## Fase 6 — 10 eventos novos, ~5 por andar (PRÓXIMA — nada implementado ainda)
 
-`events.js` `setupEvents`: `want = boss || !free.length ? 0 : roll ? 2 : 1` de `MAIN_EVENTS` (`KIND[k].setup(d, floor, free)`), mais 1 evento pequeno (sala secreta ou caça-níquel 30%). `isolateRandom` mantém a semente (continuar o andar refaz igual), `lastMain` evita repetir.
-- [ ] 10 eventos novos em `KIND`/`MAIN_EVENTS` (curtos, 30–90s, cada um com recompensa e som):
-  1. Corrida de Checkpoints (anéis de neon com tempo).
-  2. Horda (sobreviva a ondas por 45s numa arena marcada).
-  3. Caça ao Tesouro (sinal quente/frio até um baú enterrado).
-  4. Chuva de Meteoros (desvie das sombras e pegue os cristais).
-  5. Hacker de Torres (capture 3 torres antes dos inimigos).
-  6. Caixa de Pandora (abrir = recompensa ou maldição).
-  7. Elite Fugitivo (um elite rico foge; pegue antes de escapar).
-  8. Duelo de Espelho (uma cópia sombria sua).
-  9. Pinball de Bombas (empurre bombas até os alvos).
-  10. Chuva de Créditos (créditos caindo por 20s).
-- [ ] `setupEvents`: ~5 eventos por andar normal (4–6 conforme salas livres), 0 em andar de chefe; sem repetir no mesmo andar.
-- [ ] Toque, controle e teclado em todos (eventos usam encostar/atacar, sem botão novo); textos bilíngues.
-- [ ] Medalhas (contadores de eventos) se fizer sentido; README (tabela de eventos).
+Estado: Fases 1–5 no ar (último commit das músicas: c2972c9). A Fase 6 só tem o desenho abaixo; `js/events.js` ainda não foi mexido.
+
+### Ideias trocadas (já existiam parecidas)
+Da lista original, 4 ideias repetiam eventos que já existem: Corrida de Checkpoints = `relay` (Circuito Neon), Caça ao Tesouro = `signal` (Sinal Perdido, quente/frio), Horda e Hacker de Torres ≈ `upload` (ficar no círculo com ondas), Elite Fugitivo = inimigo `thief` (Ladrão de Dados, já foge). Lista final (chave em `KIND`/`MAIN_EVENTS`, só acrescentar no fim):
+
+1. `meteor` — **Chuva de Meteoros / Meteor Shower**: pisar no círculo (raio ~6) começa 25s de meteoros com sombra avisando (`telegraphFx`); cada meteoro deixa um cristal; pegue 12 (andar por cima). Prêmio parcial pelos cristais. Dano do meteoro: helper `eventHurt(frac)` (% da vida máx., nunca mata, respeita `p.invuln`, como a bomba faz).
+2. `vault` — **Cofre Rachado / Cracked Vault** ("chuva de créditos"): cofre dourado; o 1º golpe abre 15s; cada golpe (máx. ~5/s) espirra moedas (`spawnPickup('credits', x, z, { amount })`, ímã de 3m já existe). Total ≈ `eventCredits(2)`. Implementar com inimigo `pylon` (static, dmg 0) com vida enorme e modelo escondido + malha própria do cofre; contar golpes pela queda de `e.hp` no update; no fim `e.alive = false; e.selfDestruct = true; onEnemyKilled(e)` (sem XP). Conferir se pylon vivo atrapalha o "andar limpo" (`run.js`).
+3. `arena` — **Arena de Gladiadores / Gladiator Arena**: anel no chão; entrar começa 3 ondas (`spawnWave`) dentro do anel e um campeão elite no fim; vencer = matar todas (diferente do upload, que é por tempo). `busy` enquanto ativo.
+4. `pandora` — **Caixa de Pandora / Pandora's Box**: encostar abre: ~60% tesouro (créditos + `dropLoot` de baú), ~40% maldição (emboscada de elites + aviso; vencer dá prêmio dobrado). Sempre vale a pena, mas com risco.
+5. `shell` — **Jogo dos Baús / Shell Game**: 3 baús; mostra onde está o prêmio, fecha e embaralha (troca de posições animada, cada vez mais rápido); encoste no certo = prêmio grande; errado = mímico (inimigo) e prêmio menor.
+6. `mirror` — **Duelo de Espelho / Mirror Duel**: cópia sombria da sua classe (`makePlayerModel(G.char.cls, …)` escurecido). Precisa de `o.model` em `spawnEnemy` (`const model = o.model || makeEnemyModel(...)`), base num tipo humanoide `ai: 'melee'` (ex.: `bladeknight`) para `animWalk` funcionar; vida ~6× elite; avanço com aviso a cada ~4s e onda de choque abaixo de 50%.
+7. `ball` — **Bola de Plasma / Plasma Ball**: bola que você empurra andando nela (e golpes chutam); quica nas paredes (`isWalkable`), fere inimigos no caminho; faça 3 gols no anel-alvo em 75s (volta ao centro depois de cada gol).
+8. `watcher` — **Olho Vigia / Watcher's Eye**: "batatinha frita 1-2-3": olho gigante alterna verde/vermelho (aviso amarelo antes); se você se mexer no vermelho (delta de `p.x/p.z`), leva choque e é empurrado para trás; chegue até o olho e encoste.
+9. `race` — **Corrida Fantasma / Ghost Race**: plataforma de largada; contagem 3-2-1; um corredor fantasma (modelo de jogador translúcido, materiais clonados) segue `findPath(d, sx, sz, tx, tz)` até a chegada; chegue antes dele (Teleporte vale).
+10. `spinner` — **Laser Giratório / Laser Spinner**: 2 feixes girando a partir do centro de uma arena; chegue ao centro e fique 2s; tocar no feixe = `eventHurt` + empurrão (distância ponto–segmento).
+
+### Regras de implementação
+- `setupEvents`: hoje `want = boss || !free.length ? 0 : roll ? 2 : 1`; passar para 4–6 conforme salas livres (0 em andar de chefe), mantendo **o mesmo número de sorteios** com ou sem andar salvo (`forcedMain`, `isolateRandom` por evento, `shuffle` da lista inteira) e `lastMain` (não repetir do andar anterior). Setup só com `rr/ri/pick/chance/shuffle` (semente); runtime pode usar `Math.random`.
+- Com 5 eventos os avisos de começo (`announceEvents`, 4,3s cada) viram spam: mostrar 1 toast-resumo com ícones/nomes + intro detalhada só dos eventos sem posição (`E.x == null`: bomba, procurado, fragmentos, circuito, servidores) e do sinal; os com posição mostram a intro ao chegar perto (~9m, flag `E.told`). A bomba precisa continuar recebendo `E.delay`.
+- Cada evento: `setup/update/hud/save/load/intro` (+ `busy`, `kill` se precisar), entrada em `EVENT_INFO` (ícone, cor, nome bilíngue, `short`), marca no minimapa (`drawEventMarks`; o `else` padrão já desenha quadrado+losango para eventos com `E.x`), seta (`eventArrows`) se for preciso, prêmio por `complete(E, mult, título, sub, x, z, o)`, falha por `failed(E, msg)`.
+- Só andar/encostar/atacar (sem botão novo): funciona em teclado, controle e toque. Textos com `L('pt','en')`.
+- Medalha que conta tipos de evento (`achMark('evDone', kind)` em `ach.js`): conferir a meta; medalhas novas sugeridas: "Festival" (5 eventos num andar) e uma por evento marcante (ex.: 3 gols, vencer o espelho).
+- Docs: README (tabela/lista de eventos), cabeçalho de `events.js`, `docs/CONTENT.md` (receita de evento), `docs/ARCHITECTURE.md`.
+- Teste: `__dbg.startFloor(n)` várias vezes contando `G.events.length` e tipos; forçar cada evento (chamar `KIND[k].setup` não é exportado — exportar um helper de debug ou usar `eventsResume({ ev: [{ k }] })` antes do `startFloor`); salvar/continuar o andar refaz igual.
+
+### Referências de código levantadas
+- `spawnEnemy(type, x, z, { elite, anomaly, decoy })` em `enemies.js:331`; `onEnemyKilled` exportado; `pylon` = estático, dmg 0, `ai: 'pylon'`.
+- `damagePlayer(amount)`, `explosion(x, z, r, mult, o)`, `enemyExplosion`, `after(t, fn)` em `combat.js`.
+- `telegraphFx(x, z, r, dur, color)`, `ghostFx(model, color)`, `beamFx`, `ringFx`, `burst`, `floatText` em `fx.js`.
+- `findPath(d, sx, sz, tx, tz)`, `routeTime(d, x, z, pts, each)`, `lineOfSight`, `isWalkable` em `dungeon.js`.
+- `animWalk(m, phase, moving)` e `makePlayerModel(cls, accent)` em `models.js` (o Prisioneiro já usa).
 
 ---
 
