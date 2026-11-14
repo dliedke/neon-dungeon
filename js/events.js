@@ -390,7 +390,7 @@ const lights = {
     put(g, mats().ring, rmat, rx, 0.03, rz, 0.45, 1, 0.45);
     put(g, mats().disc, flatMat(0xff4466, 0.15), rx, 0.025, rz, 0.4, 1, 0.4);
     const hint = put(g, mats().ring, lightMat(0xffd23d, 1.6), 0, 0.13, 0, 0.78, 1, 0.78);
-    const E = { kind: 'lights', x: s.x, z: s.z, g, bits, init: bits.slice(), plates, hint, reset: { x: s.x + rx, z: s.z + rz }, st: 'play', last: -1, hinted: false };
+    const E = { kind: 'lights', x: s.x, z: s.z, g, bits, init: bits.slice(), plates, hint, hintWait: 0, hintLeft: 0, reset: { x: s.x + rx, z: s.z + rz }, st: 'play', last: -1, hinted: false };
     lights.paint(E);
     return E;
   },
@@ -406,7 +406,12 @@ const lights = {
   paint(E) {
     const on = glowMat(E.st === 'done' ? 0x39ff88 : 0x7affc8, 1.3);
     E.plates.forEach((pl, k) => (pl.m.material = E.bits[k] ? on : mats().plateOff));
-    // Só nove placas: procura a solução com menos passos quando o tabuleiro muda.
+    if (E.hint.visible) E.hintWait = 0;
+    E.hint.visible = false;
+    E.hintLeft = 0;
+  },
+  showHint(E) {
+    // Só nove placas: procura a solução com menos passos apenas ao oferecer uma dica.
     let best = 0;
     let count = 10;
     if (E.st === 'play') for (let mask = 1; mask < 512; mask++) {
@@ -422,6 +427,7 @@ const lights = {
       }
     }
     E.hint.visible = best !== 0;
+    E.hintLeft = best ? 5 : 0;
     if (best) {
       // Prefere a placa mais próxima para reduzir travessias sobre as outras.
       let next = -1;
@@ -441,11 +447,25 @@ const lights = {
     if (Math.hypot(p.x - E.reset.x, p.z - E.reset.z) < 0.5) return 9;
     return -1;
   },
-  update(E) {
+  update(E, dt) {
     if (E.st !== 'play') return;
+    // Conta só o tempo perto do quebra-cabeça; uma dica não revela a sequência toda.
+    if (!G.player.alive || !near(E, 5.5)) {
+      E.hintWait = E.hintLeft = 0;
+      E.hint.visible = false;
+    } else if (E.hintLeft > 0) {
+      E.hintLeft = Math.max(0, E.hintLeft - dt);
+      if (!E.hintLeft) E.hint.visible = false;
+    } else {
+      E.hintWait += dt;
+      if (E.hintWait >= 30) {
+        E.hintWait = 0;
+        lights.showHint(E);
+      }
+    }
     if (!E.hinted && near(E, 5.5)) {
       E.hinted = true;
-      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. <b>O anel dourado indica o próximo passo.</b> Ande pelos espaços entre as placas; o círculo vermelho recomeça.', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. <b>The gold ring shows your next step.</b> Walk through the gaps between plates; the red circle resets.'), 'leg', 'ev');
+      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. Ande pelos espaços entre as placas; o círculo vermelho recomeça. <b>Se demorar, um anel dourado dará uma dica breve.</b>', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. Walk through the gaps between plates; the red circle resets. <b>If you get stuck, a gold ring will offer a brief hint.</b>'), 'leg', 'ev');
     }
     const k = lights.under(E);
     if (k === E.last) return;
@@ -453,6 +473,7 @@ const lights = {
     if (k < 0) return;
     if (k === 9) {
       E.bits = E.init.slice();
+      E.hintWait = 0;
       lights.paint(E);
       sfx.deny();
       floatText(E.reset.x, 1.6, E.reset.z, L('RECOMEÇAR', 'RESET'), 'shield');
@@ -469,14 +490,15 @@ const lights = {
       complete(E, 1.1, L('PISO ACESO!', 'FLOOR LIT!'), L('Um cofre especial apareceu', 'A special cache appeared'), E.x, E.z, { extra: true });
     }
   },
-  hud: (E) => `${E.bits.filter((b) => b).length}/9${near(E, 6) ? L(' · siga o dourado', ' · follow gold') : ''}`,
+  hud: (E) => `${E.bits.filter((b) => b).length}/9${E.hint.visible ? L(' · dica: anel dourado', ' · hint: gold ring') : ''}`,
   save: (E) => ({ bits: E.bits.join('') }),
   load(E, s) {
     if (typeof s.bits === 'string' && s.bits.length === 9) E.bits = s.bits.split('').map(Number);
     if (s.st === 'done') E.st = 'done';
+    E.hintWait = 0;
     lights.paint(E);
   },
-  intro: () => L('acenda as 9 placas por um cofre especial. O anel dourado indica a próxima placa; ande pelos espaços entre elas.', 'light all 9 plates for a special cache. The gold ring marks the next plate; walk through the gaps between them.'),
+  intro: () => L('acenda as 9 placas por um cofre especial. Ande pelos espaços entre elas; se demorar, aparece uma dica breve em dourado.', 'light all 9 plates for a special cache. Walk through the gaps between them; if you get stuck, a brief gold hint appears.'),
 };
 
 // ==================================================================
