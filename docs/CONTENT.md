@@ -211,12 +211,14 @@ Add a method to `sfx` in `js/audio.js` built from `tone({ type, f, f2, dur, vol 
 
 ## Song
 
-Add an entry to `SONGS` in `js/music.js`. Copy an existing song and change it:
+Append an entry to the end of `SONGS` in `js/music.js` (never insert or reorder: `G.settings.track` stores the index). Copy an existing song and change it:
 
 - `name: [pt, en]`, `bpm`, `prog` (named chord progressions, one chord per bar: `'Am F C G'`).
 - Step patterns of 16 sixteenths: `kick`, `snare`, `hat` (`x` hit, `o` open hat), `bass` (`r` root, `o` octave, `f` fifth, `t` third, `-` hold, `.` rest), `arp` (indices into the chord notes).
 - `mel`: melodies per section in eighth notes (`a4`, `c#5`, `-` hold, `.` rest, `|` separates bars; whole bars only).
 - `secs`: the arrangement, `[section, bars, layers]`, where layers are letters: `p` pad, `a` arp, `k` kick, `s` snare, `h` hat, `b` bass, `l` lead, `c` crash at start, `r` riser at end.
+- Timbres and options: `lead` (`saw`, `square`, `pulse` 8-bit, `pluck`, `bell`; leads live in `LEADS`), `bassType` (`saw` default, `tri` chip, `reese`; in `BASSES`), `bassOct`, `bassGate`, `bassCut`, `chip: true` (8-bit kick and snare), `clap`, `arpOct`, `arpCut`, `arpDly`, `padCut`, `leadCut`, `pump` (sidechain), `swing`, `glide`, `hatVol`, `gain`.
+- Match the loudness: render it in an `OfflineAudioContext` (`createMusic(ctx, ctx.destination, { intensity: () => 1 })`, `start(i, 0)`, `tick(secs)`) and tune `gain` until the RMS is close to the other songs (about 0.075–0.08).
 
 The options track picker and shuffle pick it up automatically (`trackNames()`). Update the song count in README. Listen to the whole song; a bad note name or an incomplete bar throws an error.
 

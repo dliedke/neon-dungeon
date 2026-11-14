@@ -9,7 +9,7 @@ Pedidos do usuário:
 3. Uma raridade nova acima do divino, rara mas alcançável. → **Fase 3 (Primordial)**
 4. Árvore de habilidades com mais 4 passivos e 4 ataques novos para todas as 10 classes. → **Fase 7**
 5. Santuários mais divertidos (super velocidade, superpoderes, superteleporte...). → **Fase 4**
-6. Duas músicas novas, sons mais variados. → **Fase 5**
+6. Duas músicas novas, sons mais variados. → **Fase 5 (concluída)**
 7. 10 eventos novos e uns 5 eventos por andar. → **Fase 6**
 
 ---
@@ -102,13 +102,12 @@ Antes (`loot.js` `SHRINES`): 11 buffs de números, 30s, 2–3 por andar.
 - [x] Medalhas "Super-Herói" (usar os 6 especiais) e "Supremo" (usar um Supremo): 155 medalhas.
 - [x] Docs: README, `docs/CONTENT.md`, `docs/ARCHITECTURE.md`.
 
-## Fase 5 — 2 músicas novas
+## Fase 5 — 2 músicas novas (concluída)
 
-`music.js` `SONGS` (5 músicas; formato `{name, bpm, prog:{A,B}, kick, snare, hat, bass, arp, arpOct, lead, mel:{A,B}, secs, ...}`); `ANTHEM_I = SONGS.length` e `audio.js` usa `G.settings.track` como índice, então **só acrescentar no fim** e conferir os usos de `ANTHEM_I`/`trackNames`.
-- [ ] Música 6: estilo diferente das atuais (ex.: synthwave lento/sombrio ~92 bpm, ou drum & bass ~172 bpm).
-- [ ] Música 7: outro estilo (ex.: chiptune/arcade rápido, ou industrial pesado).
-- [ ] Novos timbres se precisar (ex.: `lead: 'pluck'`, `bass: 'reese'`), sem quebrar as músicas antigas.
-- [ ] Seletor de música nas Opções mostra as 7; README (trilha sonora).
+- [x] Música 6 "Fliperama Fantasma / Ghost Arcade": chiptune 144 bpm em Mi maior, lead `pulse` (onda de pulso 25% via `createPeriodicWave`), baixo `tri` em oitavas (`bassOct: 12`), bateria de 8 bits (`chip: true`: `chipKick`/`chipSnare`), arpejo rápido de 3 notas.
+- [x] Música 7 "Velocidade Terminal / Terminal Velocity": drum & bass 174 bpm em Sol menor, bateria quebrada (bumbo 1 e 3½, caixa 2 e 4), baixo `reese` (serras desafinadas ±20 cents + sub), lead `pluck` com eco.
+- [x] Timbres novos em `LEADS` (`pulse`, `pluck`, com `fe`/`fd` próprios) e `BASSES` (`saw`, `tri`, `reese`); músicas antigas inalteradas.
+- [x] Volume igualado renderizando offline (RMS ~0,075–0,08); seletor nas Opções mostra as 7; README, AGENTS e `docs/CONTENT.md`.
 
 ## Fase 6 — 10 eventos novos, ~5 por andar
 

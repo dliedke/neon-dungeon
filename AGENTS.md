@@ -89,7 +89,7 @@ Module map (`js/`):
 | `models.js` | Low-poly models built from primitives (`makePlayerModel`, `makeEnemyModel`, `glowMat`, merged geometry cache). |
 | `fx.js` | Particles, rings, beams, floating numbers. |
 | `audio.js` | WebAudio sound effects (`sfx.*`) and music playback. |
-| `music.js` | The 5 soundtrack songs and the synth/sequencer. Imports nothing, so it also runs in an `OfflineAudioContext`. |
+| `music.js` | The 7 soundtrack songs and the synth/sequencer. Imports nothing, so it also runs in an `OfflineAudioContext`. |
 | `input.js` | Unified keyboard/mouse, gamepad and touch input (`Input`). |
 | `padglyphs.js` | Gamepad model detection (Xbox / PlayStation / Switch) and button glyphs (`padText`). |
 | `ui.js` | Menus, HUD, inventory, skill tree, shop, forge, minimap, medals screen, gamepad menu navigation. |

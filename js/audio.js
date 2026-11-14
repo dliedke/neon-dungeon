@@ -320,7 +320,7 @@ export const sfx = {
 };
 
 // ---------------- Música ----------------
-// 5 músicas em js/music.js; tocam em ordem aleatória (ou a escolhida nas opções)
+// 7 músicas em js/music.js; tocam em ordem aleatória (ou a escolhida nas opções)
 let music = null;
 
 function trackChoice() {

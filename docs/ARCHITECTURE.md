@@ -286,7 +286,7 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
 
 - `initAudio()` creates the `AudioContext` on the first user gesture, with `sfxBus` and `musBus` gains (`applyVolumes`).
 - `sfx.name()` functions build each sound from `tone({ type, f, f2, dur, vol })` and `noise({ dur, vol, type, f, f2, q })`. `throttle(key, ms)` stops floods of the same sound.
-- `music.js` `SONGS` describes each song as data: `bpm`, chord progressions `prog`, drum and bass step patterns, `arp`, `lead` timbre, `mel` melodies (eighth notes, `-` hold, `.` rest) and `secs` (arrangement sections with active layers). `createMusic(ctx, dest, opts)` schedules it. Drums and bass come in during fights.
+- `music.js` `SONGS` describes each song as data: `bpm`, chord progressions `prog`, drum and bass step patterns, `arp`, `lead` timbre (`LEADS`) and `bassType` (`BASSES`), `chip` 8-bit drums, `mel` melodies (eighth notes, `-` hold, `.` rest) and `secs` (arrangement sections with active layers). `createMusic(ctx, dest, opts)` schedules it. Drums and bass come in during fights.
 - `applyTrack()` follows `G.settings.track` (`'shuffle'` or a song index).
 - `ANTHEM` (Neon Dawn) is an extra song outside `SONGS`, so it never enters the shuffle or the track option. `playAnthem(true)` fixes it during the true ending; `playAnthem(false)` (the ending-screen buttons) returns to the previous track setting.
 
