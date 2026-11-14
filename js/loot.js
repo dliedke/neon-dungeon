@@ -25,14 +25,14 @@ function mythChance(o, find) {
   const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief || o.beast ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
   return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1) * rewardK('loot');
 }
-// Chance de um item virar divino (acima do mítico): só no Apocalipse e na Morte, ou no Pesadelo/Inferno
-// a partir do Brutal. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
+// Chance de um item virar divino (acima do mítico): do Caos para cima (no Caos, metade do Apocalipse),
+// ou no Pesadelo/Inferno a partir do Brutal. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
 // No Abismo sobe +10% da chance da Morte por nível (Abismo X: o dobro da Morte).
 function divChance(o, find) {
   const t = G.char.tier | 0;
   const dr = Math.floor(rewardRank() + 1e-6);
-  const k = dr >= 8 ? 1.5 * (1 + 0.1 * (dr - 8)) : dr >= 7 ? 1 : t < 1 ? 0 : dr >= 6 ? 0.6 : dr >= 5 ? 0.5 : dr >= 4 ? 0.4 : 0;
-  if (!k || effFloor() < 10) return 0;
+  const k = dr >= 8 ? 3 * (1 + 0.1 * (dr - 8)) : dr >= 7 ? 2 : t < 1 ? (dr >= 6 ? 0.6 : 0) : dr >= 6 ? 1.2 : dr >= 5 ? 1 : dr >= 4 ? 0.8 : 0;
+  if (!k || effFloor() < 8) return 0;
   const base = o.boss ? 0.02 : o.rift ? 0.015 : o.thief || o.beast ? 0.0125 : o.contract ? 0.0075 : o.chest ? 0.004 : o.elite ? 0.002 : 0.0003;
   return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }

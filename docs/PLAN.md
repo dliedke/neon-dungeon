@@ -35,14 +35,16 @@ Falta:
 
 ---
 
-## Fase 2 — Divinos mais frequentes
+## Fase 2 — Divinos mais frequentes (concluída)
 
 Hoje (`loot.js`, `divChance`): só a partir do andar efetivo 10; `k` = Morte 1.5 (Abismo +10%/nível), Apocalipse 1, Caos/Insano/Brutal no Pesadelo/Inferno 0.6/0.5/0.4; base por fonte: chefe 2%, fenda 1.5%, ladrão/fera 1.25%, contrato 0.75%, baú 0.4%, elite 0.2%, comum 0.03%.
 
-- [ ] Dobrar o `k` de todas as faixas (Morte 3, Apocalipse 2, 1.2/1.0/0.8 no tier) e liberar o Brutal+ no tier 0 com `k` pequeno (0.3/0.4/0.5)? Combinar com o usuário só se ficar em dúvida; senão: dobrar e abrir o Caos (k 0.5) no tier 0.
-- [ ] Caça-níquel (`events.js` ~1267): divino de 2.5% → 5% no prêmio máximo.
-- [ ] Baixar o piso de andar efetivo de 10 para 8.
-- [ ] Testar estatisticamente com `__dbg.makeItem` / chamando `dropLoot` em loop (ou expor `divChance` no `__dbg`) e anotar as chances novas no README.
+- [x] Dobrar o `k` de todas as faixas (Morte 3, Apocalipse 2, 1.2/1.0/0.8 no tier) e liberar o Brutal+ no tier 0 com `k` pequeno (0.3/0.4/0.5)? Combinar com o usuário só se ficar em dúvida; senão: dobrar e abrir o Caos (k 0.5) no tier 0.
+- [x] Caça-níquel (`events.js` ~1267): divino de 2.5% → 5% no prêmio máximo.
+- [x] Baixar o piso de andar efetivo de 10 para 8.
+- [x] Testar estatisticamente com `__dbg.makeItem` / chamando `dropLoot` em loop (ou expor `divChance` no `__dbg`) e anotar as chances novas no README.
+
+Resultado (medido com 600–1000 drops de chefe no andar 10): chefe com pelo menos 1 divino: Caos 5,5%, Apocalipse 17%, Morte 27% (antes ~14%), Abismo VI 45%, Abismo X 51%. `k` final: Morte 3 (+10%/Abismo), Apocalipse 2, Caos 0,6 (tier 0) / 1,2 (tier ≥ 1), Insano 1, Brutal 0,8 no tier.
 
 ---
 

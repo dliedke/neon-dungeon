@@ -1264,7 +1264,7 @@ const gamble = {
     const top = diffRank() >= 7 || (G.char.tier | 0) >= 1;
     // mesmo piso de raridade dos drops: do Insano para cima (ou no Inferno) não sai modificado
     const minR = rewardRank() >= 5 || tierOf().off >= 60 ? 2 : 1;
-    const rarity = Math.max(minR, top && r < 0.025 ? DIVINE : r < 0.05 ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
+    const rarity = Math.max(minR, top && r < 0.05 ? DIVINE : r < (top ? 0.08 : 0.05) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
     const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
     const d = G.dungeon;
     const fx = E.x + 0.8;
