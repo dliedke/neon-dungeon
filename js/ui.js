@@ -1423,6 +1423,32 @@ function slotKey(k) {
   if (G.lastInput === 'pad') return glyphText(['a', 'x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k + 1]);
   return k < 0 ? '⚔' : String(k + 1);
 }
+// todas as teclas/botões que disparam o botão k (-1 = ⚔), já como HTML
+const PAD_BTN = ['a', 'x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'];
+function slotKeysHtml(k) {
+  if (G.lastInput === 'pad') return glyph(PAD_BTN[k + 1]);
+  if (G.lastInput === 'touch' || G.isTouch) return `<kbd>${slotKey(k)}</kbd>`;
+  const kb = [[L('Clique', 'Click'), L('Espaço', 'Space')], ['1', 'Q', L('Botão dir.', 'Right-click')], ['2', 'E'], ['3', 'R']][k + 1] || [String(k + 1)];
+  return kb.map((t) => `<kbd>${t}</kbd>`).join('');
+}
+// Quadro com os 8 botões de ação: tecla/botão → poder. Se o poder selecionado pode ir para a barra, cada linha o coloca naquele botão
+function loadoutHtml(c, C, sel, canAssign) {
+  const cur = slotOf(c, sel);
+  const rows = [-1, ...c.slots.keys()].map((k) => {
+    const i = k < 0 ? c.atk || 0 : c.slots[k];
+    const sk = i == null || !(c.skills[i] > 0) ? null : C.skills[i];
+    const cls = `lo-row${sk ? '' : ' empty'}${sk && i === sel ? ' cur' : ''}`;
+    const inner = `<span class="lo-keys">${slotKeysHtml(k)}</span><span class="lo-icon">${sk ? iconSvg(sk.icon) : ''}</span><span class="lo-name">${sk ? sk.name : L('vazio', 'empty')}</span>`;
+    return canAssign ? `<button class="${cls}" data-nav data-slot="${k}">${inner}</button>` : `<div class="${cls}">${inner}</div>`;
+  }).join('');
+  const sk = C.skills[sel];
+  const pad = G.lastInput === 'pad';
+  const hint = !canAssign ? '' : cur != null
+    ?L(`Escolha outro botão para <b>${sk.name}</b> (os poderes trocam de lugar).`, `Pick another button for <b>${sk.name}</b> (powers swap places).`)
+    : L(`Escolha um botão para <b>${sk.name}</b>.`, `Pick a button for <b>${sk.name}</b>.`);
+  return `<div class="loadout"><div class="lo-head">${L('Botões de ação', 'Action buttons')}${pad && canAssign ? ` <span class="lo-sub">${padText(L('{X} no poder: próximo botão', '{X} on a power: next button'))}</span>` : ''}</div>
+    ${hint ? `<div class="lo-hint">${hint}</div>` : ''}<div class="lo-grid ${G.lastInput === 'pad' || G.lastInput === 'touch' || G.isTouch ? '' : 'kb'}">${rows}</div></div>`;
+}
 // em qual botão o poder está: -1 no ⚔, 0–6 nos 7 botões, null fora da barra
 function slotOf(c, i) {
   if (!(c.skills[i] > 0)) return null;
@@ -1533,19 +1559,14 @@ function renderTree() {
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');
   let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
-  if (!locked && !sk.passive) {
-    // o primeiro é o ⚔ (botão de ataque): um poder nele troca de lugar com o ataque básico
-    const cur = slotOf(c, i);
-    actions += `<div class="slot-pick"><span>${pg('x')}${L('Colocar no botão:', 'Assign to button:')}</span>${[-1, ...c.slots.keys()].map((k) => `<button class="btn small ${cur === k ? '' : 'ghost'}" data-nav data-slot="${k}" title="${k < 0 ? L('Botão de ataque', 'Attack button') : ''}">${slotKey(k)}</button>`).join('')}</div>`;
-  }
   const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
-  html += `<div class="tree-detail">
+  html += `<div class="tree-side"><div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
     <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
     ${status}
     <div class="td-actions">${actions}</div>
     ${tip ? `<div class="td-tip">${tip}</div>` : ''}
-  </div></div>`;
+  </div>${loadoutHtml(c, C, i, !locked && !sk.passive)}</div></div>`;
   $('skill-list').innerHTML = html;
   $('skill-list').querySelectorAll('[data-node]').forEach((b) => {
     b.onclick = () => {
