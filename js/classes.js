@@ -180,6 +180,14 @@ export const ICONS = {
   prison: '<rect x="6" y="6" width="20" height="22" rx="1"/><path d="M11 6v22M16 6v22M21 6v22"/><path d="M4 6h24" opacity=".6"/>',
   avalanche: '<path d="M2 28l9-14 5 6 4-9 10 17z"/><circle cx="8" cy="8" r="2" opacity=".6"/><circle cx="15" cy="5" r="1.5" opacity=".6"/><circle cx="22" cy="6" r="2" opacity=".6"/>',
   iceAge: '<path d="M16 2l3 8-3 6-3-6zM16 30l3-8-3-6-3 6zM2 16l8-3 6 3-6 3zM30 16l-8-3-6 3 6 3z"/><path d="M6 6l5 5M26 26l-5-5M26 6l-5 5M6 26l5-5" opacity=".6"/>',
+  missiles: '<path d="M6 26l6-6M14 28l4-8M24 26l-4-6"/><path d="M12 20l-3-9 6 3zM20 20l-1-10 5 4z"/><path d="M15 10l1-7 1 7"/>',
+  hturret: '<rect x="8" y="11" width="12" height="8" rx="1"/><path d="M20 13h10M20 17h10"/><path d="M14 19v4M7 28h14l-2-5h-10z"/>',
+  bmech: '<rect x="10" y="6" width="12" height="10" rx="1"/><path d="M13 10h6"/><path d="M10 9H5v8M22 9h5v8"/><path d="M12 16l-2 12M20 16l2 12"/>',
+  tbomb: '<circle cx="16" cy="19" r="8"/><path d="M16 11V5M13 3h6"/><circle cx="16" cy="19" r="3" opacity=".6"/><path d="M4 19h2M26 19h2" opacity=".6"/>',
+  tripleArrow: '<path d="M3 16h22M5 9l20 5M5 23l20-5"/><path d="M25 16l-4-3M25 16l-4 3" />',
+  traps: '<path d="M4 22h24"/><path d="M6 22l2-8 2 8 2-8 2 8 2-8 2 8 2-8 2 8 2-8 2 8"/><circle cx="16" cy="9" r="2" opacity=".6"/>',
+  beast: '<path d="M6 26v-8l4-6h10l5 4 3 1-1 3h-4l-2 6"/><path d="M12 12l-2-6M18 12l1-6"/><path d="M10 26v-4M17 26v-4"/>',
+  skyArrow: '<path d="M16 2v24"/><path d="M12 22l4 6 4-6"/><path d="M16 2l-3 4M16 2l3 4"/><path d="M4 12l3 3M28 12l-3 3M7 5l2 3M25 5l-2 3" opacity=".6"/>',
   satellite: '<rect x="12" y="3" width="8" height="6" rx="1"/><path d="M4 6h8M20 6h8"/><path d="M16 9v4"/><path d="M13 13h6l3 15H10z" opacity=".6"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -686,6 +694,18 @@ const SUP_PASSIVES = {
     sup('pEternalBlizzard', 88, L('Nevasca Eterna', 'Eternal Blizzard'), 'pGear', (r) => ({ chillDmg: 4 * r, fullHpDmg: 4 * r })),
     sup('pIceQueen', 96, L('Rainha do Gelo', 'Ice Queen'), 'pCrown', (r) => ({ bossDmg: 5 * r, execDmg: 3 * r, xpPct: 2 * r })),
   ],
+  heavy: [
+    sup('pInfiniteAmmo', 72, L('Munição Infinita', 'Infinite Ammo'), 'pBattery', (r) => ({ atkSpd: 2 * r, costRed: r1(1.0 * r) })),
+    sup('pTitanChassis', 80, L('Chassi Titânico', 'Titanic Chassis'), 'pPlate', (r) => ({ hpPct: 3 * r, armorPct: 5 * r })),
+    sup('pHeavyCaliber', 88, L('Calibre Pesado', 'Heavy Caliber'), 'pSkull', (r) => ({ execDmg: 4 * r, critDmg: 6 * r })),
+    sup('pLivingArsenal', 96, L('Arsenal Vivo', 'Living Arsenal'), 'pCrown', (r) => ({ bossDmg: 5 * r, dmgPct: 2 * r, xpPct: 2 * r })),
+  ],
+  hunter: [
+    sup('pWildInstinct', 72, L('Instinto Selvagem', 'Wild Instinct'), 'pEye', (r) => ({ atkSpd: 2 * r, crit: r1(1.0 * r) })),
+    sup('pShadowHide', 80, L('Pele de Sombra', 'Shadow Hide'), 'pWind', (r) => ({ dodge: r1(0.5 * r), hpPct: 2 * r })),
+    sup('pRareVenom', 88, L('Veneno Raro', 'Rare Venom'), 'pDrop', (r) => ({ burnPct: 10 * r, execDmg: 3 * r })),
+    sup('pJungleQueen', 96, L('Rainha da Selva', 'Jungle Queen'), 'pCrown', (r) => ({ bossDmg: 5 * r, fullHpDmg: 3 * r, xpPct: 2 * r })),
+  ],
 };
 const APEX_POWERS = {
   blade: [
@@ -723,6 +743,18 @@ const APEX_POWERS = {
     apex('glacialPrison', 84, L('Prisão Glacial', 'Glacial Prison'), 'prison', 50, 14, (r) => L(`Prende num bloco de gelo todos os inimigos a 5m de onde você mira (${pct(1.5 * rankMult(r))}, congela por 3s). Depois o gelo estilhaça e causa ${pct(4.5 * rankMult(r))}.`, `Traps every enemy within 5m of where you aim in a block of ice (${pct(1.5 * rankMult(r))}, frozen for 3s). Then the ice shatters for ${pct(4.5 * rankMult(r))}.`)),
     apex('avalanche', 92, 'Avalanche', 'avalanche', 60, 16, (r) => L(`Uma muralha de neve de 8m rola 18m à sua frente, causando ${pct(5.0 * rankMult(r))}, deixando lento e arrastando os inimigos.`, `An 8m wall of snow rolls 18m ahead of you, dealing ${pct(5.0 * rankMult(r))}, slowing and sweeping enemies away.`)),
     apex('iceAge', 100, L('Era do Gelo', 'Ice Age'), 'iceAge', 85, 26, (r) => L(`Congela o mundo em 14m: causa ${pct(6.0 * rankMult(r))} e congela os inimigos por 4s entre cristais gigantes, que então estilhaçam (${pct(3.0 * rankMult(r))}).`, `Freezes the world within 14m: deals ${pct(6.0 * rankMult(r))} and freezes enemies for 4s among giant crystals, which then shatter (${pct(3.0 * rankMult(r))}).`)),
+  ],
+  heavy: [
+    apex('missileBarrage', 76, L('Barragem de Mísseis', 'Missile Barrage'), 'missiles', 45, 10, (r) => L(`Dispara 16 mísseis teleguiados que se espalham entre os inimigos próximos; cada um causa ${pct(1.2 * rankMult(r))} e explode em 2m (${pct(1.6 * rankMult(r))}).`, `Fires 16 homing missiles that spread among nearby enemies; each deals ${pct(1.2 * rankMult(r))} and explodes in 2m (${pct(1.6 * rankMult(r))}).`)),
+    apex('heavyTurret', 84, L('Torre Pesada', 'Heavy Turret'), 'hturret', 50, 18, (r) => L(`Instala uma torre de metralhadora dupla por 14s que atira sem parar (${pct(0.5 * rankMult(r))} por bala) e solta foguetes (${pct(2.5 * rankMult(r))}).`, `Deploys a twin-minigun turret for 14s that fires nonstop (${pct(0.5 * rankMult(r))} per bullet) and launches rockets (${pct(2.5 * rankMult(r))}).`)),
+    apex('battleMech', 92, L('Mech de Batalha', 'Battle Mech'), 'bmech', 60, 26, (r) => L(`Chama um mech de combate gigante que luta ao seu lado por 18s, esmagando o chão (${pct(3.0 * rankMult(r))} em área e atordoa).`, `Calls in a giant battle mech that fights by your side for 18s, smashing the ground (${pct(3.0 * rankMult(r))} in an area, stuns).`)),
+    apex('tacticalBomb', 100, L('Bomba Tática', 'Tactical Bomb'), 'tbomb', 85, 26, (r) => L(`Lança uma bomba tática que puxa todos os inimigos em 9m por 1,5s e detona em 3 ondas: ${pct(3.0 * rankMult(r))}, ${pct(3.0 * rankMult(r))} e ${pct(8.0 * rankMult(r))}.`, `Launches a tactical bomb that pulls every enemy within 9m for 1.5s, then detonates in 3 waves: ${pct(3.0 * rankMult(r))}, ${pct(3.0 * rankMult(r))} and ${pct(8.0 * rankMult(r))}.`)),
+  ],
+  hunter: [
+    apex('tripleArrow', 76, L('Flecha Perfurante', 'Piercing Arrow'), 'tripleArrow', 45, 9, (r) => L(`3 flechas gigantes em leque atravessam todos os inimigos por 20m, cada uma causando ${pct(3.5 * rankMult(r))} e fazendo sangrar.`, `3 giant arrows in a fan pierce every enemy for 20m, each dealing ${pct(3.5 * rankMult(r))} and causing bleeding.`)),
+    apex('huntTraps', 84, L('Armadilhas de Caça', 'Hunting Traps'), 'traps', 45, 14, (r) => L(`Espalha 6 armadilhas ao seu redor por 15s. Quando um inimigo chega perto, ela fecha: ${pct(4.0 * rankMult(r))} em 2,5m e atordoa por 1,5s.`, `Scatters 6 traps around you for 15s. When an enemy comes close, it snaps shut: ${pct(4.0 * rankMult(r))} in 2.5m and stuns for 1.5s.`)),
+    apex('legendBeast', 92, L('Fera Lendária', 'Legendary Beast'), 'beast', 60, 26, (r) => L(`Invoca uma fera lendária de chifres dourados que caça ao seu lado por 18s, pisoteando os inimigos (${pct(2.2 * rankMult(r))} em área).`, `Summons a legendary golden-horned beast that hunts by your side for 18s, trampling enemies (${pct(2.2 * rankMult(r))} in an area).`)),
+    apex('skyArrow', 100, L('Flecha Celestial', 'Celestial Arrow'), 'skyArrow', 85, 22, (r) => L(`Atira uma flecha ao céu: 40 flechas caem em 8m de onde você mira (${pct(1.6 * rankMult(r))} cada) e por fim a flecha celestial crava no centro (${pct(9.0 * rankMult(r))} em 5m).`, `Shoots an arrow into the sky: 40 arrows rain within 8m of where you aim (${pct(1.6 * rankMult(r))} each), then the celestial arrow strikes the center (${pct(9.0 * rankMult(r))} in 5m).`)),
   ],
 };
 for (const [id, list] of Object.entries(SUP_PASSIVES)) CLASSES[id].skills.push(...list);
@@ -2644,6 +2676,241 @@ Object.assign(SKILL_FN, {
         G.shake = Math.max(G.shake, 0.5);
         sfx.explode();
       });
+    });
+    return true;
+  },
+});
+
+// geometrias em cache dos ataques supremos do Juggernaut e da Caçadora
+const trapGeo = new THREE.CylinderGeometry(0.45, 0.5, 0.12, 10);
+const bigArrowGeo = () => merged('skyArrow', (b) => {
+  b(0.14, 4.0, 0.14, 0, 2.0, 0);
+  b(0.5, 0.5, 0.5, 0, -0.1, 0);
+  b(0.5, 0.12, 0.06, 0, 3.8, 0);
+});
+
+Object.assign(SKILL_FN, {
+  // Juggernaut
+  missileBarrage(p, r) {
+    const rm = rankMult(r);
+    const col = 0xff8a00;
+    const foes = enemiesInRadius(p.x, p.z, 14).filter((e) => lineOfSight(G.dungeon, p.x, p.z, e.x, e.z));
+    for (let k = 0; k < 16; k++) {
+      after(k * 0.05, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        // cada míssil sai num ângulo diferente e mira um inimigo diferente
+        const tg = foes.length ? foes[k % foes.length] : null;
+        let a = angleOf(pl.aim.dx, pl.aim.dz) + (k % 2 ? 1 : -1) * (0.6 + (k % 4) * 0.25);
+        if (tg && tg.alive) a = angleOf(tg.x - pl.x, tg.z - pl.z) + (k % 2 ? 0.9 : -0.9);
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, y: 1.4, dx: Math.cos(a), dz: Math.sin(a), speed: 15, life: 1.6, mult: 1.2 * rm, color: col, size: 0.14, r: 0.28, homing: 5, quiet: true, onHit: (e) => explosion(e.x, e.z, 2, 1.6 * rm, { color: col, small: true, noProc: true, knock: 3 }) });
+        if (k % 3 === 0) sfx.shoot();
+      });
+    }
+    burst(p.x, 1.6, p.z, 0xffd060, 20, 4, 0.08, 0.5, { up: 3 });
+    p.swing = 1;
+    return true;
+  },
+  heavyTurret(p, r) {
+    const rm = rankMult(r);
+    let x = p.x + p.aim.dx * 1.5;
+    let z = p.z + p.aim.dz * 1.5;
+    if (!isWalkable(G.dungeon, x, z)) {
+      x = p.x;
+      z = p.z;
+    }
+    // só uma torre pesada por vez
+    for (const a of G.allies) if (a.kind === 'warTurret') a.t = Math.min(a.t, 0.01);
+    PW.spawnAlly('warTurret', x, z, { dur: 14, mult: 0.5 * rm, rocket: 2.5 * rm });
+    sfx.deploy();
+    return true;
+  },
+  battleMech(p, r) {
+    const rm = rankMult(r);
+    const t = targetPoint(p, 4);
+    const col = 0xffd23d;
+    telegraphFx(t.x, t.z, 2.5, 0.6, col);
+    sfx.telegraph();
+    after(0.6, () => {
+      if (!G.player || !G.player.alive) return;
+      for (const a of G.allies) if (a.kind === 'mech') a.t = Math.min(a.t, 0.01);
+      PW.spawnAlly('mech', t.x, t.z, { dur: 18, mult: 3.0 * rm });
+      explosion(t.x, t.z, 3, 2.0 * rm, { color: col, knock: 6, stun: 1 });
+      G.shake = Math.max(G.shake, 0.6);
+      sfx.punchHeavy();
+    });
+    return true;
+  },
+  tacticalBomb(p, r) {
+    const rm = rankMult(r);
+    const col = 0xffd23d;
+    const t = targetPoint(p, 10);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.6, color: 0xff3322, onLand: (x, z) => {
+      // anel que se fecha (a puxada) em vez de um disco de 9m que cobre a tela
+      telegraphFx(x, z, 3.5, 1.5, 0xff3322);
+      ringFx(x, z, 1, 0xff3322, 1.5, { from: 9, linear: true, opacity: 0.7 });
+      after(0.5, () => ringFx(x, z, 1, 0xff8a00, 1.0, { from: 9, linear: true, opacity: 0.6 }));
+      sfx.alarm();
+      // puxa todo mundo para o centro
+      const st = { last: G.t };
+      const core = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 9), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff3322).multiplyScalar(gk(2.4)), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }));
+      core.position.set(x, 0.6, z);
+      tempMesh(core, 1.5, (fx, k) => {
+        const dt = Math.min(0.1, Math.max(0, G.t - st.last));
+        st.last = G.t;
+        core.scale.setScalar(1 + Math.sin(G.t * 30) * 0.2 + k);
+        for (const e of enemiesInRadius(x, z, 9)) {
+          if (e.boss || e.T.big) continue;
+          const ex = x - e.x;
+          const ez = z - e.z;
+          const d = Math.hypot(ex, ez);
+          if (d < 1) continue;
+          const px = e.x + (ex / d) * 5 * dt;
+          const pz = e.z + (ez / d) * 5 * dt;
+          if (isWalkable(G.dungeon, px, pz)) {
+            e.x = px;
+            e.z = pz;
+          }
+        }
+        if (Math.random() < 0.6) {
+          const a = rr(0, Math.PI * 2);
+          particle(x + Math.cos(a) * 8, 0.4, z + Math.sin(a) * 8, -Math.cos(a) * 14, 0.5, -Math.sin(a) * 14, col, 0.12, 0.5, 0, 0);
+        }
+      }).disposeGeo = true;
+      const waves = [[3.5, 3.0], [6, 3.0], [9, 8.0]];
+      waves.forEach(([rad, m], k) => {
+        after(1.5 + k * 0.3, () => {
+          if (!G.player || !G.player.alive) return;
+          explosion(x, z, rad, m * rm, { color: k === 2 ? 0xffffff : col, knock: k === 2 ? 10 : 4, stun: k === 2 ? 1.5 : 0, noProc: k < 2 });
+          ringFx(x, z, rad + 1, k === 2 ? 0xffffff : 0xff8a00, 0.6, { from: rad * 0.4 });
+          G.shake = Math.max(G.shake, 0.4 + k * 0.25);
+          if (k === 2) {
+            burst(x, 1, z, 0xffd060, 60, 12, 0.15, 1.0, { up: 4 });
+            spawnHazard(x, z, 4, 4, 0, { faction: 'player', mult: 0.6 * rm, burn: 0.8, color: 0xff6a00, opacity: 0.4 });
+            sfx.nova();
+          }
+        });
+      });
+    } });
+    p.swing = 1;
+    sfx.shoot();
+    return true;
+  },
+
+  // Caçadora
+  tripleArrow(p, r) {
+    const rm = rankMult(r);
+    const col = C_('hunter');
+    const a0 = angleOf(p.aim.dx, p.aim.dz);
+    for (const off of [-0.2, 0, 0.2]) {
+      const dx = Math.cos(a0 + off);
+      const dz = Math.sin(a0 + off);
+      let len = 0.5;
+      while (len < 20 && isWalkable(G.dungeon, p.x + dx * len, p.z + dz * len)) len += 0.25;
+      const x2 = p.x + dx * len;
+      const z2 = p.z + dz * len;
+      for (const e of enemiesOnSegment(p.x, p.z, x2, z2, 0.6)) hitEnemy(e, 3.5 * rm, { burn: 1.0, knock: 3, kx: e.x - dx, kz: e.z - dz });
+      streakFx(p.x, p.z, x2, z2, col, 0.45, 0.45);
+      streakFx(p.x, p.z, x2, z2, 0xffffff, 0.12, 0.3);
+      burst(x2, 1, z2, col, 10, 4, 0.07, 0.4);
+    }
+    G.shake = Math.max(G.shake, 0.3);
+    sfx.laser();
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  huntTraps(p, r) {
+    const rm = rankMult(r);
+    const col = C_('hunter');
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + rr(-0.3, 0.3);
+      const d = rr(2.2, 4.5);
+      let x = p.x + Math.cos(a) * d;
+      let z = p.z + Math.sin(a) * d;
+      if (!isWalkable(G.dungeon, x, z)) {
+        x = p.x + Math.cos(a) * 1.2;
+        z = p.z + Math.sin(a) * 1.2;
+        if (!isWalkable(G.dungeon, x, z)) continue;
+      }
+      const mat = new THREE.MeshLambertMaterial({ color: 0x5a5a60, emissive: new THREE.Color(col).multiplyScalar(gk(0.6)) });
+      const trap = new THREE.Mesh(trapGeo, mat);
+      trap.position.set(x, 0.06, z);
+      const st = { armed: 0.5, sprung: false };
+      tempMesh(trap, 15, (e, q) => {
+        if (st.sprung) return;
+        const pulse = 0.5 + Math.sin(G.t * 6 + k) * 0.3;
+        mat.emissive.setRGB(((col >> 16) & 255) / 255 * pulse, ((col >> 8) & 255) / 255 * pulse, (col & 255) / 255 * pulse);
+        if (q * 15 < st.armed) return;
+        if (!enemiesInRadius(x, z, 1.4).length) return;
+        st.sprung = true;
+        explosion(x, z, 2.5, 4.0 * rm, { color: col, stun: 1.5, knock: 2, small: true });
+        for (let j = 0; j < 8; j++) {
+          const b = (j / 8) * Math.PI * 2;
+          streakFx(x, z, x + Math.cos(b) * 1.4, z + Math.sin(b) * 1.4, 0xd0d0d0, 0.12, 0.3, 0.4);
+        }
+        sfx.punchHeavy();
+        e.t = e.dur;
+      });
+      lob({ x: p.x, z: p.z, tx: x, tz: z, time: 0.3, color: col, onLand: () => {} });
+    }
+    sfx.deploy();
+    p.swing = 1;
+    return true;
+  },
+  legendBeast(p, r) {
+    const rm = rankMult(r);
+    for (const a of G.allies) if (a.kind === 'beast') a.t = Math.min(a.t, 0.01);
+    let x = p.x + p.aim.dx * 1.5;
+    let z = p.z + p.aim.dz * 1.5;
+    if (!isWalkable(G.dungeon, x, z)) {
+      x = p.x;
+      z = p.z;
+    }
+    PW.spawnAlly('beast', x, z, { dur: 18, mult: 2.2 * rm });
+    ringFx(x, z, 3, 0xffb347, 0.5, { from: 0.5 });
+    burst(x, 1.2, z, 0xffe0a0, 30, 6, 0.1, 0.6, { up: 2 });
+    sfx.roar();
+    return true;
+  },
+  skyArrow(p, r) {
+    const rm = rankMult(r);
+    const col = C_('hunter');
+    const t = targetPoint(p, 12);
+    burst(p.x, 1.5, p.z, col, 14, 5, 0.08, 0.4, { up: 6 });
+    telegraphFx(t.x, t.z, 5, 2.2, col);
+    ringFx(t.x, t.z, 8, col, 0.7, { from: 2 });
+    sfx.shoot();
+    p.swing = 1;
+    for (let k = 0; k < 40; k++) {
+      after(0.3 + k * 0.045, () => {
+        if (!G.player || !G.player.alive) return;
+        const a = rr(0, Math.PI * 2);
+        const d = Math.sqrt(Math.random()) * 8;
+        const x = t.x + Math.cos(a) * d;
+        const z = t.z + Math.sin(a) * d;
+        streakFx(x - 0.6, z - 0.6, x, z, col, 0.12, 0.25, 0.6);
+        burst(x, 0.2, z, col, 4, 2, 0.06, 0.3);
+        for (const e of enemiesInRadius(x, z, 1.1)) hitEnemy(e, 1.6 * rm, { noProc: true, quiet: k % 2 === 1, knock: 0.5, kx: x, kz: z });
+        if (k % 5 === 0) sfx.shoot();
+      });
+    }
+    // a flecha celestial cai no centro
+    const mat = addGlow(0xfff0c0, 2.4, 0.95);
+    const arrow = new THREE.Mesh(bigArrowGeo(), mat);
+    arrow.position.set(t.x, 13, t.z);
+    tempMesh(arrow, 3.0, (e, k) => {
+      const tt = k * 3;
+      if (tt < 2.2) arrow.position.y = 13 - Math.min(1, Math.pow(tt / 2.2, 3)) * 12.7;
+      else mat.opacity = 0.95 * Math.max(0, 1 - (tt - 2.2) / 0.8);
+    });
+    after(2.2, () => {
+      if (!G.player || !G.player.alive) return;
+      explosion(t.x, t.z, 5, 9.0 * rm, { color: col, stun: 1.5, knock: 8 });
+      ringFx(t.x, t.z, 8, 0xffffff, 0.6, { from: 1 });
+      burst(t.x, 1, t.z, 0xfff0c0, 40, 9, 0.12, 0.8, { up: 3 });
+      G.shake = Math.max(G.shake, 0.7);
+      sfx.nova();
     });
     return true;
   },

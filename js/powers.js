@@ -67,6 +67,9 @@ const ALLY = {
   hacked: { speed: 3.8, r: 0.4, range: 1.5, atk: 0.8, mult: 1.2, melee: true, color: 0x39ff14 },
   shade: { speed: 6.2, r: 0.35, range: 1.5, atk: 0.5, mult: 1.4, melee: true, color: 0x9b4dff },
   drone: { speed: 7, r: 0.3, range: 7.5, atk: 0.45, mult: 0.8, melee: false, color: 0x39ff14, fly: true },
+  warTurret: { speed: 0, r: 0.55, range: 10, atk: 0.14, mult: 0.5, melee: false, color: 0xffd23d, static: true },
+  mech: { speed: 4.4, r: 0.8, range: 2.3, atk: 0.9, mult: 3.0, melee: true, color: 0xffd23d, slam: true },
+  beast: { speed: 8, r: 0.7, range: 2.0, atk: 0.55, mult: 2.2, melee: true, color: 0xffb347, slam: true },
 };
 
 function allyModel(kind, color) {
@@ -174,15 +177,49 @@ function allyModel(kind, color) {
     m.handR.add(gun);
     return m;
   }
-  if (kind === 'wolf') {
+  if (kind === 'warTurret') {
+    // torre pesada do Juggernaut: base larga e cabeça com dois canos
+    const root = new THREE.Group();
+    const md = lam(0x3a3a40);
+    root.add(mesh(new THREE.CylinderGeometry(0.5, 0.65, 0.4, 8), md, 0, 0.2, 0));
+    const head = new THREE.Group();
+    head.position.y = 0.75;
+    head.add(mesh(box(0.6, 0.4, 0.55), lam(0x5a5a40)));
+    for (const sx of [-1, 1]) head.add(mesh(box(0.1, 0.1, 0.8), md, sx * 0.16, 0, 0.6));
+    head.add(mesh(box(0.42, 0.06, 0.04), glowMat(0xffd23d, 2.6), 0, 0.1, 0.29));
+    root.add(head);
+    root.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.4, 6), md, 0, 0.5, 0));
+    return { root, body: root, mats: [md] };
+  }
+  if (kind === 'mech') {
+    const m = humanoid({ body: 0x8a8a70, dark: 0x2a2a24, accent: 0xffd23d, scale: 1.9, wide: 1.5 });
+    for (const sx of [-1, 1]) {
+      const pod = mesh(box(0.22, 0.2, 0.3), m.mats[1], sx * 0.3, 0.55, -0.05);
+      pod.add(mesh(box(0.16, 0.04, 0.02), glowMat(0xff8a00, 2.4), 0, 0.03, 0.16));
+      m.torso.add(pod);
+    }
+    m.handL.add(mesh(box(0.3, 0.3, 0.3), m.mats[1]));
+    m.handR.add(mesh(box(0.3, 0.3, 0.3), m.mats[1]));
+    return m;
+  }
+  if (kind === 'wolf' || kind === 'beast') {
+    const beast = kind === 'beast';
     const root = new THREE.Group();
     const body = new THREE.Group();
     root.add(body);
-    const mb = lam(0xb8d8ff);
+    const mb = lam(beast ? 0xc89050 : 0xb8d8ff);
     body.add(mesh(box(0.35, 0.32, 0.8), mb, 0, 0.55, 0));
     const head = mesh(box(0.28, 0.26, 0.34), mb, 0, 0.72, 0.5);
     body.add(head);
-    head.add(mesh(box(0.2, 0.05, 0.03), glowMat(0x8ab4ff, 2.4), 0, 0.04, 0.18));
+    head.add(mesh(box(0.2, 0.05, 0.03), glowMat(beast ? 0xffb347 : 0x8ab4ff, 2.4), 0, 0.04, 0.18));
+    // fera lendária: chifres brilhando
+    if (beast) {
+      for (const sx of [-1, 1]) {
+        const horn = mesh(new THREE.ConeGeometry(0.04, 0.3, 5), glowMat(0xffb347, 2.2), sx * 0.1, 0.24, -0.02);
+        horn.rotation.z = -sx * 0.5;
+        head.add(horn);
+      }
+    }
     const legs = [];
     for (const [x, z] of [[0.13, 0.3], [-0.13, 0.3], [0.13, -0.3], [-0.13, -0.3]]) {
       const lg = new THREE.Group();
@@ -191,7 +228,8 @@ function allyModel(kind, color) {
       body.add(lg);
       legs.push(lg);
     }
-    body.add(mesh(box(0.06, 0.06, 0.4), glowMat(0x8ab4ff, 1.6), 0, 0.68, -0.55));
+    body.add(mesh(box(0.06, 0.06, 0.4), glowMat(beast ? 0xffb347 : 0x8ab4ff, 1.6), 0, 0.68, -0.55));
+    if (beast) body.scale.setScalar(2);
     return { root, body, legs, mats: [mb], quad: true };
   }
   if (kind === 'daemon') {
@@ -419,7 +457,15 @@ function allyAttack(a, tgt) {
   const dx = tgt.x - a.x;
   const dz = tgt.z - a.z;
   const l = Math.hypot(dx, dz) || 1;
-  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.model.floaty ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, quiet: a.kind === 'clone' || a.kind === 'drone' });
+  // torre pesada: a cada 14 tiros solta um foguete
+  if (a.kind === 'warTurret') {
+    a.shots = (a.shots || 0) + 1;
+    if (a.shots % 14 === 0 && a.rocket) {
+      spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.6, z: a.z + (dz / l) * 0.6, y: 0.9, dx: dx / l, dz: dz / l, speed: 16, life: 1, mult: a.rocket, color: 0xff8a00, size: 0.18, r: 0.3, homing: 4, onHit: (e) => explosion(e.x, e.z, 2.5, a.rocket, { color: 0xff8a00, small: true, noProc: true, knock: 4 }) });
+      sfx.shoot();
+    }
+  }
+  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.kind === 'warTurret' ? 0.75 : a.model.floaty ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, quiet: a.kind === 'clone' || a.kind === 'drone' || a.kind === 'warTurret' });
   if (a.kind === 'daemon') sfx.orb();
 }
 
