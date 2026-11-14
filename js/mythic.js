@@ -1,4 +1,5 @@
 // Poderes dos itens míticos: laser orbital, lâminas fantasmas, ceifador, singularidade, fênix e avatar.
+// Também os poderes divinos (Zeus, Olimpo, Égide, Titã, Hermes, Ambrosia) e os primordiais (Caos, Nyx, Gaia, Cronos, Érebo, Urano).
 import * as THREE from 'three';
 import { G } from './state.js';
 import { rr, chance } from './utils.js';
@@ -24,6 +25,11 @@ let titanN = 0;
 let aegisCd = 0;
 let ambCd = 0;
 let stormT = 3;
+let chaosCd = 0;
+let cronosN = 0;
+let erebusCd = 0;
+let uranusT = 4;
+let genesisCd = 0;
 
 // estado novo a cada personagem
 export function resetMythic() {
@@ -36,6 +42,11 @@ export function resetMythic() {
   aegisCd = 0;
   ambCd = 0;
   stormT = 3;
+  chaosCd = 0;
+  cronosN = 0;
+  erebusCd = 0;
+  uranusT = 4;
+  genesisCd = 0;
 }
 
 // ---------- Lâminas Fantasmas: 3 lâminas presas ao modelo do jogador ----------
@@ -202,6 +213,7 @@ export function updateMythic(dt) {
   if (!p.alive) return;
   updateOrbital(p, dt);
   updateDivine(p, dt);
+  if (p.stats.prims && p.stats.prims.size) updatePrimordial(p, dt);
   if (p.buffs.avatar > 0 && Math.random() < dt * 30) burst(p.x + rr(-0.4, 0.4), rr(0.2, 1.6), p.z + rr(-0.4, 0.4), MC, 1, 1, 0.07, 0.5, { grav: -3 });
 }
 
@@ -288,6 +300,109 @@ function updateDivine(p, dt) {
       const tz = i < list.length && e.alive ? e.z : z;
       thunderbolt(tx, tz, 1.6, 2.5);
       sfx.zap();
+    });
+  }
+}
+
+// ================= Itens primordiais =================
+// cores do prisma (o primordial troca de cor o tempo todo)
+const PRISM = [0x7dfff0, 0xff6bd6, 0xffe680, 0x8a7dff, 0x6bff9a];
+export const prismC = (k = 0) => PRISM[(Math.floor(G.t * 5) + k) % PRISM.length];
+const hasPrim = (k) => G.player && G.player.stats.prims && G.player.stats.prims.has(k);
+
+// antes do dano: Olhar de Nyx (alvo marcado) e Gênese (6 peças)
+export function primDmgMult(e) {
+  let k = 1;
+  if (e.nyxT > G.t) k *= 1.4;
+  if (G.player.stats.prims.size >= 6) k *= 1.5;
+  return k;
+}
+
+// depois de um golpe do jogador
+export function primOnHit(e, crit, o) {
+  const p = G.player;
+  // Olhar de Nyx: crítico marca o alvo por 4s
+  if (crit && hasPrim('nyx') && e.alive) {
+    if (!(e.nyxT > G.t)) burst(e.x, e.height + 0.4, e.z, 0x8a7dff, 8, 2, 0.06, 0.4, { up: 1 });
+    e.nyxT = G.t + 4;
+  }
+  if (o.noProc) return;
+  // Lâmina do Caos: uma fenda repete o golpe em volta
+  if (hasPrim('chaos') && chaosCd <= 0 && chance(0.15)) {
+    chaosCd = 0.3;
+    const x = e.x;
+    const z = e.z;
+    after(0.06, () => {
+      const col = prismC();
+      ringFx(x, z, 6, col, 0.35, { from: 0.2 });
+      burst(x, 1, z, col, 22, 6, 0.08, 0.45);
+      for (const t of enemiesInRadius(x, z, 6)) {
+        if (t.inert || t.decoy) continue;
+        beamFx(x, 1, z, t.x, 1, t.z, col, 0.15, 2);
+        hitEnemy(t, 1.2, { noProc: true, kx: x, kz: z });
+      }
+      sfx.zap();
+    });
+  }
+  // Mãos de Cronos: a cada 8 golpes todas as habilidades recarregam 1s
+  if (hasPrim('cronos') && ++cronosN >= 8) {
+    cronosN = 0;
+    for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - 1);
+    ringFx(p.x, p.z, 1.4, 0x7dfff0, 0.3, { from: 0.4 });
+  }
+}
+
+// esquivou de um golpe: Passos de Érebo deixam uma sombra que explode
+export function primDodge() {
+  const p = G.player;
+  if (!hasPrim('erebus') || erebusCd > 0) return;
+  erebusCd = 1;
+  const x = p.x;
+  const z = p.z;
+  burst(x, 0.8, z, 0x8a7dff, 16, 2, 0.08, 0.5, { up: 1 });
+  telegraphFx(x, z, 2.6, 0.4, 0x8a7dff);
+  after(0.4, () => explosion(x, z, 2.6, 3, { color: 0x8a7dff, noProc: true, knock: 4 }));
+}
+
+// Gênese: cada habilidade usada solta uma onda prismática (no máximo uma a cada 0,6s)
+export function primSkillWave() {
+  if (genesisCd > 0) return;
+  genesisCd = 0.6;
+  const p = G.player;
+  const col = prismC();
+  explosion(p.x, p.z, 4.5, 3, { color: col, noProc: true, knock: 4 });
+  ringFx(p.x, p.z, 5.5, prismC(2), 0.5, { from: 0.4 });
+}
+
+// Coroa de Urano: chuva de meteoros a cada 12s
+function meteor(x, z) {
+  const col = prismC();
+  beamFx(x + 4, 15, z - 4, x, 0, z, col, 0.3, 4);
+  beamFx(x + 4, 15, z - 4, x, 0, z, 0xffffff, 0.18, 2);
+  explosion(x, z, 1.8, 2.2, { color: col, noProc: true, knock: 2, small: true });
+}
+function updatePrimordial(p, dt) {
+  chaosCd = Math.max(0, chaosCd - dt);
+  erebusCd = Math.max(0, erebusCd - dt);
+  genesisCd = Math.max(0, genesisCd - dt);
+  if (!hasPrim('uranus') || (uranusT -= dt) > 0) return;
+  const list = enemiesInRadius(p.x, p.z, 10).filter((e) => !e.inert && !e.decoy && e.aggro);
+  if (!list.length) {
+    uranusT = 0.5;
+    return;
+  }
+  uranusT = 12;
+  sfx.roar();
+  for (let i = 0; i < 8; i++) {
+    const e = list[i % list.length];
+    const x = e.x + (i >= list.length ? rr(-1.5, 1.5) : 0);
+    const z = e.z + (i >= list.length ? rr(-1.5, 1.5) : 0);
+    const d = 0.4 + i * 0.22;
+    telegraphFx(x, z, 1.8, d, 0x7dfff0, i < list.length ? e : null);
+    after(d, () => {
+      const follow = i < list.length && e.alive;
+      meteor(follow ? e.x : x, follow ? e.z : z);
+      if (i % 2 === 0) sfx.explode();
     });
   }
 }

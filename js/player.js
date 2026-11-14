@@ -18,6 +18,7 @@ import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
 import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
+import { primSkillWave } from './mythic.js';
 
 // sem nível máximo: o personagem sobe para sempre (depois do 50 cada nível conta metade nos atributos)
 export const MAX_LEVEL = Infinity;
@@ -66,6 +67,7 @@ export function computeStats(c) {
     legs: new Set(),
     myths: new Set(),
     divs: new Set(),
+    prims: new Set(),
   };
   for (const slot of SLOTS) {
     const it = c.equip[slot];
@@ -84,6 +86,7 @@ export function computeStats(c) {
     if (it.leg) s.legs.add(it.leg);
     if (it.myth) s.myths.add(it.myth);
     if (it.div) s.divs.add(it.div);
+    if (it.prim) s.prims.add(it.prim);
   }
   // poderes divinos que são só atributos
   if (s.divs.has('olympus')) {
@@ -94,6 +97,8 @@ export function computeStats(c) {
     s.moveSpd = (s.moveSpd || 0) + 20;
     s.dodge += 8;
   }
+  // Passos de Érebo (primordial): mais esquiva e teto maior
+  if (s.prims.has('erebus')) s.dodge += 10;
   // poderes passivos da árvore
   const pm = { ...passiveMods(c) };
   // implantes escolhidos depois dos chefes
@@ -105,7 +110,7 @@ export function computeStats(c) {
   if (pm.hpPct) s.maxHp *= 1 + pm.hpPct / 100;
   if (pm.armorPct) s.armor *= 1 + pm.armorPct / 100;
   s.armor = Math.round(s.armor);
-  s.dodge = Math.min(s.dodge, 25);
+  s.dodge = Math.min(s.dodge, s.prims.has('erebus') ? 35 : 25);
   s.dmgRed = Math.min(s.dmgRed, 30);
   s.costRed = Math.min(s.costRed, 40);
   // dificuldade: no difícil o jogador tem menos vida, blindagem e regeneração; no fácil, mais
@@ -120,6 +125,8 @@ export function computeStats(c) {
   s.atkRate *= 1 + s.atkSpd / 100;
   s.maxHp = Math.round(s.maxHp);
   s.maxEn = Math.round(s.maxEn);
+  // Pele de Gaia (primordial): regenera 1% da vida máxima por segundo
+  if (s.prims.has('gaia')) s.hpRegen += s.maxHp * 0.01 * D.pRegen;
   return s;
 }
 
@@ -445,6 +452,8 @@ function tryUseSkill(p, i, quiet = false) {
   }
   p.en -= cost;
   p.cds[i] = p.stats.legs.has('echo') && Math.random() < 0.25 ? 0.3 : skillCd(i);
+  // Gênese (6 primordiais): cada habilidade solta uma onda prismática
+  if (p.stats.prims.size >= 6) primSkillWave();
   p.facing = Math.atan2(p.aim.dx, p.aim.dz);
   p.lockFace = 0.25;
   p.inCombat = 4;

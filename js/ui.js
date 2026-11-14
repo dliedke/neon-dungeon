@@ -3,7 +3,7 @@ import { G } from './state.js';
 import * as THREE from 'three';
 import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult, MAX_RANK } from './classes.js';
-import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
+import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, PRIMORDIALS, PRIM_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ROMAN } from './enemies.js';
@@ -1376,6 +1376,8 @@ export function renderChar() {
     if (s.xpPct) rows.push([L('Experiência', 'Experience'), `+${s.xpPct}%`]);
     if (s.findPct) rows.push([L('Achar itens', 'Item find'), `+${Math.round(s.findPct)}%`]);
     let sh = rows.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+    for (const l of s.prims) sh += `<div class="leg prim">✺ ${PRIMORDIALS[l].name}</div>`;
+    if (s.prims.size >= 6) sh += `<div class="leg prim">✺ ${PRIM_SET.name}</div>`;
     for (const l of s.divs) sh += `<div class="leg div">⚡ ${DIVINES[l].name}</div>`;
     if (s.divs.size >= 6) sh += `<div class="leg div">⚡ ${DIV_SET.name}</div>`;
     for (const l of s.myths) sh += `<div class="leg myth">✦ ${MYTHICS[l].name}</div>`;
@@ -2200,7 +2202,7 @@ function renderStash() {
   const pm = $('stash-put-myth');
   pm.innerHTML = `✦ ${G.isTouch ? L('Guardar míticos', 'Store mythics') : L('Guardar todos os míticos', 'Store all mythics')}${nm ? ` (${nm})` : ''}${padKey('y')}`;
   pm.disabled = !nm || st.length >= STASH_SIZE;
-  pm.title = L('Manda todos os itens míticos (e divinos) do inventário para o baú', 'Sends every mythic (and divine) item in your inventory to the stash');
+  pm.title = L('Manda todos os itens míticos (e divinos e primordiais) do inventário para o baú', 'Sends every mythic (and divine and primordial) item in your inventory to the stash');
   renderStashDetail();
   renderBank();
 }

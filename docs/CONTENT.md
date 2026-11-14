@@ -163,7 +163,7 @@ Add to `AFFIXES` (`js/items.js`): `{ fmt: (v) => L(...), roll: (ilvl) => number,
 2. Implement it in `js/mythic.js`, checking `p.stats.myths.has('key')`: `updateMythic(dt)` for periodic effects, `mythOnHit`, `mythOnKill`, `mythDmgMult(e)`, `mythSave()` (death prevention) and `mythHud()` for a HUD indicator. Reset per-floor state in `resetMythic()`.
 3. README mythic list.
 
-Divine powers work the same way: `DIVINES` in `items.js` has one entry per slot (`slot` decides which items get it), checked with `hasDiv('key')` in `mythic.js`. Pure stat bonuses go in `computeStats` (`player.js`, see `olympus` and `hermes`).
+Divine powers work the same way: `DIVINES` in `items.js` has one entry per slot (`slot` decides which items get it), checked with `hasDiv('key')` in `mythic.js`. Pure stat bonuses go in `computeStats` (`player.js`, see `olympus` and `hermes`). Primordial powers too: `PRIMORDIALS` (one per slot) and `hasPrim('key')` in `mythic.js` (hooks `primOnHit`, `primDmgMult`, `primDodge`, `updatePrimordial`; stat parts like `gaia`/`erebus` in `computeStats`).
 
 Test: `G.char.inv.push(__dbg.makeItem({ ilvl: 10, rarity: 4, slot: 'chip', cls: G.char.cls }))`, then set `.myth = 'key'` on it and equip it.
 

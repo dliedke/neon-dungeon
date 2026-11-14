@@ -198,6 +198,16 @@ export const sfx = {
     [262, 392].forEach((f) => tone({ type: 'triangle', f, dur: 2, vol: 0.05, delay: 0.62, a: 0.08, lp: 1500 }));
     [2637, 3136, 3951, 4186, 3520].forEach((f, i) => tone({ type: 'sine', f, dur: 0.3, vol: 0.025, delay: 0.95 + i * 0.11 }));
   },
+  // item primordial caindo: o mítico com um trovão grave, um coro subindo e cintilação que demora a sumir
+  primordial() {
+    if (throttle('primordial', 900)) return;
+    this.mythic();
+    tone({ type: 'sawtooth', f: 55, f2: 27, dur: 1.6, vol: 0.18, lp: 400 });
+    noise({ dur: 1.2, vol: 0.12, type: 'lowpass', f: 300, f2: 60, delay: 0.05 });
+    [130.8, 196, 261.6, 329.6, 392, 523.3].forEach((f, i) => tone({ type: 'sine', f, f2: f * 1.5, dur: 1.8, vol: 0.045, delay: 0.4 + i * 0.1, a: 0.25 }));
+    [1568, 2093, 2637, 3136, 3951, 4699, 5274].forEach((f, i) => tone({ type: 'sine', f, dur: 0.5, vol: 0.022, delay: 1.1 + i * 0.13 }));
+    [65.4, 98, 130.8].forEach((f) => tone({ type: 'triangle', f, dur: 3, vol: 0.06, delay: 1, a: 0.3, lp: 900 }));
+  },
   // batidinha distante do ferreiro trabalhando
   forgeTick() {
     if (throttle('forgeTick', 300)) return;

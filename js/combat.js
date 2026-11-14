@@ -11,7 +11,7 @@ import { dropLoot, killBounty } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled, abyssOn } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
-import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia } from './mythic.js';
+import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia, primDmgMult, primOnHit, primDodge } from './mythic.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
@@ -102,6 +102,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.lowHpDmg && p.hp < ps.maxHp * 0.5) r.d *= 1 + ps.lowHpDmg / 100;
   if (ps.chillDmg && (e.slowT > 0 || e.frozenT > 0)) r.d *= 1 + ps.chillDmg / 100;
   if (ps.myths.size) r.d *= mythDmgMult(e);
+  if (ps.prims && ps.prims.size) r.d *= primDmgMult(e);
   const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
   const fm = formMods(p);
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (p.buffs.leech > 0 ? 10 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
@@ -113,6 +114,7 @@ export function hitEnemy(e, mult, o = {}) {
   }
   if (ps.myths.size || p.buffs.avatar > 0) mythOnHit(e, r.crit, o);
   if (ps.divs && ps.divs.size) divOnHit(e, o);
+  if (ps.prims && ps.prims.size) primOnHit(e, r.crit, o);
 }
 
 // Efeitos de status causados pelo jogador
@@ -316,6 +318,7 @@ export function damagePlayer(amount) {
   const dodge = (p.stats.dodge || 0) + (p.buffs.evade > 0 ? p.evadeK || 0 : 0);
   if (dodge && Math.random() * 100 < dodge) {
     floatText(p.x, 1.8, p.z, L('ESQUIVA', 'DODGE'), 'shield');
+    if (p.stats.prims && p.stats.prims.size) primDodge();
     return;
   }
   // Égide Divina: bloqueia o golpe inteiro
@@ -323,6 +326,7 @@ export function damagePlayer(amount) {
   amount *= armorTaken(p.stats.armor);
   amount *= amod('taken');
   if (p.stats.dmgRed) amount *= 1 - p.stats.dmgRed / 100;
+  if (p.stats.prims && p.stats.prims.has('gaia')) amount *= 0.8; // Pele de Gaia
   if (p.buffs.titan > 0) amount *= 0.4;
   if (p.buffs.aegis > 0) amount *= 0.5;
   if (p.buffs.guard > 0) amount *= p.guardK ?? 0.5; // defesas dos poderes avançados

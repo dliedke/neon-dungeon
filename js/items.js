@@ -21,10 +21,13 @@ export const RARITY = [
   { name: L('Protótipo', 'Prototype'), color: '#ff7a1a', hex: 0xff7a1a, n: [4, 4], mult: 1.26 },
   { name: L('Mítico', 'Mythic'), color: '#c56bff', hex: 0xb04dff, n: [5, 5], mult: 1.42 },
   { name: L('Divino', 'Divine'), color: '#ffe680', hex: 0xffd84d, n: [6, 6], mult: 1.65 },
+  { name: L('Primordial', 'Primordial'), color: '#7dfff0', hex: 0x7dfff0, n: [6, 6], mult: 1.95 },
 ];
 export const MYTHIC = 4;
 // acima do mítico: só cai nas dificuldades mais altas (ver divChance em loot.js)
 export const DIVINE = 5;
+// acima do divino: só na Morte/Abismo (ou Apocalipse+ no Pesadelo/Inferno), ver primChance em loot.js
+export const PRIMORDIAL = 6;
 
 const BASES = {
   head: [L('Implante Ocular', 'Ocular Implant'), L('Visor Tático', 'Tactical Visor'), L('Chip Cortical', 'Cortical Chip'), L('Capacete Neural', 'Neural Helmet')],
@@ -85,6 +88,19 @@ export const DIVINES = {
 export const DIV_SET = { name: L('Ira dos Deuses', 'Wrath of the Gods'), desc: L('Com os 6 itens divinos: a cada 6s, 5 raios caem sobre inimigos próximos (250% de dano cada).', 'With all 6 divine items: every 6s, 5 lightning bolts strike nearby enemies (250% damage each).') };
 const DIV_OF_SLOT = Object.fromEntries(Object.entries(DIVINES).map(([k, d]) => [d.slot, k]));
 
+// Poderes primordiais (antes dos deuses): um por espaço, a lógica fica em mythic.js.
+// O item primordial também tem um poder mítico e o poder divino do espaço.
+export const PRIMORDIALS = {
+  chaos: { slot: 'weapon', name: L('Lâmina do Caos', 'Blade of Chaos'), desc: L('15% dos acertos abrem uma fenda que repete o golpe em todos os inimigos a até 6m (120% de dano).', '15% of hits open a rift that repeats the strike on every enemy within 6m (120% damage).') },
+  nyx: { slot: 'head', name: L('Olhar de Nyx', 'Gaze of Nyx'), desc: L('Críticos marcam o alvo com a noite: inimigos marcados recebem +40% de dano por 4s.', 'Critical hits mark the target with night: marked enemies take +40% damage for 4s.') },
+  gaia: { slot: 'chest', name: L('Pele de Gaia', 'Skin of Gaia'), desc: L('Recebe 20% menos dano e regenera 1% da vida máxima por segundo.', 'Take 20% less damage and regenerate 1% of max health per second.') },
+  cronos: { slot: 'hands', name: L('Mãos de Cronos', 'Hands of Cronus'), desc: L('A cada 8 golpes, o tempo volta: todas as habilidades recarregam 1s mais rápido.', 'Every 8 hits, time rewinds: all skills recharge 1s faster.') },
+  erebus: { slot: 'feet', name: L('Passos de Érebo', 'Steps of Erebus'), desc: L('+10% de esquiva. Ao esquivar, deixa uma sombra que explode (300% de dano).', '+10% dodge. When you dodge, you leave a shadow that explodes (300% damage).') },
+  uranus: { slot: 'chip', name: L('Coroa de Urano', 'Crown of Uranus'), desc: L('A cada 12s, uma chuva de 8 meteoros cai sobre os inimigos por perto (220% de dano cada).', 'Every 12s, a shower of 8 meteors falls on nearby enemies (220% damage each).') },
+};
+export const PRIM_SET = { name: L('Gênese', 'Genesis'), desc: L('Com os 6 itens primordiais: +50% de dano e cada habilidade usada solta uma onda prismática (300% de dano).', 'With all 6 primordial items: +50% damage and every skill you use releases a prismatic wave (300% damage).') };
+const PRIM_OF_SLOT = Object.fromEntries(Object.entries(PRIMORDIALS).map(([k, d]) => [d.slot, k]));
+
 export function rollRarity(bonus = 0) {
   const w = [62, 28 + bonus * 0.5, 8 + bonus * 0.35, 1.6 + bonus * 0.15];
   return weightedPick([0, 1, 2, 3], (i) => w[i]);
@@ -124,6 +140,13 @@ export function makeItem({ ilvl, rarity, slot, cls }) {
     it.div = DIV_OF_SLOT[slot];
     for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.45);
   }
+  if (rarity === PRIMORDIAL) {
+    // primordial: 6 atributos no máximo, um poder mítico, o divino e o primordial do espaço
+    it.myth = pick(Object.keys(MYTHICS));
+    it.div = DIV_OF_SLOT[slot];
+    it.prim = PRIM_OF_SLOT[slot];
+    for (const k of Object.keys(it.affixes)) it.affixes[k] = fround(it.affixes[k] * 1.6);
+  }
   it.si = Math.floor(rnd() * 64);
   return it;
 }
@@ -133,6 +156,7 @@ export function itemName(it) {
   if (it.bi === undefined) return it.name || '?';
   const plus = it.plus ? ` +${it.plus}` : '';
   const base = (it.slot === 'weapon' ? CLASSES[it.cls].weaponNames[it.bi] : BASES[it.slot][it.bi]) + plus;
+  if (it.prim) return `✺ ${base} «${PRIMORDIALS[it.prim].name}»`;
   if (it.div) return `⚡ ${base} «${DIVINES[it.div].name}»`;
   if (it.myth) return `✦ ${base} «${MYTHICS[it.myth].name}»`;
   if (it.rarity === 3) return `${base} «${LEGENDARIES[it.leg].name}»`;
@@ -144,13 +168,13 @@ export function itemName(it) {
 // ---------------- Ferreiro: aprimora itens (+1, +2...) por créditos ----------------
 // Cada nível: +4% de dano/blindagem base e +2,5% nos atributos. A cada 4 níveis, um marco:
 // ganha um atributo novo (ou reforça um dos que já tem).
-export const FORGE_MAX = [4, 6, 8, 10, 12, 15];
+export const FORGE_MAX = [4, 6, 8, 10, 12, 15, 18];
 export const forgeMax = (it) => FORGE_MAX[it.rarity] ?? 4;
 export const isMilestone = (lv) => lv > 0 && lv % 4 === 0;
 // valores pequenos ficam com uma casa decimal para o aprimoramento sempre aparecer
 const fround = (v) => (Math.abs(v) < 20 ? Math.round(v * 10) / 10 : Math.round(v));
 export function forgeCost(it) {
-  return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4, 6][it.rarity] * Math.pow(1.32, it.plus | 0));
+  return Math.round((25 + it.ilvl * 10) * [1, 1.4, 2, 2.8, 4, 6, 9][it.rarity] * Math.pow(1.32, it.plus | 0));
 }
 export function forgeItem(it) {
   // a0: atributos originais (os marcos mudam base.affixes); itens antigos não têm e usam base.affixes
@@ -216,6 +240,7 @@ export function itemScore(it) {
   if (it.leg) s += 20;
   if (it.myth) s += 45;
   if (it.div) s += 80;
+  if (it.prim) s += 160;
   return s;
 }
 
@@ -228,7 +253,7 @@ export function forgeSpent(it) {
 
 // reciclar devolve o valor do item mais tudo o que foi gasto no ferreiro
 export function recycleValue(it) {
-  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100][it.rarity]) + forgeSpent(it);
+  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100, 250][it.rarity]) + forgeSpent(it);
 }
 
 export function itemStatLines(it) {
@@ -237,6 +262,7 @@ export function itemStatLines(it) {
   if (it.armor) lines.push(`<div class="it-main">${fmt(it.armor)} <span>${L('de blindagem', 'armor')}</span></div>`);
   for (const [k, v] of Object.entries(it.affixes)) lines.push(`<div class="it-aff">${AFFIXES[k].fmt(v)}</div>`);
   if (it.leg) lines.push(`<div class="it-leg"><b>${LEGENDARIES[it.leg].name}:</b> ${LEGENDARIES[it.leg].desc}</div>`);
+  if (it.prim) lines.push(`<div class="it-prim"><b>✺ ${PRIMORDIALS[it.prim].name}:</b> ${PRIMORDIALS[it.prim].desc}</div>`);
   if (it.div) lines.push(`<div class="it-div"><b>⚡ ${DIVINES[it.div].name}:</b> ${DIVINES[it.div].desc}</div>`);
   if (it.myth) lines.push(`<div class="it-myth"><b>✦ ${MYTHICS[it.myth].name}:</b> ${MYTHICS[it.myth].desc}</div>`);
   return lines.join('');
@@ -283,6 +309,10 @@ export function itemDiffHtml(it, cur) {
     // recarga aparece como "-X%": mais é melhor, mostra como redução
     if (k === 'cdr') add(-((it.affixes.cdr || 0) - (cur.affixes.cdr || 0)), L(n[0], n[1]), true);
     else add((it.affixes[k] || 0) - (cur.affixes[k] || 0), L(n[0], n[1]));
+  }
+  if (it.prim !== cur.prim) {
+    if (cur.prim) rows.push(`<div class="down">▼ ✺ ${PRIMORDIALS[cur.prim].name}</div>`);
+    if (it.prim) rows.push(`<div class="up">▲ ✺ ${PRIMORDIALS[it.prim].name}</div>`);
   }
   if (it.div !== cur.div) {
     if (cur.div) rows.push(`<div class="down">▼ ⚡ ${DIVINES[cur.div].name}</div>`);

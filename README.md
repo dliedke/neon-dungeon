@@ -115,7 +115,7 @@ Every floor changes biome (23 in total), each with its own lighting and hazards.
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Large server halls | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one). Floor 22 has a merchant too |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one; primordials are never sold). Floor 22 has a merchant too |
 | **Bone Forest** | Organic clearings | Giant ribs and dead trees; **bone piles** you can smash for healing marrow, but the noise draws predators. Enemies standing in marrow pools heal; stalking **bone stalkers** |
 | **Glass Desert** | Open dunes | A glass floor that cracks into cutting shards under explosions and heavy blows, crystal spires and shard storms; **glass golems** vanish into reflections, leaving fake copies behind |
 | **Fallen Star Swamp** | Organic caves | Black water and low-gravity craters where you run faster and shots slow down; creatures race you for **star fragments** (grab one for Fury, or they get empowered); exploding **star sparks** |
@@ -197,15 +197,15 @@ From floor 2 on, most floors (not boss floors) get one or two **main events**, a
 | **Drone Escort** | A drone flies to a point across the floor, but only while you stay close. Protect it from the waves on the way. |
 | **Memory Pairs** | Step on tiles to reveal their symbols and find all the pairs. Too many misses call in enemies; few misses earn an extra chest. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
-| **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic). Each bet costs more than the last. |
+| **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
 Thieves, shrines and rifts show up on the minimap once explored. Click or tap the minimap (or press M) to open the full map.
 
 ## Medals
 
-**151 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**153 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
-legendaries, mythics, divine items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
+legendaries, mythics, divine and primordial items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
 ## Bosses
@@ -229,7 +229,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
-    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic or divine items.
+    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic, divine or primordial items.
   - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, from Chaos difficulty up (rarer on Chaos, more on Apocalypse,
     Death and each Abyss level), or on Brutal and above in Nightmare/Inferno, from floor 8 onwards. They are rarer than mythics: bosses are the best source
     (about 27% of bosses drop one on Death, about 50% on Abyss X, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
@@ -238,6 +238,14 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Divine Aegis** (torso: every 8 s a thunder shield blocks one whole hit and releases a shockwave), **Titan Fists** (hands: every 5th hit calls a thunderbolt),
     **Sandals of Hermes** (feet: +20% movement speed, +8% dodge) and **Ambrosia** (chip: below 30% health, or on a fatal blow, heals 50% and grants 2 s of invulnerability, every 60 s).
     Wearing all 6 unlocks **Wrath of the Gods**: every 6 s, 5 lightning bolts strike nearby enemies.
+  - **Primordial items** ✺ (above divine): the rarest drop, with a rainbow prism beam, its own sound and announcement. They only drop on Death and the Abyss
+    (or Apocalypse+ in Nightmare/Inferno), from effective floor 15, and only from bosses, rifts, Behemoths, Data Thieves and chests (about 3% of bosses on Death,
+    7% on Abyss V, 13% on Abyss X). The first win of the final battle on Abyss X always gives one. A primordial item has 6 stats stronger than a divine one,
+    a random mythic power, the divine power of its slot and the primordial power of its slot:
+    **Blade of Chaos** (weapon: 15% of hits open a rift that repeats the strike on every enemy within 6 m), **Gaze of Nyx** (implant: crits mark the target, +40% damage taken for 4 s),
+    **Skin of Gaia** (torso: 20% less damage taken, regenerate 1% max health per second), **Hands of Cronus** (hands: every 8 hits all skills recharge 1 s),
+    **Steps of Erebus** (feet: +10% dodge, dodging leaves an exploding shadow) and **Crown of Uranus** (chip: every 12 s, 8 meteors fall on nearby enemies).
+    Wearing all 6 unlocks **Genesis**: +50% damage and every skill you use releases a prismatic wave. The merchant never sells them.
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
   - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
@@ -251,7 +259,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
 - **Progression:** no level cap (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 30 per skill, refundable per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).
 - **Soundtrack:** 5 synthwave tracks synthesized live (Neon Pulse, Chrome Rain, Midnight Grid, Data Ghosts, Overdrive), played in shuffle or fixed to one in the options. Drums and bass kick in during fights and bosses. A 6th song, Neon Dawn, plays only in the true ending.
 - **Difficulty:** a small slider in the HUD (also in the options) with 9 levels: Easy, Normal, Hard, Very Hard, Brutal, Insane, Chaos, Apocalypse and Death. Each step up gives more credits and better items: from Brutal on (or in Nightmare) common items stop dropping, and from Insane on (or in Inferno) modded items stop dropping too, so the worst drop is rare. Chaos, Apocalypse and Death also raise the item level (+10, +20 and +30). It changes instantly, enemies on the floor included.
-- **Abyss I–X (above Death):** defeat a boss on Death to open the Abyss, a separate selector under the Death slider (− / + and 10 depth pips, also in the options for gamepads). Each Abyss level pushes the dungeon 6 floors deeper, adds one more rule on top of the previous ones and raises the rewards (credits up to ×17, item level +6 per level, divine chance +10% per level, an extra item from chests and bosses from Abyss V). Defeating a boss on Abyss N opens Abyss N+1 (the lowest level used during the fight counts). The rules: I Elite Horde (many more elites, even on floor 1), II Swift Hunters (+15% enemy speed), III Deep Wounds (healing 30% weaker), IV Extra Affix (elites get one more affix), V Early Fury (bosses enrage at 60% health), VI Unstable Elites (elites explode on death), VII Rapid Fire (enemy shots 25% faster), VIII Frenzy (enemies attack 20% faster), IX Swarm (+20% enemies), X Lords of the Abyss (bosses and elites +50% health). Four medals go with it.
+- **Abyss I–X (above Death):** defeat a boss on Death to open the Abyss, a separate selector under the Death slider (− / + and 10 depth pips, also in the options for gamepads). Each Abyss level pushes the dungeon 6 floors deeper, adds one more rule on top of the previous ones and raises the rewards (credits up to ×17, item level +6 per level, divine chance +10% per level, more primordials, an extra item from chests and bosses from Abyss V). Defeating a boss on Abyss N opens Abyss N+1 (the lowest level used during the fight counts). The rules: I Elite Horde (many more elites, even on floor 1), II Swift Hunters (+15% enemy speed), III Deep Wounds (healing 30% weaker), IV Extra Affix (elites get one more affix), V Early Fury (bosses enrage at 60% health), VI Unstable Elites (elites explode on death), VII Rapid Fire (enemy shots 25% faster), VIII Frenzy (enemies attack 20% faster), IX Swarm (+20% enemies), X Lords of the Abyss (bosses and elites +50% health). Four medals go with it.
   The harder it is, the bigger the rewards: up to ×3.5 credits and far more and better items (more drops, higher rarity, more mythics).
   When you raise it the reward bonus ramps up over a few seconds, so it can't be flipped up just to open a chest.
 - **Healing that scales with damage** (life steal, heal on kill) has a per-second cap, so a strong character still has to watch their health.

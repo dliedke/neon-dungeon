@@ -7,7 +7,10 @@ Pedidos do usuário:
 1. Dificuldades acima da Morte com mais recompensa (o baú compartilhado deixou o jogo fácil). → **Fase 1 (Abismo)**
 2. Itens divinos mais frequentes. → **Fase 2**
 3. Uma raridade nova acima do divino, rara mas alcançável. → **Fase 3 (Primordial)**
-4. Árvore de habilidades com mais 4 passivos e 4 ataques novos para todas as 10 classes. → **Fase 4**
+4. Árvore de habilidades com mais 4 passivos e 4 ataques novos para todas as 10 classes. → **Fase 7**
+5. Santuários mais divertidos (super velocidade, superpoderes, superteleporte...). → **Fase 4**
+6. Duas músicas novas, sons mais variados. → **Fase 5**
+7. 10 eventos novos e uns 5 eventos por andar. → **Fase 6**
 
 ---
 
@@ -48,41 +51,86 @@ Resultado (medido com 600–1000 drops de chefe no andar 10): chefe com pelo men
 
 ---
 
-## Fase 3 — Raridade nova: **Primordial** (acima do Divino)
+## Fase 3 — Raridade nova: **Primordial** (acima do Divino) (concluída)
 
 Tema: antes dos deuses vieram os Primordiais (Caos, Gaia, Nyx, Cronos, Érebo, Urano). Visual: nome com gradiente prismático animado (arco-íris neon), feixe de loot trocando de cor, banner próprio ("✺ ITEM PRIMORDIAL ✺"), som próprio.
 
 Dados (`items.js`):
-- [ ] `RARITY[6] = { name: L('Primordial', 'Primordial'), color: '#7dfff0', hex: 0x7dfff0, n: [6, 6], mult: 1.95 }` e `export const PRIMORDIAL = 6;` (cor base ciano-branco; o prisma vem do CSS).
-- [ ] `makeItem`: afixos ×1.6, um poder mítico + o poder divino do espaço + um poder primordial do espaço (`it.prim`). Campo ausente = sem poder (saves antigos ok).
-- [ ] `PRIMORDIALS` (um por espaço, lógica em `mythic.js`), sugestões:
-  - arma `chaos` — Lâmina do Caos: 15% dos acertos abrem uma fenda que repete o golpe em todos os inimigos a 6m (100%).
+- [x] `RARITY[6] = { name: L('Primordial', 'Primordial'), color: '#7dfff0', hex: 0x7dfff0, n: [6, 6], mult: 1.95 }` e `export const PRIMORDIAL = 6;` (cor base ciano-branco; o prisma vem do CSS).
+- [x] `makeItem`: afixos ×1.6, um poder mítico + o poder divino do espaço + um poder primordial do espaço (`it.prim`). Campo ausente = sem poder (saves antigos ok).
+- [x] `PRIMORDIALS` (um por espaço, lógica em `mythic.js`), sugestões:
+  - arma `chaos` — Lâmina do Caos: 15% dos acertos abrem uma fenda que repete o golpe em todos os inimigos a 6m (120%).
   - cabeça `nyx` — Olhar de Nyx: críticos marcam o alvo; marcados recebem +40% de dano por 4s.
-  - peito `gaia` — Pele de Gaia: 20% menos dano recebido e regenera 2% da vida por segundo fora de combate por 3s.
-  - mãos `cronos` — Mãos de Cronos: a cada 10 golpes, recarrega 1s de todos os poderes.
-  - pés `erebus` — Passos de Érebo: ao esquivar ou teleportar deixa uma sombra que explode (300%).
-  - chip `uranus` — Coroa de Urano: a cada 20s chove meteoros por 3s ao redor (200% cada).
+  - peito `gaia` — Pele de Gaia: 20% menos dano recebido e regenera 1% da vida por segundo.
+  - mãos `cronos` — Mãos de Cronos: a cada 8 golpes, recarrega 1s de todos os poderes.
+  - pés `erebus` — Passos de Érebo: +10% de esquiva (teto 35%); ao esquivar deixa uma sombra que explode (300%).
+  - chip `uranus` — Coroa de Urano: a cada 12s caem 8 meteoros nos inimigos a 10m (220% cada).
   - Conjunto `GENESIS` (6 peças): "Gênese" — +50% de dano e todo poder usado solta uma onda prismática (300%).
-- [ ] `itemName` (prefixo ✺), `itemScore` (+160), `itemCardHtml`/`itemDiffHtml` (linha `.it-prim`), forja (`forgeMax`, custos, `recycleValue`: conferir arrays indexados por raridade), `sortInventory`.
+- [x] `itemName` (prefixo ✺), `itemScore` (+160), `itemCardHtml`/`itemDiffHtml` (linha `.it-prim`), forja (`forgeMax`, custos, `recycleValue`: conferir arrays indexados por raridade), `sortInventory`.
 
 Drop (`loot.js`):
-- [ ] `primChance(o, find)`: só com `rewardRank() >= 8` (Morte/Abismo) **ou** tier ≥ 1 no Apocalipse+, andar efetivo ≥ 20, apenas chefes/fendas/feras/ladrões/baús (nunca inimigo comum). Valor ≈ `divChance × 0.1`, ×(1 + 0.15 × nível do Abismo). Rolar antes do divino.
-- [ ] Recompensa garantida: primeira vitória da batalha final no Abismo X dá 1 Primordial (flag em `stats.sets.flags`).
-- [ ] Ground loot: cor, feixe maior, rótulo `.ilabel.r6`, `achAdd('primordials')`, banner/toast `prim`, som (`sfx.primordial` em `audio.js`, sintetizado).
-- [ ] `events.js` caça-níquel: Primordial só no Abismo, 0.5%.
+- [x] `primChance(o, find)`: só com `rewardRank() >= 8` (Morte/Abismo) **ou** tier ≥ 1 no Apocalipse+, andar efetivo ≥ 15, apenas chefes/fendas/feras/ladrões/baús (nunca inimigo comum). Valor = `divChance × 0.1 × (1 + 0.1 × nível do Abismo)`. Rolado depois do divino (e o substitui).
+- [x] Recompensa garantida: primeira vitória da batalha final no Abismo X dá 1 Primordial (flag em `stats.sets.flags`).
+- [x] Ground loot: cor, feixe maior, rótulo `.ilabel.r6`, `achAdd('primordials')`, banner/toast `prim`, som (`sfx.primordial` em `audio.js`, sintetizado).
+- [x] `events.js` caça-níquel: Primordial só no Abismo, 0.5%.
 
 Resto:
-- [ ] `player.js` `computeStats`: `s.prims = new Set()` e bônus passivos (Gaia, conjunto).
-- [ ] `mythic.js`: lógica dos 6 poderes + conjunto (evitar alocação por frame, reaproveitar geometrias/fx).
-- [ ] `ui.js`: lista de bônus do personagem (perto da linha que mostra `DIVINES` em `s.divs`), minimapa (`RARITY[...]` já cobre), forja, baú.
-- [ ] `css/style.css`: `--r6`, `.cell.r6`, `.item-card.r6`, `.ilabel.r6`, `.toast.prim`, `.it-prim` com `@keyframes` de gradiente; tamanhos em `body.touch`.
-- [ ] `ach.js`: medalhas "Primordial" (achar 1), "Gênese" (6 equipados), contador `primordials`; conferir `divPlus`/`div6` que usam `rarity >= 5` (Primordial também conta como "divino ou melhor"? Sim, manter `>= 5`).
-- [ ] `sync.js`: o melhor item por espaço usa `itemScore` (conferir que o Primordial ganha).
-- [ ] Docs: README (raridades e poderes), `docs/CONTENT.md` (receita de raridade), og/meta se citarem raridades.
+- [x] `player.js` `computeStats`: `s.prims = new Set()` e bônus passivos (Gaia, conjunto).
+- [x] `mythic.js`: lógica dos 6 poderes + conjunto (evitar alocação por frame, reaproveitar geometrias/fx).
+- [x] `ui.js`: lista de bônus do personagem (perto da linha que mostra `DIVINES` em `s.divs`), minimapa (`RARITY[...]` já cobre), forja, baú.
+- [x] `css/style.css`: `--r6`, `.cell.r6`, `.item-card.r6`, `.ilabel.r6`, `.toast.prim`, `.it-prim` com `@keyframes` de gradiente; tamanhos em `body.touch`.
+- [x] `ach.js`: medalhas "Primordial" (achar 1), "Gênese" (6 equipados), contador `primordials`; conferir `divPlus`/`div6` que usam `rarity >= 5` (Primordial também conta como "divino ou melhor"? Sim, manter `>= 5`).
+- [x] `sync.js`: o melhor item por espaço usa `itemScore` (conferir que o Primordial ganha).
+- [x] Docs: README (raridades e poderes), `docs/CONTENT.md` (receita de raridade), og/meta se citarem raridades.
+
+Resultado medido (qualquer Primordial por chefe): Morte andar 10 = 0% (piso 15), Morte andar 20 ≈ 3%, Abismo V ≈ 7%, Abismo X ≈ 13%; baú no Morte ≈ 0,4%. Apocalipse no tier 0 = 0%. O mercador nunca vende. 153 medalhas.
 
 ---
 
-## Fase 4 — Árvore: +4 passivos e +4 ataques por classe (80 poderes novos)
+## Fase 4 — Santuários mais divertidos
+
+Hoje (`loot.js` `SHRINES`, `SHRINE_TIME = 30`, `spawnShrine(x, z, kind)`): fury, haste, fortune, aegis, crit, vamp, arcane, chrono, storm, frost, wisdom (buffs de números, 30s). Pedido: "super velocidade, superpoderes, superteleportes, mais divertido".
+- [ ] Santuários novos (só **acrescentar** no fim de `SHRINES`), cada um com efeito visível e som próprio:
+  - `blitz` — Super Velocidade: +80% de movimento, rastro de neon que causa dano em quem você atravessa.
+  - `titan` — Superpoder: fica gigante (modelo ×1.5), +60% de dano, golpes empurram e tremem a tela.
+  - `warp` — Superteleporte: o Teleporte fica sem recarga e cada chegada explode.
+  - `overload` — Sobrecarga: todos os poderes com 70% menos recarga.
+  - `midas` — Toque de Midas: inimigos mortos explodem em créditos.
+  - `clone` — Clone Neon: um holograma seu luta junto (copia seus golpes básicos).
+- [ ] Santuários antigos mais fortes: duração 30s → 40s, aura colorida no jogador enquanto dura, banner curto ao ativar.
+- [ ] Mais santuários por andar (conferir onde `spawnShrine` é chamado) e chance de um "Santuário Supremo" que dá 2 efeitos.
+- [ ] HUD de buffs: ícone e tempo de cada efeito novo; toque/controle sem mudança de entrada (ativar é encostar).
+- [ ] Docs: README (lista de santuários).
+
+## Fase 5 — 2 músicas novas
+
+`music.js` `SONGS` (5 músicas; formato `{name, bpm, prog:{A,B}, kick, snare, hat, bass, arp, arpOct, lead, mel:{A,B}, secs, ...}`); `ANTHEM_I = SONGS.length` e `audio.js` usa `G.settings.track` como índice, então **só acrescentar no fim** e conferir os usos de `ANTHEM_I`/`trackNames`.
+- [ ] Música 6: estilo diferente das atuais (ex.: synthwave lento/sombrio ~92 bpm, ou drum & bass ~172 bpm).
+- [ ] Música 7: outro estilo (ex.: chiptune/arcade rápido, ou industrial pesado).
+- [ ] Novos timbres se precisar (ex.: `lead: 'pluck'`, `bass: 'reese'`), sem quebrar as músicas antigas.
+- [ ] Seletor de música nas Opções mostra as 7; README (trilha sonora).
+
+## Fase 6 — 10 eventos novos, ~5 por andar
+
+`events.js` `setupEvents`: `want = boss || !free.length ? 0 : roll ? 2 : 1` de `MAIN_EVENTS` (`KIND[k].setup(d, floor, free)`), mais 1 evento pequeno (sala secreta ou caça-níquel 30%). `isolateRandom` mantém a semente (continuar o andar refaz igual), `lastMain` evita repetir.
+- [ ] 10 eventos novos em `KIND`/`MAIN_EVENTS` (curtos, 30–90s, cada um com recompensa e som):
+  1. Corrida de Checkpoints (anéis de neon com tempo).
+  2. Horda (sobreviva a ondas por 45s numa arena marcada).
+  3. Caça ao Tesouro (sinal quente/frio até um baú enterrado).
+  4. Chuva de Meteoros (desvie das sombras e pegue os cristais).
+  5. Hacker de Torres (capture 3 torres antes dos inimigos).
+  6. Caixa de Pandora (abrir = recompensa ou maldição).
+  7. Elite Fugitivo (um elite rico foge; pegue antes de escapar).
+  8. Duelo de Espelho (uma cópia sombria sua).
+  9. Pinball de Bombas (empurre bombas até os alvos).
+  10. Chuva de Créditos (créditos caindo por 20s).
+- [ ] `setupEvents`: ~5 eventos por andar normal (4–6 conforme salas livres), 0 em andar de chefe; sem repetir no mesmo andar.
+- [ ] Toque, controle e teclado em todos (eventos usam encostar/atacar, sem botão novo); textos bilíngues.
+- [ ] Medalhas (contadores de eventos) se fizer sentido; README (tabela de eventos).
+
+---
+
+## Fase 7 — Árvore: +4 passivos e +4 ataques por classe (80 poderes novos)
 
 Estrutura atual (`classes.js`): `skills` base → `PASSIVES` → Teleporte (exceto Netrunner) → `LATE_PASSIVES` (níveis 20/28/36, marca `late`) → `ADV_POWERS` (40/50/60/70, marca `adv`, lógica em `SKILL_FN`). A árvore em `ui.js` (`TIERS`, `tierIdx`) agrupa pelas marcas. Nível máximo do personagem é infinito (`MAX_LEVEL`), XP `45·lvl^1.5`, `MAX_RANK = 30`. `sanitizeChar` já completa `c.skills` com zeros, então **só acrescentar no fim** (índices são save).
 

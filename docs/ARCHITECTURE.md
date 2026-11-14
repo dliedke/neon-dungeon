@@ -199,13 +199,13 @@ hitEnemy(e, mult, opts)
 ## Items and loot (`items.js`, `loot.js`, `mythic.js`)
 
 - Slots: `weapon`, `head`, `chest`, `hands`, `feet`, `chip`.
-- Rarities (`RARITY`, index 0–5): Common, Modded, Rare, Prototype, Mythic (`MYTHIC`), Divine (`DIVINE`). Each sets the affix count `n` and the stat multiplier `mult`.
-- `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`). Divine items get a random `myth` plus `div`, the divine power of their slot (`DIVINES`, one per slot; `DIV_SET` is the 6-piece bonus). `computeStats` collects them in `p.stats.divs`.
+- Rarities (`RARITY`, index 0–6): Common, Modded, Rare, Prototype, Mythic (`MYTHIC`), Divine (`DIVINE`), Primordial (`PRIMORDIAL`). Each sets the affix count `n` and the stat multiplier `mult`.
+- `makeItem({ ilvl, rarity, slot, cls })` returns `{ uid, slot, rarity, ilvl, affixes, bi, si, … }`. Weapons also get `cls`, `wMin` and `wMax`; armor gets `armor`. Prototypes get a legendary power `leg` (`LEGENDARIES`), Mythics a mythic power `myth` (`MYTHICS`). Divine items get a random `myth` plus `div`, the divine power of their slot (`DIVINES`, one per slot; `DIV_SET` is the 6-piece bonus). `computeStats` collects them in `p.stats.divs`. Primordial items get `myth`, `div` and `prim`, the primordial power of their slot (`PRIMORDIALS`; `PRIM_SET` is the 6-piece bonus), collected in `p.stats.prims`. Arrays indexed by rarity (`FORGE_MAX`, `forgeCost`, `recycleValue`, merchant prices) need an entry per rarity; the merchant caps its offers at Divine.
 - Optional item fields: `plus` (forge level) with `base` (the pre-forge stats that `forgeItem` scales from; every 4th level adds or boosts an affix), and `fav` (favorite, protected from recycling).
 - `itemScore` ranks items. `isUpgrade` (more than 3 % better than equipped) drives the ▲ marker and the shop stock.
 - `loot.js`: `dropLoot`, `spawnPickup` (items, credits, orbs), `spawnChest`, shrines (`SHRINES`, timed buffs in `p.buffs`) and `INV_SIZE` (100).
-- Divine drops: `divChance` in `loot.js` (0 below Apocalypse, except Brutal+ in Nightmare/Inferno; needs effective floor 10).
-- `mythic.js` runs the mythic and divine powers each frame and hooks into hits (`mythOnHit`, `divOnHit`), kills, damage taken (`divBlock` before armor, `divAmbrosia` after the hit) and death.
+- Divine drops: `divChance` in `loot.js` (from Chaos up, or Brutal+ in Nightmare/Inferno; needs effective floor 8). Primordial drops: `primChance` (a tenth of `divChance`, only Death/Abyss or Apocalypse+ in a higher tier, effective floor 15+, only bosses, rifts, Behemoths, thieves and chests; rolled after the divine). The first final-battle win on Abyss X spawns one (`flags.primGift`).
+- `mythic.js` runs the mythic and divine powers each frame and hooks into hits (`mythOnHit`, `divOnHit`, `primDmgMult`, `primOnHit`), kills, damage taken (`divBlock` before armor, `divAmbrosia` after the hit, `primDodge` on a dodge), skill use (`primSkillWave`, Genesis) and death.
 
 ## Run events (`run.js`)
 

@@ -17,6 +17,7 @@ import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
 import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor, MAX_TIER } from './run.js';
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
+import { makeItem, PRIMORDIAL } from './items.js';
 import { wildPopulate, mirrorDecoy, sentinelCall } from './wilds.js';
 
 export const ETYPES = {
@@ -2316,7 +2317,17 @@ function finalVictory() {
   if (diffRank() >= 6) achMark('flags', 'winChaos');
   if (diffRank() >= 7) achMark('flags', 'winApocalypse');
   if (diffRank() >= 8) achMark('flags', 'winDeath');
-  if (abyssLvl() >= 10) achMark('flags', 'winAbyss');
+  if (abyssLvl() >= 10) {
+    // primeira vitória no Abismo X: um item primordial garantido (uma vez por conta; a flag sincroniza)
+    const fl = G.save.stats.sets.flags || {};
+    if (!fl.primGift) {
+      achMark('flags', 'primGift');
+      const p = G.player;
+      const it = makeItem({ ilvl: G.floor + tierOf().off + diffIlvl() + 2, rarity: PRIMORDIAL, cls: ch.cls });
+      after(3, () => spawnPickup('item', p.x, p.z, { item: it }));
+    }
+    achMark('flags', 'winAbyss');
+  }
   if (F.time < 600) achMark('flags', 'winFast');
   if (ch.tier >= 1) achMark('flags', 'winNightmare');
   if (ch.tier >= 2) achMark('flags', 'winInferno');

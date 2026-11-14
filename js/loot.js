@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { G, gk } from './state.js';
 import { rr, chance, short } from './utils.js';
-import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, itemName, isUpgrade } from './items.js';
+import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, PRIMORDIAL, PRIMORDIALS, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText, beamFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -18,6 +18,8 @@ export const INV_SIZE = 100;
 const UP_COLOR = 0x39ff88;
 const MYTH_COLOR = 0xb04dff;
 const DIV_COLOR = 0xffd84d;
+const PRIM_COLOR = 0x7dfff0;
+const PRISM_FX = [0x7dfff0, 0xff6bd6, 0xffe680, 0x8a7dff, 0x6bff9a, 0xff7a5a];
 
 // Chance de um item virar mítico: raro, mas acontece (mais em chefes, fendas, ladrões e nos modos Pesadelo/Inferno)
 function mythChance(o, find) {
@@ -35,6 +37,16 @@ function divChance(o, find) {
   if (!k || effFloor() < 8) return 0;
   const base = o.boss ? 0.02 : o.rift ? 0.015 : o.thief || o.beast ? 0.0125 : o.contract ? 0.0075 : o.chest ? 0.004 : o.elite ? 0.002 : 0.0003;
   return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
+}
+// Chance de um item virar primordial (acima do divino): só na Morte/Abismo (ou Apocalipse+ no Pesadelo/Inferno),
+// do andar efetivo 15 em diante e só de chefes, fendas, feras, ladrões e baús. Um décimo da chance do divino,
+// mais 10% por nível de Abismo (por cima dos 10% que o divino já ganha).
+function primChance(o, find) {
+  if (!(o.boss || o.rift || o.beast || o.thief || o.chest)) return 0;
+  const t = G.char.tier | 0;
+  const dr = Math.floor(rewardRank() + 1e-6);
+  if (!(dr >= 8 || (t >= 1 && dr >= 7)) || effFloor() < 15) return 0;
+  return divChance(o, find) * 0.1 * (1 + 0.1 * Math.max(0, dr - 8));
 }
 let labelRoot = null;
 
@@ -103,6 +115,7 @@ export function dropLoot(x, z, o = {}) {
     if (rich && rarity < 3 && chance(0.25)) rarity++;
     if (chance(mythChance(o, find))) rarity = MYTHIC;
     if (chance(divChance(o, find))) rarity = DIVINE;
+    if (chance(primChance(o, find))) rarity = PRIMORDIAL;
     const it = makeItem({ ilvl, rarity, cls: G.char.cls });
     spawnPickup('item', x, z, { item: it });
   }
@@ -161,11 +174,14 @@ export function spawnPickup(type, x, z, data) {
     if (data.item.rarity >= MYTHIC) {
       // mítico/divino: coluna de luz alta, dois anéis girando e um losango em volta
       // o divino é dourado e maior
+      // o primordial troca de cor (prisma) e é ainda maior
+      const pr = data.item.rarity >= PRIMORDIAL;
       const dv = data.item.rarity === DIVINE;
-      const fc = dv ? DIV_COLOR : MYTH_COLOR;
-      mesh.scale.setScalar(dv ? 1.45 : 1.25);
+      const fc = pr ? PRIM_COLOR : dv ? DIV_COLOR : MYTH_COLOR;
+      mesh.scale.setScalar(pr ? 1.65 : dv ? 1.45 : 1.25);
       const beam = new THREE.Mesh(mythBeamGeo, beamMat(fc, 0.5));
-      if (dv) beam.scale.set(1.5, 1.4, 1.5);
+      if (pr) beam.scale.set(1.9, 1.7, 1.9);
+      else if (dv) beam.scale.set(1.5, 1.4, 1.5);
       const r1 = new THREE.Mesh(upRingGeo, beamMat(fc, 0.9));
       const r2 = new THREE.Mesh(upRingGeo, beamMat(0xffffff, 0.6));
       r1.position.y = -0.3;
@@ -174,6 +190,10 @@ export function spawnPickup(type, x, z, data) {
       const gem = new THREE.Mesh(mythGemGeo, beamMat(fc, 0.55));
       g.add(beam, r1, r2, gem);
       data.mythFx = { beam, r1, r2, gem };
+      if (pr) {
+        gem.scale.setScalar(1.3);
+        data.prism = true;
+      }
       pkColor = fc;
     } else if (data.item.rarity >= 1) {
       const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.55 : 0.25));
@@ -202,6 +222,7 @@ export function spawnPickup(type, x, z, data) {
     if (data.item.rarity === 3) achAdd('legendaries');
     if (data.item.rarity === MYTHIC) achAdd('mythics');
     if (data.item.rarity === DIVINE) achAdd('divines');
+    if (data.item.rarity === PRIMORDIAL) achAdd('primordials');
     if (!labelRoot) labelRoot = document.getElementById('labels');
     const el = document.createElement('div');
     el.style.display = 'none';
@@ -210,7 +231,21 @@ export function spawnPickup(type, x, z, data) {
     pk.lid = labelId++;
     setUpgrade(pk, isUpgrade(data.item, G.char.equip));
     const name = itemName(data.item);
-    if (data.item.rarity === DIVINE) {
+    if (data.item.rarity === PRIMORDIAL) {
+      // acima dos deuses: céu rachando em todas as cores, faixa própria e o som mais raro do jogo
+      sfx.primordial();
+      banner(L('✺ ITEM PRIMORDIAL ✺', '✺ PRIMORDIAL ITEM ✺'), name);
+      toast(`<b class="prim-t">✺ ${L('PRIMORDIAL', 'PRIMORDIAL')}:</b> ${name}<br><small>${PRIMORDIALS[data.item.prim].desc}</small>`, 'prim');
+      PRISM_FX.forEach((c, i) => {
+        const a = (i / PRISM_FX.length) * Math.PI * 2;
+        beamFx(x + Math.cos(a) * 1.4, 18, z + Math.sin(a) * 1.4, x, 0, z, c, 0.5, 5);
+        ringFx(x, z, 3 + i * 1.3, c, 0.9 + i * 0.12, { from: 0.3 });
+      });
+      beamFx(x, 18, z, x, 0, z, 0xffffff, 0.45, 4);
+      burst(x, 1, z, PRIM_COLOR, 70, 10, 0.1, 1.3, { up: 3 });
+      burst(x, 1, z, 0xff6bd6, 50, 8, 0.1, 1.1, { up: 2.5 });
+      G.shake = Math.max(G.shake, 0.6);
+    } else if (data.item.rarity === DIVINE) {
       // o maior momento do jogo: trovão, faixa dourada e explosão de luz
       sfx.mythic();
       sfx.zap();
@@ -457,6 +492,14 @@ export function updatePickups(dt, camera) {
       f.r2.rotation.y += dt * 3;
       f.gem.rotation.y -= dt * 1.5;
       f.gem.position.y = 0.1 + Math.sin(pk.t * 2) * 0.08;
+      if (pk.prism) {
+        // primordial: o feixe, os anéis e o losango passam pelas cores do arco-íris
+        const h = (pk.t * 0.22) % 1;
+        f.beam.material.color.setHSL(h, 1, 0.62).multiplyScalar(gk(1.6));
+        f.r1.material.color.setHSL((h + 0.33) % 1, 1, 0.62).multiplyScalar(gk(1.6));
+        f.gem.material.color.setHSL((h + 0.66) % 1, 1, 0.62).multiplyScalar(gk(1.6));
+        pk.fc = f.beam.material.color.getHex();
+      }
       if (Math.random() < dt * 14) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? pk.fc : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
     }
     const bob = pk.up ? 0.5 + Math.sin(pk.t * 4) * 0.12 : 0.35 + Math.sin(pk.t * 3) * 0.06;

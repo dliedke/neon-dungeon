@@ -13,14 +13,14 @@ import { glowMat, box, makePlayerModel } from './models.js';
 import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank } from './enemies.js';
+import { spawnEnemy, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion } from './combat.js';
 import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { tierOf, tierFloor, applyAnomalyToEnemy } from './run.js';
-import { makeItem, MYTHIC, DIVINE, RARITY, itemName } from './items.js';
+import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 
 // eventos principais (até dois por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
@@ -1264,7 +1264,8 @@ const gamble = {
     const top = diffRank() >= 7 || (G.char.tier | 0) >= 1;
     // mesmo piso de raridade dos drops: do Insano para cima (ou no Inferno) não sai modificado
     const minR = rewardRank() >= 5 || tierOf().off >= 60 ? 2 : 1;
-    const rarity = Math.max(minR, top && r < 0.05 ? DIVINE : r < (top ? 0.08 : 0.05) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
+    // no Abismo o prêmio máximo pode ser primordial (0,5%)
+    const rarity = Math.max(minR, abyssLvl() && r < 0.005 ? PRIMORDIAL : top && r < 0.05 ? DIVINE : r < (top ? 0.08 : 0.05) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
     const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
     const d = G.dungeon;
     const fx = E.x + 0.8;
