@@ -184,7 +184,8 @@ All in `js/events.js`. See [Floor events](ARCHITECTURE.md#floor-events-eventsjs)
    - `setup(d, floor, rooms)`: find a spot with `findSpot(d, rooms, radius)`, build the meshes in a group from `groupAt`, and return `{ kind, x, z, st, ... }` (or `null` if it doesn't fit).
    - Only draw from `rr`/`ri`/`pick`/`chance` in `setup` (it runs inside `isolateRandom`). Use `Math.random` in `update`.
    - `update(E, dt)` drives it. End with `complete(E, mult, title, sub, x, z)` or `failed(E, msg)`.
-   - `hud(E)` returns the short text after the name. `intro(E)` shows the arrival toast.
+   - `hud(E)` returns the short text after the name. `intro(E)` is the explanation toast (shown when the player gets close, or on arrival if the event has no `x`).
+   - Damage to the player: `eventHurt(frac, x, z, knock)` (never lethal). Things to hit: `hitTarget` + `hitsOf`. Extra positions: `E.pts`.
    - `save(E)` / `load(E, s)` keep its progress across a resume.
 3. Register it in `KIND`. Main events also go in `MAIN_EVENTS`; a small event needs its own roll in `setupEvents`.
 4. Make it playable with every input method: walk-over pads, things you hit, or an NPC prop (see the slot machine).

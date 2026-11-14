@@ -10,7 +10,7 @@ Pedidos do usuário:
 4. Árvore de habilidades com mais 4 passivos e 4 ataques novos para todas as 10 classes. → **Fase 7**
 5. Santuários mais divertidos (super velocidade, superpoderes, superteleporte...). → **Fase 4**
 6. Duas músicas novas, sons mais variados. → **Fase 5 (concluída)**
-7. 10 eventos novos e uns 5 eventos por andar. → **Fase 6**
+7. 10 eventos novos e uns 5 eventos por andar. → **Fase 6 (concluída)**
 
 ---
 
@@ -109,9 +109,15 @@ Antes (`loot.js` `SHRINES`): 11 buffs de números, 30s, 2–3 por andar.
 - [x] Timbres novos em `LEADS` (`pulse`, `pluck`, com `fe`/`fd` próprios) e `BASSES` (`saw`, `tri`, `reese`); músicas antigas inalteradas.
 - [x] Volume igualado renderizando offline (RMS ~0,075–0,08); seletor nas Opções mostra as 7; README, AGENTS e `docs/CONTENT.md`.
 
-## Fase 6 — 10 eventos novos, ~5 por andar (PRÓXIMA — nada implementado ainda)
+## Fase 6 — 10 eventos novos, ~5 por andar (concluída)
 
-Estado: Fases 1–5 no ar (último commit das músicas: c2972c9). A Fase 6 só tem o desenho abaixo; `js/events.js` ainda não foi mexido.
+Estado: Fases 1–6 no ar. **Próxima: Fase 7.**
+
+- [x] 10 eventos em `events.js` (helpers `eventHurt`, `segDist`, `hitTarget`, `hitsOf`, `ambush`, `fighterType`); `o.model` em `spawnEnemy`; `spotOk` olha `E.pts`.
+- [x] `setupEvents`: 3 (andar < 4), 4 (< 8), 5 depois, +1 às vezes; mesmos sorteios.
+- [x] Avisos: toast-resumo + intro ao chegar perto; HUD junta os terminados numa linha de ícones.
+- [x] Minimapa (bola/gol, largada/chegada) e setas; 12 medalhas (10 de evento + Festival + Reflexo Perfeito), total 167.
+- [x] Docs (README, ARCHITECTURE, CONTENT, cabeçalho do events.js); teste no Edge headless (cada evento, continuar o andar).
 
 ### Ideias trocadas (já existiam parecidas)
 Da lista original, 4 ideias repetiam eventos que já existem: Corrida de Checkpoints = `relay` (Circuito Neon), Caça ao Tesouro = `signal` (Sinal Perdido, quente/frio), Horda e Hacker de Torres ≈ `upload` (ficar no círculo com ondas), Elite Fugitivo = inimigo `thief` (Ladrão de Dados, já foge). Lista final (chave em `KIND`/`MAIN_EVENTS`, só acrescentar no fim):

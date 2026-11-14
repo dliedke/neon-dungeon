@@ -1132,6 +1132,8 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .ri-con.done b { color: #39ff88; }
 .ri-con.fail { opacity: 0.55; text-decoration: line-through; border-color: #ff4466; }
 .ri-con.fail b { color: #ff4466; }
+.ri-evfin { letter-spacing: 2px; border-color: #39ff88; }
+.ri-evfin .ko { opacity: 0.4; filter: grayscale(1); }
 .ri-clear { border-right-color: #39ff88; color: #c8ffe0; }
 .ri-clear b { color: #39ff88; }
 

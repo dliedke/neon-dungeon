@@ -251,6 +251,16 @@ export function achList() {
     servers: ['🗄️', 1, L('Formatador', 'Hard Reset'), L('Destrua os Servidores Corrompidos', 'Destroy the Corrupted Servers')],
     escort: ['🛸', 0, L('Guarda-Costas', 'Bodyguard'), L('Leve o drone até o destino numa Escolta do Drone', 'Get the drone to its destination in a Drone Escort')],
     pairs: ['🃏', 0, L('Memória de Elefante', 'Elephant Memory'), L('Ache todos os pares em Pares de Memória', 'Find every pair in Memory Pairs')],
+    meteor: ['☄️', 0, L('Caçador de Estrelas', 'Star Catcher'), L('Pegue todos os cristais numa Chuva de Meteoros', 'Catch every crystal in a Meteor Shower')],
+    vault: ['💰', 0, L('Chuva de Dinheiro', 'Money Rain'), L('Esvazie um Cofre Rachado', 'Empty a Cracked Vault')],
+    arena: ['⚔️', 1, L('Gladiador', 'Gladiator'), L('Vença o campeão da Arena de Gladiadores', 'Beat the champion of a Gladiator Arena')],
+    pandora: ['🎁', 0, L('Curiosidade Mortal', 'Curiosity'), L('Abra uma Caixa de Pandora e sobreviva', "Open a Pandora's Box and live")],
+    shell: ['🎲', 0, L('Olho de Lince', 'Eagle Eye'), L('Ache o prêmio no Jogo dos Baús', 'Find the prize in a Chest Shuffle')],
+    mirror: ['🪞', 1, L('Encare a Si Mesmo', 'Face Yourself'), L('Vença seu reflexo num Duelo de Espelho', 'Beat your reflection in a Mirror Duel')],
+    ball: ['⚽', 0, L('Artilheiro', 'Top Scorer'), L('Faça gol na Bola de Plasma', 'Score in a Plasma Ball')],
+    watcher: ['👁️', 0, L('Estátua', 'Statue'), L('Chegue ao Olho Vigia', "Reach the Watcher's Eye")],
+    race: ['👻', 0, L('Mais Rápido que um Fantasma', 'Faster Than a Ghost'), L('Vença uma Corrida Fantasma', 'Win a Ghost Race')],
+    spinner: ['🌀', 0, L('Olho do Furacão', 'Eye of the Storm'), L('Chegue ao centro de um Laser Giratório', 'Reach the center of a Laser Spinner')],
     secret: ['🧱', 0, L('Olho Clínico', 'Keen Eye'), L('Encontre uma Sala Secreta', 'Find a Secret Room')],
     gamble: ['🎰', 0, L('Apostador', 'High Roller'), L('Jogue na Máquina de Apostas', 'Play a Slot Machine')],
   };
@@ -263,6 +273,8 @@ export function achList() {
   add('evAll', '🧩', 2, L('Mestre dos Quebra-Cabeças', 'Puzzle Master'), L(`Complete os ${Object.keys(evMedals).length} tipos de evento de andar`, `Complete all ${Object.keys(evMedals).length} kinds of floor event`), () => Object.keys(evMedals).filter((k) => has('evDone', k)).length, Object.keys(evMedals).length);
   add('evPerfect', '🧠', 1, L('Memória Fotográfica', 'Photographic Memory'), L('Complete uma Sequência de Terminais sem errar', 'Complete a Terminal Sequence without a mistake'), () => (has('flags', 'evPerfect') ? 1 : 0));
   add('evBombFast', '⏱️', 2, L('Sangue Frio', 'Cool Under Pressure'), L('Desarme uma Bomba-Relógio com metade do tempo sobrando', 'Defuse a Time Bomb with half the time left'), () => (has('flags', 'evBombFast') ? 1 : 0));
+  add('evFest', '🎉', 2, L('Festival', 'Festival'), L('Complete 5 eventos no mesmo andar', 'Complete 5 events on the same floor'), () => (has('flags', 'evFest') ? 1 : 0));
+  add('evMirror', '✨', 2, L('Reflexo Perfeito', 'Flawless Reflection'), L('Vença o Duelo de Espelho sem cair abaixo de metade da vida', 'Win a Mirror Duel without dropping below half health'), () => (has('flags', 'evMirror') ? 1 : 0));
   add('gambleMyth', '🍀', 2, L('Jackpot!', 'Jackpot!'), L('Ganhe um item mítico ou melhor na Máquina de Apostas', 'Win a mythic or better item from a Slot Machine'), () => (has('flags', 'gambleMyth') ? 1 : 0));
 
   // tempo de jogo (conta toda)

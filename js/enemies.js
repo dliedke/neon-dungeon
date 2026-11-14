@@ -339,7 +339,7 @@ export function spawnEnemy(type, x, z, o = {}) {
     affixes = pool.slice(0, 1 + (ef >= 14 ? 1 : 0) + (ef >= 26 ? 1 : 0) + (abyssOn(4) ? 1 : 0));
   }
   const eliteKey = affixes ? affixes[0] : null;
-  const model = makeEnemyModel(type, eliteKey ? ELITE[eliteKey].color : null);
+  const model = o.model || makeEnemyModel(type, eliteKey ? ELITE[eliteKey].color : null);
   const e = {
     type, T, x, z,
     r: T.r * (eliteKey ? 1.2 : 1),

@@ -1,7 +1,9 @@
-// Eventos e quebra-cabeças dos andares: até dois eventos principais e um pequeno por andar.
+// Eventos e quebra-cabeças dos andares: de 3 a 6 eventos principais e um pequeno por andar.
 // Principais: Sequência de Terminais, Piso de Luzes, Prismas de Laser, Upload de Dados, Bomba-Relógio,
 // Procurado, Caça aos Fragmentos, Prisioneiro, Circuito Neon, Sinal Perdido, Servidores Corrompidos,
-// Escolta do Drone e Pares de Memória. Pequenos: Sala Secreta e Máquina de Apostas.
+// Escolta do Drone, Pares de Memória, Chuva de Meteoros, Cofre Rachado, Arena de Gladiadores,
+// Caixa de Pandora, Jogo dos Baús, Duelo de Espelho, Bola de Plasma, Olho Vigia, Corrida Fantasma
+// e Laser Giratório. Pequenos: Sala Secreta e Máquina de Apostas.
 // Tudo funciona só andando (pisar, ficar perto) e com o botão de interagir, então vale para
 // teclado+mouse, controle e toque. O sorteio usa a semente do andar (continuar o andar refaz igual);
 // o estado de cada evento vai no retrato do andar (eventsSnapshot/eventsRestore).
@@ -9,22 +11,22 @@ import * as THREE from 'three';
 import { G, TILE, gk } from './state.js';
 import { L } from './i18n.js';
 import { rr, ri, pick, chance, shuffle, fmt, short, isolateRandom } from './utils.js';
-import { glowMat, box, makePlayerModel } from './models.js';
-import { burst, ringFx, floatText } from './fx.js';
+import { glowMat, box, makePlayerModel, animWalk } from './models.js';
+import { burst, ringFx, floatText, telegraphFx, beamFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
+import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
-import { explosion } from './combat.js';
-import { isWalkable, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
+import { explosion, damagePlayer, hitEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
+import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
-import { tierOf, tierFloor, applyAnomalyToEnemy } from './run.js';
+import { tierOf, tierFloor, applyAnomalyToEnemy, runHurt } from './run.js';
 import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 
-// eventos principais (até dois por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs'];
+// eventos principais (de 3 a 6 por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner'];
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
@@ -40,6 +42,16 @@ export const EVENT_INFO = {
   servers: { icon: '🗄️', css: '#ff3366', name: L('Servidores Corrompidos', 'Corrupted Servers'), short: L('Servidores', 'Servers') },
   escort: { icon: '🛸', css: '#5ab8ff', name: L('Escolta do Drone', 'Drone Escort'), short: L('Escolta', 'Escort') },
   pairs: { icon: '🃏', css: '#e07bff', name: L('Pares de Memória', 'Memory Pairs'), short: L('Pares', 'Pairs') },
+  meteor: { icon: '☄️', css: '#ff6a2a', name: L('Chuva de Meteoros', 'Meteor Shower'), short: L('Meteoros', 'Meteors') },
+  vault: { icon: '💰', css: '#ffd23d', name: L('Cofre Rachado', 'Cracked Vault'), short: L('Cofre', 'Vault') },
+  arena: { icon: '⚔️', css: '#ff3d6e', name: L('Arena de Gladiadores', 'Gladiator Arena'), short: L('Arena', 'Arena') },
+  pandora: { icon: '🎁', css: '#b44dff', name: L('Caixa de Pandora', "Pandora's Box"), short: L('Pandora', 'Pandora') },
+  shell: { icon: '🎲', css: '#ffb84d', name: L('Jogo dos Baús', 'Chest Shuffle'), short: L('Baús', 'Chests') },
+  mirror: { icon: '🪞', css: '#9a7bff', name: L('Duelo de Espelho', 'Mirror Duel'), short: L('Espelho', 'Mirror') },
+  ball: { icon: '⚽', css: '#00f0ff', name: L('Bola de Plasma', 'Plasma Ball'), short: L('Bola', 'Ball') },
+  watcher: { icon: '👁️', css: '#39ff88', name: L('Olho Vigia', "Watcher's Eye"), short: L('Olho', 'Eye') },
+  race: { icon: '👻', css: '#7affc8', name: L('Corrida Fantasma', 'Ghost Race'), short: L('Corrida', 'Race') },
+  spinner: { icon: '🌀', css: '#ff2244', name: L('Laser Giratório', 'Laser Spinner'), short: L('Giratório', 'Spinner') },
   secret: { icon: '🧱', css: '#ffaa33', name: L('Sala Secreta', 'Secret Room') },
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
 };
@@ -123,7 +135,7 @@ function spotOk(d, x, z, hx, hz, avoid = []) {
   if (d.props.some((p) => Math.hypot(p.x - x, p.z - z) < (NPCS.includes(p.type) ? r + 4 : r + 1))) return false;
   if (G.enemies.some((e) => e.static && Math.hypot(e.x - x, e.z - z) < r + 1)) return false;
   if (G.nest && Math.hypot(G.nest.x - x, G.nest.z - z) < r + 8) return false;
-  if (G.events.some((E) => E.x != null && Math.hypot(E.x - x, E.z - z) < r + 8)) return false;
+  if (G.events.some((E) => (E.x != null && Math.hypot(E.x - x, E.z - z) < r + 8) || (E.pts && E.pts.some((q) => Math.hypot(q.x - x, q.z - z) < r + 5)))) return false;
   if (avoid.some((a) => Math.hypot(a.x - x, a.z - z) < a.r)) return false;
   return true;
 }
@@ -189,6 +201,8 @@ function complete(E, mult, title, sub, x, z, o = {}) {
   achMark('evDone', E.kind);
   dropLoot(x, z, o.loot || { contract: true });
   if (o.extra) dropLoot(x, z, { chest: true });
+  // Festival: 5 eventos concluídos no mesmo andar
+  if (G.events.filter((o) => o.st === 'done').length >= 5) achMark('flags', 'evFest');
   const col = new THREE.Color(EVENT_INFO[E.kind].css).getHex();
   banner(title, `${sub} · +${fmt(cr)}¢`);
   sfx.legendary();
@@ -1768,12 +1782,1207 @@ const pairs = {
 };
 
 // ------------------------------------------------------------------
+// Peças dos eventos novos (16 a 25)
+// ------------------------------------------------------------------
+// dano de evento: fração da vida máxima, nunca mata e respeita a invulnerabilidade (esquiva, teleporte)
+function eventHurt(frac, x, z, knock = 0) {
+  const p = G.player;
+  if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return false;
+  const loss = Math.max(1, Math.round(p.stats.maxHp * frac));
+  p.hp = Math.max(1, p.hp - loss);
+  p.hurtT = 0.12;
+  runHurt();
+  floatText(p.x, 1.8, p.z, `-${short(loss)}`, 'hurt');
+  sfx.hurt();
+  if (knock && x != null) {
+    const dx = p.x - x;
+    const dz = p.z - z;
+    const l = Math.hypot(dx, dz) || 1;
+    p.kx = (p.kx || 0) + (dx / l) * knock;
+    p.kz = (p.kz || 0) + (dz / l) * knock;
+  }
+  return true;
+}
+// distância de (px, pz) até o segmento a–b
+function segDist(px, pz, ax, az, bx, bz) {
+  const vx = bx - ax;
+  const vz = bz - az;
+  const t = Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / (vx * vx + vz * vz || 1)));
+  return Math.hypot(px - ax - vx * t, pz - az - vz * t);
+}
+// alvo que apanha (cofre, bola): uma "parede rachada" invisível; cada golpe tira 1 de vida (até 4 por segundo)
+function hitTarget(x, z, r, h, name) {
+  const e = spawnEnemy('crack', x, z, {});
+  e.hp = e.maxHp = 1e6;
+  e.r = r;
+  e.height = h;
+  e.name = name;
+  e.model.root.visible = false;
+  return e;
+}
+// golpes novos no alvo desde a última olhada
+function hitsOf(E) {
+  const n = Math.round(E.e.maxHp - E.e.hp);
+  const k = n - E.hits;
+  E.hits = n;
+  return Math.max(0, k);
+}
+// some com o alvo sem efeito nenhum
+function dropTarget(E) {
+  const e = E.e;
+  if (!e || !e.alive) return;
+  killQuiet(e);
+}
+// inimigo que luta de verdade (sem torres, objetos ou chefes solitários)
+function fighterType() {
+  let type = pickEnemyType(G.floor);
+  for (let t = 0; t < 8 && (ETYPES[type].solo || ETYPES[type].static || ETYPES[type].ai === 'inert'); t++) type = pickEnemyType(G.floor);
+  return type;
+}
+function ambush(E, n, x, z, r0, r1, color, o = {}) {
+  for (let k = 0; k < n; k++) {
+    const pt = freeAround(G.dungeon, x, z, r0, r1);
+    if (!pt) continue;
+    const e = spawnEnemy(fighterType(), pt.x, pt.z, { elite: o.elite });
+    applyAnomalyToEnemy(e);
+    if (o.hp) e.hp = e.maxHp = e.maxHp * o.hp;
+    if (o.name) e.name = o.name;
+    e.aggro = true;
+    e.alerted = true;
+    E.foes.push(e);
+    burst(pt.x, 0.8, pt.z, color, 18, 5, 0.08, 0.6, { up: 1.2 });
+    ringFx(pt.x, pt.z, 1.2, color, 0.35);
+  }
+}
+let thinRing = null;
+const ringThin = () => thinRing || (thinRing = new THREE.RingGeometry(0.985, 1, 72).rotateX(-Math.PI / 2));
+
+// ==================================================================
+// 16. Chuva de Meteoros: entre no círculo; por 25s caem meteoros que deixam cristais. Pegue 12
+// ==================================================================
+const MET_COL = 0xff6a2a;
+const GEM_COL = 0xffc23d;
+const MET_R = 5;
+const MET_NEED = 12;
+const MET_TIME = 25;
+let metGeo = null;
+const meteor = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const ringMat = lightMat(MET_COL, 1.4);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, MET_R, 1, MET_R);
+    put(g, mats().disc, flatMat(MET_COL, 0.07), 0, 0.02, 0, MET_R, 1, MET_R);
+    put(g, mats().cyl, mats().dark, 0, 0.25, 0, 0.4, 0.5, 0.4);
+    const core = put(g, mats().oct, glowMat(GEM_COL, 2.6), 0, 1.05, 0, 0.28, 0.42, 0.28);
+    return { kind: 'meteor', x: s.x, z: s.z, g, ringMat, core, st: 'idle', t: MET_TIME, got: 0, rocks: [], gems: [], dropT: 0 };
+  },
+  clear(E) {
+    for (const r of E.rocks) G.world.remove(r.m);
+    for (const c of E.gems) G.world.remove(c.m);
+    E.rocks = [];
+    E.gems = [];
+  },
+  end(E) {
+    meteor.clear(E);
+    E.core.visible = false;
+    setLight(E.ringMat, 0x333344, 0.3);
+    if (E.got >= MET_NEED) complete(E, 2.2, L('CHUVA DE ESTRELAS!', 'STAR SHOWER!'), L(`Os ${MET_NEED} cristais foram pegos`, `All ${MET_NEED} crystals caught`), E.x, E.z, { extra: true });
+    else if (E.got >= 4) complete(E, (1.6 * E.got) / MET_NEED, L('A CHUVA PASSOU', 'THE STORM IS OVER'), L(`${E.got}/${MET_NEED} cristais`, `${E.got}/${MET_NEED} crystals`), E.x, E.z);
+    else failed(E, L('A chuva passou e quase nenhum cristal foi pego.', 'The storm is over and almost no crystals were caught.'));
+  },
+  update(E, dt) {
+    if (E.st === 'done' || E.st === 'failed') return;
+    const p = G.player;
+    E.core.rotation.y += dt * (E.st === 'run' ? 6 : 1.2);
+    if (E.st === 'idle') {
+      if (!near(E, MET_R)) return;
+      E.st = 'run';
+      banner(L('CHUVA DE METEOROS!', 'METEOR SHOWER!'), L(`Desvie das sombras e pegue ${MET_NEED} cristais em ${MET_TIME}s`, `Dodge the shadows and grab ${MET_NEED} crystals in ${MET_TIME}s`));
+      sfx.alarm();
+      ringFx(E.x, E.z, MET_R, MET_COL, 0.6);
+    }
+    E.t -= dt;
+    // meteoro novo: um em cada três mira no jogador
+    E.dropT -= dt;
+    if (E.dropT <= 0 && E.t > 1.2) {
+      E.dropT = 0.4 + Math.random() * 0.25;
+      const toP = Math.random() < 0.35 && near(E, MET_R + 2);
+      for (let k = 0; k < 6; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * (toP ? 1.2 : MET_R - 0.5);
+        const x = (toP ? p.x : E.x) + Math.cos(a) * r;
+        const z = (toP ? p.z : E.z) + Math.sin(a) * r;
+        if (!isWalkable(G.dungeon, x, z)) continue;
+        telegraphFx(x, z, 1.3, 1.1, MET_COL);
+        if (!metGeo) metGeo = new THREE.IcosahedronGeometry(0.42, 0);
+        E.rocks.push({ x, z, t: 1.1, m: put(G.world, metGeo, glowMat(MET_COL, 2.2), x + 3, 14, z - 3) });
+        break;
+      }
+    }
+    for (const r of E.rocks) {
+      r.t -= dt;
+      const k = Math.max(0, r.t / 1.1);
+      r.m.position.set(r.x + 3 * k, 0.4 + 13.6 * k, r.z - 3 * k);
+      r.m.rotation.x += dt * 8;
+      if (Math.random() < dt * 25) burst(r.m.position.x, r.m.position.y, r.m.position.z, MET_COL, 1, 0.5, 0.12, 0.4, { grav: 0 });
+      if (r.t > 0) continue;
+      G.world.remove(r.m);
+      explosion(r.x, r.z, 1.4, 1.2, { color: MET_COL, noProc: true, knock: 4, small: true });
+      G.shake = Math.max(G.shake, 0.2);
+      if (Math.hypot(p.x - r.x, p.z - r.z) < 1.3 + p.r) eventHurt(0.07, r.x, r.z, 9);
+      // o cristal quica para longe da cratera: parado no lugar não dá para pegar
+      let cx = r.x;
+      let cz = r.z;
+      for (let t = 0; t < 6; t++) {
+        const a = Math.random() * Math.PI * 2;
+        const l = 1.3 + Math.random() * 1.2;
+        if (!isWalkable(G.dungeon, r.x + Math.cos(a) * l, r.z + Math.sin(a) * l)) continue;
+        cx = r.x + Math.cos(a) * l;
+        cz = r.z + Math.sin(a) * l;
+        break;
+      }
+      E.gems.push({ x: cx, z: cz, life: 7, m: put(G.world, mats().oct, glowMat(GEM_COL, 2.6), cx, 0.45, cz, 0.17, 0.25, 0.17) });
+    }
+    E.rocks = E.rocks.filter((r) => r.t > 0);
+    for (const c of E.gems) {
+      c.life -= dt;
+      c.m.rotation.y += dt * 3;
+      c.m.position.y = 0.45 + Math.sin(G.t * 4 + c.x) * 0.08;
+      if (c.life < 2) c.m.visible = Math.sin(G.t * 22) > 0;
+      if (p.alive && Math.hypot(p.x - c.x, p.z - c.z) < 0.95) {
+        c.life = 0;
+        E.got++;
+        sfx.pickup();
+        burst(c.x, 0.6, c.z, GEM_COL, 12, 3, 0.06, 0.4, { up: 1.5 });
+        floatText(c.x, 1.4, c.z, `${E.got}/${MET_NEED}`, 'up');
+      }
+      if (c.life <= 0) G.world.remove(c.m);
+    }
+    E.gems = E.gems.filter((c) => c.life > 0);
+    if (E.got >= MET_NEED || E.t <= 0) meteor.end(E);
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre no círculo', 'step in') : `${E.got}/${MET_NEED} · ${Math.ceil(Math.max(0, E.t))}s`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done' && s.st !== 'failed') return;
+    E.st = s.st;
+    E.core.visible = false;
+    setLight(E.ringMat, 0x333344, 0.3);
+  },
+  busy: (E) => E.st === 'run',
+  intro: () => L(`entre no círculo laranja e meteoros vão cair por ${MET_TIME}s. Desvie das sombras no chão e pegue ${MET_NEED} cristais que eles deixam.`, `step into the orange circle and meteors will fall for ${MET_TIME}s. Dodge the shadows on the ground and grab ${MET_NEED} of the crystals they leave.`),
+};
+
+// ==================================================================
+// 17. Cofre Rachado: o primeiro golpe abre 15s; cada golpe espirra créditos
+// ==================================================================
+const VAULT_COL = 0xffd23d;
+const VAULT_T = 15;
+const vault = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1.3);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    g.rotation.y = Math.PI / 4; // porta para a câmera
+    const gold = new THREE.MeshLambertMaterial({ color: 0xd8a63a, emissive: 0x3a2400 });
+    put(g, box(1.3, 1.4, 1.1), gold, 0, 0.7, 0);
+    put(g, box(1.38, 0.08, 1.18), mats().dark, 0, 1.43, 0);
+    put(g, box(1.38, 0.08, 1.18), mats().dark, 0, 0.04, 0);
+    const doorMat = lightMat(VAULT_COL, 1.3);
+    // rachaduras brilhando nos lados
+    put(g, box(0.03, 0.5, 0.02), doorMat, 0.66, 0.9, 0.2);
+    put(g, box(0.03, 0.34, 0.02), doorMat, -0.66, 0.5, -0.2);
+    put(g, box(0.02, 0.3, 0.4), doorMat, 0.66, 0.4, -0.1);
+    // porta com dobradiça na esquerda
+    const door = new THREE.Group();
+    door.position.set(-0.52, 0, 0.57);
+    g.add(door);
+    put(door, box(1.04, 1.12, 0.06), mats().metal, 0.52, 0.72, 0);
+    const dial = put(door, mats().cyl, glowMat(VAULT_COL, 2), 0.52, 0.76, 0.05, 0.22, 0.05, 0.22);
+    dial.rotation.x = Math.PI / 2;
+    put(door, box(0.5, 0.05, 0.03), doorMat, 0.52, 0.76, 0.07);
+    const e = hitTarget(s.x, s.z, 0.8, 1.5, L('Cofre Rachado', 'Cracked Vault'));
+    return { kind: 'vault', x: s.x, z: s.z, g, door, dial, doorMat, e, st: 'idle', t: VAULT_T, hits: 0, n: 0, per: 1 };
+  },
+  spray(E) {
+    E.n++;
+    for (let j = 0; j < 3; j++) spawnPickup('credits', E.x, E.z, { amount: E.per });
+    burst(E.x, 1.3, E.z, VAULT_COL, 10, 5, 0.07, 0.5, { up: 1.5 });
+    sfx.coin();
+    if (E.n % 10 === 0) {
+      floatText(E.x, 2.4, E.z, `x${E.n}!`, 'crit');
+      ringFx(E.x, E.z, 2, VAULT_COL, 0.4);
+    }
+  },
+  finish(E) {
+    dropTarget(E);
+    setLight(E.doorMat, 0x555566, 0.4);
+    E.dial.visible = false;
+    complete(E, 0.6, L('COFRE ESVAZIADO', 'VAULT EMPTIED'), L(`${E.n} golpes`, `${E.n} hits`), E.x, E.z);
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const k = hitsOf(E);
+    if (E.st === 'idle') {
+      if (!k) return;
+      E.st = 'open';
+      E.t = VAULT_T;
+      // até 60 golpes em 15s; 3 moedas por golpe
+      E.per = Math.max(1, Math.round(eventCredits(2.6) / 180));
+      banner(L('COFRE ABERTO!', 'VAULT CRACKED!'), L(`Bata sem parar por ${VAULT_T}s: cada golpe espirra créditos`, `Keep hitting for ${VAULT_T}s: every blow sprays credits`));
+      sfx.upgrade();
+    }
+    E.t -= dt;
+    E.door.rotation.y = Math.max(-1.9, E.door.rotation.y - dt * 4);
+    E.dial.rotation.y += dt * 9;
+    for (let i = 0; i < k; i++) vault.spray(E);
+    if (Math.random() < dt * 6) burst(E.x, 1, E.z, VAULT_COL, 1, 2, 0.06, 0.5, { up: 2 });
+    if (E.t <= 0) vault.finish(E);
+  },
+  hud: (E) => (E.st === 'idle' ? L('bata no cofre', 'hit the vault') : `${E.n} · ${Math.ceil(Math.max(0, E.t))}s`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st === 'done' || !E.e.alive) {
+      E.st = 'done';
+      dropTarget(E);
+      setLight(E.doorMat, 0x555566, 0.4);
+      E.dial.visible = false;
+      E.door.rotation.y = -1.9;
+      return;
+    }
+    E.e.hp = E.e.maxHp;
+    E.hits = 0;
+  },
+  intro: () => L(`um cofre dourado está rachado. Bata nele: por ${VAULT_T}s cada golpe espirra créditos. Quanto mais rápido, mais dinheiro!`, `a golden vault is cracked. Hit it: for ${VAULT_T}s every blow sprays credits. The faster you hit, the more money!`),
+};
+
+// ==================================================================
+// 18. Arena de Gladiadores: entre no anel; 3 ondas e um campeão elite
+// ==================================================================
+const AR_COL = 0xff3d6e;
+const AR_R = 5;
+const arena = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const ringMat = lightMat(AR_COL, 1.4);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, AR_R, 1, AR_R);
+    put(g, ringThin(), ringMat, 0, 0.03, 0, AR_R - 0.45, 1, AR_R - 0.45);
+    put(g, mats().disc, flatMat(AR_COL, 0.06), 0, 0.02, 0, AR_R, 1, AR_R);
+    // colunas com chama nas diagonais
+    const fires = [];
+    for (let k = 0; k < 4; k++) {
+      const a = Math.PI / 4 + (k * Math.PI) / 2;
+      const x = Math.cos(a) * (AR_R - 0.2);
+      const z = Math.sin(a) * (AR_R - 0.2);
+      if (!isWalkable(d, s.x + x, s.z + z)) continue;
+      put(g, mats().cyl, mats().metal, x, 0.6, z, 0.16, 1.2, 0.16);
+      fires.push(put(g, mats().oct, glowMat(AR_COL, 2.6), x, 1.38, z, 0.16, 0.24, 0.16));
+    }
+    return { kind: 'arena', x: s.x, z: s.z, g, ringMat, fires, st: 'idle', wave: 0, gap: 0, foes: [] };
+  },
+  update(E, dt) {
+    for (const f of E.fires) f.rotation.y += dt * 3;
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      if (!near(E, AR_R - 0.6)) return;
+      E.st = 'fight';
+      E.wave = 0;
+      E.gap = 1.4;
+      E.foes = [];
+      banner(L('ARENA DE GLADIADORES', 'GLADIATOR ARENA'), L('Vença 3 ondas e o campeão', 'Beat 3 waves and the champion'));
+      sfx.roar();
+      ringFx(E.x, E.z, AR_R, AR_COL, 0.6);
+      return;
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    if (E.foes.length) return;
+    E.gap -= dt;
+    if (E.gap > 0) return;
+    if (E.wave >= 4) {
+      setLight(E.ringMat, 0xffd23d, 1.6);
+      complete(E, 2.4, L('CAMPEÃO DA ARENA!', 'ARENA CHAMPION!'), L('A multidão vai à loucura', 'The crowd goes wild'), E.x, E.z, { extra: true });
+      return;
+    }
+    E.wave++;
+    E.gap = 1.6;
+    sfx.telegraph();
+    if (E.wave <= 3) {
+      spawnWave(E, Math.min(9, 2 + E.wave + Math.floor(G.floor / 6)), E.x, E.z, 1.5, AR_R - 0.7, AR_COL);
+      floatText(E.x, 2.6, E.z, L(`ONDA ${E.wave}/3`, `WAVE ${E.wave}/3`), 'crit');
+    } else {
+      ambush(E, 1, E.x, E.z, 0.5, 2.5, AR_COL, { elite: true, hp: 2.2, name: L('Campeão da Arena', 'Arena Champion') });
+      for (const e of E.foes) {
+        e.xp *= 2;
+        e.model.root.scale.multiplyScalar(1.15);
+      }
+      banner(L('O CAMPEÃO ENTRA!', 'THE CHAMPION ENTERS!'), L('Derrote o campeão da arena', 'Defeat the arena champion'));
+      sfx.roar();
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre na arena', 'step in') : E.wave >= 4 ? L('campeão', 'champion') : L(`onda ${Math.max(1, E.wave)}/3`, `wave ${Math.max(1, E.wave)}/3`)),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    setLight(E.ringMat, 0xffd23d, 1.6);
+  },
+  busy: (E) => E.st === 'fight',
+  intro: () => L('entre no anel da arena para lutar contra 3 ondas de inimigos e um campeão elite. Vença todos pelo prêmio.', 'step into the arena ring to fight 3 waves of enemies and an elite champion. Beat them all for the prize.'),
+};
+
+// ==================================================================
+// 19. Caixa de Pandora: encoste para abrir: tesouro ou maldição (emboscada que dobra o prêmio)
+// ==================================================================
+const PAN_COL = 0xb44dff;
+const pandora = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    g.rotation.y = Math.PI / 4;
+    const boxM = new THREE.MeshLambertMaterial({ color: 0x2a1640 });
+    const trim = glowMat(0xffd23d, 2);
+    put(g, box(0.9, 0.6, 0.7), boxM, 0, 0.32, 0);
+    put(g, box(0.94, 0.05, 0.74), trim, 0, 0.62, 0);
+    for (const sx of [-0.3, 0.3]) put(g, box(0.06, 0.62, 0.74), trim, sx, 0.32, 0);
+    const lid = new THREE.Group();
+    lid.position.set(0, 0.66, 0);
+    g.add(lid);
+    put(lid, box(0.98, 0.16, 0.78), boxM, 0, 0.08, 0);
+    put(lid, mats().oct, glowMat(PAN_COL, 2.6), 0, 0.32, 0, 0.12, 0.18, 0.12);
+    const ringMat = lightMat(PAN_COL, 1.3);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, 1.3, 1, 1.3);
+    return { kind: 'pandora', x: s.x, z: s.z, g, lid, ringMat, st: 'idle', foes: [], lidT: 0 };
+  },
+  open(E) {
+    E.lidT = 1;
+    burst(E.x, 1, E.z, PAN_COL, 40, 6, 0.09, 0.8, { up: 1.6 });
+    G.shake = Math.max(G.shake, 0.3);
+    if (Math.random() < 0.6) {
+      for (let k = 0; k < 8; k++) spawnPickup('credits', E.x, E.z, { amount: Math.max(1, Math.round(eventCredits(0.1))) });
+      complete(E, 1.6, L('TESOURO!', 'TREASURE!'), L('A caixa estava cheia de riquezas', 'The box was full of riches'), E.x, E.z, { extra: true });
+      return;
+    }
+    E.st = 'curse';
+    E.foes = [];
+    setLight(E.ringMat, 0xff2244, 1.8);
+    banner(L('MALDIÇÃO!', 'CURSED!'), L('Derrote a emboscada para dobrar o prêmio', 'Defeat the ambush to double the prize'));
+    sfx.alarm();
+    ambush(E, 2 + (G.floor >= 10 ? 1 : 0) + (G.floor >= 20 ? 1 : 0), E.x, E.z, 2, 4, PAN_COL, { elite: true });
+  },
+  update(E, dt) {
+    if (E.lidT > 0) {
+      E.lidT -= dt;
+      E.lid.position.y += dt * 4;
+      E.lid.rotation.z += dt * 6;
+      if (E.lidT <= 0) E.lid.visible = false;
+    }
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      E.lid.position.y = 0.66 + Math.abs(Math.sin(G.t * 7)) * 0.04;
+      if (Math.random() < dt * 4) burst(E.x, 0.9, E.z, PAN_COL, 1, 1, 0.05, 0.6, { grav: -3 });
+      if (near(E, 1.3)) pandora.open(E);
+      return;
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    if (!E.foes.length) complete(E, 3, L('MALDIÇÃO QUEBRADA!', 'CURSE BROKEN!'), L('O prêmio dobrou', 'The prize doubled'), E.x, E.z, { extra: true });
+  },
+  hud: (E) => (E.st === 'idle' ? L('encoste para abrir', 'touch to open') : L(`${E.foes.length} amaldiçoados`, `${E.foes.length} cursed`)),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.lid.visible = false;
+  },
+  busy: (E) => E.st === 'curse',
+  intro: () => L('uma caixa misteriosa. Encoste para abrir: pode ter um tesouro... ou uma maldição. Vencer a maldição dobra o prêmio.', 'a mysterious box. Touch it to open: it may hold treasure... or a curse. Beating the curse doubles the prize.'),
+};
+
+// ==================================================================
+// 20. Jogo dos Baús: veja onde está o prêmio, acompanhe o embaralhamento e encoste no certo
+// ==================================================================
+const SH_COL = 0xffb84d;
+const SH_GAP = 2.1;
+const shell = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.2, 1.6);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const bodyM = new THREE.MeshLambertMaterial({ color: 0x3a2a18 });
+    const chests = [];
+    for (let k = 0; k < 3; k++) {
+      const c = new THREE.Group();
+      c.position.set((k - 1) * SH_GAP, 0, 0);
+      put(c, box(0.8, 0.5, 0.56), bodyM, 0, 0.25, 0);
+      put(c, box(0.84, 0.06, 0.6), glowMat(SH_COL, 1.6), 0, 0.48, 0);
+      const lid = new THREE.Group();
+      lid.position.set(0, 0.52, -0.28);
+      c.add(lid);
+      put(lid, box(0.82, 0.18, 0.58), bodyM, 0, 0.09, 0.29);
+      put(lid, box(0.14, 0.12, 0.04), glowMat(SH_COL, 2.2), 0, 0.03, 0.6);
+      const ring = lightMat(SH_COL, 0.7);
+      put(c, mats().ring, ring, 0, 0.03, 0, 0.75, 1, 0.75);
+      g.add(c);
+      chests.push({ c, lid, ring });
+    }
+    const gem = put(g, mats().oct, glowMat(0x39ff88, 3), 0, 1.1, 0, 0.2, 0.3, 0.2);
+    gem.visible = false;
+    return { kind: 'shell', x: s.x, z: s.z, g, chests, gem, slot: [0, 1, 2], prize: 0, st: 'idle', t: 0, swaps: 0, sw: null, foes: [], block: -1 };
+  },
+  // posição (local) da vaga de cada baú
+  sx: (i) => (i - 1) * SH_GAP,
+  where(E, k) {
+    return { x: E.x + E.chests[k].c.position.x, z: E.z + E.chests[k].c.position.z };
+  },
+  touching(E) {
+    const p = G.player;
+    if (!p.alive) return -1;
+    for (let k = 0; k < 3; k++) {
+      const w = shell.where(E, k);
+      if (Math.hypot(p.x - w.x, p.z - w.z) < 0.95) return k;
+    }
+    return -1;
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    E.t += dt;
+    if (E.st === 'idle') {
+      if (!near(E, 4.5)) return;
+      E.st = 'show';
+      E.t = 0;
+      E.prize = Math.floor(Math.random() * 3);
+      E.swaps = 0;
+      floatText(E.x, 2.4, E.z, L('OLHE BEM!', 'WATCH CLOSELY!'), 'info');
+      sfx.seq();
+    }
+    const P = E.chests[E.prize];
+    if (E.st === 'show') {
+      P.lid.rotation.x = -Math.min(1.3, E.t * 4);
+      E.gem.visible = true;
+      E.gem.position.set(P.c.position.x, 0.8 + Math.min(0.5, E.t), 0);
+      E.gem.rotation.y += dt * 3;
+      if (E.t > 2) {
+        E.st = 'close';
+        E.t = 0;
+      }
+    } else if (E.st === 'close') {
+      P.lid.rotation.x = -1.3 * Math.max(0, 1 - E.t * 3);
+      E.gem.position.y = Math.max(0.3, 1.3 - E.t * 3);
+      if (E.t > 0.5) {
+        E.gem.visible = false;
+        E.st = 'shuffle';
+        E.t = 0;
+        E.sw = null;
+      }
+    } else if (E.st === 'shuffle') {
+      const total = Math.min(12, 6 + Math.floor(G.floor / 5));
+      if (!E.sw) {
+        if (E.swaps >= total) {
+          E.st = 'pick';
+          E.block = shell.touching(E);
+          for (const c of E.chests) setLight(c.ring, SH_COL, 1.6);
+          floatText(E.x, 2.4, E.z, L('ESCOLHA UM BAÚ!', 'PICK A CHEST!'), 'info');
+          sfx.click();
+          return;
+        }
+        const a = Math.floor(Math.random() * 3);
+        const b = (a + 1 + Math.floor(Math.random() * 2)) % 3;
+        // ka/kb: baús que estão nas vagas a e b
+        E.sw = { ka: E.slot.indexOf(a), kb: E.slot.indexOf(b), a, b, dur: Math.max(0.22, 0.6 - E.swaps * 0.04) };
+        E.t = 0;
+        sfx.dash();
+      }
+      const S = E.sw;
+      const k = Math.min(1, E.t / S.dur);
+      const ca = E.chests[S.ka].c;
+      const cb = E.chests[S.kb].c;
+      ca.position.set(shell.sx(S.a) + (shell.sx(S.b) - shell.sx(S.a)) * k, 0, Math.sin(k * Math.PI) * 0.9);
+      cb.position.set(shell.sx(S.b) + (shell.sx(S.a) - shell.sx(S.b)) * k, 0, -Math.sin(k * Math.PI) * 0.9);
+      if (k >= 1) {
+        E.slot[S.ka] = S.b;
+        E.slot[S.kb] = S.a;
+        E.swaps++;
+        E.sw = null;
+      }
+    } else if (E.st === 'pick') {
+      const k = shell.touching(E);
+      if (k !== E.block) E.block = -1;
+      if (k < 0 || k === E.block) return;
+      const c = E.chests[k];
+      c.lid.rotation.x = -1.3;
+      for (const o of E.chests) setLight(o.ring, 0x333344, 0.3);
+      if (k === E.prize) {
+        E.gem.visible = true;
+        E.gem.position.set(c.c.position.x, 1.1, 0);
+        const w = shell.where(E, k);
+        complete(E, 2.4, L('ACERTOU!', 'YOU GOT IT!'), L('Olho de lince', 'Eagle eye'), w.x, w.z, { extra: true });
+        return;
+      }
+      // errou: o certo se mostra e o escolhido era um mímico
+      P.lid.rotation.x = -1.3;
+      E.gem.visible = true;
+      E.gem.position.set(P.c.position.x, 1.1, 0);
+      const w = shell.where(E, k);
+      c.c.visible = false;
+      E.st = 'mimic';
+      E.foes = [];
+      ambush(E, 1, w.x, w.z, 0, 0.6, SH_COL, { elite: true, name: L('Mímico', 'Mimic') });
+      banner(L('MÍMICO!', 'MIMIC!'), L('Era o baú errado... derrote-o', 'Wrong chest... defeat it'));
+      sfx.roar();
+    } else if (E.st === 'mimic') {
+      E.foes = E.foes.filter((e) => e.alive);
+      if (!E.foes.length) complete(E, 0.9, L('MÍMICO DERROTADO', 'MIMIC DEFEATED'), L('Prêmio de consolação', 'Consolation prize'), E.x, E.z);
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto', 'get close') : E.st === 'pick' ? L('escolha um baú', 'pick a chest') : E.st === 'mimic' ? L('mímico!', 'mimic!') : L('olhe bem...', 'watch...')),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    for (const c of E.chests) c.lid.rotation.x = -1.3;
+  },
+  busy: (E) => E.st === 'mimic',
+  intro: () => L('3 baús, um com prêmio. Chegue perto, veja onde ele está, acompanhe o embaralhamento e encoste no baú certo. O errado é um mímico!', '3 chests, one holds the prize. Get close, see where it is, follow the shuffle and touch the right chest. The wrong one is a mimic!'),
+};
+
+// ==================================================================
+// 21. Duelo de Espelho: sua cópia sombria sai do espelho, com investidas e ondas de choque
+// ==================================================================
+const MIR_COL = 0xff2244;
+const MIR_FRAME = 0x9a7bff;
+const mirror = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 2.4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    g.rotation.y = Math.PI / 4;
+    for (const sx of [-0.78, 0.78]) put(g, box(0.12, 2.3, 0.14), mats().metal, sx, 1.15, 0);
+    put(g, box(1.7, 0.12, 0.16), mats().metal, 0, 2.32, 0);
+    put(g, box(1.7, 0.05, 0.05), glowMat(MIR_FRAME, 2.2), 0, 2.42, 0.02);
+    const glassMat = new THREE.MeshBasicMaterial({ color: 0x2a1040, transparent: true, opacity: 0.8 });
+    const glass = put(g, box(1.44, 2.12, 0.04), glassMat, 0, 1.15, 0);
+    const ringMat = lightMat(MIR_FRAME, 1.3);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, 2.2, 1, 2.2);
+    return { kind: 'mirror', x: s.x, z: s.z, g, glass, glassMat, ringMat, st: 'idle', e: null, dashT: 3, dash: null, wave: 0, low: 1 };
+  },
+  spawn(E) {
+    const d = G.dungeon;
+    const c = G.char;
+    const m = makePlayerModel(c.cls, MIR_COL);
+    for (const mt of m.mats) mt.color.multiplyScalar(0.28);
+    m.kind = 'humanoid';
+    const pt = freeAround(d, E.x, E.z, 1.2, 2) || { x: E.x, z: E.z };
+    const e = spawnEnemy('bladeknight', pt.x, pt.z, { model: m });
+    e.hp = e.maxHp = e.maxHp * 9;
+    e.dmg *= 1.5;
+    e.speed = 4;
+    e.xp = Math.round(e.xp * 5);
+    e.height = 1.7;
+    e.name = L('Reflexo Sombrio', 'Dark Reflection');
+    e.aggro = true;
+    e.alerted = true;
+    applyAnomalyToEnemy(e);
+    E.e = e;
+    E.st = 'fight';
+    E.dashT = 3;
+    E.wave = 0;
+    E.low = 1;
+    E.glassMat.opacity = 0.25;
+    burst(pt.x, 1, pt.z, MIR_COL, 40, 6, 0.08, 0.7, { up: 1.4 });
+    banner(L('DUELO DE ESPELHO', 'MIRROR DUEL'), L('Seu reflexo saiu do espelho!', 'Your reflection stepped out of the mirror!'));
+    sfx.roar();
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    const d = G.dungeon;
+    if (E.st === 'idle') {
+      E.glassMat.color.setHSL(0.76, 0.6, 0.12 + Math.sin(G.t * 2) * 0.04);
+      if (near(E, 5)) mirror.spawn(E);
+      return;
+    }
+    const e = E.e;
+    if (!e.alive) {
+      E.glass.visible = false;
+      complete(E, 3, L('REFLEXO DESTRUÍDO', 'REFLECTION SHATTERED'), L('Você venceu a si mesmo', 'You beat yourself'), e.x, e.z, { loot: { thief: true } });
+      if (E.low >= 0.5) achMark('flags', 'evMirror');
+      return;
+    }
+    if (p.alive) E.low = Math.min(E.low, p.hp / p.stats.maxHp);
+    // onda de choque com metade e com um quarto da vida
+    if ((E.wave === 0 && e.hp < e.maxHp * 0.5) || (E.wave === 1 && e.hp < e.maxHp * 0.25)) {
+      E.wave++;
+      telegraphFx(e.x, e.z, 4, 0.8, MIR_COL);
+      floatText(e.x, e.height + 0.6, e.z, '!!', 'hurt');
+      after(0.8, () => {
+        if (!e.alive) return;
+        enemyExplosion(e.x, e.z, 4, e.dmg * 1.4, MIR_COL);
+        if (Math.hypot(p.x - e.x, p.z - e.z) < 4 + p.r) {
+          const l = Math.hypot(p.x - e.x, p.z - e.z) || 1;
+          p.kx = (p.kx || 0) + ((p.x - e.x) / l) * 12;
+          p.kz = (p.kz || 0) + ((p.z - e.z) / l) * 12;
+        }
+        G.shake = Math.max(G.shake, 0.5);
+        sfx.explode();
+      });
+    }
+    // investida avisada no chão
+    const D = E.dash;
+    if (D) {
+      D.t -= dt;
+      if (D.go) {
+        for (let s = 0; s < 3; s++) {
+          const nx = e.x + D.dx * D.sp * (dt / 3);
+          const nz = e.z + D.dz * D.sp * (dt / 3);
+          if (!isWalkable(d, nx, nz)) {
+            D.t = 0;
+            break;
+          }
+          e.x = nx;
+          e.z = nz;
+        }
+        if (Math.random() < dt * 20) burst(e.x, 1, e.z, MIR_COL, 3, 2, 0.08, 0.4);
+        if (!D.hit && p.alive && Math.hypot(p.x - e.x, p.z - e.z) < e.r + p.r + 0.35) {
+          D.hit = true;
+          damagePlayer(e.dmg * 1.6);
+          p.kx = (p.kx || 0) + D.dx * 10;
+          p.kz = (p.kz || 0) + D.dz * 10;
+        }
+        if (D.t <= 0) {
+          e.speed = D.speed;
+          E.dash = null;
+          E.dashT = (e.hp < e.maxHp * 0.5 ? 2.6 : 3.6) + Math.random() * 1.2;
+        }
+      } else if (D.t <= 0) {
+        D.go = true;
+        D.t = 0.32;
+        sfx.dash();
+      }
+      return;
+    }
+    E.dashT -= dt;
+    const dist = Math.hypot(p.x - e.x, p.z - e.z);
+    if (E.dashT <= 0 && p.alive && e.stun <= 0 && dist > 2.5 && dist < 10 && lineOfSight(d, e.x, e.z, p.x, p.z)) {
+      const dx = (p.x - e.x) / dist;
+      const dz = (p.z - e.z) / dist;
+      E.dash = { t: 0.6, dx, dz, sp: 26, speed: e.speed, go: false, hit: false };
+      e.speed = 0;
+      e.faceX = dx;
+      e.faceZ = dz;
+      for (let k = 1; k <= 7; k++) telegraphFx(e.x + dx * k * 1.2, e.z + dz * k * 1.2, 0.6, 0.6, MIR_COL);
+      floatText(e.x, e.height + 0.6, e.z, '!', 'hurt');
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto do espelho', 'approach the mirror') : `${Math.max(1, Math.ceil((E.e.hp / E.e.maxHp) * 100))}%`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.glass.visible = false;
+  },
+  busy: (E) => E.st === 'fight',
+  intro: () => L('um espelho escuro. Chegue perto e seu reflexo sai para lutar: ele investe em linha reta (veja o aviso no chão) e solta ondas de choque quando está ferido.', 'a dark mirror. Get close and your reflection steps out to fight: it dashes in a straight line (watch the warning on the ground) and releases shockwaves when hurt.'),
+};
+
+// ==================================================================
+// 22. Bola de Plasma: empurre (andando) ou chute (golpes) a bola até o gol; 3 gols em 75s
+// ==================================================================
+const BALL_COL = 0x00f0ff;
+const GOAL_COL = 0x39ff88;
+const BALL_R = 0.42;
+const GOALS = 3;
+const BALL_TIME = 75;
+let ballGeo = null;
+const ball = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 2.4);
+    if (!s) return null;
+    // gol: 6–10m do centro, à vista, com espaço em volta
+    let goal = null;
+    for (let t = 0; t < 30 && !goal; t++) {
+      const a = rr(0, Math.PI * 2);
+      const r = rr(6, 10);
+      const gx = Math.floor(s.x + Math.cos(a) * r) + 0.5;
+      const gz = Math.floor(s.z + Math.sin(a) * r) + 0.5;
+      if (spotOk(d, gx, gz, 1.2, 1.2) && lineOfSight(d, s.x, s.z, gx, gz)) goal = { x: gx, z: gz };
+    }
+    if (!goal) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, mats().ring, lightMat(BALL_COL, 1), 0, 0.03, 0, 0.8, 1, 0.8);
+    const gg = groupAt(goal.x, goal.z);
+    const goalMat = lightMat(GOAL_COL, 1.5);
+    put(gg, mats().ring, goalMat, 0, 0.03, 0, 1.3, 1, 1.3);
+    put(gg, mats().disc, flatMat(GOAL_COL, 0.14), 0, 0.02, 0, 1.3, 1, 1.3);
+    gg.rotation.y = Math.atan2(s.x - goal.x, s.z - goal.z);
+    for (const sx of [-1.3, 1.3]) put(gg, mats().cyl, mats().metal, sx, 0.8, 0, 0.07, 1.6, 0.07);
+    put(gg, box(2.7, 0.08, 0.08), goalMat, 0, 1.62, 0);
+    if (!ballGeo) ballGeo = new THREE.IcosahedronGeometry(BALL_R, 1);
+    const bm = new THREE.Group();
+    bm.add(new THREE.Mesh(ballGeo, glowMat(BALL_COL, 2.2)));
+    const band = new THREE.Mesh(mats().ring, glowMat(0xffffff, 2));
+    band.scale.setScalar(BALL_R * 1.08);
+    band.rotation.x = Math.PI / 2;
+    bm.add(band);
+    bm.position.set(s.x, BALL_R + 0.05, s.z);
+    G.world.add(bm);
+    const e = hitTarget(s.x, s.z, BALL_R + 0.1, 0.9, L('Bola de Plasma', 'Plasma Ball'));
+    return { kind: 'ball', x: s.x, z: s.z, g, gg, goalMat, gx: goal.x, gz: goal.z, pts: [goal], bx: s.x, bz: s.z, vx: 0, vz: 0, bm, e, st: 'idle', goals: 0, t: BALL_TIME, hits: 0, resetT: 0 };
+  },
+  kick(E, sp) {
+    const p = G.player;
+    const dx = E.bx - p.x;
+    const dz = E.bz - p.z;
+    const l = Math.hypot(dx, dz) || 1;
+    E.vx = (dx / l) * sp;
+    E.vz = (dz / l) * sp;
+    ringFx(E.bx, E.bz, 0.9, BALL_COL, 0.25);
+    sfx.punch();
+    ball.start(E);
+  },
+  start(E) {
+    if (E.st !== 'idle') return;
+    E.st = 'play';
+    banner(L('BOLA EM JOGO!', 'BALL IN PLAY!'), L(`Leve a bola ao anel verde: ${GOALS} gols em ${BALL_TIME}s`, `Get the ball into the green ring: ${GOALS} goals in ${BALL_TIME}s`));
+  },
+  end(E) {
+    dropTarget(E);
+    G.world.remove(E.bm);
+    setLight(E.goalMat, 0x333344, 0.3);
+  },
+  update(E, dt) {
+    if (E.st === 'done' || E.st === 'failed') return;
+    const p = G.player;
+    const d = G.dungeon;
+    if (E.st === 'play') {
+      E.t -= dt;
+      if (E.t <= 0) {
+        ball.end(E);
+        if (E.goals) complete(E, 0.6 * E.goals, L('FIM DE JOGO', 'FULL TIME'), L(`${E.goals} gol(s)`, `${E.goals} goal(s)`), E.gx, E.gz);
+        else failed(E, L('O tempo acabou sem gol.', 'Time ran out without a goal.'));
+        return;
+      }
+    }
+    if (E.resetT > 0) {
+      E.resetT -= dt;
+      hitsOf(E);
+      if (E.resetT > 0) return;
+      E.bx = E.x;
+      E.bz = E.z;
+      E.vx = E.vz = 0;
+      E.bm.visible = true;
+      ringFx(E.x, E.z, 1.2, BALL_COL, 0.4);
+    }
+    // golpes chutam a bola; andando nela você empurra
+    if (hitsOf(E)) ball.kick(E, 13);
+    const dist = Math.hypot(E.bx - p.x, E.bz - p.z);
+    if (p.alive && dist < p.r + BALL_R + 0.08) {
+      const nx = (E.bx - p.x) / (dist || 1);
+      const nz = (E.bz - p.z) / (dist || 1);
+      const sp = Math.max(Math.hypot(E.vx, E.vz), Math.hypot(p.ivx || 0, p.ivz || 0) * 1.6, 4);
+      E.vx = nx * sp;
+      E.vz = nz * sp;
+      const ox = p.x + nx * (p.r + BALL_R + 0.1);
+      const oz = p.z + nz * (p.r + BALL_R + 0.1);
+      if (isWalkable(d, ox, oz)) {
+        E.bx = ox;
+        E.bz = oz;
+      }
+      ball.start(E);
+    }
+    const sp = Math.hypot(E.vx, E.vz);
+    if (sp > 0.05) {
+      // quica nas paredes
+      const nx = E.bx + E.vx * dt;
+      if (!isWalkable(d, nx + Math.sign(E.vx) * BALL_R, E.bz)) E.vx = -E.vx * 0.8;
+      else E.bx = nx;
+      const nz = E.bz + E.vz * dt;
+      if (!isWalkable(d, E.bx, nz + Math.sign(E.vz) * BALL_R)) E.vz = -E.vz * 0.8;
+      else E.bz = nz;
+      const f = Math.exp(-dt * 1.1);
+      E.vx *= f;
+      E.vz *= f;
+      E.bm.rotation.x += (E.vz * dt) / BALL_R;
+      E.bm.rotation.z -= (E.vx * dt) / BALL_R;
+      // atropela inimigos no caminho
+      if (sp > 4) {
+        for (const o of enemiesInRadius(E.bx, E.bz, BALL_R + 0.3)) {
+          if (o === E.e || o.inert || (o.ballT || 0) > G.t) continue;
+          o.ballT = G.t + 0.5;
+          hitEnemy(o, 1 + sp * 0.12, { knock: 6, kx: E.bx, kz: E.bz, noProc: true });
+        }
+      }
+      if (Math.random() < dt * sp * 2) burst(E.bx, BALL_R, E.bz, BALL_COL, 1, 1, 0.06, 0.4, { grav: -1 });
+    }
+    if (!isWalkable(d, E.bx, E.bz)) {
+      E.bx = E.x;
+      E.bz = E.z;
+      E.vx = E.vz = 0;
+    }
+    E.e.x = E.bx;
+    E.e.z = E.bz;
+    E.bm.position.set(E.bx, BALL_R + 0.05, E.bz);
+    // gol!
+    if (E.st === 'play' && Math.hypot(E.bx - E.gx, E.bz - E.gz) < 1.25) {
+      E.goals++;
+      for (const c of [GOAL_COL, BALL_COL, 0xffd23d]) burst(E.gx, 1.2, E.gz, c, 25, 7, 0.08, 0.9, { up: 1.8 });
+      ringFx(E.gx, E.gz, 3, GOAL_COL, 0.6);
+      sfx.upgrade();
+      if (E.goals >= GOALS) {
+        ball.end(E);
+        complete(E, 2.2, L('HAT-TRICK!', 'HAT TRICK!'), L(`${GOALS} gols com ${Math.ceil(E.t)}s de sobra`, `${GOALS} goals with ${Math.ceil(E.t)}s to spare`), E.gx, E.gz);
+        return;
+      }
+      banner(L(`GOL! ${E.goals}/${GOALS}`, `GOAL! ${E.goals}/${GOALS}`), L('A bola volta para o centro', 'The ball goes back to the center'));
+      E.bm.visible = false;
+      E.vx = E.vz = 0;
+      E.resetT = 1.2;
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('empurre a bola', 'push the ball') : `${E.goals}/${GOALS} · ${Math.ceil(Math.max(0, E.t))}s`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done' && s.st !== 'failed' && E.e.alive) {
+      E.e.hp = E.e.maxHp;
+      return;
+    }
+    E.st = s.st === 'failed' ? 'failed' : 'done';
+    ball.end(E);
+  },
+  intro: () => L(`empurre a bola de plasma andando nela (golpes chutam) até o anel verde. Faça ${GOALS} gols em ${BALL_TIME}s; ela atropela inimigos no caminho.`, `push the plasma ball by walking into it (attacks kick it) into the green ring. Score ${GOALS} goals in ${BALL_TIME}s; it runs over enemies on the way.`),
+};
+
+// ==================================================================
+// 23. Olho Vigia: ande no verde, pare no vermelho; mexer no vermelho dá choque e empurra para trás
+// ==================================================================
+const WAT_R = 11;
+const WAT_COL = { green: 0x39ff88, yellow: 0xffd23d, red: 0xff2244 };
+const watcher = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1.4);
+    if (!s) return null;
+    // precisa de caminho: chão andável em volta, longe do olho
+    let ok = 0;
+    for (let k = 0; k < 16; k++) if (isWalkable(d, s.x + Math.cos((k / 16) * Math.PI * 2) * 8, s.z + Math.sin((k / 16) * Math.PI * 2) * 8)) ok++;
+    if (ok < 3) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, mats().cyl, mats().metal, 0, 0.9, 0, 0.22, 1.8, 0.22);
+    put(g, mats().cyl, mats().dark, 0, 0.1, 0, 0.6, 0.2, 0.6);
+    const eye = new THREE.Group();
+    eye.position.y = 2.4;
+    g.add(eye);
+    put(eye, new THREE.SphereGeometry(0.62, 16, 12), new THREE.MeshLambertMaterial({ color: 0xe8e4f0 }), 0, 0, 0);
+    const irisMat = lightMat(WAT_COL.green, 1.6);
+    put(eye, mats().disc, irisMat, 0, 0, 0.6, 0.32, 1, 0.32).rotation.x = Math.PI / 2;
+    put(eye, mats().disc, new THREE.MeshBasicMaterial({ color: 0x000000 }), 0, 0, 0.615, 0.14, 1, 0.14).rotation.x = Math.PI / 2;
+    const lineMat = lightMat(WAT_COL.green, 0.9);
+    put(g, ringThin(), lineMat, 0, 0.03, 0, WAT_R, 1, WAT_R);
+    put(g, mats().ring, lineMat, 0, 0.03, 0, 1.8, 1, 1.8);
+    return { kind: 'watcher', x: s.x, z: s.z, introR: WAT_R + 3, g, eye, irisMat, lineMat, st: 'idle', light: 'green', lt: 0, grace: 0, zapCd: 0, zaps: 0, px: 0, pz: 0 };
+  },
+  setLightTo(E, l) {
+    E.light = l;
+    setLight(E.irisMat, WAT_COL[l], l === 'red' ? 2.6 : 1.8);
+    setLight(E.lineMat, WAT_COL[l], 1.1);
+    if (l === 'green') {
+      E.lt = 1.6 + Math.random() * 1.8;
+      floatText(E.x, 3.4, E.z, L('ANDE!', 'GO!'), 'up');
+    } else if (l === 'yellow') {
+      E.lt = 0.8;
+      sfx.telegraph();
+    } else {
+      E.lt = 1.4 + Math.random() * 1.2;
+      E.grace = 0.25;
+      floatText(E.x, 3.4, E.z, L('PARE!', 'FREEZE!'), 'hurt');
+      sfx.alarm();
+    }
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    const dist = Math.hypot(p.x - E.x, p.z - E.z);
+    // o olho segue o jogador no amarelo/vermelho e olha para longe no verde
+    if (E.st === 'idle') E.eye.rotation.y += dt * 0.6;
+    else {
+      const look = Math.atan2(p.x - E.x, p.z - E.z) + (E.light === 'green' ? Math.PI : 0);
+      const da = ((((look - E.eye.rotation.y + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
+      E.eye.rotation.y += Math.max(-dt * 5, Math.min(dt * 5, da));
+    }
+    if (E.st === 'idle') {
+      if (!p.alive || dist > WAT_R) return;
+      E.st = 'play';
+      E.zaps = 0;
+      E.px = p.x;
+      E.pz = p.z;
+      watcher.setLightTo(E, 'green');
+      banner(L('OLHO VIGIA', "WATCHER'S EYE"), L('Ande no verde, PARE no vermelho e encoste no olho', 'Move on green, FREEZE on red and touch the eye'));
+      return;
+    }
+    const moved = Math.hypot(p.x - E.px, p.z - E.pz);
+    E.px = p.x;
+    E.pz = p.z;
+    if (dist > WAT_R + 4) {
+      E.st = 'idle';
+      setLight(E.lineMat, WAT_COL.green, 0.9);
+      setLight(E.irisMat, WAT_COL.green, 1.6);
+      toast(L('👁️ Você saiu do anel do Olho Vigia: entre de novo para recomeçar.', "👁️ You left the Watcher's ring: step back in to start over."), 'warn', 'ev');
+      return;
+    }
+    if (dist < 1.9) {
+      setLight(E.irisMat, 0x333344, 0.4);
+      setLight(E.lineMat, 0x333344, 0.3);
+      complete(E, 1.9, L('VOCÊ CHEGOU!', 'YOU MADE IT!'), E.zaps ? L(`${E.zaps} choque(s)`, `${E.zaps} zap(s)`) : L('Sem levar nenhum choque!', 'Without a single zap!'), E.x, E.z);
+      return;
+    }
+    E.lt -= dt;
+    E.zapCd -= dt;
+    if (E.lt <= 0) watcher.setLightTo(E, E.light === 'green' ? 'yellow' : E.light === 'yellow' ? 'red' : 'green');
+    if (E.light !== 'red') return;
+    E.grace -= dt;
+    // mexeu no vermelho (andar ou teleportar; empurrão de golpe não conta)
+    if (E.grace > 0 || E.zapCd > 0 || !p.alive || !(p.moving || moved > 0.5)) return;
+    E.zapCd = 1;
+    E.zaps++;
+    beamFx(E.x, 2.4, E.z, p.x, 1, p.z, WAT_COL.red, 0.3, 8);
+    sfx.zap();
+    eventHurt(0.06, E.x, E.z, 22);
+    floatText(p.x, 2.4, p.z, L('TE VI!', 'GOTCHA!'), 'hurt');
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre no anel', 'step in') : E.light === 'green' ? L('🟢 ande', '🟢 go') : E.light === 'yellow' ? L('🟡 atenção', '🟡 careful') : L('🔴 pare!', '🔴 freeze!')),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    setLight(E.irisMat, 0x333344, 0.4);
+    setLight(E.lineMat, 0x333344, 0.3);
+  },
+  intro: () => L('um olho gigante vigia o anel. Ande enquanto ele está verde e PARE quando ficar vermelho (amarelo avisa); se você se mexer no vermelho, leva choque e é empurrado. Encoste no olho para vencer.', "a giant eye watches the ring. Move while it is green and FREEZE when it turns red (yellow warns you); move on red and you get zapped and pushed back. Touch the eye to win."),
+};
+
+// ==================================================================
+// 24. Corrida Fantasma: pise na largada; depois do 3-2-1, chegue antes do corredor fantasma
+// ==================================================================
+const RACE_COL = 0x7affc8;
+const race = {
+  setup(d, floor, rooms) {
+    const a = findSpot(d, rooms, 1.2);
+    if (!a) return null;
+    let b = null;
+    let path = null;
+    for (let t = 0; t < 4 && !b; t++) {
+      const s = findSpot(d, rooms, 1.2, 1.2, [{ x: a.x, z: a.z, r: 14 }]);
+      if (!s) break;
+      const pth = findPath(d, a.x, a.z, s.x, s.z, 6000);
+      if (!pth) continue;
+      let len = 0;
+      let px = a.x;
+      let pz = a.z;
+      for (const q of pth) {
+        len += Math.hypot(q.x - px, q.z - pz);
+        px = q.x;
+        pz = q.z;
+      }
+      if (len < 16 || len > 55) continue;
+      b = s;
+      path = pth;
+    }
+    if (!b) return null;
+    const padMat = lightMat(RACE_COL, 1.4);
+    const ga = groupAt(a.x, a.z);
+    put(ga, mats().ring, padMat, 0, 0.03, 0, 1.2, 1, 1.2);
+    put(ga, mats().disc, flatMat(RACE_COL, 0.18), 0, 0.02, 0, 1.2, 1, 1.2);
+    const gb = groupAt(b.x, b.z);
+    const finMat = lightMat(0xffffff, 1.2);
+    put(gb, mats().ring, finMat, 0, 0.03, 0, 1.4, 1, 1.4);
+    for (const sx of [-1.3, 1.3]) put(gb, mats().cyl, mats().metal, sx, 1, 0, 0.07, 2, 0.07);
+    // faixa xadrez da chegada
+    for (let k = 0; k < 6; k++) put(gb, box(0.43, 0.3, 0.05), k % 2 ? finMat : mats().dark, -1.08 + k * 0.43, 1.85, 0);
+    gb.rotation.y = Math.PI / 4;
+    const ghost = makePlayerModel(pick(CLASS_ORDER), RACE_COL);
+    const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(RACE_COL).multiplyScalar(gk(1.1)), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
+    ghost.root.traverse((o) => o.isMesh && (o.material = gm));
+    ghost.root.position.set(a.x + 0.8, 0, a.z);
+    G.world.add(ghost.root);
+    return { kind: 'race', x: a.x, z: a.z, fx: b.x, fz: b.z, pts: [{ x: b.x, z: b.z }], ga, gb, padMat, finMat, path, ghost, st: 'idle', t: 0, gi: 0, gxp: a.x + 0.8, gzp: a.z, phase: 0, beep: -1, losses: 0 };
+  },
+  reset(E) {
+    E.st = 'idle';
+    E.gi = 0;
+    E.gxp = E.x + 0.8;
+    E.gzp = E.z;
+    E.ghost.root.position.set(E.gxp, 0, E.gzp);
+    setLight(E.padMat, RACE_COL, 1.4);
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    const m = E.ghost;
+    if (E.st === 'idle') {
+      m.root.rotation.y += dt;
+      animWalk(m, 0, false);
+      if (!near(E, 1.2)) return;
+      E.st = 'count';
+      E.t = 3;
+      E.beep = 4;
+      m.root.position.set(E.x + 0.8, 0, E.z);
+      m.root.rotation.y = Math.atan2(E.path[0].x - E.x, E.path[0].z - E.z);
+      return;
+    }
+    if (E.st === 'count') {
+      E.t -= dt;
+      const n = Math.ceil(E.t);
+      if (n !== E.beep && n > 0) {
+        E.beep = n;
+        floatText(E.x, 2.6, E.z, `${n}`, 'crit');
+        sfx.click();
+      }
+      if (E.t > 0) return;
+      E.st = 'run';
+      E.t = 0;
+      E.speed = p.stats.speed * 0.86;
+      floatText(E.x, 2.6, E.z, L('JÁ!', 'GO!'), 'up');
+      setLight(E.padMat, 0x333344, 0.4);
+      sfx.deploy();
+      return;
+    }
+    // corrida
+    E.t += dt;
+    let step = E.speed * dt;
+    while (step > 0 && E.gi < E.path.length) {
+      const q = E.path[E.gi];
+      const dx = q.x - E.gxp;
+      const dz = q.z - E.gzp;
+      const l = Math.hypot(dx, dz);
+      if (l <= step) {
+        E.gxp = q.x;
+        E.gzp = q.z;
+        step -= l;
+        E.gi++;
+      } else {
+        E.gxp += (dx / l) * step;
+        E.gzp += (dz / l) * step;
+        m.root.rotation.y = Math.atan2(dx, dz);
+        step = 0;
+      }
+    }
+    E.phase += dt * E.speed * 2.6;
+    animWalk(m, E.phase, true);
+    m.root.position.set(E.gxp, 0, E.gzp);
+    if (Math.random() < dt * 12) burst(E.gxp, 0.8, E.gzp, RACE_COL, 1, 1, 0.06, 0.5, { grav: -1 });
+    if (p.alive && Math.hypot(p.x - E.fx, p.z - E.fz) < 1.5) {
+      G.world.remove(m.root);
+      complete(E, 2.1, L('VITÓRIA NA CORRIDA!', 'RACE WON!'), L(`${E.t.toFixed(1)}s`, `${E.t.toFixed(1)}s`), E.fx, E.fz);
+      return;
+    }
+    if (E.gi >= E.path.length) {
+      E.losses++;
+      burst(E.fx, 1, E.fz, RACE_COL, 30, 5, 0.08, 0.6, { up: 1.4 });
+      sfx.deny();
+      toast(L('👻 O fantasma chegou primeiro! Volte à largada para a revanche.', '👻 The ghost got there first! Go back to the start for a rematch.'), 'warn', 'ev');
+      race.reset(E);
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('vá à largada', 'go to the start') : E.st === 'count' ? `${Math.ceil(E.t)}...` : `${E.t.toFixed(0)}s`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    G.world.remove(E.ghost.root);
+    setLight(E.padMat, 0x333344, 0.4);
+  },
+  intro: () => L('pise na largada verde e, depois do 3-2-1, chegue na linha de chegada antes do corredor fantasma (o Teleporte vale!).', 'step on the green start pad and, after the 3-2-1, reach the finish line before the ghost runner (Teleport counts!).'),
+};
+
+// ==================================================================
+// 25. Laser Giratório: feixes giram em volta do centro; chegue lá e fique 2s
+// ==================================================================
+const SPIN_COL = 0xff2244;
+const SPIN_R = 4.6;
+const SPIN_IN = 1.35;
+const SPIN_HOLD = 2;
+const spinner = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.5);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, mats().ring, lightMat(SPIN_COL, 1), 0, 0.03, 0, SPIN_R, 1, SPIN_R);
+    const padMat = lightMat(0x39ff88, 1.3);
+    put(g, mats().ring, padMat, 0, 0.035, 0, 1, 1, 1);
+    const fill = put(g, mats().disc, flatMat(0x39ff88, 0.3), 0, 0.03, 0, 0.001, 1, 0.001);
+    const rot = new THREE.Group();
+    rot.position.y = 0.6;
+    g.add(rot);
+    const n = floor >= 12 ? 3 : 2;
+    const beamMat = lightMat(SPIN_COL, 3);
+    for (let k = 0; k < n; k++) {
+      const arm = new THREE.Group();
+      arm.rotation.y = (k / n) * Math.PI * 2;
+      rot.add(arm);
+      put(arm, box(SPIN_R - SPIN_IN, 0.1, 0.1), beamMat, (SPIN_R + SPIN_IN) / 2, 0, 0);
+      put(arm, box(0.24, 0.5, 0.24), mats().metal, SPIN_R, -0.35, 0);
+      put(arm, box(0.24, 0.3, 0.24), mats().metal, SPIN_IN, -0.45, 0);
+    }
+    return { kind: 'spinner', x: s.x, z: s.z, g, rot, n, beamMat, padMat, fill, st: 'idle', w: Math.min(1.6, 1.1 + floor * 0.015), dir: 1, flipT: rr(5, 8), hold: 0, hitCd: 0, hits: 0 };
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    // de vez em quando inverte o giro (pisca branco antes)
+    E.flipT -= dt;
+    if (E.flipT <= 0) {
+      E.dir = -E.dir;
+      E.flipT = 5 + Math.random() * 3;
+      setLight(E.beamMat, SPIN_COL, 3);
+    } else if (E.flipT < 0.6) setLight(E.beamMat, Math.sin(G.t * 30) > 0 ? 0xffffff : SPIN_COL, 3);
+    E.rot.rotation.y += E.dir * E.w * dt;
+    if (E.st === 'idle') {
+      if (!near(E, SPIN_R + 1)) return;
+      E.st = 'run';
+    }
+    E.hitCd -= dt;
+    if (p.alive && E.hitCd <= 0) {
+      for (let k = 0; k < E.n; k++) {
+        const a = E.rot.rotation.y + (k / E.n) * Math.PI * 2;
+        const cx = Math.cos(a);
+        const cz = -Math.sin(a);
+        if (segDist(p.x, p.z, E.x + cx * SPIN_IN, E.z + cz * SPIN_IN, E.x + cx * SPIN_R, E.z + cz * SPIN_R) > p.r + 0.12) continue;
+        if (!eventHurt(0.07, E.x, E.z, 14)) break;
+        E.hitCd = 0.8;
+        E.hits++;
+        burst(p.x, 1, p.z, SPIN_COL, 14, 4, 0.06, 0.4);
+        sfx.zap();
+        break;
+      }
+    }
+    const on = near(E, 1);
+    E.hold = on ? E.hold + dt : Math.max(0, E.hold - dt * 2);
+    const k = Math.min(1, E.hold / SPIN_HOLD);
+    E.fill.scale.set(Math.max(0.001, k), 1, Math.max(0.001, k));
+    if (on && Math.random() < dt * 10) burst(E.x, 0.9, E.z, 0x39ff88, 1, 1.5, 0.05, 0.4, { up: 1 });
+    if (E.hold < SPIN_HOLD) return;
+    E.rot.visible = false;
+    complete(E, 1.7, L('NO OLHO DO FURACÃO', 'IN THE EYE OF THE STORM'), E.hits ? L(`${E.hits} queimadura(s)`, `${E.hits} burn(s)`) : L('Sem encostar em nenhum feixe!', 'Without touching a single beam!'), E.x, E.z);
+  },
+  hud: (E) => (E.hold > 0 ? `${Math.floor((E.hold / SPIN_HOLD) * 100)}%` : L('chegue ao centro', 'reach the center')),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.rot.visible = false;
+  },
+  intro: () => L(`feixes de laser giram em volta de um centro verde (às vezes invertem: piscam branco antes). Chegue ao centro e fique ${SPIN_HOLD}s; encostar num feixe queima e empurra.`, `laser beams spin around a green center (sometimes they reverse: they flash white first). Reach the center and stay ${SPIN_HOLD}s; touching a beam burns and pushes you.`),
+};
+
+// ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, secret, gamble };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, secret, gamble };
 
-// Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (um sempre, o segundo
-// com a mesma chance que o único tinha antes) e o pequeno
+// Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (3 no começo, 4 do andar 4,
+// 5 do andar 8, e às vezes um a mais) e o pequeno
 export function setupEvents(d, floor, boss, rooms) {
   if (!G.events) G.events = [];
   const forced = forcedMain;
@@ -1785,7 +2994,8 @@ export function setupEvents(d, floor, boss, rooms) {
   const fresh = MAIN_EVENTS.filter((k) => !lastMain.includes(k));
   const first = pick(fresh);
   const second = pick(fresh.filter((k) => k !== first));
-  const want = boss || !free.length ? 0 : roll ? 2 : 1;
+  const base = floor < 4 ? 3 : floor < 8 ? 4 : 5;
+  const want = boss || !free.length ? 0 : Math.min(base + (roll && floor >= 4 ? 1 : 0), Math.max(1, free.length));
   // cada tentativa começa do mesmo ponto da semente: se uma não couber, a próxima sai igual ao continuar
   // embaralha a lista inteira (mesmo número de sorteios com ou sem andar salvo)
   const rest = shuffle(MAIN_EVENTS.slice()).filter((k) => k !== first && k !== second && fresh.includes(k));
@@ -1811,8 +3021,20 @@ export function setupEvents(d, floor, boss, rooms) {
 
 export function updateEvents(dt) {
   if (!G.events || !G.events.length || !G.player) return;
-  for (const E of G.events) KIND[E.kind].update(E, dt);
+  const p = G.player;
+  for (const E of G.events) {
+    KIND[E.kind].update(E, dt);
+    // explicação de cada evento quando o jogador chega perto
+    if (!E.told && E.x != null && KIND[E.kind].intro && E.st !== 'done' && E.st !== 'failed' && p.alive && Math.hypot(p.x - E.x, p.z - E.z) < Math.max(9, E.introR || 0)) {
+      E.told = true;
+      toast(introHtml(E), 'leg');
+    }
+  }
 }
+const introHtml = (E) => {
+  const I = EVENT_INFO[E.kind];
+  return `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${KIND[E.kind].intro(E)}`;
+};
 
 // inimigo derrotado pelo jogador
 export function eventKill(e) {
@@ -1824,12 +3046,18 @@ export function eventKill(e) {
 export const eventsBusy = () => (G.events || []).some((E) => KIND[E.kind].busy && KIND[E.kind].busy(E));
 
 // avisos do começo do andar (em sequência com os outros avisos); devolve o próximo horário livre
+// um resumo com todos os eventos; a explicação de cada um aparece quando o jogador chega perto
+// (os que não têm lugar fixo, como a bomba e o procurado, são explicados logo no começo)
 export function announceEvents(floor, t) {
-  for (const E of G.events || []) {
-    const K = KIND[E.kind];
-    if (!K.intro || E.st === 'done' || E.st === 'failed') continue;
-    const I = EVENT_INFO[E.kind];
-    const html = `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${K.intro(E)}`;
+  const list = (G.events || []).filter((E) => KIND[E.kind].intro && E.st !== 'done' && E.st !== 'failed');
+  if (!list.length) return t;
+  const names = list.map((E) => `<span style="color:${EVENT_INFO[E.kind].css}">${EVENT_INFO[E.kind].icon} ${EVENT_INFO[E.kind].short || EVENT_INFO[E.kind].name}</span>`).join(' · ');
+  setTimeout(() => G.floor === floor && toast(`🎪 <b>${L(`${list.length} eventos neste andar`, `${list.length} events on this floor`)}</b> (${L('marcados no mapa', 'marked on the map')}):<br>${names}`, 'leg'), t);
+  t += 4300;
+  for (const E of list) {
+    if (E.x != null && E.kind !== 'signal') continue;
+    E.told = true;
+    const html = introHtml(E);
     setTimeout(() => G.floor === floor && G.events.includes(E) && E.st !== 'done' && E.st !== 'failed' && toast(html, 'leg'), t);
     // a bomba só começa a contar depois do aviso
     if (E.kind === 'bomb') E.delay = t / 1000 + 4;
@@ -1839,15 +3067,21 @@ export function announceEvents(floor, t) {
 }
 
 // linhas do HUD (abaixo do contrato)
+// (os já terminados ficam juntos numa linha só de ícones)
 export function eventsHud() {
   let h = '';
+  let fin = '';
   for (const E of G.events || []) {
     const K = KIND[E.kind];
     if (!K.hud) continue;
     const I = EVENT_INFO[E.kind];
-    const st = E.st === 'done' ? 'done' : E.st === 'failed' ? 'fail' : '';
-    h += `<div class="ri-con ri-ev ${st}" style="--c:${I.css}">${I.icon}<span class="ri-nm"> ${I.short || I.name}${E.st === 'done' || E.st === 'failed' ? '' : ' ·'}</span><b>${E.st === 'done' ? ' ✔' : E.st === 'failed' ? ' ✖' : ' ' + K.hud(E)}</b></div>`;
+    if (E.st === 'done' || E.st === 'failed') {
+      fin += `<span class="${E.st === 'done' ? 'ok' : 'ko'}">${I.icon}</span>`;
+      continue;
+    }
+    h += `<div class="ri-con ri-ev" style="--c:${I.css}">${I.icon}<span class="ri-nm"> ${I.short || I.name} ·</span><b> ${K.hud(E)}</b></div>`;
   }
+  if (fin) h += `<div class="ri-con ri-evfin">${fin}</div>`;
   return h;
 }
 
@@ -1921,6 +3155,18 @@ export function drawEventMarks(ctx, d) {
       ctx.strokeStyle = I.css;
       ctx.lineWidth = 0.7;
       ctx.strokeRect(E.tx - 1.6 * pulse, E.tz - 1.6 * pulse, 3.2 * pulse, 3.2 * pulse);
+    } else if (E.kind === 'ball') {
+      diamond(ctx, E.bx, E.bz, 0.8, I.css);
+      ctx.strokeStyle = '#39ff88';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.arc(E.gx, E.gz, 1.6 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (E.kind === 'race') {
+      diamond(ctx, E.x, E.z, 1, I.css);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 0.7;
+      ctx.strokeRect(E.fx - 1.4 * pulse, E.fz - 1.4 * pulse, 2.8 * pulse, 2.8 * pulse);
     } else if (E.kind === 'secret') {
       continue; // segredo não aparece no mapa
     } else if (E.kind === 'gamble') {
@@ -1943,5 +3189,7 @@ export function eventArrows(arrow) {
     else if (E.kind === 'shards' && E.st === 'run') for (const s of E.list) !s.got && arrow(s.x, s.z, '#7affc8', 0.7);
     else if (E.kind === 'relay' && E.st === 'run' && E.list[E.idx]) arrow(E.list[E.idx].x, E.list[E.idx].z, '#ff9a3d', 1);
     else if (E.kind === 'escort' && E.st === 'move') arrow(E.stall ? E.x : E.tx, E.stall ? E.z : E.tz, '#5ab8ff', 0.85);
+    else if (E.kind === 'race' && E.st !== 'idle') arrow(E.fx, E.fz, '#7affc8', 1);
+    else if (E.kind === 'ball' && E.st === 'play') arrow(E.gx, E.gz, '#39ff88', 0.85);
   }
 }

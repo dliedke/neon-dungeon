@@ -220,11 +220,13 @@ hitEnemy(e, mult, opts)
 
 ## Floor events (`events.js`)
 
-Puzzles and challenges. Each floor gets up to two main events (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs) and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor.
+Puzzles and challenges. Each floor gets 3 to 6 main events (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner; 3 before floor 4, 4 before floor 8, then 5, sometimes +1, never more than the free rooms) and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor. Kinds used on the previous floor are skipped.
 
 - Each kind is an object registered in `KIND`:
   - `setup(d, floor, rooms)` builds the meshes and returns the event object, or `null` if it doesn't fit.
-  - `update(E, dt)`, `hud(E)`, `save(E)` / `load(E, s)` and `intro(E)` (the arrival toast).
+  - `update(E, dt)`, `hud(E)`, `save(E)` / `load(E, s)` and `intro(E)` (the explanation toast).
+- Announcements: `announceEvents` shows one summary toast with every event, then the intro of events without a fixed place (`E.x == null`) and the signal. Events with a place show their intro when the player gets within 9 m (or `E.introR`), flagged with `E.told`.
+- Extra positions (race finish, ball goal) go in `E.pts` so `spotOk` keeps other events away from them.
   - Optional: `busy(E)` holds the floor-clear check (e.g. during the upload), and `kill(E, e)` reacts to kills.
 - `EVENT_INFO[kind]` has the icon, color, name and an optional `short` name for the HUD.
 - Resuming rebuilds the same events:
@@ -234,6 +236,9 @@ Puzzles and challenges. Each floor gets up to two main events (`MAIN_EVENTS`: te
 - Shared helpers: `complete(E, mult, title, sub, x, z)` pays credits, drops loot, counts the medal and saves. `failed(E, msg)` ends the event without a reward.
 - Interactive objects are walk-over pads, so every input method works.
 - The cracked wall is an enemy with `T.prop` (`crack` in `ETYPES`). It takes 1 damage per hit and gives no XP, loot or kill medals. When it dies, `killEnemy` calls `propBroken`.
+- `hitTarget` reuses that prop as an invisible target with huge health (vault, ball); `hitsOf(E)` counts the hits since the last frame.
+- Event damage: `eventHurt(frac, x, z, knock)` takes a share of max health, never kills, respects `p.invuln` and knocks the player away from (x, z).
+- The Mirror Duel passes its own model to `spawnEnemy(type, x, z, { model })` (a darkened `makePlayerModel` with `kind = 'humanoid'`).
 - The slot machine is an NPC prop (`type: 'gamble'`) opened through `openNpc` in `biomes.js`.
 - The minimap draws the events with `drawEventMarks` and the edge arrows with `eventArrows`.
 

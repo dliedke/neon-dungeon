@@ -181,7 +181,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 ### Puzzles and challenges
 
-From floor 2 on, most floors (not boss floors) get one or two **main events**, and some also get a **small event**. Each one is announced when you arrive, shown in the HUD and marked on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Completing one pays credits and items, and each kind has its own medal.
+From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself when you get close (events without a fixed place, like the bomb, are explained right away). They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Completing one pays credits and items, and each kind has its own medal.
 
 | Event | What to do |
 |---|---|
@@ -198,6 +198,16 @@ From floor 2 on, most floors (not boss floors) get one or two **main events**, a
 | **Corrupted Servers** | Three armored servers keep sending waves of enemies while you are near. Destroy all three. |
 | **Drone Escort** | A drone flies to a point across the floor, but only while you stay close. Protect it from the waves on the way. |
 | **Memory Pairs** | Step on tiles to reveal their symbols and find all the pairs. Too many misses call in enemies; few misses earn an extra chest. |
+| **Meteor Shower** | Step into the circle and meteors fall for 25 s. Dodge the shadows on the ground and grab 12 of the crystals they leave (fewer pays less). |
+| **Cracked Vault** | The first hit cracks a golden vault open for 15 s: every blow sprays credits, so hit as fast as you can. |
+| **Gladiator Arena** | Step into the ring to fight 3 waves of enemies and then an elite champion. |
+| **Pandora's Box** | Touch it to open it: treasure, or a curse that summons elites and doubles the prize once you beat them. |
+| **Chest Shuffle** | Watch which of 3 chests holds the prize, follow the shuffle and touch the right one. The wrong one is a mimic. |
+| **Mirror Duel** | Your dark reflection steps out of a mirror: a tough copy of your class that dashes in a straight line (warned on the ground) and releases shockwaves when hurt. |
+| **Plasma Ball** | Push the ball by walking into it (attacks kick it) into the green goal. Score 3 goals in 75 s; it runs over enemies on the way. |
+| **Watcher's Eye** | Move while the giant eye is green and freeze when it turns red (yellow warns you). Moving on red zaps you and pushes you back. Touch the eye to win. |
+| **Ghost Race** | Step on the start pad and, after a 3-2-1, reach the finish line before a ghost runner. Teleport counts; rematches are unlimited. |
+| **Laser Spinner** | Laser beams spin around a green center and sometimes reverse (they flash white first). Reach the center and stay 2 s. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -205,7 +215,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**155 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**167 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
