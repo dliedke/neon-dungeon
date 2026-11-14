@@ -113,6 +113,8 @@ export const ICONS = {
   pEye: '<path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z"/><circle cx="16" cy="16" r="4"/>',
   pSword: '<path d="M27 4L12 19M27 4l-1 6M27 4l-6 1"/><path d="M8 15l9 9M10 21l-5 5"/>',
   pFist: '<path d="M9 14V9a2 2 0 0 1 4 0v4M13 13V8a2 2 0 0 1 4 0v5M17 13V9a2 2 0 0 1 4 0v5M21 14v-3a2 2 0 0 1 4 0v7c0 6-4 10-9 10s-9-3-9-8v-4a2 2 0 0 1 4 0"/>',
+  pFlame: '<path d="M16 3c5 6 9 10 9 16a9 9 0 0 1-18 0c0-4 2-7 4-9 0 3 1 5 3 6 0-5 0-9 2-13z"/><path d="M16 21c1.5 1 3 2.5 3 4a3 3 0 0 1-6 0c0-1.5 1.5-3 3-4z" opacity=".6"/>',
+  pSnow: '<path d="M16 3v26M4.7 9.5l22.6 13M4.7 22.5l22.6-13"/><path d="M13 5l3 3 3-3M13 27l3-3 3 3M5 13l4-1-1-4M27 19l-4 1 1 4M5 19l4 1-1 4M27 13l-4-1 1-4" opacity=".6"/>',
   pNet: '<circle cx="16" cy="6" r="3"/><circle cx="6" cy="24" r="3"/><circle cx="26" cy="24" r="3"/><circle cx="16" cy="17" r="2"/><path d="M16 9v6M8 22l6.5-4M24 22l-6.5-4M9 24h14"/>',
   pStar: '<path d="M16 3l3.8 8.2 8.7.9-6.5 5.9 1.9 8.6L16 22.2 8.1 26.6 10 18 3.5 12.1l8.7-.9z"/>',
   // poderes avançados (níveis 40–70)
@@ -170,6 +172,14 @@ export const ICONS = {
   hook: '<path d="M3 16h15"/><path d="M18 10v12M18 10c6 0 9 3 9 6s-3 6-9 6"/><path d="M3 12v8" opacity=".6"/>',
   hundred: '<circle cx="10" cy="10" r="4"/><circle cx="22" cy="12" r="4"/><circle cx="14" cy="22" r="4"/><path d="M2 5l4 2M2 15l4-1M25 25l3 3M27 19h4" opacity=".6"/>',
   heaven: '<path d="M10 2v8h12V2"/><path d="M9 10h14v7a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><path d="M13 10v4M17 10v4"/><path d="M3 28h26M8 24l-3-2M24 24l3-2" opacity=".6"/>',
+  flameWall: '<path d="M3 28h26"/><path d="M6 28c-2-5 1-7 1-11 2 2 3 4 3 6 1-3 0-6 2-9 3 4 4 8 3 14M17 28c-1-5 2-8 3-13 2 3 3 5 3 8 1-1 2-3 2-5 2 3 2 7 0 10"/>',
+  wyrm: '<path d="M4 24c4 0 5-8 9-8s5 8 9 8 4-6 4-6"/><path d="M26 18l3-4-5 1"/><circle cx="25" cy="14" r="1"/><path d="M7 21l-2-3M13 16l-1-3M19 20l1-3" opacity=".6"/>',
+  tornado: '<path d="M4 6h24M7 11h18M10 16h12M12 21h7M14 26h3"/><path d="M28 6c-2 2-3 3-3 5M22 16c0 2-2 3-3 5" opacity=".6"/>',
+  solar: '<circle cx="16" cy="16" r="6"/><path d="M16 2v5M16 25v5M2 16h5M25 16h5M6 6l3.5 3.5M22.5 22.5L26 26M26 6l-3.5 3.5M9.5 22.5L6 26"/>',
+  crystals: '<path d="M8 4l3 8-3 4-3-4zM24 6l3 8-3 4-3-4zM16 14l4 8-4 6-4-6z"/><path d="M8 16v6M24 18v4" opacity=".6"/>',
+  prison: '<rect x="6" y="6" width="20" height="22" rx="1"/><path d="M11 6v22M16 6v22M21 6v22"/><path d="M4 6h24" opacity=".6"/>',
+  avalanche: '<path d="M2 28l9-14 5 6 4-9 10 17z"/><circle cx="8" cy="8" r="2" opacity=".6"/><circle cx="15" cy="5" r="1.5" opacity=".6"/><circle cx="22" cy="6" r="2" opacity=".6"/>',
+  iceAge: '<path d="M16 2l3 8-3 6-3-6zM16 30l3-8-3-6-3 6zM2 16l8-3 6 3-6 3zM30 16l-8-3-6 3 6 3z"/><path d="M6 6l5 5M26 26l-5-5M26 6l-5 5M6 26l5-5" opacity=".6"/>',
   satellite: '<rect x="12" y="3" width="8" height="6" rx="1"/><path d="M4 6h8M20 6h8"/><path d="M16 9v4"/><path d="M13 13h6l3 15H10z" opacity=".6"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -664,6 +674,18 @@ const SUP_PASSIVES = {
     sup('pUnbreakable', 88, L('Fúria Inquebrável', 'Unbreakable Fury'), 'pRage', (r) => ({ execDmg: 4 * r, killHeal: r1(0.3 * r) })),
     sup('pRingLegend', 96, L('Lenda do Ringue', 'Ring Legend'), 'pCrown', (r) => ({ bossDmg: 5 * r, atkSpd: 2 * r, xpPct: 2 * r })),
   ],
+  pyro: [
+    sup('pSlowBurn', 72, L('Combustão Lenta', 'Slow Burn'), 'pFlame', (r) => ({ burnPct: 12 * r, dmgPct: 2 * r })),
+    sup('pMagmaSkin', 80, L('Pele de Magma', 'Magma Skin'), 'pPlate', (r) => ({ armorPct: 6 * r, hpRegen: r1(1.0 * r) })),
+    sup('pBlueFlame', 88, L('Chama Azul', 'Blue Flame'), 'pRage', (r) => ({ execDmg: 4 * r, critDmg: 6 * r })),
+    sup('pInnerSun', 96, L('Sol Interior', 'Inner Sun'), 'pCrown', (r) => ({ bossDmg: 5 * r, burnPct: 8 * r, xpPct: 2 * r })),
+  ],
+  frost: [
+    sup('pLivingCrystal', 72, L('Cristal Vivo', 'Living Crystal'), 'pSnow', (r) => ({ critDmg: 6 * r, dmgPct: 2 * r })),
+    sup('pGlacierHeart', 80, L('Coração de Geleira', 'Glacier Heart'), 'pHeart', (r) => ({ hpPct: 3 * r, dmgRed: r1(1.0 * r) })),
+    sup('pEternalBlizzard', 88, L('Nevasca Eterna', 'Eternal Blizzard'), 'pGear', (r) => ({ chillDmg: 4 * r, fullHpDmg: 4 * r })),
+    sup('pIceQueen', 96, L('Rainha do Gelo', 'Ice Queen'), 'pCrown', (r) => ({ bossDmg: 5 * r, execDmg: 3 * r, xpPct: 2 * r })),
+  ],
 };
 const APEX_POWERS = {
   blade: [
@@ -689,6 +711,18 @@ const APEX_POWERS = {
     apex('rocketHook', 84, L('Gancho Foguete', 'Rocket Hook'), 'hook', 45, 10, (r) => L(`Dispara um gancho de 12m que puxa todos os inimigos da linha até você (${pct(1.5 * rankMult(r))}) e emenda um soco em cone de ${pct(4.0 * rankMult(r))}.`, `Fires a 12m hook that drags every enemy in the line to you (${pct(1.5 * rankMult(r))}) and follows up with a cone punch dealing ${pct(4.0 * rankMult(r))}.`)),
     apex('hundredFists', 92, L('Cem Socos', 'Hundred Fists'), 'hundred', 60, 16, (r) => L(`100 socos em 2,5s à sua frente (${pct(0.45 * rankMult(r))} cada) e um soco final de ${pct(5.0 * rankMult(r))}. Enquanto isso você recebe metade do dano.`, `100 punches in 2.5s in front of you (${pct(0.45 * rankMult(r))} each) and a final punch dealing ${pct(5.0 * rankMult(r))}. Meanwhile you take half damage.`)),
     apex('heavenFist', 100, L('Punho do Céu', 'Fist of Heaven'), 'heaven', 85, 22, (r) => L(`Marca o chão onde você mira; 1s depois um punho gigante cai do céu causando ${pct(9.0 * rankMult(r))} em 5,5m e atordoando, e a onda de choque causa ${pct(2.0 * rankMult(r))} em 9m.`, `Marks the ground where you aim; 1s later a giant fist falls from the sky dealing ${pct(9.0 * rankMult(r))} within 5.5m and stunning, and the shockwave deals ${pct(2.0 * rankMult(r))} within 9m.`)),
+  ],
+  pyro: [
+    apex('fireWall', 76, L('Muralha de Fogo', 'Wall of Fire'), 'flameWall', 45, 10, (r) => L(`Ergue uma muralha de fogo de 10m onde você mira: a erupção causa ${pct(3.0 * rankMult(r))} e a muralha queima quem passar por 6s (${pct(0.7 * rankMult(r))} a cada 0,5s).`, `Raises a 10m wall of fire where you aim: the eruption deals ${pct(3.0 * rankMult(r))} and the wall burns anyone crossing it for 6s (${pct(0.7 * rankMult(r))} every 0.5s).`)),
+    apex('flameDragon', 84, L('Dragão de Chamas', 'Flame Dragon'), 'wyrm', 50, 12, (r) => L(`Solta um dragão de fogo que serpenteia 18m à frente, causando ${pct(3.5 * rankMult(r))} e queimando forte quem tocar, e explode no fim (${pct(3.0 * rankMult(r))}).`, `Unleashes a fire dragon that snakes 18m ahead, dealing ${pct(3.5 * rankMult(r))} and burning hard whoever it touches, then explodes at the end (${pct(3.0 * rankMult(r))}).`)),
+    apex('fireTornado', 92, L('Tornado de Fogo', 'Fire Tornado'), 'tornado', 60, 18, (r) => L(`Um tornado de fogo de 8s caça os inimigos, puxa quem estiver a 5m e causa ${pct(0.9 * rankMult(r))} a cada 0,25s em quem estiver dentro.`, `An 8s fire tornado hunts enemies, pulls anyone within 5m and deals ${pct(0.9 * rankMult(r))} every 0.25s to those inside.`)),
+    apex('solarNova', 100, L('Nova Solar', 'Solar Nova'), 'solar', 85, 26, (r) => L(`Por 8s você vira um sol vivo: queima tudo em 5m (${pct(1.0 * rankMult(r))} a cada 0,5s), recebe 30% menos dano e solta labaredas a cada 2s (${pct(3.0 * rankMult(r))} em 6m). No fim, explode numa nova de ${pct(8.0 * rankMult(r))} em 8m.`, `For 8s you become a living sun: burns everything within 5m (${pct(1.0 * rankMult(r))} every 0.5s), take 30% less damage and release flares every 2s (${pct(3.0 * rankMult(r))} in 6m). At the end you explode in a nova of ${pct(8.0 * rankMult(r))} in 8m.`)),
+  ],
+  frost: [
+    apex('crystalSwarm', 76, L('Enxame de Cristais', 'Crystal Swarm'), 'crystals', 45, 9, (r) => L(`Dispara 10 cristais de gelo teleguiados, cada um causando ${pct(2.2 * rankMult(r))} e congelando por um instante.`, `Fires 10 homing ice crystals, each dealing ${pct(2.2 * rankMult(r))} and briefly freezing.`)),
+    apex('glacialPrison', 84, L('Prisão Glacial', 'Glacial Prison'), 'prison', 50, 14, (r) => L(`Prende num bloco de gelo todos os inimigos a 5m de onde você mira (${pct(1.5 * rankMult(r))}, congela por 3s). Depois o gelo estilhaça e causa ${pct(4.5 * rankMult(r))}.`, `Traps every enemy within 5m of where you aim in a block of ice (${pct(1.5 * rankMult(r))}, frozen for 3s). Then the ice shatters for ${pct(4.5 * rankMult(r))}.`)),
+    apex('avalanche', 92, 'Avalanche', 'avalanche', 60, 16, (r) => L(`Uma muralha de neve de 8m rola 18m à sua frente, causando ${pct(5.0 * rankMult(r))}, deixando lento e arrastando os inimigos.`, `An 8m wall of snow rolls 18m ahead of you, dealing ${pct(5.0 * rankMult(r))}, slowing and sweeping enemies away.`)),
+    apex('iceAge', 100, L('Era do Gelo', 'Ice Age'), 'iceAge', 85, 26, (r) => L(`Congela o mundo em 14m: causa ${pct(6.0 * rankMult(r))} e congela os inimigos por 4s entre cristais gigantes, que então estilhaçam (${pct(3.0 * rankMult(r))}).`, `Freezes the world within 14m: deals ${pct(6.0 * rankMult(r))} and freezes enemies for 4s among giant crystals, which then shatter (${pct(3.0 * rankMult(r))}).`)),
   ],
 };
 for (const [id, list] of Object.entries(SUP_PASSIVES)) CLASSES[id].skills.push(...list);
@@ -2261,6 +2295,354 @@ Object.assign(SKILL_FN, {
       after(0.25, () => {
         for (const e of enemiesInRadius(t.x, t.z, 9)) hitEnemy(e, 2.0 * rm, { knock: 6, kx: t.x, kz: t.z, noProc: true, quiet: true });
         ringFx(t.x, t.z, 9, col, 0.6, { from: 4 });
+      });
+    });
+    return true;
+  },
+});
+
+// geometrias em cache dos ataques supremos da Incendiária e da Geada
+const sphereGeoA = new THREE.SphereGeometry(1, 12, 9);
+const tornadoGeo = new THREE.CylinderGeometry(1.7, 0.3, 4.5, 14, 1, true).translate(0, 2.25, 0);
+const iceCubeGeo = new THREE.BoxGeometry(1, 1, 1);
+const iceSpikeGeo = new THREE.ConeGeometry(0.55, 2.8, 5).translate(0, 1.4, 0);
+const snowWallGeo = new THREE.BoxGeometry(8, 1.8, 1.4).translate(0, 0.9, 0);
+const addGlow = (color, k, op = 1) => new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(k)), transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending });
+const iceMat = (op) => new THREE.MeshLambertMaterial({ color: 0xcfeeff, emissive: new THREE.Color(0x6aa8ff).multiplyScalar(gk(0.45)), transparent: true, opacity: op, depthWrite: false });
+
+Object.assign(SKILL_FN, {
+  // Incendiária
+  fireWall(p, r) {
+    const rm = rankMult(r);
+    const col = C_('pyro');
+    const t = targetPoint(p, 7);
+    const nx = -p.aim.dz;
+    const nz = p.aim.dx;
+    const half = 5;
+    for (const e of enemiesOnSegment(t.x - nx * half, t.z - nz * half, t.x + nx * half, t.z + nz * half, 1.2)) hitEnemy(e, 3.0 * rm, { burn: 1.2, knock: 3, kx: p.x, kz: p.z });
+    for (let k = -2; k <= 2; k++) {
+      const x = t.x + nx * k * 2.2;
+      const z = t.z + nz * k * 2.2;
+      if (!isWalkable(G.dungeon, x, z)) continue;
+      spawnHazard(x, z, 1.3, 6, 0, { faction: 'player', mult: 0.7 * rm, burn: 1.0, color: col, opacity: 0.5 });
+      burst(x, 0.4, z, 0xffb040, 12, 5, 0.1, 0.6, { up: 4 });
+    }
+    // labaredas subindo da muralha
+    for (let k = 0; k < 24; k++) {
+      after(k * 0.25, () => {
+        for (let j = 0; j < 3; j++) {
+          const u = rr(-half, half);
+          burst(t.x + nx * u, 0.3, t.z + nz * u, pick([col, 0xffb040, 0xffe080]), 2, 1.5, rr(0.1, 0.18), 0.6, { grav: -6 });
+        }
+      });
+    }
+    streakFx(t.x - nx * half, t.z - nz * half, t.x + nx * half, t.z + nz * half, col, 0.8, 0.5, 0.4);
+    G.shake = Math.max(G.shake, 0.3);
+    sfx.flame();
+    sfx.explode();
+    p.swing = 1;
+    return true;
+  },
+  flameDragon(p, r) {
+    const rm = rankMult(r);
+    const col = C_('pyro');
+    const x0 = p.x;
+    const z0 = p.z;
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    const hit = new Set();
+    const steps = 30;
+    // o dragão serpenteia: cada passo deixa um gomo de fogo que some aos poucos
+    for (let k = 0; k <= steps; k++) {
+      after(k * 0.035, () => {
+        if (!G.player || !G.player.alive) return;
+        const along = 1 + (k / steps) * 17;
+        const side = Math.sin(along * 0.55) * 2;
+        const x = x0 + dx * along - dz * side;
+        const z = z0 + dz * along + dx * side;
+        const head = k === steps;
+        const mat = addGlow(k % 2 ? col : 0xffa030, 2.2, 0.9);
+        const m = new THREE.Mesh(sphereGeoA, mat);
+        m.position.set(x, 1.2 + Math.sin(along) * 0.3, z);
+        m.scale.setScalar(head ? 0.75 : 0.45);
+        tempMesh(m, 0.6, (e, q) => {
+          mat.opacity = 0.9 * (1 - q);
+          m.scale.setScalar((head ? 0.75 : 0.45) * (1 - q * 0.6));
+        });
+        burst(x, 1.2, z, pick([col, 0xffd060]), 3, 2, 0.1, 0.4);
+        for (const e of enemiesInRadius(x, z, 1.7)) {
+          if (hit.has(e)) continue;
+          hit.add(e);
+          hitEnemy(e, 3.5 * rm, { burn: 2.0, knock: 2, kx: x - dx, kz: z - dz });
+        }
+        if (k % 6 === 0) sfx.flame();
+        if (head) {
+          explosion(x, z, 4, 3.0 * rm, { color: col, burn: 1.5, knock: 5 });
+          sfx.roar();
+        }
+      });
+    }
+    p.swing = 1;
+    return true;
+  },
+  fireTornado(p, r) {
+    const rm = rankMult(r);
+    const col = C_('pyro');
+    const t = targetPoint(p, 8);
+    const tor = { x: t.x, z: t.z, tick: 0, last: G.t };
+    const g = new THREE.Group();
+    const mats = [addGlow(col, 1.8, 0.55), addGlow(0xffc040, 2.2, 0.4)];
+    const outer = new THREE.Mesh(tornadoGeo, mats[0]);
+    const inner = new THREE.Mesh(tornadoGeo, mats[1]);
+    inner.scale.set(0.6, 1.05, 0.6);
+    g.add(outer, inner);
+    g.position.set(t.x, 0, t.z);
+    const dur = 8;
+    tempMesh(g, dur, (fx, k) => {
+      const dt = Math.min(0.1, Math.max(0, G.t - tor.last));
+      tor.last = G.t;
+      // anda na direção do inimigo mais próximo
+      const n = nearestEnemy(tor.x, tor.z, 12, false);
+      if (n) {
+        const ddx = n.x - tor.x;
+        const ddz = n.z - tor.z;
+        const d = Math.hypot(ddx, ddz) || 1;
+        const nx = tor.x + (ddx / d) * 3.2 * dt;
+        const nz = tor.z + (ddz / d) * 3.2 * dt;
+        if (isWalkable(G.dungeon, nx, nz)) {
+          tor.x = nx;
+          tor.z = nz;
+        }
+      }
+      // puxa os inimigos próximos
+      for (const e of enemiesInRadius(tor.x, tor.z, 5)) {
+        if (e.boss || e.T.big) continue;
+        const ex = tor.x - e.x;
+        const ez = tor.z - e.z;
+        const d = Math.hypot(ex, ez);
+        if (d < 0.6) continue;
+        const px = e.x + (ex / d) * 2.5 * dt;
+        const pz = e.z + (ez / d) * 2.5 * dt;
+        if (isWalkable(G.dungeon, px, pz)) {
+          e.x = px;
+          e.z = pz;
+        }
+      }
+      tor.tick -= dt;
+      if (tor.tick <= 0) {
+        tor.tick = 0.25;
+        for (const e of enemiesInRadius(tor.x, tor.z, 2.2)) hitEnemy(e, 0.9 * rm, { burn: 1.0, noProc: true, quiet: true, knock: 0 });
+      }
+      g.position.set(tor.x, 0, tor.z);
+      outer.rotation.y += dt * 9;
+      inner.rotation.y -= dt * 13;
+      const fade = k < 0.06 ? k / 0.06 : k > 0.92 ? (1 - k) / 0.08 : 1;
+      mats[0].opacity = 0.55 * fade;
+      mats[1].opacity = 0.4 * fade;
+      g.scale.set(1 + Math.sin(G.t * 7) * 0.08, fade, 1 + Math.cos(G.t * 7) * 0.08);
+      if (Math.random() < 0.7) {
+        const a = rr(0, Math.PI * 2);
+        const h = rr(0.2, 4);
+        const rad = 0.3 + h * 0.32;
+        particle(tor.x + Math.cos(a) * rad, h, tor.z + Math.sin(a) * rad, -Math.sin(a) * 6, 2, Math.cos(a) * 6, pick([col, 0xffb040]), rr(0.08, 0.15), 0.4, -2, 0);
+      }
+    });
+    ringFx(t.x, t.z, 3, col, 0.4, { from: 0.5 });
+    sfx.flame();
+    sfx.spin();
+    p.swing = 1;
+    return true;
+  },
+  solarNova(p, r) {
+    const rm = rankMult(r);
+    const col = 0xffb020;
+    aura(p, 8, 5, 1.0 * rm, C_('pyro'), { burn: 1.2 });
+    guard(p, 8, 0.7, col);
+    // sol em miniatura sobre a cabeça
+    const mat = addGlow(0xffd060, 2.4, 0.95);
+    const sun = new THREE.Mesh(sphereGeoA, mat);
+    tempMesh(sun, 8, (e, k) => {
+      const pl = G.player;
+      if (!pl) return;
+      sun.position.set(pl.x, 3 + Math.sin(G.t * 3) * 0.2, pl.z);
+      sun.scale.setScalar(0.55 + k * 0.5 + Math.sin(G.t * 10) * 0.05);
+      if (Math.random() < 0.5) burst(pl.x + rr(-0.6, 0.6), 3, pl.z + rr(-0.6, 0.6), pick([col, 0xff4422]), 1, 2, 0.1, 0.4);
+    });
+    for (let k = 1; k <= 3; k++) {
+      after(k * 2, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        explosion(pl.x, pl.z, 6, 3.0 * rm, { color: col, burn: 1.0, knock: 4, noProc: true });
+        ringFx(pl.x, pl.z, 6, 0xffe080, 0.5, { from: 1 });
+        sfx.flame();
+      });
+    }
+    after(8, () => {
+      const pl = G.player;
+      if (!pl || !pl.alive) return;
+      explosion(pl.x, pl.z, 8, 8.0 * rm, { color: col, burn: 2.0, knock: 9 });
+      ringFx(pl.x, pl.z, 9, 0xffffff, 0.7, { from: 1 });
+      burst(pl.x, 1.5, pl.z, 0xffe080, 50, 10, 0.14, 0.9);
+      G.shake = Math.max(G.shake, 0.8);
+      sfx.nova();
+    });
+    explosion(p.x, p.z, 4, 1.5 * rm, { color: col, knock: 6, noProc: true });
+    G.shake = Math.max(G.shake, 0.4);
+    sfx.nova();
+    return true;
+  },
+
+  // Geada
+  crystalSwarm(p, r) {
+    const rm = rankMult(r);
+    const col = 0xbfe6ff;
+    const a0 = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = 0; k < 10; k++) {
+      after(k * 0.04, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const a = a0 + (k - 4.5) * 0.16;
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, y: 1.2, dx: Math.cos(a), dz: Math.sin(a), speed: 18, life: 1.3, mult: 2.2 * rm, color: col, size: 0.17, r: 0.3, homing: 8, freeze: 0.6, slow: 2, quiet: k % 2 === 1 });
+        if (k % 2 === 0) sfx.cryo();
+      });
+    }
+    burst(p.x + p.aim.dx * 0.6, 1.2, p.z + p.aim.dz * 0.6, col, 16, 5, 0.08, 0.4);
+    p.swing = 1;
+    return true;
+  },
+  glacialPrison(p, r) {
+    const rm = rankMult(r);
+    const col = C_('frost');
+    const t = targetPoint(p, 10);
+    telegraphFx(t.x, t.z, 5, 0.3, col);
+    sfx.cryo();
+    p.swing = 1;
+    after(0.3, () => {
+      if (!G.player || !G.player.alive) return;
+      const caught = enemiesInRadius(t.x, t.z, 5);
+      for (const e of caught) {
+        hitEnemy(e, 1.5 * rm, { freeze: 3, slow: 3, knock: 0 });
+        const mat = iceMat(0.6);
+        const cube = new THREE.Mesh(iceCubeGeo, mat);
+        const w = e.r * 2.4 + 0.4;
+        const h = (e.height || 1.6) * 1.1;
+        cube.scale.set(w, h, w);
+        cube.rotation.y = rr(0, 1.5);
+        tempMesh(cube, 3, (fx, k) => {
+          cube.position.set(e.x, h / 2, e.z);
+          mat.opacity = 0.6 * Math.min(1, k * 12, (1 - k) * 12);
+        });
+      }
+      ringFx(t.x, t.z, 5, col, 0.5, { from: 1 });
+      burst(t.x, 0.5, t.z, 0xffffff, 30, 6, 0.08, 0.6);
+      sfx.shieldBlock();
+      after(3, () => {
+        if (!G.player || !G.player.alive) return;
+        for (const e of caught) {
+          if (!e.alive) continue;
+          hitEnemy(e, 4.5 * rm, { slow: 2, knock: 2, kx: e.x + rr(-0.1, 0.1), kz: e.z + rr(-0.1, 0.1) });
+          burst(e.x, 1, e.z, pick([0xffffff, col]), 16, 6, 0.09, 0.5);
+        }
+        if (caught.length) {
+          G.shake = Math.max(G.shake, 0.35);
+          sfx.explode();
+        }
+      });
+    });
+    return true;
+  },
+  avalanche(p, r) {
+    const rm = rankMult(r);
+    const col = C_('frost');
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    const nx = -dz;
+    const nz = dx;
+    const x0 = p.x + dx;
+    const z0 = p.z + dz;
+    let len = 0;
+    while (len < 18 && isWalkable(G.dungeon, x0 + dx * len, z0 + dz * len)) len += 0.5;
+    const T = 1.2;
+    const hit = new Set();
+    const mat = iceMat(0.9);
+    const wall = new THREE.Mesh(snowWallGeo, mat);
+    wall.position.set(x0, 0, z0);
+    wall.lookAt(x0 + dx, 0, z0 + dz);
+    tempMesh(wall, T + 0.4, (fx, k) => {
+      const tt = k * (T + 0.4);
+      const d = Math.min(1, tt / T) * len;
+      const cx = x0 + dx * d;
+      const cz = z0 + dz * d;
+      wall.position.set(cx, 0, cz);
+      wall.scale.y = 0.6 + Math.min(1, tt / T) * 0.6;
+      if (tt > T) mat.opacity = 0.9 * Math.max(0, 1 - (tt - T) / 0.4);
+      else {
+        for (const e of enemiesOnSegment(cx - nx * 4, cz - nz * 4, cx + nx * 4, cz + nz * 4, 1.0)) {
+          if (hit.has(e)) continue;
+          hit.add(e);
+          hitEnemy(e, 5.0 * rm, { slow: 3, knock: 6, kx: e.x - dx, kz: e.z - dz });
+        }
+        for (let j = 0; j < 3; j++) {
+          const u = rr(-4, 4);
+          particle(cx + nx * u + dx * 0.7, rr(0.2, 2), cz + nz * u + dz * 0.7, dx * rr(4, 9), rr(1, 4), dz * rr(4, 9), pick([0xffffff, 0xdff4ff, col]), rr(0.1, 0.2), 0.5, 6, 1);
+        }
+      }
+    });
+    G.shake = Math.max(G.shake, 0.5);
+    sfx.cryo();
+    sfx.explode();
+    p.swing = 1;
+    return true;
+  },
+  iceAge(p, r) {
+    const rm = rankMult(r);
+    const col = C_('frost');
+    const x0 = p.x;
+    const z0 = p.z;
+    ringFx(x0, z0, 14, col, 0.6, { from: 2 });
+    burst(x0, 1, z0, 0xffffff, 20, 4, 0.08, 0.5, { up: 2 });
+    sfx.telegraph();
+    after(0.6, () => {
+      const pl = G.player;
+      if (!pl || !pl.alive) return;
+      const cx = pl.x;
+      const cz = pl.z;
+      const caught = enemiesInRadius(cx, cz, 14);
+      for (const e of caught) hitEnemy(e, 6.0 * rm, { freeze: 4, slow: 5, knock: 0 });
+      // cristais gigantes brotam do chão
+      const spikes = [];
+      for (const e of caught.slice(0, 14)) spikes.push([e.x + rr(-0.6, 0.6), e.z + rr(-0.6, 0.6)]);
+      for (let k = spikes.length; k < 22; k++) {
+        const a = rr(0, Math.PI * 2);
+        const d = rr(2, 13);
+        const x = cx + Math.cos(a) * d;
+        const z = cz + Math.sin(a) * d;
+        if (isWalkable(G.dungeon, x, z)) spikes.push([x, z]);
+      }
+      for (const [x, z] of spikes) {
+        const mat = iceMat(0.8);
+        const sp = new THREE.Mesh(iceSpikeGeo, mat);
+        sp.position.set(x, 0, z);
+        sp.rotation.set(rr(-0.25, 0.25), rr(0, 3), rr(-0.25, 0.25));
+        const sc = rr(0.8, 1.5);
+        tempMesh(sp, 4.2, (fx, k) => {
+          const tt = k * 4.2;
+          sp.scale.set(sc, sc * Math.min(1, tt / 0.2), sc);
+          mat.opacity = tt > 4 ? 0.8 * (4.2 - tt) / 0.2 : 0.8;
+        });
+      }
+      ringFx(cx, cz, 14, 0xffffff, 0.8, { from: 1 });
+      ringFx(cx, cz, 10, col, 0.6, { from: 0.5 });
+      burst(cx, 1, cz, 0xffffff, 60, 12, 0.1, 0.8);
+      G.shake = Math.max(G.shake, 0.7);
+      sfx.nova();
+      sfx.cryo();
+      after(4, () => {
+        if (!G.player || !G.player.alive) return;
+        for (const e of enemiesInRadius(cx, cz, 14)) hitEnemy(e, 3.0 * rm, { slow: 3, knock: 3, kx: cx, kz: cz, noProc: true });
+        for (const [x, z] of spikes) burst(x, 1.2, z, pick([0xffffff, col]), 10, 6, 0.1, 0.5);
+        G.shake = Math.max(G.shake, 0.5);
+        sfx.explode();
       });
     });
     return true;
