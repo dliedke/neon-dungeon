@@ -819,7 +819,7 @@ body.pad .pad-hints { display: block; }
 .bank-steps .btn[data-bank="step"] { flex: 1.4; }
 .bank-btns .btn[data-bank="ok"] { flex: 1; }
 .cell.locked { opacity: 0.55; }
-/* nível do item no canto (o baú é ordenado por nível) */
+/* nível do item no canto (baú, inventário e equipados) */
 .cell .lvl { position: absolute; right: 2px; bottom: 1px; color: #dfe6ff; font-size: 10px; font-weight: 700; line-height: 1; text-shadow: 0 0 2px #000, 0 0 3px #000; pointer-events: none; }
 .cell .cls-dot { position: absolute; right: 3px; top: 3px; width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 4px #000; pointer-events: none; }
 @media (max-width: 980px) {

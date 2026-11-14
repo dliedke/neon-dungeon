@@ -1338,7 +1338,7 @@ export function renderChar() {
       const it = c.equip[slot];
       const sel = selected && selected.where === 'equip' && selected.slot === slot ? ' sel' : '';
       return `<div class="eslot">${it
-        ? `<div class="cell r${it.rarity}${sel}" data-nav data-eslot="${slot}" data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}${favMark(it)}</div>`
+        ? `<div class="cell r${it.rarity}${sel}" data-nav data-eslot="${slot}" data-uid="${it.uid}" data-where="equip" data-slot="${slot}">${slotIconSvg(slot)}${favMark(it)}<span class="lvl">${it.ilvl | 0}</span></div>`
         : `<div class="cell empty" data-nav data-eslot="${slot}">${slotIconSvg(slot)}</div>`}${SLOT_NAMES[slot]}</div>`;
     }).join('');
     // inventário (sempre ordenado: melhores itens primeiro)
@@ -1353,7 +1353,7 @@ export function renderChar() {
       const better = isUpgrade(it, c.equip);
       const up = better ? '<span class="up">▲</span>' : '';
       const sel = selected && selected.where === 'inv' && selected.uid === it.uid ? ' sel' : '';
-      html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}${favMark(it)}</div>`;
+      html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}${favMark(it)}<span class="lvl">${it.ilvl | 0}</span></div>`;
     }
     $('inv-grid').innerHTML = html;
     $('inv-count').textContent = `${L('Inventário', 'Inventory')} ${c.inv.length}/${INV_SIZE}`;
@@ -2159,8 +2159,8 @@ function stashCell(it, where) {
   // ▲ só para o personagem atual: personagens mais fracos marcavam quase tudo e confundia.
   // Quem mais ganha com o item aparece nos detalhes (e no title).
   const up = better ? '<span class="up">▲</span>' : '';
-  // no baú (ordenado por nível) cada casa mostra o nível do item
-  const lvl = where === 'stash' ? `<span class="lvl">${it.ilvl | 0}</span>` : '';
+  // Nível visível tanto no baú quanto no inventário.
+  const lvl = `<span class="lvl">${it.ilvl | 0}</span>`;
   const tip = bf.length ? ` title="${L('Melhor que o equipado de', 'Better than what is equipped on')}: ${bf.map((k) => CLASSES[k].name).join(', ')}"` : '';
   return `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}${lock ? ' locked' : ''}" data-nav data-uid="${it.uid}" data-swhere="${where}"${tip}>${slotIconSvg(it.slot)}${up}${favMark(it)}${tag}${lvl}</div>`;
 }
