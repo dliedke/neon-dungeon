@@ -1,14 +1,16 @@
 // Itens no chão: créditos, stims, orbes de vida, equipamentos e cofres.
 import * as THREE from 'three';
 import { G, gk } from './state.js';
-import { rr, chance, short } from './utils.js';
+import { rr, chance, short, pick } from './utils.js';
 import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, PRIMORDIAL, PRIMORDIALS, itemName, isUpgrade } from './items.js';
 import { glowMat, box } from './models.js';
-import { burst, ringFx, floatText, beamFx } from './fx.js';
+import { burst, ringFx, floatText, beamFx, ghostFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, invFull, banner } from './ui.js';
 import { MAX_STIMS } from './player.js';
-import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius } from './combat.js';
+import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius, explosion } from './combat.js';
+import { spawnAlly } from './powers.js';
+import { CLASSES } from './classes.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
@@ -55,11 +57,17 @@ let labelRoot = null;
 export function killBounty(e) {
   const c = G.char;
   const k = e.boss ? 10 : e.type === 'thief' || e.T.big ? 6 : e.elite ? 3 : 1;
-  const cr = Math.round((2 + (c.level | 0) * 0.25) * (1 + G.floor * 0.05) * k * tierOf().credits * rewardK('cr') * amod('credits') * (G.player.buffs.fortune > 0 ? 2 : 1));
+  const midas = G.player.buffs.midas > 0; // Toque de Midas: 5x
+  const cr = Math.round((2 + (c.level | 0) * 0.25) * (1 + G.floor * 0.05) * k * tierOf().credits * rewardK('cr') * amod('credits') * (G.player.buffs.fortune > 0 ? 2 : 1) * (midas ? 5 : 1));
   if (cr < 1) return;
   c.credits += cr;
   achAdd('credits', cr);
   floatText(e.x, e.height + 0.9, e.z, `+${short(cr)}¢`, 'cr');
+  if (midas) {
+    burst(e.x, e.height * 0.6, e.z, 0xffd23d, 22, 6, 0.09, 0.8, { up: 2.5 });
+    burst(e.x, e.height * 0.6, e.z, 0xfff6c0, 8, 4, 0.06, 0.5, { up: 1.5 });
+    sfx.coin();
+  }
 }
 
 export function dropLoot(x, z, o = {}) {
@@ -334,45 +342,87 @@ export function spawnChest(x, z) {
 }
 
 // ---------- Santuários Neon: bônus temporário ao passar por eles ----------
+// Só acrescentar no fim (a medalha "Peregrino" conta os tipos). super: santuário especial (banner, som e efeito visível)
 export const SHRINES = {
-  fury: { name: L('Fúria', 'Fury'), desc: L('+50% de dano', '+50% damage'), color: 0xff2b5a, css: '#ff4d75' },
-  haste: { name: L('Velocidade', 'Haste'), desc: L('+35% de velocidade e +30% de ataque', '+35% move speed and +30% attack speed'), color: 0x00f0ff, css: '#00f0ff' },
-  fortune: { name: L('Fortuna', 'Fortune'), desc: L('mais loot e o dobro de créditos', 'more loot and double credits'), color: 0xffd23d, css: '#ffd23d' },
-  aegis: { name: L('Égide', 'Aegis'), desc: L('metade do dano recebido', 'half damage taken'), color: 0x39ff88, css: '#39ff88' },
-  crit: { name: L('Precisão', 'Precision'), desc: L('+25% de chance de crítico', '+25% critical chance'), color: 0xff8a2b, css: '#ff9a45' },
-  vamp: { name: L('Vampiro', 'Vampire'), desc: L('6% do dano vira vida', '6% life steal'), color: 0xc4103a, css: '#ff3a64' },
-  arcane: { name: L('Arcano', 'Arcana'), desc: L('habilidades sem custo de energia', 'skills cost no energy'), color: 0x4d7bff, css: '#6b93ff' },
-  chrono: { name: L('Cronos', 'Chrono'), desc: L('recarga das habilidades 2x mais rápida', 'skills recharge twice as fast'), color: 0xe0e0ff, css: '#e0e0ff' },
-  storm: { name: L('Tempestade', 'Storm'), desc: L('raios caem nos inimigos por perto', 'lightning strikes nearby enemies'), color: 0xb06bff, css: '#c08aff' },
-  frost: { name: L('Inverno', 'Winter'), desc: L('aura gélida que fere e congela quem chega perto', 'icy aura that hurts and freezes enemies close by'), color: 0x8ad8ff, css: '#8ad8ff' },
-  wisdom: { name: L('Sabedoria', 'Wisdom'), desc: L('o dobro de experiência', 'double experience'), color: 0x3dffd2, css: '#3dffd2' },
+  fury: { icon: '🔥', name: L('Fúria', 'Fury'), desc: L('+50% de dano', '+50% damage'), color: 0xff2b5a, css: '#ff4d75' },
+  haste: { icon: '💨', name: L('Velocidade', 'Haste'), desc: L('+35% de velocidade e +30% de ataque', '+35% move speed and +30% attack speed'), color: 0x00f0ff, css: '#00f0ff' },
+  fortune: { icon: '💰', name: L('Fortuna', 'Fortune'), desc: L('mais loot e o dobro de créditos', 'more loot and double credits'), color: 0xffd23d, css: '#ffd23d' },
+  aegis: { icon: '🛡️', name: L('Égide', 'Aegis'), desc: L('metade do dano recebido', 'half damage taken'), color: 0x39ff88, css: '#39ff88' },
+  crit: { icon: '🎯', name: L('Precisão', 'Precision'), desc: L('+25% de chance de crítico', '+25% critical chance'), color: 0xff8a2b, css: '#ff9a45' },
+  vamp: { icon: '🩸', name: L('Vampiro', 'Vampire'), desc: L('6% do dano vira vida', '6% life steal'), color: 0xc4103a, css: '#ff3a64' },
+  arcane: { icon: '🔷', name: L('Arcano', 'Arcana'), desc: L('habilidades sem custo de energia', 'skills cost no energy'), color: 0x4d7bff, css: '#6b93ff' },
+  chrono: { icon: '⏳', name: L('Cronos', 'Chrono'), desc: L('recarga das habilidades 2x mais rápida', 'skills recharge twice as fast'), color: 0xe0e0ff, css: '#e0e0ff' },
+  storm: { icon: '🌩️', name: L('Tempestade', 'Storm'), desc: L('raios caem nos inimigos por perto', 'lightning strikes nearby enemies'), color: 0xb06bff, css: '#c08aff' },
+  frost: { icon: '❄️', name: L('Inverno', 'Winter'), desc: L('aura gélida que fere e congela quem chega perto', 'icy aura that hurts and freezes enemies close by'), color: 0x8ad8ff, css: '#8ad8ff' },
+  wisdom: { icon: '📘', name: L('Sabedoria', 'Wisdom'), desc: L('o dobro de experiência', 'double experience'), color: 0x3dffd2, css: '#3dffd2' },
+  blitz: { super: true, icon: '⚡', name: L('Supervelocidade', 'Super Speed'), desc: L('+80% de velocidade e +40% de ataque; você deixa um rastro de imagens e atropela quem estiver no caminho', '+80% move speed and +40% attack speed; you leave a trail of afterimages and run over anyone in your way'), color: 0xfff23d, css: '#fff23d' },
+  giant: { super: true, icon: '🗿', name: L('Gigante', 'Giant'), desc: L('você fica enorme: +60% de dano, 40% menos dano recebido, golpes que empurram e passos que tremem o chão', 'you grow huge: +60% damage, 40% less damage taken, hits that knock back and footsteps that shake the ground'), color: 0xff6a2b, css: '#ff8a4d' },
+  phase: { super: true, icon: '🌀', name: L('Superteleporte', 'Super Teleport'), desc: L('o Teleporte não gasta energia, recarrega na hora e explode na saída e na chegada', 'Teleport costs no energy, recharges instantly and explodes where you leave and where you land'), color: 0xff3df0, css: '#ff5ef3' },
+  surge: { super: true, icon: '💥', name: L('Superpoderes', 'Super Powers'), desc: L('habilidades sem custo e recarga 4x mais rápida', 'skills cost nothing and recharge 4x faster'), color: 0x9d5bff, css: '#b583ff' },
+  midas: { super: true, icon: '🪙', name: L('Toque de Midas', 'Midas Touch'), desc: L('cada inimigo derrotado explode em créditos (5x a recompensa por abate)', 'every enemy you defeat bursts into credits (5x kill bounty)'), color: 0xffc21a, css: '#ffcf3d' },
+  clone: { super: true, icon: '👥', name: L('Gêmeos Neon', 'Neon Twins'), desc: L('dois clones holográficos lutam com você', 'two holographic clones fight beside you'), color: 0x3df5ff, css: '#5ef7ff' },
 };
-export const SHRINE_TIME = 30;
+export const SUPER_SHRINES = Object.keys(SHRINES).filter((k) => SHRINES[k].super);
+export const SHRINE_TIME = 40;
+export const SUPREME_TIME = 60;
 const shrineGem = new THREE.OctahedronGeometry(0.32, 0);
+const superGem = new THREE.IcosahedronGeometry(0.36, 0);
 const shrineRing = new THREE.TorusGeometry(0.55, 0.04, 6, 28).rotateX(Math.PI / 2);
+const crownRing = new THREE.TorusGeometry(0.42, 0.035, 6, 24);
 
-export function spawnShrine(x, z, kind) {
+// Superteleporte só aparece para quem tem o Teleporte (ou o Salto de Rede) aprendido e num atalho
+export function shrineOk(kind) {
+  if (kind !== 'phase') return true;
+  const c = G.char;
+  const sk = CLASSES[c.cls].skills;
+  return sk.some((s, i) => (s.id === 'warp' || s.id === 'blink') && c.skills[i] > 0 && c.slots.includes(i));
+}
+
+// supreme: Santuário Supremo, dá dois efeitos (kind e kind2) por mais tempo
+export function spawnShrine(x, z, kind, supreme = false) {
   const S = SHRINES[kind];
+  const big = supreme || S.super;
   const g = new THREE.Group();
-  const stone = new THREE.MeshLambertMaterial({ color: 0x2a2e44 });
+  const stone = new THREE.MeshLambertMaterial({ color: supreme ? 0x3a3424 : 0x2a2e44 });
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.75, 0.3, 8), stone);
   base.position.y = 0.15;
   g.add(base);
   const col = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.9, 6), stone);
   col.position.y = 0.75;
   g.add(col);
-  const gemMat = glowMat(S.color, 2.6);
-  const gem = new THREE.Mesh(shrineGem, gemMat);
+  const gemMat = glowMat(S.color, big ? 3 : 2.6);
+  const gem = new THREE.Mesh(big ? superGem : shrineGem, gemMat);
   gem.position.y = 1.65;
+  if (supreme) gem.scale.setScalar(1.35);
   g.add(gem);
-  const ring = new THREE.Mesh(shrineRing, glowMat(S.color, 2));
+  const ring = new THREE.Mesh(shrineRing, glowMat(supreme ? 0xffd23d : S.color, 2));
   ring.position.y = 0.32;
   g.add(ring);
-  const beam = new THREE.Mesh(beamGeo, beamMat(S.color, 0.35));
+  // anéis girando em volta da gema dos santuários especiais
+  let crown = null;
+  if (big) {
+    crown = new THREE.Group();
+    const cm = glowMat(supreme ? 0xffd23d : S.color, 2.2);
+    for (let k = 0; k < (supreme ? 2 : 1); k++) {
+      const r = new THREE.Mesh(crownRing, cm);
+      r.rotation.x = k ? Math.PI / 2 : 0;
+      crown.add(r);
+    }
+    crown.position.y = 1.65;
+    if (supreme) crown.scale.setScalar(1.35);
+    g.add(crown);
+  }
+  const beam = new THREE.Mesh(beamGeo, beamMat(supreme ? 0xffd23d : S.color, big ? 0.5 : 0.35));
+  if (big) beam.scale.set(1.4, 1, 1.4);
   g.add(beam);
   g.position.set(x, 0, z);
   G.world.add(g);
-  const pk = { type: 'shrine', kind, x, z, group: g, mesh: gem, ring, beam, gemMat, t: rr(0, 6), vy: 0, y: 0, vx: 0, vz: 0, used: false, static: true };
+  let kind2 = null;
+  if (supreme) {
+    const pool = (S.super ? Object.keys(SHRINES) : SUPER_SHRINES).filter((k) => k !== kind && shrineOk(k));
+    kind2 = pool.length ? pick(pool) : null;
+  }
+  const pk = { type: 'shrine', kind, kind2, supreme, x, z, group: g, mesh: gem, ring, crown, beam, gemMat, t: rr(0, 6), vy: 0, y: 0, vx: 0, vz: 0, used: false, static: true };
   G.pickups.push(pk);
   return pk;
 }
@@ -381,18 +431,65 @@ function useShrine(pk) {
   const S = SHRINES[pk.kind];
   const p = G.player;
   pk.used = true;
+  const kinds = pk.kind2 ? [pk.kind, pk.kind2] : [pk.kind];
+  const time = pk.supreme ? SUPREME_TIME : SHRINE_TIME;
   // santuários diferentes se acumulam; o mesmo tipo renova o tempo
-  p.buffs[pk.kind] = SHRINE_TIME;
+  for (const k of kinds) {
+    p.buffs[k] = Math.max(p.buffs[k] || 0, time);
+    achMark('shrineKinds', k);
+    shrineStart(k);
+  }
   achAdd('shrines');
-  achMark('shrineKinds', pk.kind);
-  sfx.levelup();
-  ringFx(pk.x, pk.z, 2.4, S.color, 0.6);
-  burst(pk.x, 1.6, pk.z, S.color, 40, 6, 0.08, 0.7, { up: 1.5 });
-  burst(p.x, 1, p.z, S.color, 24, 3, 0.07, 0.5, { up: 2 });
-  toast(`<b style="color:${S.css}">${L('Santuário da', 'Shrine of')} ${S.name}</b>: ${S.desc} (${SHRINE_TIME}s)`, 'up');
+  if (pk.supreme) achAdd('shrineSup');
+  const big = pk.supreme || S.super;
+  if (big) sfx.superShrine();
+  else sfx.levelup();
+  for (const k of kinds) {
+    const c = SHRINES[k].color;
+    ringFx(pk.x, pk.z, big ? 4 : 2.4, c, 0.6);
+    burst(pk.x, 1.6, pk.z, c, big ? 60 : 40, big ? 8 : 6, 0.08, 0.7, { up: 1.5 });
+    burst(p.x, 1, p.z, c, 24, 3, 0.07, 0.5, { up: 2 });
+  }
+  if (big) {
+    beamFx(pk.x, 9, pk.z, pk.x, 0, pk.z, pk.supreme ? 0xffd23d : S.color, 0.5);
+    G.shake = Math.max(G.shake, 0.3);
+  }
+  const line = (k) => `<b style="color:${SHRINES[k].css}">${SHRINES[k].icon} ${SHRINES[k].name}</b>: ${SHRINES[k].desc}`;
+  if (pk.supreme) {
+    banner(L('👑 SANTUÁRIO SUPREMO', '👑 SUPREME SHRINE'), kinds.map((k) => `${SHRINES[k].icon} ${SHRINES[k].name}`).join(' + '));
+    toast(`<b style="color:#ffd23d">${L('Santuário Supremo', 'Supreme Shrine')}</b> (${time}s)<br>${kinds.map(line).join('<br>')}`, 'up');
+  } else {
+    if (S.super) banner(`${S.icon} ${S.name.toUpperCase()}`, L(`Santuário especial · ${time}s`, `Special shrine · ${time}s`));
+    toast(`${L('Santuário', 'Shrine')} · ${line(pk.kind)} (${time}s)`, 'up');
+  }
   floatText(p.x, 2, p.z, S.name.toUpperCase(), 'up');
   pk.group.remove(pk.beam);
   pk.gemMat.color.set(0x444455);
+  if (pk.crown) pk.crown.visible = false;
+}
+
+// efeito imediato ao pegar um santuário especial
+function shrineStart(k) {
+  const p = G.player;
+  if (k === 'clone') spawnTwins(p, p.buffs.clone);
+  else if (k === 'phase' && !shrineOk('phase')) toast(L('Coloque o <b>Teleporte</b> num atalho para usar o Superteleporte.', 'Put <b>Teleport</b> on a hotkey to use Super Teleport.'), 'warn');
+}
+
+function spawnTwins(p, dur) {
+  for (const a of G.allies) if (a.shrine) a.t = 0;
+  for (const s of [-1, 1]) {
+    const a = spawnAlly('clone', p.x - p.aim.dz * s * 1.3, p.z + p.aim.dx * s * 1.3, { dur, mult: 1.1, atk: 0.25 });
+    a.shrine = true;
+  }
+}
+
+// Superteleporte: explode onde chegou e, um instante depois, onde saiu
+const ghostBombs = [];
+export function shrineBlink(x0, z0, x1, z1) {
+  const c = SHRINES.phase.color;
+  explosion(x1, z1, 3.2, 2.4, { color: c, knock: 5 });
+  ghostBombs.push({ x: x0, z: z0, t: 0.45, w: G.world });
+  burst(x0, 0.8, z0, c, 20, 3, 0.07, 0.5);
 }
 
 function openChest(pk) {
@@ -409,11 +506,78 @@ function openChest(pk) {
 const pv = new THREE.Vector3();
 let fullWarn = 0;
 
-// auras dos santuários da Tempestade e do Inverno
+// auras dos santuários (Tempestade, Inverno e os especiais)
 let stormT = 0;
 let frostT = 0;
+let blitzT = 0;
+let ghostT = 0;
+let stepT = 0;
+let auraI = 0;
+let lastX = 0;
+let lastZ = 0;
+const GIANT = 1.45;
 function shrineAuras(dt, p) {
+  for (let i = ghostBombs.length - 1; i >= 0; i--) {
+    const gb = ghostBombs[i];
+    if ((gb.t -= dt) > 0) continue;
+    if (gb.w === G.world) explosion(gb.x, gb.z, 2.6, 1.8, { color: SHRINES.phase.color, knock: 4, small: true });
+    ghostBombs.splice(i, 1);
+  }
   if (!p || !p.alive || !p.buffs) return;
+  const moved = Math.hypot(p.x - lastX, p.z - lastZ);
+  const moving = moved > 0.01 && moved < 2;
+  lastX = p.x;
+  lastZ = p.z;
+  // brilho da cor de cada santuário ativo em volta do jogador (um de cada vez, em rodízio)
+  if (Math.random() < dt * 16) {
+    const ks = SHRINE_KEYS;
+    for (let n = 0; n < ks.length; n++) {
+      const k = ks[(auraI + n) % ks.length];
+      if (!(p.buffs[k] > 0)) continue;
+      auraI = (auraI + n + 1) % ks.length;
+      const ang = rr(0, Math.PI * 2);
+      burst(p.x + Math.cos(ang) * 0.7, 0.15, p.z + Math.sin(ang) * 0.7, SHRINES[k].color, 1, 0.6, 0.06, 0.7, { grav: -3 });
+      break;
+    }
+  }
+  // Supervelocidade: imagens que ficam para trás e atropelamento
+  if (p.buffs.blitz > 0 && moving) {
+    if ((ghostT -= dt) <= 0) {
+      ghostT = 0.09;
+      ghostFx(p.model, SHRINES.blitz.color);
+    }
+    if (Math.random() < dt * 30) burst(p.x + rr(-0.3, 0.3), 0.1, p.z + rr(-0.3, 0.3), pick2(0xfff23d, 0x00f0ff), 1, 0.5, 0.05, 0.35);
+    if ((blitzT -= dt) <= 0) {
+      blitzT = 0.2;
+      const near = enemiesInRadius(p.x, p.z, 1.6);
+      for (const e of near) hitEnemy(e, 0.7, { noProc: true, knock: 4, kx: p.x, kz: p.z, quiet: true });
+      if (near.length) {
+        burst(p.x, 0.8, p.z, 0xfff23d, 12, 4, 0.06, 0.3);
+        sfx.zap();
+      }
+    }
+  }
+  // Gigante: cresce aos poucos e cada passo treme o chão
+  if (p.buffs.giant > 0 || p.giantK) {
+    const on = p.buffs.giant > 0;
+    p.giantK = on ? Math.min(GIANT, (p.giantK || 1) + dt * 1.5) : Math.max(1, (p.giantK || 1) - dt * 1.5);
+    const form = p.form ? (p.form === 'mech' ? 1.4 : 1.3) : 1;
+    p.model.root.scale.setScalar(Math.max(form, p.giantK));
+    if (!on && p.giantK <= 1) p.giantK = 0;
+    if (on && moving && (stepT -= dt) <= 0) {
+      stepT = 0.5;
+      const near = enemiesInRadius(p.x, p.z, 2.6);
+      for (const e of near) hitEnemy(e, 0.5, { noProc: true, knock: 3, stun: 0.25, kx: p.x, kz: p.z, quiet: true });
+      ringFx(p.x, p.z, 2.6, SHRINES.giant.color, 0.3, { from: 0.4 });
+      burst(p.x, 0.1, p.z, 0x8a7a6a, 8, 3, 0.08, 0.4, { up: 0.6 });
+      G.shake = Math.max(G.shake, 0.12);
+      sfx.punchHeavy();
+    }
+  }
+  // Superpoderes: faíscas roxas
+  if (p.buffs.surge > 0 && Math.random() < dt * 18) burst(p.x + rr(-0.5, 0.5), rr(0.3, 1.8), p.z + rr(-0.5, 0.5), 0x9d5bff, 1, 1.5, 0.05, 0.3);
+  // Gêmeos Neon: recria os clones se o andar mudou ou o jogo foi carregado
+  if (p.buffs.clone > 1 && !G.allies.some((a) => a.shrine)) spawnTwins(p, p.buffs.clone);
   if (p.buffs.storm > 0 && (stormT -= dt) <= 0) {
     stormT = 0.7;
     const e = nearestEnemy(p.x, p.z, 8, true);
@@ -438,6 +602,9 @@ function shrineAuras(dt, p) {
   }
 }
 
+const SHRINE_KEYS = Object.keys(SHRINES);
+const pick2 = (a, b) => (Math.random() < 0.5 ? a : b);
+
 export function updatePickups(dt, camera) {
   const p = G.player;
   const c = G.char;
@@ -449,8 +616,14 @@ export function updatePickups(dt, camera) {
     if (pk.type === 'shrine') {
       pk.mesh.rotation.y += dt * (pk.used ? 0.3 : 1.6);
       pk.mesh.position.y = 1.65 + Math.sin(pk.t * 2) * (pk.used ? 0.02 : 0.12);
+      if (pk.crown && !pk.used) {
+        pk.crown.rotation.y += dt * 2.2;
+        pk.crown.rotation.z = Math.sin(pk.t * 1.3) * 0.5;
+        pk.crown.position.y = pk.mesh.position.y;
+      }
       if (!pk.used) {
         pk.ring.scale.setScalar(1 + Math.sin(pk.t * 3) * 0.08);
+        if (pk.supreme && Math.random() < dt * 8) burst(pk.x + rr(-0.6, 0.6), 0.4, pk.z + rr(-0.6, 0.6), pk.kind2 && Math.random() < 0.5 ? SHRINES[pk.kind2].color : 0xffd23d, 1, 1, 0.06, 0.8, { grav: -2.5 });
         if (Math.random() < dt * 6) burst(pk.x + rr(-0.5, 0.5), 0.4, pk.z + rr(-0.5, 0.5), SHRINES[pk.kind].color, 1, 1, 0.05, 0.6, { grav: -2 });
         if (p.alive && Math.hypot(p.x - pk.x, p.z - pk.z) < 1.3) useShrine(pk);
       }

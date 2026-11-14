@@ -164,8 +164,10 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
   Catch it for a jackpot: guaranteed rare-or-better items, a pile of credits and a stim.
 - **Raging Behemoth:** from floor 3 on, about one floor in three hides a huge armored beast in a far room. You are warned when you arrive, and it shows on the minimap (with an arrow at the edge) and on the full map. It is very tough (it shrugs off 20% of all damage), roars when it spots you and hits extremely hard: a ground slam and a straight-line charge, both telegraphed on the floor. If the charge hits a wall it is stunned for a moment. Below half health it becomes enraged: faster, stronger, double slams and double charges.
   Kill it for a big payout: a pile of credits (about the price of a legendary in the shop), 3 items (the first is rare or better), a stim and an orb.
-- **Neon Shrines:** glowing pillars that grant a 30-second buff when you walk over them:
-  **Fury** (+50% damage), **Haste** (+35% move speed, +30% attack speed), **Fortune** (more loot and double credits) or **Aegis** (half damage taken).
+- **Neon Shrines:** glowing pillars that grant a 40-second buff when you walk over them. There are 3 or 4 per floor (2 on the first floors), the buffs stack and the HUD shows each one with its icon and timer.
+  - **Regular:** Fury (+50% damage), Haste (+35% move speed, +30% attack speed), Fortune (more loot and double credits), Aegis (half damage taken), Precision (+25% crit chance), Vampire (6% life steal), Arcana (skills cost no energy), Chrono (skills recharge 2x faster), Storm (lightning strikes nearby enemies), Winter (freezing aura) and Wisdom (double experience).
+  - **Special** (spinning rings around the gem, one on every floor from floor 2): **Super Speed** (+80% move speed, +40% attack speed, a trail of afterimages and you run over anyone in your way), **Giant** (you grow huge: +60% damage, 40% less damage taken, hits knock back and every step shakes the ground), **Super Teleport** (Teleport is free, recharges almost instantly and explodes where you leave and where you land; only shows up once Teleport is on a hotkey), **Super Powers** (skills cost nothing and recharge 4x faster), **Midas Touch** (enemies burst into credits: 5x kill bounty) and **Neon Twins** (two holographic clones fight beside you).
+  - **Supreme Shrine:** from floor 3 on, about one floor in four has a gold one that grants two effects at once (at least one special) for 60 seconds.
 
 - **Floor anomalies:** many floors roll a random modifier that changes how they play, with risk and reward:
   Horde, Frenzy, Elite Surge, Gold Rush, Glass Cannon, Blood Moon, Chain Reaction, Overload, Giants and Blackout.
@@ -203,7 +205,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**153 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**155 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

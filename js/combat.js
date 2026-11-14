@@ -83,7 +83,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.giant > 0 ? 1.6 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
   let crit = false;
   if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
@@ -103,7 +103,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.chillDmg && (e.slowT > 0 || e.frozenT > 0)) r.d *= 1 + ps.chillDmg / 100;
   if (ps.myths.size) r.d *= mythDmgMult(e);
   if (ps.prims && ps.prims.size) r.d *= primDmgMult(e);
-  const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z });
+  const dealt = damageEnemy(e, r.d, r.crit, { ...o, kx: o.kx ?? p.x, kz: o.kz ?? p.z, knock: p.buffs.giant > 0 ? Math.max(o.knock || 0, 3) : o.knock });
   const fm = formMods(p);
   const ls = p.stats.lifeSteal + (p.buffs.overclock > 0 ? 8 : 0) + (p.buffs.vamp > 0 ? 6 : 0) + (p.buffs.leech > 0 ? 10 : 0) + (fm && fm.lifeSteal ? fm.lifeSteal : 0);
   if (ls > 0 && dealt > 0) healPlayer(capHeal('ls', (dealt * ls) / 100, (p.stats.maxHp * ls * 0.75) / 100), false);
@@ -329,6 +329,7 @@ export function damagePlayer(amount) {
   if (p.stats.prims && p.stats.prims.has('gaia')) amount *= 0.8; // Pele de Gaia
   if (p.buffs.titan > 0) amount *= 0.4;
   if (p.buffs.aegis > 0) amount *= 0.5;
+  if (p.buffs.giant > 0) amount *= 0.6; // Santuário do Gigante
   if (p.buffs.guard > 0) amount *= p.guardK ?? 0.5; // defesas dos poderes avançados
   const fmd = formMods(p);
   if (fmd) amount *= fmd.taken;

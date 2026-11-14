@@ -87,20 +87,20 @@ Resultado medido (qualquer Primordial por chefe): Morte andar 10 = 0% (piso 15),
 
 ---
 
-## Fase 4 — Santuários mais divertidos
+## Fase 4 — Santuários mais divertidos (concluída)
 
-Hoje (`loot.js` `SHRINES`, `SHRINE_TIME = 30`, `spawnShrine(x, z, kind)`): fury, haste, fortune, aegis, crit, vamp, arcane, chrono, storm, frost, wisdom (buffs de números, 30s). Pedido: "super velocidade, superpoderes, superteleportes, mais divertido".
-- [ ] Santuários novos (só **acrescentar** no fim de `SHRINES`), cada um com efeito visível e som próprio:
-  - `blitz` — Super Velocidade: +80% de movimento, rastro de neon que causa dano em quem você atravessa.
-  - `titan` — Superpoder: fica gigante (modelo ×1.5), +60% de dano, golpes empurram e tremem a tela.
-  - `warp` — Superteleporte: o Teleporte fica sem recarga e cada chegada explode.
-  - `overload` — Sobrecarga: todos os poderes com 70% menos recarga.
-  - `midas` — Toque de Midas: inimigos mortos explodem em créditos.
-  - `clone` — Clone Neon: um holograma seu luta junto (copia seus golpes básicos).
-- [ ] Santuários antigos mais fortes: duração 30s → 40s, aura colorida no jogador enquanto dura, banner curto ao ativar.
-- [ ] Mais santuários por andar (conferir onde `spawnShrine` é chamado) e chance de um "Santuário Supremo" que dá 2 efeitos.
-- [ ] HUD de buffs: ícone e tempo de cada efeito novo; toque/controle sem mudança de entrada (ativar é encostar).
-- [ ] Docs: README (lista de santuários).
+Antes (`loot.js` `SHRINES`): 11 buffs de números, 30s, 2–3 por andar.
+- [x] 6 santuários especiais acrescentados no fim de `SHRINES` (`super: true`, ícone, gema maior com anéis girando, banner e `sfx.superShrine`):
+  - `blitz` — Supervelocidade: +80% de movimento, +40% de ataque, rastro de imagens (`ghostFx`) e atropela (0,7 a cada 0,2s em 1,6m).
+  - `giant` — Gigante: modelo ×1,45 (convive com as transformações), +60% de dano, −40% de dano recebido, golpes empurram, passos tremem o chão (0,5 em 2,6m).
+  - `phase` — Superteleporte: Teleporte/Salto de Rede sem custo, recarga 0,35s, explosão na chegada (2,4×) e na saída (1,8×, 0,45s depois). Só aparece com o Teleporte aprendido e num atalho (`shrineOk`).
+  - `surge` — Superpoderes: habilidades sem custo e recarga 4×.
+  - `midas` — Toque de Midas: recompensa por abate ×5 com chuva de moedas.
+  - `clone` — Gêmeos Neon: 2 clones (`spawnAlly('clone')`, `a.shrine`), recriados ao trocar de andar/carregar.
+- [x] Duração 30s → 40s; brilho em volta do jogador com a cor de cada santuário ativo; ícones na barra de buffs.
+- [x] 3–4 santuários por andar (2 nos primeiros), um especial garantido do andar 2 em diante; Santuário Supremo (~25% dos andares a partir do 3): dourado, dois efeitos (pelo menos um especial) por 60s; contorno dourado no minimapa.
+- [x] Medalhas "Super-Herói" (usar os 6 especiais) e "Supremo" (usar um Supremo): 155 medalhas.
+- [x] Docs: README, `docs/CONTENT.md`, `docs/ARCHITECTURE.md`.
 
 ## Fase 5 — 2 músicas novas
 

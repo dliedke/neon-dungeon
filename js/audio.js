@@ -208,6 +208,15 @@ export const sfx = {
     [1568, 2093, 2637, 3136, 3951, 4699, 5274].forEach((f, i) => tone({ type: 'sine', f, dur: 0.5, vol: 0.022, delay: 1.1 + i * 0.13 }));
     [65.4, 98, 130.8].forEach((f) => tone({ type: 'triangle', f, dur: 3, vol: 0.06, delay: 1, a: 0.3, lp: 900 }));
   },
+  // santuário especial: varredura subindo, acorde brilhante e um baque grave
+  superShrine() {
+    if (throttle('superShrine', 400)) return;
+    tone({ type: 'sine', f: 70, f2: 35, dur: 0.6, vol: 0.3 });
+    tone({ type: 'sawtooth', f: 160, f2: 1400, dur: 0.45, vol: 0.07, lp: 3000 });
+    noise({ dur: 0.5, vol: 0.12, type: 'bandpass', f: 600, f2: 6000, q: 1.4 });
+    [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone({ type: 'square', f, dur: 0.24, vol: 0.055, delay: 0.18 + i * 0.06, lp: 3800 }));
+    [523, 784, 1047].forEach((f) => tone({ type: 'triangle', f, dur: 1.2, vol: 0.05, delay: 0.55, a: 0.04 }));
+  },
   // batidinha distante do ferreiro trabalhando
   forgeTick() {
     if (throttle('forgeTick', 300)) return;

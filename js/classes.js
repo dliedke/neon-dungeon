@@ -9,6 +9,7 @@ import { isWalkable, lineOfSight } from './dungeon.js';
 import { clamp, rr, pick } from './utils.js';
 import { L } from './i18n.js';
 import * as PW from './powers.js';
+import { shrineBlink } from './loot.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 // nível máximo de cada poder
@@ -798,6 +799,8 @@ function teleport(p, t, color, mult, radius, big) {
   if (!ok || (big && Math.hypot(tx - p.x, tz - p.z) < 0.6)) return false;
   burst(p.x, 0.8, p.z, color, big ? 30 : 20, 4, 0.07, 0.4);
   ghostFx(p.model, color);
+  const x0 = p.x;
+  const z0 = p.z;
   if (big) ringFx(p.x, p.z, 1.3, color, 0.3, { from: 0.9 });
   p.x = tx;
   p.z = tz;
@@ -808,6 +811,7 @@ function teleport(p, t, color, mult, radius, big) {
   ringFx(tx, tz, radius, color, 0.3);
   burst(tx, 0.8, tz, color, big ? 30 : 20, 5, 0.07, 0.4, big ? { up: 1 } : undefined);
   sfx.zap();
+  if (p.buffs.phase > 0) shrineBlink(x0, z0, tx, tz); // Santuário do Superteleporte
   return true;
 }
 

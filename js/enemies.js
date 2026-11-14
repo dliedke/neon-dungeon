@@ -12,7 +12,7 @@ import { L } from './i18n.js';
 import { groundEffect, npcNear } from './biomes.js';
 import { achAdd, achMark } from './ach.js';
 import { timeFactor } from './powers.js';
-import { spawnChest, spawnPickup, spawnShrine, SHRINES } from './loot.js';
+import { spawnChest, spawnPickup, spawnShrine, SHRINES, SUPER_SHRINES, shrineOk } from './loot.js';
 import { randomFloorInRoom } from './dungeon.js';
 import { beamFx, particle } from './fx.js';
 import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, tierOf, effFloor, MAX_TIER } from './run.js';
@@ -2152,14 +2152,19 @@ export function populateFloor(d, floor, boss) {
     const pt = spotAwayFromNpc(d, pick(beastRooms), 2.5);
     if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 5 && Math.hypot(pt.x - d.start.x, pt.z - d.start.z) > 16) spawnEnemy('behemoth', pt.x, pt.z);
   }
-  // Santuários Neon: 2 ou 3 por andar, de tipos diferentes e em salas diferentes
+  // Santuários Neon: 3 ou 4 por andar (2 no começo), de tipos diferentes e em salas diferentes.
+  // Do andar 2 em diante um deles é especial (super) e às vezes um é o Santuário Supremo (dois efeitos)
   if (!final) {
-    const kinds = shuffle(Object.keys(SHRINES));
+    // embaralha antes de filtrar: o andar salvo é refeito com a mesma semente, então o sorteio não pode depender dos atalhos do personagem
+    const sup = shuffle(SUPER_SHRINES.slice()).filter(shrineOk);
+    const all = shuffle(Object.keys(SHRINES));
+    const kinds = floor >= 2 && sup.length ? [sup[0], ...all.filter((k) => k !== sup[0] && shrineOk(k))] : all.filter((k) => !SHRINES[k].super);
     const rooms = shuffle((hallsFar.length >= 3 ? hallsFar : far.length ? far : d.rooms.filter((r) => r !== d.rooms[0])).slice());
-    const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 3 : 2);
+    const n = Math.min(rooms.length, floor < 3 ? 2 : chance(0.5) ? 4 : 3);
+    const supreme = floor >= 3 && chance(0.25) ? 1 + Math.floor(Math.random() * Math.max(1, n - 1)) : -1;
     for (let k = 0; k < n; k++) {
       const pt = spotAwayFromNpc(d, rooms[k], 2);
-      if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, kinds[k]);
+      if (pt && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) spawnShrine(pt.x, pt.z, kinds[k], k === supreme);
     }
   }
   const nChests = Math.min(chestRooms.length, floor < 3 ? 1 : 2);

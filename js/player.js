@@ -184,7 +184,9 @@ export function placePlayer(x, z) {
 export function skillCost(i) {
   const p = G.player;
   const base = CLASSES[G.char.cls].skills[i].cost;
-  if (p.buffs && p.buffs.arcane > 0) return 0; // Santuário Arcano
+  if (p.buffs && (p.buffs.arcane > 0 || p.buffs.surge > 0)) return 0; // Santuários Arcano e Superpoderes
+  const id = CLASSES[G.char.cls].skills[i].id;
+  if (p.buffs && p.buffs.phase > 0 && (id === 'warp' || id === 'blink')) return 0; // Superteleporte
   return Math.round(base * (p.stats.legs.has('overload') ? 0.7 : 1) * (1 - (p.stats.costRed || 0) / 100));
 }
 
@@ -452,6 +454,7 @@ function tryUseSkill(p, i, quiet = false) {
   }
   p.en -= cost;
   p.cds[i] = p.stats.legs.has('echo') && Math.random() < 0.25 ? 0.3 : skillCd(i);
+  if (p.buffs.phase > 0 && (sk.id === 'warp' || sk.id === 'blink')) p.cds[i] = Math.min(p.cds[i], 0.35); // Superteleporte
   // Gênese (6 primordiais): cada habilidade solta uma onda prismática
   if (p.stats.prims.size >= 6) primSkillWave();
   p.facing = Math.atan2(p.aim.dx, p.aim.dz);
@@ -505,7 +508,7 @@ export function updatePlayer(dt) {
   const s = p.stats;
 
   // temporizadores
-  const cdt = p.buffs.chrono > 0 ? dt * 2 : dt; // Santuário de Cronos
+  const cdt = dt * (p.buffs.chrono > 0 ? 2 : 1) * (p.buffs.surge > 0 ? 4 : 1); // Santuários de Cronos e Superpoderes
   for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - cdt);
   p.invuln = Math.max(0, p.invuln - dt);
   p.stimCd = Math.max(0, p.stimCd - dt);
@@ -654,7 +657,7 @@ export function updatePlayer(dt) {
   }
   if (wantAttack && p.atkT <= 0 && !p.dash && !p.leap) {
     const fm = formMods(p);
-    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1) * (fm && fm.rate ? fm.rate : 1) * (p.buffs.haste > 0 ? 1.3 : 1) * (p.buffs.avatar > 0 ? 1.3 : 1));
+    p.atkT = 1 / (s.atkRate * (oc ? 1.5 : 1) * (C.spinUp ? 1 + 2 * p.spin : 1) * (fm && fm.rate ? fm.rate : 1) * (p.buffs.haste > 0 ? 1.3 : 1) * (p.buffs.blitz > 0 ? 1.4 : 1) * (p.buffs.avatar > 0 ? 1.3 : 1));
     SKILL_FN[C.skills[0].id](p, c.skills[0]);
     p.facing = Math.atan2(p.aim.dx, p.aim.dz);
     p.lockFace = 0.22;
@@ -675,7 +678,7 @@ export function updatePlayer(dt) {
   stimHint(p, c, dt);
 
   const fmv = formMods(p);
-  let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1) * (p.buffs.haste > 0 ? 1.35 : 1) * (p.buffs.avatar > 0 ? 1.25 : 1);
+  let speed = s.speed * (oc ? 1.3 : 1) * (fmv ? fmv.speed : 1) * (p.buffs.haste > 0 ? 1.35 : 1) * (p.buffs.blitz > 0 ? 1.8 : 1) * (p.buffs.avatar > 0 ? 1.25 : 1);
   if (p.attackHold > 0) speed *= C.melee ? 0.45 : C.spinUp ? 0.55 : 0.8;
   if (p.whirl) speed *= 0.75;
 

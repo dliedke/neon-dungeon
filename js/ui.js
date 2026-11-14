@@ -656,7 +656,7 @@ export function updateHUD(dt) {
   if (p.buffs.mend > 0) buffs.push(`✚ ${L('Cura', 'Mend')} ${p.buffs.mend.toFixed(0)}s`);
   if (p.buffs.evade > 0) buffs.push(`${L('Esquiva', 'Evade')} ${Math.round(p.evadeK || 0)}% ${p.buffs.evade.toFixed(0)}s`);
   if (p.buffs.leech > 0) buffs.push(`${L('Roubo de vida', 'Life steal')} ${p.buffs.leech.toFixed(0)}s`);
-  for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
+  for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].icon} ${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
   for (const b of mythHud()) buffs.push(`<span style="color:#c56bff;border-color:#c56bff">✦ ${b}</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
   const bh = buffs.map((b) => (b.startsWith('<span') ? b.replace('<span ', '<span class="buff" ') : `<span class="buff">${b}</span>`)).join('');
@@ -1030,8 +1030,14 @@ function drawMapMarks(ctx, d, p, near) {
       if (pk.used || !d.explored[Math.floor(pk.z) * d.W + Math.floor(pk.x)]) continue;
       ctx.fillStyle = SHRINES[pk.kind].css;
       ctx.beginPath();
-      ctx.arc(pk.x, pk.z, 0.9, 0, Math.PI * 2);
+      ctx.arc(pk.x, pk.z, pk.supreme || SHRINES[pk.kind].super ? 1.2 : 0.9, 0, Math.PI * 2);
       ctx.fill();
+      // Santuário Supremo: contorno dourado
+      if (pk.supreme) {
+        ctx.strokeStyle = '#ffd23d';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
       continue;
     }
     if (pk.type === 'rift') {

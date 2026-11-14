@@ -8,7 +8,7 @@ import { ETYPES, BOSS_ORDER, diffRank, abyssLvl, abyssUnlocked, abyssBest } from
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
-import { SHRINES } from './loot.js';
+import { SHRINES, SUPER_SHRINES } from './loot.js';
 import { PET_KINDS } from './pets.js';
 import { ANOMALIES } from './run.js';
 import { toast, medalPopup, abyssUnlockedFx } from './ui.js';
@@ -213,6 +213,8 @@ export function achList() {
   add('pet25', '🦴', 1, L('Encantador de Bichos', 'Critter Whisperer'), L('Faça 25 bichinhos seguirem você', 'Get 25 critters to follow you'), () => total('pets'), 25);
   add('petAll', '🐶', 2, L('Arca Neon', 'Neon Ark'), L(`Faça amizade com os ${Object.keys(PET_KINDS).length} tipos de bichinho`, `Befriend all ${Object.keys(PET_KINDS).length} kinds of critter`), () => Object.keys(PET_KINDS).filter((k) => has('petKinds', k)).length, Object.keys(PET_KINDS).length);
   add('shrine50', '🛐', 2, L('Devoto do Neon', 'Neon Devotee'), L('Use 50 santuários', 'Use 50 shrines'), () => total('shrines'), 50);
+  add('shrineSuper', '🦸', 1, L('Super-Herói', 'Superhero'), L(`Use os ${SUPER_SHRINES.length} santuários especiais`, `Use all ${SUPER_SHRINES.length} special shrines`), () => SUPER_SHRINES.filter((k) => has('shrineKinds', k)).length, SUPER_SHRINES.length);
+  add('shrineSup', '⛩️', 1, L('Supremo', 'Supreme'), L('Use um Santuário Supremo', 'Use a Supreme Shrine'), () => total('shrineSup'));
   add('contract1', '📜', 0, L('Freelancer', 'Freelancer'), L('Cumpra um contrato', 'Complete a contract'), () => total('contracts'));
   add('contract10', '🖋️', 1, L('Mercenário', 'Mercenary'), L('Cumpra 10 contratos', 'Complete 10 contracts'), () => total('contracts'), 10);
   add('contract50', '🎩', 2, L('Lenda dos Contratos', 'Contract Legend'), L('Cumpra 50 contratos', 'Complete 50 contracts'), () => total('contracts'), 50);

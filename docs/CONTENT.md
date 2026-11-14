@@ -173,7 +173,7 @@ All in `js/run.js` except shrines (`js/loot.js`).
 
 - **Anomaly:** add to `ANOMALIES`: `{ icon, css, name, desc, ...modifiers }`. Existing modifier keys are read with `amod(key, default)` (`count`, `elite`, `hp`, `dmg`, `speed`, `xp`, `credits`, `loot`, `orbs`, `pdmg`, `taken`, `cd`, `regen`, `killHeal`, `explode`, `giant`, `dark`). A new key needs an `amod('key')` call where it applies. The `anomalyAll` medal counts the list automatically. README "Floor events".
 - **Implant:** add to `IMPLANTS`: `{ icon, name, mods }`, where `mods` uses `computeStats` keys (including `hpPct` / `armorPct`). Implant keys are stored in `c.implants`. README "Floor events" or "Loot and progression".
-- **Shrine:** add to `SHRINES`: `{ name, desc, color, css }`. Touching one sets a timed `p.buffs[key]`. Apply the effect where it matters (search for an existing one, e.g. `buffs.fury` in `combat.js`).
+- **Shrine:** append to `SHRINES` (never reorder: the "Pilgrim" medal counts kinds): `{ icon, name, desc, color, css }`, plus `super: true` for a special one (bigger gem with spinning rings, banner, `sfx.superShrine`, counts for the "Superhero" medal and is guaranteed once per floor from floor 2). Touching one sets a timed `p.buffs[key]` (`SHRINE_TIME`, or `SUPREME_TIME` for the Supreme Shrine, which also grants `kind2`). Apply the effect where it matters (search for an existing one, e.g. `buffs.fury` in `combat.js`, `buffs.blitz` in `player.js`); per-frame visuals and auras go in `shrineAuras` (`loot.js`), one-time effects on pickup in `shrineStart`. If a shrine needs something the character may not have, filter it in `shrineOk` (like Super Teleport needing Teleport on a hotkey).
 
 ## Floor event (puzzle or challenge)
 
