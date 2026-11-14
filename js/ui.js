@@ -204,7 +204,7 @@ export function initUI() {
     if (!n) return;
     if (n > abyssUnlocked()) {
       sfx.deny();
-      return toast(L(`🔒 Derrote um chefe no <b>${abyssName(n - 1)}</b> para abrir o <b>${abyssName(n)}</b>.`, `🔒 Defeat a boss on <b>${abyssName(n - 1)}</b> to open <b>${abyssName(n)}</b>.`), 'warn', 'abyssLock');
+      return toast(L('🔒 Derrote um chefe no <b>Morte</b> para abrir o Abismo.', '🔒 Defeat a boss on <b>Death</b> to open the Abyss.'), 'warn', 'abyssLock');
     }
     applyAbyss(n === abyssLvl() ? n - 1 : n);
   });
@@ -760,7 +760,7 @@ function updDiffUi() {
     ? L('Derrote um chefe no Morte para abrir o Abismo: 10 níveis acima do Morte, cada um com uma regra nova, mais créditos e itens melhores.', 'Defeat a boss on Death to open the Abyss: 10 levels above Death, each adding a new rule, more credits and better items.')
     : ab
       ? `${abyssName(ab)}\n${abyssRulesText(ab)}`
-      : L(`Abismo: ${un} de ${ABYSS_MAX} níveis abertos. Cada nível soma uma regra e dá mais créditos e itens melhores.`, `Abyss: ${un} of ${ABYSS_MAX} levels open. Each level adds a rule and gives more credits and better items.`);
+      : L(`Abismo: escolha um dos ${un} níveis. Cada nível soma uma regra e dá mais créditos e itens melhores.`, `Abyss: pick any of the ${un} levels. Each level adds a rule and gives more credits and better items.`);
   $('abyss-pips').querySelectorAll('i').forEach((pip, j) => {
     pip.classList.toggle('on', j < ab);
     pip.classList.toggle('open', j < un);
@@ -810,13 +810,8 @@ export function abyssUnlockedFx(n) {
   // depois do aviso de chefe derrotado
   setTimeout(() => {
     sfx.roar();
-    if (n === 1) banner(L('🕳️ O ABISMO SE ABRIU', '🕳️ THE ABYSS OPENS'), L('Escolha o nível embaixo da dificuldade', 'Pick its level under the difficulty'));
-    toast(
-      n === 1
-        ? L('<b>Abismo liberado!</b> 10 níveis acima do Morte: cada um soma uma regra nova e dá mais créditos e itens melhores. Use o <b>+</b> embaixo da dificuldade (ou as Opções).', '<b>Abyss unlocked!</b> 10 levels above Death: each adds a new rule and gives more credits and better items. Use the <b>+</b> under the difficulty (or Options).')
-        : L(`🕳️ <b>${abyssName(n)}</b> liberado!`, `🕳️ <b>${abyssName(n)}</b> unlocked!`),
-      'myth',
-    );
+    banner(L('🕳️ O ABISMO SE ABRIU', '🕳️ THE ABYSS OPENS'), L(`Os ${n} níveis estão abertos: escolha embaixo da dificuldade`, `All ${n} levels are open: pick one under the difficulty`));
+    toast(L(`<b>Abismo liberado!</b> ${n} níveis acima do Morte, todos abertos: cada um soma uma regra nova e dá mais créditos e itens melhores. Escolha qual encarar com o <b>+</b>/<b>−</b> embaixo da dificuldade (ou nas Opções).`, `<b>Abyss unlocked!</b> ${n} levels above Death, all open: each adds a new rule and gives more credits and better items. Pick the one you want with <b>+</b>/<b>−</b> under the difficulty (or in Options).`), 'myth');
   }, 2800);
 }
 function applyDiff(key) {

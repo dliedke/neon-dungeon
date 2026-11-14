@@ -207,13 +207,11 @@ export const ABYSS_RULES = [
 export const abyssLvl = () => (G.settings.difficulty === 'death' ? Math.max(0, Math.min(ABYSS_MAX, G.settings.abyss | 0)) : 0);
 // a regra do Abismo n está ligada?
 export const abyssOn = (n) => abyssLvl() >= n;
-// maior nível já liberado na conta (0 = fechado)
+// maior nível já liberado na conta (0 = fechado). Vencer um chefe no Morte abre os 10 de uma vez:
+// o jogador escolhe qual tentar
 export function abyssUnlocked() {
   const sets = G.save && G.save.stats && G.save.stats.sets;
-  if (!sets || !(sets.flags || {}).deathBoss) return 0;
-  let n = 1;
-  for (const k in sets.abyss || {}) n = Math.max(n, Math.min(ABYSS_MAX, (+k | 0) + 1));
-  return n;
+  return sets && (sets.flags || {}).deathBoss ? ABYSS_MAX : 0;
 }
 // maior Abismo em que um chefe já caiu (medalhas)
 export function abyssBest() {

@@ -76,8 +76,8 @@ export function achKill(e) {
     if (e.fightT0 != null && G.t - e.fightT0 < 60) achMark('flags', 'fastBoss');
     if (diffRank() >= 2) achMark('flags', 'hardBoss');
     if (diffRank() >= 6) achMark('flags', 'chaosBoss');
-    // Morte (e Abismo): abre o próximo nível do Abismo. Vale o menor nível usado durante a luta
-    // (subir o Abismo no fim da luta não conta)
+    // Morte: abre o Abismo (todos os níveis). No Abismo, guarda o menor nível usado durante a luta
+    // para as medalhas (subir o Abismo no fim da luta não conta)
     const before = abyssUnlocked();
     if (diffRank() >= 8) achMark('flags', 'deathBoss');
     const ab = Math.min(abyssLvl(), e.abyMin ?? abyssLvl());

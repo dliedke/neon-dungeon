@@ -2816,6 +2816,135 @@ const watcher = {
 // 24. Corrida Fantasma: pise na largada; depois do 3-2-1, chegue antes do corredor fantasma
 // ==================================================================
 const RACE_COL = 0x7affc8;
+// placa com faixa xadrez em cima e o texto embaixo (LARGADA / CHEGADA)
+function raceSign(text, css) {
+  const cv = document.createElement('canvas');
+  cv.width = 512;
+  cv.height = 192;
+  const g = cv.getContext('2d');
+  g.fillStyle = 'rgba(6,10,18,0.88)';
+  g.fillRect(0, 0, 512, 192);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 16; c++) {
+    g.fillStyle = (r + c) % 2 ? '#ffffff' : '#10141e';
+    g.fillRect(c * 32, r * 28, 32, 28);
+  }
+  g.strokeStyle = css;
+  g.lineWidth = 8;
+  g.strokeRect(4, 4, 504, 184);
+  g.font = 'bold 86px Orbitron, Arial, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.shadowColor = css;
+  g.shadowBlur = 16;
+  g.fillStyle = css;
+  g.fillText(text, 256, 124, 480);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, side: THREE.DoubleSide, color: new THREE.Color(gk(0.85), gk(0.85), gk(0.85)) });
+}
+// coluna de luz vertical saindo de cima da placa (vista de longe), mais forte embaixo e sumindo para cima
+let raceBeamGeo = null;
+let raceBeamTex = null;
+let raceArrowGeo = null;
+function raceBeam(parent, color, r, h, op, y0) {
+  raceBeamGeo = raceBeamGeo || new THREE.CylinderGeometry(1, 1, 1, 20, 1, true);
+  if (!raceBeamTex) {
+    const cv = document.createElement('canvas');
+    cv.width = 4;
+    cv.height = 128;
+    const g = cv.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 128);
+    gr.addColorStop(0, '#000');
+    gr.addColorStop(0.55, '#555');
+    gr.addColorStop(1, '#fff');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 4, 128);
+    raceBeamTex = new THREE.CanvasTexture(cv);
+  }
+  const mat = new THREE.MeshBasicMaterial({ map: raceBeamTex, color: new THREE.Color(color).multiplyScalar(gk(0.9)), transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const m = put(parent, raceBeamGeo, mat, 0, y0 + h / 2, 0, r, h, r);
+  m.userData.op = op;
+  return m;
+}
+const raceDummy = new THREE.Object3D();
+const raceTint = new THREE.Color();
+// setas no chão ao longo do trajeto (um InstancedMesh só)
+function raceRoute(a, path) {
+  if (!raceArrowGeo) {
+    const sh = new THREE.Shape();
+    sh.moveTo(-0.42, -0.12);
+    sh.lineTo(0, 0.26);
+    sh.lineTo(0.42, -0.12);
+    sh.lineTo(0.42, -0.36);
+    sh.lineTo(0, 0.02);
+    sh.lineTo(-0.42, -0.36);
+    sh.closePath();
+    raceArrowGeo = new THREE.ShapeGeometry(sh).rotateX(Math.PI / 2);
+  }
+  const pts = [{ x: a.x, z: a.z }, ...path];
+  const seg = (i) => Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) total += seg(i);
+  const list = [];
+  let i = 1;
+  let acc = 0; // distância até o começo do segmento i
+  for (let dd = 1.9; dd < total - 1.9; dd += 1.4) {
+    while (i < pts.length - 1 && acc + seg(i) < dd) {
+      acc += seg(i);
+      i++;
+    }
+    const p0 = pts[i - 1];
+    const p1 = pts[i];
+    const k = Math.min(1, (dd - acc) / (seg(i) || 1));
+    list.push({ x: p0.x + (p1.x - p0.x) * k, z: p0.z + (p1.z - p0.z) * k, a: Math.atan2(p1.x - p0.x, p1.z - p0.z) });
+  }
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const im = new THREE.InstancedMesh(raceArrowGeo, mat, Math.max(1, list.length));
+  im.count = list.length;
+  list.forEach((q, j) => {
+    raceDummy.position.set(q.x, 0.05, q.z);
+    raceDummy.rotation.set(0, q.a, 0);
+    raceDummy.updateMatrix();
+    im.setMatrixAt(j, raceDummy.matrix);
+    im.setColorAt(j, raceTint.setHex(RACE_COL));
+  });
+  im.frustumCulled = false;
+  G.world.add(im);
+  return im;
+}
+// brilho que corre pelas setas na direção da chegada; colunas de luz pulsando
+function raceFx(E, dt) {
+  const run = E.st !== 'idle';
+  E.wave = (E.wave || 0) + dt * (run ? 9 : 3.5);
+  const im = E.route;
+  if (im.count) {
+    for (let j = 0; j < im.count; j++) {
+      const w = Math.max(0, Math.sin(E.wave - j * 0.55));
+      const k = run ? 0.35 + 1.4 * w * w : 0.18 + 0.6 * w * w;
+      im.setColorAt(j, raceTint.setHex(RACE_COL).multiplyScalar(gk(k)));
+    }
+    im.instanceColor.needsUpdate = true;
+  }
+  const pulse = 0.75 + Math.sin(G.t * 3) * 0.25;
+  for (const b of E.beams) b.material.opacity = b.userData.op * pulse * (run ? 1.5 : 1);
+  E.sb.visible = E.beams[2].visible = !run;
+  E.flag.rotation.y += dt * 2;
+  E.flag.position.y = 3.9 + Math.sin(G.t * 2.4) * 0.2;
+  if (run) {
+    E.rt = (E.rt || 0) - dt;
+    if (E.rt <= 0) {
+      E.rt = 0.7;
+      ringFx(E.fx, E.fz, 3, 0xffffff, 0.7, { k: gk(1.4), opacity: 0.7 });
+    }
+  }
+}
+// tira os efeitos de luz depois da vitória
+function raceClean(E) {
+  G.world.remove(E.route);
+  for (const b of E.beams) b.visible = false;
+  E.flag.visible = false;
+  setLight(E.finMat, 0x777788, 0.5);
+}
 const race = {
   setup(d, floor, rooms) {
     const a = findSpot(d, rooms, 1.2);
@@ -2844,19 +2973,33 @@ const race = {
     const ga = groupAt(a.x, a.z);
     put(ga, mats().ring, padMat, 0, 0.03, 0, 1.2, 1, 1.2);
     put(ga, mats().disc, flatMat(RACE_COL, 0.18), 0, 0.02, 0, 1.2, 1, 1.2);
+    // placa LARGADA (some durante a corrida) e coluna de luz verde fina
+    const sb = put(ga, new THREE.PlaneGeometry(2, 0.75), raceSign(L('LARGADA', 'START'), '#7affc8'), 0, 2.1, 0);
+    for (const sx of [-0.95, 0.95]) put(sb, mats().cyl, mats().metal, sx, -1.05, 0, 0.05, 1.4, 0.05);
+    ga.rotation.y = Math.PI / 4;
     const gb = groupAt(b.x, b.z);
-    const finMat = lightMat(0xffffff, 1.2);
-    put(gb, mats().ring, finMat, 0, 0.03, 0, 1.4, 1, 1.4);
-    for (const sx of [-1.3, 1.3]) put(gb, mats().cyl, mats().metal, sx, 1, 0, 0.07, 2, 0.07);
-    // faixa xadrez da chegada
-    for (let k = 0; k < 6; k++) put(gb, box(0.43, 0.3, 0.05), k % 2 ? finMat : mats().dark, -1.08 + k * 0.43, 1.85, 0);
+    const finMat = lightMat(0xffffff, 0.95);
+    put(gb, mats().ring, finMat, 0, 0.03, 0, 1.6, 1, 1.6);
+    put(gb, mats().ring, finMat, 0, 0.03, 0, 1.15, 1, 1.15);
+    put(gb, mats().disc, flatMat(0xffffff, 0.08), 0, 0.02, 0, 1.6, 1, 1.6);
+    // arco da chegada: dois postes altos e a placa xadrez CHEGADA em cima
+    for (const sx of [-1.55, 1.55]) {
+      put(gb, mats().cyl, mats().metal, sx, 1.6, 0, 0.09, 3.2, 0.09);
+      put(gb, mats().oct, finMat, sx, 3.3, 0, 0.16, 0.22, 0.16);
+    }
+    put(gb, new THREE.PlaneGeometry(3.1, 1.16), raceSign(L('CHEGADA', 'FINISH'), '#ffffff'), 0, 2.75, 0);
+    // marcador girando lá no alto
+    const flag = put(gb, mats().oct, finMat, 0, 3.9, 0, 0.26, 0.4, 0.26);
     gb.rotation.y = Math.PI / 4;
+    // colunas de luz: branca larga na chegada, verde fina na largada
+    const beams = [raceBeam(gb, 0xffffff, 0.5, 14, 0.2, 3.3), raceBeam(gb, 0xffffff, 0.16, 14, 0.55, 3.3), raceBeam(ga, RACE_COL, 0.2, 9, 0.5, 2.5)];
+    const route = raceRoute(a, path);
     const ghost = makePlayerModel(pick(CLASS_ORDER), RACE_COL);
     const gm = new THREE.MeshBasicMaterial({ color: new THREE.Color(RACE_COL).multiplyScalar(gk(1.1)), transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending });
     ghost.root.traverse((o) => o.isMesh && (o.material = gm));
     ghost.root.position.set(a.x + 0.8, 0, a.z);
     G.world.add(ghost.root);
-    return { kind: 'race', x: a.x, z: a.z, fx: b.x, fz: b.z, pts: [{ x: b.x, z: b.z }], ga, gb, padMat, finMat, path, ghost, st: 'idle', t: 0, gi: 0, gxp: a.x + 0.8, gzp: a.z, phase: 0, beep: -1, losses: 0 };
+    return { kind: 'race', x: a.x, z: a.z, fx: b.x, fz: b.z, pts: [{ x: b.x, z: b.z }], ga, gb, padMat, finMat, path, ghost, sb, flag, beams, route, st: 'idle', t: 0, gi: 0, gxp: a.x + 0.8, gzp: a.z, phase: 0, beep: -1, losses: 0 };
   },
   reset(E) {
     E.st = 'idle';
@@ -2868,6 +3011,7 @@ const race = {
   },
   update(E, dt) {
     if (E.st === 'done') return;
+    raceFx(E, dt);
     const p = G.player;
     const m = E.ghost;
     if (E.st === 'idle') {
@@ -2924,6 +3068,7 @@ const race = {
     if (Math.random() < dt * 12) burst(E.gxp, 0.8, E.gzp, RACE_COL, 1, 1, 0.06, 0.5, { grav: -1 });
     if (p.alive && Math.hypot(p.x - E.fx, p.z - E.fz) < 1.5) {
       G.world.remove(m.root);
+      raceClean(E);
       complete(E, 2.1, L('VITÓRIA NA CORRIDA!', 'RACE WON!'), L(`${E.t.toFixed(1)}s`, `${E.t.toFixed(1)}s`), E.fx, E.fz);
       return;
     }
@@ -2942,8 +3087,10 @@ const race = {
     E.st = 'done';
     G.world.remove(E.ghost.root);
     setLight(E.padMat, 0x333344, 0.4);
+    E.sb.visible = false;
+    raceClean(E);
   },
-  intro: () => L('pise na largada verde e, depois do 3-2-1, chegue na linha de chegada antes do corredor fantasma (o Teleporte vale!).', 'step on the green start pad and, after the 3-2-1, reach the finish line before the ghost runner (Teleport counts!).'),
+  intro: () => L('pise na placa verde LARGADA e, depois do 3-2-1, siga as setas no chão até o arco CHEGADA (a coluna de luz branca) antes do corredor fantasma (o Teleporte vale!).', 'step on the green START pad and, after the 3-2-1, follow the arrows on the floor to the FINISH arch (the white light column) before the ghost runner (Teleport counts!).'),
 };
 
 // ==================================================================
@@ -3213,10 +3360,46 @@ export function drawEventMarks(ctx, d) {
       ctx.arc(E.gx, E.gz, 1.6 * pulse, 0, Math.PI * 2);
       ctx.stroke();
     } else if (E.kind === 'race') {
-      diamond(ctx, E.x, E.z, 1, I.css);
+      // trajeto tracejado andando da largada até a chegada
+      const run = E.st !== 'idle';
+      ctx.strokeStyle = I.css;
+      ctx.globalAlpha = run ? 0.95 : 0.55;
+      ctx.lineWidth = run ? 0.75 : 0.5;
+      ctx.setLineDash([1.4, 1]);
+      ctx.lineDashOffset = -G.t * 4;
+      ctx.beginPath();
+      ctx.moveTo(E.x, E.z);
+      for (const q of E.path) ctx.lineTo(q.x, q.z);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+      ctx.globalAlpha = 1;
+      // largada
+      diamond(ctx, E.x, E.z, run ? 1 : 1.3 * pulse, I.css);
+      // chegada: disco xadrez com anel branco pulsando
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(E.fx, E.fz, 1.9, 0, Math.PI * 2);
+      ctx.clip();
+      for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) {
+        ctx.fillStyle = (i + j) & 1 ? '#ffffff' : '#10141e';
+        ctx.fillRect(E.fx + i * 0.7, E.fz + j * 0.7, 0.7, 0.7);
+      }
+      ctx.restore();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 0.7;
-      ctx.strokeRect(E.fx - 1.4 * pulse, E.fz - 1.4 * pulse, 2.8 * pulse, 2.8 * pulse);
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.arc(E.fx, E.fz, 2.7 * pulse, 0, Math.PI * 2);
+      ctx.stroke();
+      // fantasma correndo
+      if (E.st === 'run') {
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = I.css;
+        ctx.beginPath();
+        ctx.arc(E.gxp, E.gzp, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
     } else if (E.kind === 'secret') {
       continue; // segredo não aparece no mapa
     } else if (E.kind === 'gamble') {
