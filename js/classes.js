@@ -1,7 +1,7 @@
 // As três classes jogáveis e suas habilidades.
 import { G } from './state.js';
 import { hitEnemy, enemiesInRadius, enemiesInCone, spawnProjectile, lob, explosion, nearestEnemy, spawnTurret, chainFrom, spawnHazard, spawnBarrier, spawnDecoy, after, healPlayer } from './combat.js';
-import { slashFx, ringFx, burst, ghostFx, particle, tempMesh, beamFx } from './fx.js';
+import { slashFx, ringFx, burst, ghostFx, particle, tempMesh, beamFx, telegraphFx } from './fx.js';
 import * as THREE from 'three';
 import { gk } from './state.js';
 import { sfx } from './audio.js';
@@ -110,6 +110,8 @@ export const ICONS = {
   pRage: '<path d="M3 17h6l3-7 4 14 4-11 2 4h7"/>',
   pChip: '<rect x="9" y="9" width="14" height="14" rx="2"/><path d="M13 4v5M19 4v5M13 23v5M19 23v5M4 13h5M4 19h5M23 13h5M23 19h5"/><circle cx="16" cy="16" r="3"/>',
   pEye: '<path d="M2 16s5-9 14-9 14 9 14 9-5 9-14 9S2 16 2 16z"/><circle cx="16" cy="16" r="4"/>',
+  pSword: '<path d="M27 4L12 19M27 4l-1 6M27 4l-6 1"/><path d="M8 15l9 9M10 21l-5 5"/>',
+  pStar: '<path d="M16 3l3.8 8.2 8.7.9-6.5 5.9 1.9 8.6L16 22.2 8.1 26.6 10 18 3.5 12.1l8.7-.9z"/>',
   // poderes avançados (níveis 40–70)
   crescent: '<path d="M5 27C8 13 18 5 28 5c-7 5-11 12-12 22z"/><path d="M4 20c2-5 5-9 9-12" opacity=".5"/>',
   mirror: '<path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z"/><path d="M11 11l10 10M21 11L11 21" opacity=".6"/>',
@@ -149,6 +151,15 @@ export const ICONS = {
   cocoon: '<ellipse cx="16" cy="16" rx="8" ry="12"/><path d="M9 11c4 2 10 2 14 0M8 17c5 2 11 2 16 0M9 22c4 2 10 2 14 0"/>',
   bioBomb: '<circle cx="16" cy="16" r="3"/><path d="M16 13l-4-8a10 10 0 0 1 8 0zM13.4 17.5l-8.5 2a10 10 0 0 0 4 7zM18.6 17.5l8.5 2a10 10 0 0 1-4 7z"/>',
   hexSkin: '<path d="M16 3l11 6.5v13L16 29 5 22.5v-13z"/><path d="M16 10l5 3v6l-5 3-5-3v-6z"/>',
+  // ataques supremos (níveis 76–100)
+  petals: '<path d="M16 16c-2-6 0-11 4-13 2 5 0 10-4 13zM16 16c6-2 11 0 13 4-5 2-10 0-13-4zM16 16c2 6 0 11-4 13-2-5 0-10 4-13zM16 16c-6 2-11 0-13-4 5-2 10 0 13 4z"/>',
+  iai: '<path d="M3 22L29 10"/><path d="M5 27h14" opacity=".6"/><path d="M19 27l4-4" opacity=".6"/><path d="M8 6l3 3M14 4v4" opacity=".5"/>',
+  shades: '<circle cx="16" cy="8" r="3.5"/><path d="M10 28l2-12h8l2 12"/><circle cx="6" cy="12" r="2.5" opacity=".5"/><path d="M2 28l2-9h4" opacity=".5"/><circle cx="26" cy="12" r="2.5" opacity=".5"/><path d="M30 28l-2-9h-4" opacity=".5"/>',
+  rift: '<path d="M5 5l22 22M27 5L5 27"/><circle cx="16" cy="16" r="4" opacity=".6"/>',
+  rail: '<path d="M2 16h28"/><path d="M6 11h3M12 11h3M18 11h3M24 11h3M6 21h3M12 21h3M18 21h3M24 21h3" opacity=".6"/><circle cx="4" cy="16" r="2"/>',
+  cluster: '<circle cx="16" cy="16" r="5"/><circle cx="6" cy="7" r="2"/><circle cx="26" cy="7" r="2"/><circle cx="6" cy="25" r="2"/><circle cx="26" cy="25" r="2"/><path d="M12 12L8 9M20 12l4-3M12 20l-4 3M20 20l4 3" opacity=".6"/>',
+  dance: '<circle cx="16" cy="16" r="3"/><path d="M16 4a12 12 0 0 1 12 12M16 28A12 12 0 0 1 4 16"/><path d="M28 16l-3-3M28 16l3-3M4 16l-3 3M4 16l3 3"/>',
+  satellite: '<rect x="12" y="3" width="8" height="6" rx="1"/><path d="M4 6h8M20 6h8"/><path d="M16 9v4"/><path d="M13 13h6l3 15H10z" opacity=".6"/>',
 };
 export const iconSvg = (name) => `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
@@ -414,6 +425,10 @@ const PFMT = {
   lowHpDmg: (v) => L(`+${nfmt(v)}% de dano com menos de 50% de vida`, `+${nfmt(v)}% damage below 50% health`),
   burnPct: (v) => L(`+${nfmt(v)}% de dano de queimadura`, `+${nfmt(v)}% burn damage`),
   chillDmg: (v) => L(`+${nfmt(v)}% de dano em inimigos lentos ou congelados`, `+${nfmt(v)}% damage to slowed or frozen enemies`),
+  bossDmg: (v) => L(`+${nfmt(v)}% de dano em chefes`, `+${nfmt(v)}% damage to bosses`),
+  execDmg: (v) => L(`+${nfmt(v)}% de dano em inimigos com menos de 30% de vida`, `+${nfmt(v)}% damage to enemies below 30% health`),
+  fullHpDmg: (v) => L(`+${nfmt(v)}% de dano em inimigos com mais de 90% de vida`, `+${nfmt(v)}% damage to enemies above 90% health`),
+  xpPct: (v) => L(`+${nfmt(v)}% de experiência`, `+${nfmt(v)}% experience`),
 };
 const r1 = (v) => Math.round(v * 10) / 10;
 const passive = (id, req, name, icon, mods) => ({
@@ -608,6 +623,41 @@ const ADV_POWERS = {
   ],
 };
 for (const [id, list] of Object.entries(ADV_POWERS)) CLASSES[id].skills.push(...list);
+
+// Passivos supremos (níveis 72, 80, 88 e 96) e ataques supremos (76, 84, 92 e 100): as duas fileiras do topo
+// da árvore. Vão no fim da lista, depois dos poderes avançados (sup e apex: andares próprios na árvore).
+const sup = (...a) => ({ ...passive(...a), sup: true });
+const apex = (id, req, name, icon, cost, cd, desc) => ({ id, req, name, icon, cost, cd, desc, apex: true });
+const SUP_PASSIVES = {
+  blade: [
+    sup('pAncestral', 72, L('Lâmina Ancestral', 'Ancestral Blade'), 'pSword', (r) => ({ dmgPct: 3 * r, critDmg: 6 * r })),
+    sup('pKata', 80, L('Kata Infinito', 'Endless Kata'), 'pWind', (r) => ({ atkSpd: 2 * r, enRegen: r1(0.4 * r) })),
+    sup('pRonin', 88, L('Espírito do Ronin', 'Ronin Spirit'), 'pSkull', (r) => ({ execDmg: 4 * r, killHeal: r1(0.3 * r) })),
+    sup('pShogun', 96, 'Shogun', 'pCrown', (r) => ({ bossDmg: 5 * r, hpPct: 3 * r })),
+  ],
+  gunner: [
+    sup('pHotBarrel', 72, L('Cano Quente', 'Hot Barrel'), 'pRage', (r) => ({ atkSpd: 2 * r, dmgPct: 2 * r })),
+    sup('pGhostSight', 80, L('Mira Fantasma', 'Ghost Sight'), 'pEye', (r) => ({ critDmg: 8 * r, fullHpDmg: 4 * r })),
+    sup('pColdBlood', 88, L('Sangue Frio', 'Cold Blood'), 'pTarget', (r) => ({ execDmg: 4 * r, killEn: r1(0.6 * r) })),
+    sup('pWestMyth', 96, L('Mito do Velho Oeste', 'Wild West Legend'), 'pStar', (r) => ({ bossDmg: 5 * r, findPct: 3 * r, xpPct: 2 * r })),
+  ],
+};
+const APEX_POWERS = {
+  blade: [
+    apex('petalStorm', 76, L('Tempestade de Pétalas', 'Petal Storm'), 'petals', 55, 16, (r) => L(`Por 6s, um redemoinho de pétalas afiadas gira ao seu redor (4,5m), causando ${pct(1.2 * rankMult(r))} a cada 0,5s e deixando os inimigos lentos.`, `For 6s, a whirlwind of razor petals spins around you (4.5m), dealing ${pct(1.2 * rankMult(r))} every 0.5s and slowing enemies.`)),
+    apex('iaijutsu', 84, L('Iaijutsu Absoluto', 'Absolute Iaijutsu'), 'iai', 50, 10, (r) => L(`Atravessa até 10m na direção da mira num piscar, invulnerável. Um instante depois, todo inimigo no caminho sofre um crítico garantido de ${pct(5.0 * rankMult(r))}.`, `Flashes up to 10m toward your aim, invulnerable. A moment later, every enemy in your path takes a guaranteed critical hit of ${pct(5.0 * rankMult(r))}.`)),
+    apex('shadowClones', 92, L('Clones de Sombra', 'Shadow Clones'), 'shades', 60, 25, (r) => L(`Invoca 3 clones de sombra que lutam por 12s (${pct(1.4 * rankMult(r))} por golpe) e explodem ao sumir.`, `Summons 3 shadow clones that fight for 12s (${pct(1.4 * rankMult(r))} per strike) and explode when they fade.`)),
+    apex('dimensionCut', 100, L('Corte Dimensional', 'Dimension Cut'), 'rift', 80, 22, (r) => L(`Rasga o espaço onde você mira com dois cortes em X de 12m (${pct(6.0 * rankMult(r))} cada). A fenda suga os inimigos por 3s e se fecha numa explosão de ${pct(4.0 * rankMult(r))}.`, `Tears space where you aim with two 12m X-shaped cuts (${pct(6.0 * rankMult(r))} each). The rift pulls enemies in for 3s and closes in a ${pct(4.0 * rankMult(r))} blast.`)),
+  ],
+  gunner: [
+    apex('railShot', 76, L('Tiro de Trilha', 'Rail Shot'), 'rail', 45, 9, (r) => L(`Um disparo que atravessa paredes e todos os inimigos numa linha de 30m, causando ${pct(6.5 * rankMult(r))}.`, `A shot that goes through walls and every enemy in a 30m line, dealing ${pct(6.5 * rankMult(r))}.`)),
+    apex('clusterGrenade', 84, L('Granada Cluster', 'Cluster Grenade'), 'cluster', 50, 12, (r) => L(`Arremessa uma granada que explode causando ${pct(4.0 * rankMult(r))} em 3,5m e espalha 8 minibombas de ${pct(2.0 * rankMult(r))} cada.`, `Throws a grenade that explodes for ${pct(4.0 * rankMult(r))} within 3.5m and scatters 8 bomblets dealing ${pct(2.0 * rankMult(r))} each.`)),
+    apex('bulletDance', 92, L('Dança das Balas', 'Bullet Dance'), 'dance', 60, 18, (r) => L(`Por 3s você gira atirando em espiral: 90 balas de ${pct(0.8 * rankMult(r))} cada, e esquiva de 50% dos golpes.`, `For 3s you spin firing in a spiral: 90 bullets dealing ${pct(0.8 * rankMult(r))} each, and dodge 50% of hits.`)),
+    apex('orbitalCannon', 100, L('Canhão Orbital', 'Orbital Cannon'), 'satellite', 85, 24, (r) => L(`Marca o chão onde você mira; 1,2s depois um canhão orbital dispara um feixe gigante que causa ${pct(10 * rankMult(r))} em 5m e deixa o chão em chamas.`, `Marks the ground where you aim; 1.2s later an orbital cannon fires a giant beam dealing ${pct(10 * rankMult(r))} within 5m and setting the ground ablaze.`)),
+  ],
+};
+for (const [id, list] of Object.entries(SUP_PASSIVES)) CLASSES[id].skills.push(...list);
+for (const [id, list] of Object.entries(APEX_POWERS)) CLASSES[id].skills.push(...list);
 
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
@@ -1335,7 +1385,7 @@ Object.assign(SKILL_FN, {
 function lineBeam(p, maxLen, width, mult, color, o = {}) {
   const d = G.dungeon;
   let len = 0;
-  while (len < maxLen && isWalkable(d, p.x + p.aim.dx * len, p.z + p.aim.dz * len)) len += 0.25;
+  while (len < maxLen && (o.through || isWalkable(d, p.x + p.aim.dx * len, p.z + p.aim.dz * len))) len += 0.25;
   for (const e of G.enemies) {
     if (!e.alive) continue;
     const rx = e.x - p.x;
@@ -1392,7 +1442,7 @@ function evade(p, t, chance) {
 const leech = (p, t) => (p.buffs.leech = Math.max(p.buffs.leech || 0, t));
 // aura que causa dano ao redor a cada 0,5s
 function aura(p, t, radius, mult, color, o = {}) {
-  p.aura = { t, tick: 0, r: radius, mult, color, burn: o.burn, slow: o.slow };
+  p.aura = { t, tick: 0, r: radius, mult, color, burn: o.burn, slow: o.slow, petals: o.petals };
 }
 export function updateAura(p, dt) {
   const a = p.aura;
@@ -1405,6 +1455,14 @@ export function updateAura(p, dt) {
     ringFx(p.x, p.z, a.r, a.color, 0.4, { from: a.r * 0.5 });
   }
   if (Math.random() < dt * 20) burst(p.x + rr(-a.r, a.r) * 0.7, 0.2, p.z + rr(-a.r, a.r) * 0.7, a.color, 1, 1, 0.07, 0.5, { grav: -2 });
+  // Tempestade de Pétalas: pétalas girando em volta
+  if (a.petals) {
+    for (let k = 0; k < 3; k++) {
+      const ang = G.t * 4 + k * 2.09 + rr(-0.4, 0.4);
+      const rad = rr(1, a.r);
+      particle(p.x + Math.cos(ang) * rad, rr(0.3, 1.8), p.z + Math.sin(ang) * rad, -Math.sin(ang) * 7, rr(-0.5, 0.5), Math.cos(ang) * 7, k ? a.color : 0xffffff, rr(0.07, 0.12), 0.35, 0, 0);
+    }
+  }
   if (a.t <= 0) p.aura = null;
 }
 function bigHeal(p, frac, color) {
@@ -1760,6 +1818,194 @@ Object.assign(SKILL_FN, {
 });
 
 // Usado pelas torres e para escolher alvos automáticos
+// ---------------- Ataques supremos (níveis 76–100) ----------------
+// inimigos vivos perto do segmento (x1, z1)–(x2, z2)
+function enemiesOnSegment(x1, z1, x2, z2, w) {
+  const dx = x2 - x1;
+  const dz = z2 - z1;
+  const l2 = dx * dx + dz * dz || 1;
+  return G.enemies.filter((e) => {
+    if (!e.alive) return false;
+    const t = clamp(((e.x - x1) * dx + (e.z - z1) * dz) / l2, 0, 1);
+    return Math.hypot(e.x - x1 - dx * t, e.z - z1 - dz * t) < w + e.r;
+  });
+}
+// risco reto de luz entre dois pontos
+function streakFx(x1, z1, x2, z2, color, w = 0.25, life = 0.35, y = 1) {
+  const len = Math.hypot(x2 - x1, z2 - z1) || 0.1;
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(2.4)), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, w * 0.4, len), mat);
+  m.position.set((x1 + x2) / 2, y, (z1 + z2) / 2);
+  m.lookAt(x2, y, z2);
+  tempMesh(m, life, (e, k) => {
+    mat.opacity = 1 - k;
+    m.scale.x = 1 + k * 2;
+  }).disposeGeo = true;
+}
+
+Object.assign(SKILL_FN, {
+  // Lâmina
+  petalStorm(p, r) {
+    aura(p, 6, 4.5, 1.2 * rankMult(r), 0xff7ad9, { slow: 1, petals: true });
+    ringFx(p.x, p.z, 4.5, 0xff7ad9, 0.5, { from: 1 });
+    burst(p.x, 1, p.z, 0xffc2ee, 30, 6, 0.08, 0.6);
+    sfx.spin();
+    return true;
+  },
+  iaijutsu(p, r) {
+    const sx = p.x;
+    const sz = p.z;
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    let len = 0;
+    while (len < 10 && isWalkable(G.dungeon, sx + dx * (len + 0.25), sz + dz * (len + 0.25))) len += 0.25;
+    const ex = sx + dx * len;
+    const ez = sz + dz * len;
+    const hits = enemiesOnSegment(sx, sz, ex, ez, 1.2);
+    ghostFx(p.model, C_('blade'));
+    p.x = ex;
+    p.z = ez;
+    p.path = null;
+    p.target = null;
+    p.dash = null;
+    p.invuln = Math.max(p.invuln, 0.6);
+    streakFx(sx, sz, ex, ez, 0xffffff, 0.1, 0.55);
+    streakFx(sx, sz, ex, ez, C_('blade'), 0.45, 0.4);
+    sfx.dash();
+    // o corte chega um instante depois (a lâmina volta à bainha)
+    after(0.35, () => {
+      let n = 0;
+      for (const e of hits) {
+        if (!e.alive) continue;
+        n++;
+        hitEnemy(e, 5.0 * rankMult(r), { forceCrit: true, knock: 3, kx: sx, kz: sz });
+        slashFx(e.x, e.z, angleOf(dx, dz) + rr(-0.6, 0.6), 1.8, Math.PI * 0.5, C_('blade'), 0.5);
+        burst(e.x, 1, e.z, 0xffffff, 8, 5, 0.06, 0.3);
+      }
+      if (n) {
+        G.shake = Math.max(G.shake, 0.4);
+        sfx.crit();
+      }
+      sfx.slash();
+    });
+    return true;
+  },
+  shadowClones(p, r) {
+    const base = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = 0; k < 3; k++) {
+      const a = base + (k - 1) * 1.3;
+      let x = p.x + Math.cos(a) * 1.4;
+      let z = p.z + Math.sin(a) * 1.4;
+      if (!isWalkable(G.dungeon, x, z)) {
+        x = p.x;
+        z = p.z;
+      }
+      PW.spawnAlly('shade', x, z, { dur: 12, mult: 1.4 * rankMult(r) });
+    }
+    ghostFx(p.model, 0x9b4dff);
+    sfx.nova();
+    return true;
+  },
+  dimensionCut(p, r) {
+    const t = targetPoint(p, 10);
+    const a0 = angleOf(p.aim.dx, p.aim.dz);
+    const col = 0xb36bff;
+    telegraphFx(t.x, t.z, 6, 0.45, col);
+    sfx.telegraph();
+    p.swing = 1;
+    after(0.45, () => {
+      if (!G.player || !G.player.alive) return;
+      for (const s of [1, -1]) {
+        const a = a0 + (s * Math.PI) / 4;
+        const cx = Math.cos(a) * 6;
+        const cz = Math.sin(a) * 6;
+        streakFx(t.x - cx, t.z - cz, t.x + cx, t.z + cz, 0xffffff, 0.14, 0.6);
+        streakFx(t.x - cx, t.z - cz, t.x + cx, t.z + cz, col, 0.6, 0.45);
+        for (const e of enemiesOnSegment(t.x - cx, t.z - cz, t.x + cx, t.z + cz, 1.1)) hitEnemy(e, 6.0 * rankMult(r), { knock: 2, kx: t.x, kz: t.z });
+      }
+      PW.blackHole(t.x, t.z, 3, 4.0 * rankMult(r), col);
+      G.shake = Math.max(G.shake, 0.45);
+      sfx.slash();
+      sfx.laser();
+    });
+    return true;
+  },
+
+  // Atiradora
+  railShot(p, r) {
+    lineBeam(p, 30, 0.8, 6.5 * rankMult(r), 0xfff27a, { knock: 4, through: true });
+    burst(p.x + p.aim.dx * 0.6, 1, p.z + p.aim.dz * 0.6, 0xffffff, 14, 6, 0.07, 0.3);
+    G.shake = Math.max(G.shake, 0.35);
+    sfx.laser();
+    sfx.shoot();
+    return true;
+  },
+  clusterGrenade(p, r) {
+    const t = targetPoint(p, 10);
+    const col = 0xff8a00;
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.6, color: col, onLand: (x, z) => {
+      explosion(x, z, 3.5, 4.0 * rankMult(r), { color: col, knock: 6 });
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2 + rr(-0.3, 0.3);
+        const d = rr(2.2, 4.2);
+        let tx = x + Math.cos(a) * d;
+        let tz = z + Math.sin(a) * d;
+        if (!isWalkable(G.dungeon, tx, tz)) {
+          tx = x + Math.cos(a) * d * 0.4;
+          tz = z + Math.sin(a) * d * 0.4;
+        }
+        lob({ x, z, tx, tz, time: rr(0.35, 0.6), color: 0xffd23d, onLand: (bx, bz) => explosion(bx, bz, 2, 2.0 * rankMult(r), { color: 0xffd23d, small: true, noProc: true, knock: 3 }) });
+      }
+    } });
+    p.swing = 1;
+    return true;
+  },
+  bulletDance(p, r) {
+    evade(p, 3, 50);
+    for (let k = 0; k < 45; k++) {
+      after(k * 0.066, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const a = k * 0.55;
+        for (const s of [0, Math.PI]) {
+          const b = a + s;
+          spawnProjectile({ from: 'player', x: pl.x + Math.cos(b) * 0.5, z: pl.z + Math.sin(b) * 0.5, dx: Math.cos(b), dz: Math.sin(b), speed: 22, life: 0.55, mult: 0.8 * rankMult(r), color: C_('gunner'), size: 0.1, r: 0.22, homing: 2, quiet: true });
+        }
+        pl.hand = 1 - pl.hand;
+        pl.swing = 1;
+        if (k % 3 === 0) sfx.shoot();
+      });
+    }
+    ringFx(p.x, p.z, 2, C_('gunner'), 0.4);
+    sfx.spin();
+    return true;
+  },
+  orbitalCannon(p, r) {
+    const t = targetPoint(p, 12);
+    const col = 0x00f0ff;
+    telegraphFx(t.x, t.z, 5, 1.2, col);
+    sfx.telegraph();
+    sfx.deploy();
+    p.swing = 1;
+    after(1.2, () => {
+      if (!G.player || !G.player.alive) return;
+      const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbff8ff).multiplyScalar(gk(2.6)), transparent: true, opacity: 1, depthWrite: false, blending: THREE.AdditiveBlending });
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 30, 16, 1, true), mat);
+      beam.position.set(t.x, 15, t.z);
+      tempMesh(beam, 0.8, (e, k) => {
+        mat.opacity = 1 - k;
+        beam.scale.set(1 - k * 0.7, 1, 1 - k * 0.7);
+      }).disposeGeo = true;
+      explosion(t.x, t.z, 5, 10 * rankMult(r), { color: col, knock: 9 });
+      ringFx(t.x, t.z, 7, 0xffffff, 0.6, { from: 1 });
+      spawnHazard(t.x, t.z, 4, 4, 0, { faction: 'player', mult: 0.5 * rankMult(r), burn: 0.5, color: col, opacity: 0.4 });
+      G.shake = Math.max(G.shake, 0.7);
+      sfx.laser();
+    });
+    return true;
+  },
+});
+
 export function autoTarget(p, range = 11) {
   return nearestEnemy(p.x, p.z, range, true);
 }

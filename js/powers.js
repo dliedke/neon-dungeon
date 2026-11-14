@@ -7,7 +7,7 @@ import { isWalkable, resolveCircle, lineOfSight } from './dungeon.js';
 import { hitEnemy, enemiesInRadius, nearestEnemy, spawnProjectile, explosion, after, healPlayer } from './combat.js';
 import { burst, ringFx, beamFx, particle, tempMesh, telegraphFx, slashFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
-import { humanoid, glowMat, box, addShadow, animWalk } from './models.js';
+import { humanoid, glowMat, box, addShadow, animWalk, makePlayerModel } from './models.js';
 import { L } from './i18n.js';
 
 export function clearPowers() {
@@ -65,6 +65,7 @@ const ALLY = {
   valk: { speed: 5.6, r: 0.42, range: 2.0, atk: 0.65, mult: 1.4, melee: true, color: 0xb36bff },
   mutant: { speed: 4.0, r: 0.65, range: 1.9, atk: 1.1, mult: 2.0, melee: true, color: 0xc8ff3d, slam: true },
   hacked: { speed: 3.8, r: 0.4, range: 1.5, atk: 0.8, mult: 1.2, melee: true, color: 0x39ff14 },
+  shade: { speed: 6.2, r: 0.35, range: 1.5, atk: 0.5, mult: 1.4, melee: true, color: 0x9b4dff },
 };
 
 function allyModel(kind, color) {
@@ -74,6 +75,12 @@ function allyModel(kind, color) {
     o.position.set(x, y, z);
     return o;
   };
+  if (kind === 'shade') {
+    // clone de sombra da Lâmina: o próprio modelo do jogador, escurecido
+    const m = makePlayerModel('blade', color);
+    for (const mt of m.mats || []) mt.color && mt.color.multiplyScalar(0.25);
+    return m;
+  }
   if (kind === 'oni') {
     const m = humanoid({ body: 0x8a1a2a, dark: 0x2a0a10, accent: 0xff2244, scale: 1.2, wide: 1.2 });
     for (const sx of [-1, 1]) {
@@ -303,7 +310,7 @@ export function updateAllies(dt) {
     a.t -= dt;
     a.atkT -= dt;
     if (a.t <= 0) {
-      removeAlly(a, a.kind === 'hacked');
+      removeAlly(a, a.kind === 'hacked' || a.kind === 'shade');
       G.allies.splice(i, 1);
       continue;
     }

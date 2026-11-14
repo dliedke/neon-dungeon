@@ -159,9 +159,9 @@ Navigation helpers:
 ### Classes and skills (`classes.js`, `powers.js`)
 
 - `CLASSES[id]` holds `name`, `title`, `desc`, colors (`css`, `accent`), `melee`, `range`, `base` stats, `weaponNames` and `skills`.
-- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`), then 3 advanced passives (`LATE_PASSIVES`, marked `late: true`, levels 20/28/36), then 4 advanced powers (`ADV_POWERS`, built with the `adv()` helper and marked `adv: true`, levels 40/50/60/70: attack, defense, attack, defense). The Netrunner has its own teleport, so it has 19 skills instead of 20.
+- Each class has 9 active skills, then 3 passives (`PASSIVES`, built with the `passive()` helper; `mods(rank)` returns stat bonuses), then the shared Teleport (`warp`), then 3 advanced passives (`LATE_PASSIVES`, marked `late: true`, levels 20/28/36), then 4 advanced powers (`ADV_POWERS`, built with the `adv()` helper and marked `adv: true`, levels 40/50/60/70: attack, defense, attack, defense). The Netrunner has its own teleport, so it has 19 skills instead of 20. After those come 4 supreme passives (`SUP_PASSIVES`, `sup()` helper, `sup: true`, levels 72/80/88/96) and 4 apex attacks (`APEX_POWERS`, `apex()` helper, `apex: true`, levels 76/84/92/100), for classes that already have them.
 - `skills[0]` is the primary attack (free, no cooldown). `skills[1]` starts unlocked.
-- The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed. The last two rows find their skills by the `late` and `adv` flags instead of fixed indices.
+- The skill tree layout (which index goes in which row) is `TIERS` in `ui.js`. A skill's `req` is the level needed. The last rows find their skills by their `mark` (`late`, `adv`, `sup`, `apex`) instead of fixed indices; a row with no skills for the class is hidden.
 - Skill logic lives in `SKILL_FN`, keyed by skill `id`, extended by `Object.assign(SKILL_FN, {...})` blocks. Big reusable powers (summons, orbitals, black holes, storms, transformations) are in `powers.js`.
 - `ICONS` holds inline-SVG path strings on a 32×32 viewBox.
 

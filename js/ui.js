@@ -1407,11 +1407,15 @@ const TIERS = [
   { label: [5, 9], idx: [4, 5, 10, 6] },
   { label: [12, 15], idx: [7, 11, 8] },
   // passivos avançados: a posição muda por classe (o Netrunner não tem o Teleporte), então vêm pela marca late
-  { label: [20, 36], late: true },
+  { label: [20, 36], mark: 'late' },
   // poderes avançados (2 de ataque e 2 de defesa), também pela marca adv
-  { label: [40, 70], adv: true },
+  { label: [40, 70], mark: 'adv' },
+  // passivos supremos e ataques supremos (marcas sup e apex)
+  { label: [72, 96], mark: 'sup' },
+  { label: [76, 100], mark: 'apex' },
 ];
-const tierIdx = (C, t) => (t.late || t.adv ? C.skills.map((sk, i) => ((t.late ? sk.late : sk.adv) ? i : -1)).filter((i) => i >= 0) : t.idx);
+const MARKS = ['late', 'adv', 'sup', 'apex'];
+const tierIdx = (C, t) => (t.mark ? C.skills.map((sk, i) => (sk[t.mark] ? i : -1)).filter((i) => i >= 0) : t.idx);
 // k = -1 é o ⚔ (botão de ataque: A no controle, Espaço/clique no teclado)
 function slotKey(k) {
   if (G.lastInput === 'pad') return glyphText(['a', 'x', 'y', 'b', 'lb', 'rb', 'lt', 'rt'][k + 1]);
@@ -1485,12 +1489,14 @@ function renderTree() {
   let html = `<div class="tree-wrap"><div class="tree">
     <div class="sp-info">${L('Pontos disponíveis', 'Points available')}: <b>${c.skillPoints}</b></div>`;
   TIERS.forEach((t, ti) => {
+    const idx = tierIdx(C, t);
+    if (!idx.length) return;
     const lbl = t.label[0] === t.label[1] ? `${L('Nível', 'Level')} ${t.label[0]}` : `${L('Níveis', 'Levels')} ${t.label[0]}–${t.label[1]}`;
     if (ti) html += '<div class="tree-link"></div>';
     html += `<div class="tier"><div class="tier-label">${lbl}</div><div class="tier-nodes">`;
-    for (const i of tierIdx(C, t)) {
+    for (const i of idx) {
       const sk = C.skills[i];
-      if (!sk || (sk.late && !t.late) || (sk.adv && !t.adv)) continue;
+      if (!sk || MARKS.some((m) => sk[m] && t.mark !== m)) continue;
       const r = c.skills[i] || 0;
       const req = sk.req || 1;
       const locked = r === 0;
@@ -1517,7 +1523,7 @@ function renderTree() {
   let status = '';
   if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
   else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
-  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv || sk.apex ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
   const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
   // devolver os pontos deste poder para reaplicar em outros
   const back = r;

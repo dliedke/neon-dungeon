@@ -64,6 +64,7 @@ export function computeStats(c) {
     findPct: 0,
     // efeitos especiais dos poderes passivos
     dodge: 0, dmgRed: 0, killHeal: 0, killEn: 0, eliteDmg: 0, lowHpDmg: 0, burnPct: 0, chillDmg: 0, costRed: 0,
+    bossDmg: 0, execDmg: 0, fullHpDmg: 0,
     legs: new Set(),
     myths: new Set(),
     divs: new Set(),
