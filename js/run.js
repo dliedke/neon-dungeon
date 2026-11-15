@@ -542,13 +542,8 @@ export function updateRun(dt) {
   }
 }
 
-// celular (ou tela pequena): só a missão mais próxima fica escrita; as outras viram ícones embaixo
-let compactMQ = null;
-function hudCompact() {
-  if (document.body.classList.contains('touch')) return true;
-  compactMQ = compactMQ || matchMedia('(max-height: 520px), (max-width: 640px)');
-  return compactMQ.matches;
-}
+// celular (modo toque): só a missão mais próxima fica escrita; as outras viram ícones embaixo
+const hudCompact = () => document.body.classList.contains('touch');
 const MIS_HOLD = 4; // segundos em destaque depois que a missão avança
 const mis = { floor: -1, cur: null, seen: new Map(), list: [] };
 // relógios mudam sozinhos: não contam como avanço
