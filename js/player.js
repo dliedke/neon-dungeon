@@ -122,7 +122,8 @@ export function computeStats(c) {
   s.crit = Math.min(s.crit, 75);
   s.cdr = Math.min(s.cdr, 40);
   s.lifeSteal = Math.min(s.lifeSteal, 20);
-  s.speed *= 1 + Math.min(s.moveSpd, 50) / 100;
+  // Passos Velozes (swiftSpd) fica fora do teto de 50%
+  s.speed *= 1 + (Math.min(s.moveSpd, 50) + (s.swiftSpd || 0)) / 100;
   s.atkRate *= 1 + s.atkSpd / 100;
   s.maxHp = Math.round(s.maxHp);
   s.maxEn = Math.round(s.maxEn);
@@ -194,7 +195,7 @@ export function skillCost(i) {
 export function skillCd(i) {
   const sk = CLASSES[G.char.cls].skills[i];
   // Passos Velozes: o Teleporte (e o Salto de Rede) recarregam mais rápido
-  const warp = sk.id === 'warp' || sk.id === 'blink' ? 1 - Math.min(G.player.stats.warpCd || 0, 50) / 100 : 1;
+  const warp = sk.id === 'warp' || sk.id === 'blink' ? 1 - Math.min(G.player.stats.warpCd || 0, 80) / 100 : 1;
   return sk.cd * (1 - G.player.stats.cdr / 100) * warp * amod('cd');
 }
 

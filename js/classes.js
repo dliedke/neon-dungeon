@@ -438,6 +438,7 @@ const PFMT = {
   dmgPct: (v) => L(`+${nfmt(v)}% de dano`, `+${nfmt(v)}% damage`),
   atkSpd: (v) => L(`+${nfmt(v)}% de velocidade de ataque`, `+${nfmt(v)}% attack speed`),
   moveSpd: (v) => L(`+${nfmt(v)}% de velocidade de movimento`, `+${nfmt(v)}% movement speed`),
+  swiftSpd: (v) => L(`+${nfmt(v)}% de velocidade de movimento`, `+${nfmt(v)}% movement speed`),
   warpCd: (v) => L(`-${nfmt(v)}% de recarga do teletransporte`, `-${nfmt(v)}% teleport cooldown`),
   hpPct: (v) => L(`+${nfmt(v)}% de vida máxima`, `+${nfmt(v)}% max health`),
   armorPct: (v) => L(`+${nfmt(v)}% de blindagem`, `+${nfmt(v)}% armor`),
@@ -765,8 +766,11 @@ for (const [id, list] of Object.entries(APEX_POWERS)) CLASSES[id].skills.push(..
 // Passos Velozes: passivo de mobilidade igual para todas as classes (caminhada mais rápida e Teleporte/Salto de Rede
 // recarregando antes). Fica no fim da lista para não mudar a posição dos poderes nos saves (swift: entra no andar 10–15).
 // ATENÇÃO: os supremos que ainda faltam (lancer e biohacker) têm de ser empurrados DEPOIS deste, nunca antes.
+// 4x mais forte: a velocidade (swiftSpd) soma por fora do teto de 50% dos itens, e o Teleporte recarrega 4x mais rápido
+// que a fórmula antiga (3 + 1,5·r)% de redução — convertida em velocidade de recarga, multiplicada por 4 e de volta em redução.
+const swiftWarp = (r) => { const o = (3 + 1.5 * r) / 100; return r1(100 * (1 - 1 / (1 + 4 * (1 / (1 - o) - 1)))); };
 for (const id of Object.keys(CLASSES)) {
-  CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ moveSpd: 3 + r, warpCd: r1(3 + 1.5 * r) })), swift: true });
+  CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ swiftSpd: 4 * (3 + r), warpCd: swiftWarp(r) })), swift: true });
 }
 
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
