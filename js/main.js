@@ -10,7 +10,7 @@ import { initAudio, applyVolumes, sfx } from './audio.js';
 import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight, isWalkable } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
-import { populateFloor, updateEnemies, spawnEnemy, tickReward, abyssUnlocked } from './enemies.js';
+import { populateFloor, updateEnemies, spawnEnemy, tickReward, abyssUnlocked, DIFFICULTY, ABYSS_MAX } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL, SLOT_N } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
@@ -25,7 +25,7 @@ import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
 import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow, syncRefreshSoon } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding,
+  toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding, updDiffUi,
 } from './ui.js';
 import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
@@ -550,10 +550,20 @@ export function startGame(cls, fresh) {
   if (fresh || !G.save.slots[cls]) {
     const old = G.save.slots[cls];
     G.char = newCharacter(cls);
-    if (old) G.char.resetAt = G.char.created; // recomeço vale mais que o progresso antigo na nuvem
+    if (old) {
+      G.char.resetAt = G.char.created; // recomeço vale mais que o progresso antigo na nuvem
+      // recomeçar mantém a dificuldade que o personagem usava
+      G.char.diff = old.diff;
+      G.char.abyss = old.abyss;
+    }
   }
   else G.char = G.save.slots[cls];
   sanitizeChar(G.char);
+  // cada personagem guarda a própria dificuldade (e o Abismo): ao entrar, ela vira a atual
+  const c = G.char;
+  G.settings.difficulty = c.diff;
+  G.settings.abyss = c.diff === 'death' ? Math.min(c.abyss, abyssUnlocked()) : 0;
+  updDiffUi();
   if (G.player) {
     scene.remove(G.player.model.root);
     G.player = null;
@@ -613,6 +623,9 @@ function sanitizeChar(c) {
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
+  // dificuldade do personagem (saves antigos não têm: ficam com a dificuldade que estava escolhida)
+  if (!DIFFICULTY[c.diff]) c.diff = DIFFICULTY[G.settings.difficulty] ? G.settings.difficulty : 'normal';
+  c.abyss = c.diff === 'death' ? Math.max(0, Math.min(ABYSS_MAX, (c.abyss ?? G.settings.abyss) | 0)) : 0;
 }
 
 export function quitToMenu() {

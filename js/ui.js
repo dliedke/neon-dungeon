@@ -303,6 +303,15 @@ export function showMenu() {
   clearFocus();
 }
 
+// dificuldade salva no personagem (cartão da classe)
+function charDiffTag(c) {
+  const k = DIFFICULTY[c.diff] ? c.diff : null;
+  if (!k) return '';
+  const ab = k === 'death' ? c.abyss | 0 : 0;
+  const col = ab ? abyssColor(ab) : DIFF_COLORS[Math.max(0, DIFF_ORDER.indexOf(k))];
+  return ` · <span class="nowrap" style="color:${col}" title="${L('Dificuldade', 'Difficulty')}">${ab ? '🕳️ ' + abyssName(ab) : '⚔ ' + DIFFICULTY[k].name}</span>`;
+}
+
 export function renderClassCards() {
   const root = $('class-cards');
   root.innerHTML = '';
@@ -318,7 +327,7 @@ export function renderClassCards() {
       <div class="ctitle">${C.title}</div>
       <div class="cdesc">${C.desc}</div>
       <div class="cskills">${C.skills.filter((s) => !s.passive).map((s) => `<div title="${s.name}">${iconSvg(s.icon)}</div>`).join('')}</div>
-      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + ((save.bestTier | 0) > MAX_TIER ? ` · <span class="nowrap" style="color:#ffd23d" title="${L('Venceu o Inferno: final verdadeiro', 'Beat the Inferno: true ending')}">👑 ${L('Lenda', 'Legend')}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') : L('Novo personagem', 'New character')}</div>
+      <div class="csave">${save ? L(`Nível <b>${save.level}</b> · Andar <b>${save.floor}</b> · ${save.kills || 0} abates`, `Level <b>${save.level}</b> · Floor <b>${save.floor}</b> · ${save.kills || 0} kills`) + (save ? ` · <span class="nowrap" title="${L('Tempo de jogo', 'Play time')}">⏱ ${fmtPlay(save.playTime)}</span>` : '') + (save.wins ? ` · <span title="${L('Venceu o jogo', 'Beat the game')}">🏆${save.wins > 1 ? '×' + save.wins : ''}</span>` : '') + ((save.bestTier | 0) > MAX_TIER ? ` · <span class="nowrap" style="color:#ffd23d" title="${L('Venceu o Inferno: final verdadeiro', 'Beat the Inferno: true ending')}">👑 ${L('Lenda', 'Legend')}</span>` : '') + (save.tier ? ` · <span class="nowrap" style="color:${MODES[Math.min(MAX_TIER, save.tier)].css}">${MODES[Math.min(MAX_TIER, save.tier)].icon} ${MODES[Math.min(MAX_TIER, save.tier)].name}</span>` : '') + charDiffTag(save) : L('Novo personagem', 'New character')}</div>
       ${lastPlayed ? `<div class="clast">● ${L('Última jogada', 'Last played')}</div>` : ''}
       <div class="cbtns">
         <button class="btn" data-nav data-play="${id}">${save ? L('Continuar', 'Continue') : L('Jogar', 'Play')}</button>
@@ -753,7 +762,7 @@ const toastKeys = {};
 const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff9a3d', '#ff6a1a', '#ff3a64', '#ff2bd6', '#b04dff', '#e8e6ff'];
 // regras ativas do Abismo, uma por linha (tooltip)
 const abyssRulesText = (n) => ABYSS_RULES.slice(0, n).map((r, i) => `${ROMAN[i + 1]} ${r.icon} ${r.name}: ${r.desc}`).join('\n');
-function updDiffUi() {
+export function updDiffUi() {
   const k = G.settings.difficulty;
   const i = Math.max(0, DIFF_ORDER.indexOf(k));
   const name = DIFFICULTY[k]?.name || 'Normal';

@@ -10,7 +10,7 @@ import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, ABYSS_STEP } from './enemies.js';
+import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, abyssDepth } from './enemies.js';
 import { dropLoot, spawnPickup } from './loot.js';
 import { after, explosion, damagePlayer, healPlayer, capHeal } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
@@ -61,8 +61,8 @@ export const MAX_TIER = TIERS.length - 1;
 export const tierOf = (c = G.char) => TIERS[Math.min(MAX_TIER, (c && c.tier) | 0)];
 // andar do modo (Pesadelo/Inferno), sem o Abismo: base do nível dos itens (o Abismo entra aos poucos pelo diffIlvl)
 export const tierFloor = (f = G.floor) => f + tierOf().off;
-// andar "efetivo" dos inimigos: o modo e o Abismo (cada nível desce ABYSS_STEP andares) levam mais fundo
-export const effFloor = (f = G.floor) => f + tierOf().off + abyssLvl() * ABYSS_STEP;
+// andar "efetivo" dos inimigos: o modo e o Abismo (abyssDepth: I +6 andares, depois +12 por nível) levam mais fundo
+export const effFloor = (f = G.floor) => f + tierOf().off + abyssDepth(abyssLvl());
 // blindagem: fração do dano que passa. Depois do andar efetivo 30 (Pesadelo/Inferno) os inimigos
 // perfuram blindagem: a constante cresce no mesmo ritmo da blindagem dos itens, senão ela chega a ~90%
 export const armorK = (f = G.floor) => 100 + 22 * Math.max(0, (effFloor(f) || 0) - 30);

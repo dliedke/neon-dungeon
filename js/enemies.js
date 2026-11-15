@@ -182,13 +182,16 @@ const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
 // Abismo: 10 níveis abaixo da Morte (só valem com a Morte escolhida, num seletor próprio).
-// Cada nível leva a masmorra ABYSS_STEP andares mais fundo (vida, dano, elites com mais afixos,
+// Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
 export const ABYSS_MAX = 10;
 export const ABYSS_STEP = 6;
+// andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
+// (I +6, II +18, III +30 ... X +114). Aceita nível fracionário (recompensa subindo aos poucos)
+export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
 export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 // regra que cada nível liga (índice 0 = Abismo I)
 export const ABYSS_RULES = [
@@ -251,11 +254,11 @@ export function rewardK(kind) {
 export const rewardRamping = () => rewardLvl >= 0 && rewardLvl < diffRank();
 // nível de recompensa atual (sobe aos poucos, como o rewardK)
 export const rewardRank = () => Math.max(0, Math.min(diffRank(), rewardLvl < 0 ? 1 : rewardLvl));
-// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30 e cada Abismo mais ABYSS_STEP
+// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30 e o Abismo a mesma profundidade dos inimigos (abyssDepth)
 // (os itens acompanham a profundidade dos inimigos, mas sobem aos poucos como o resto da recompensa)
 export const diffIlvl = () => {
   const r = rewardRank();
-  return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + Math.max(0, r - 8) * ABYSS_STEP);
+  return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + abyssDepth(Math.max(0, r - 8)));
 };
 
 // Troca de dificuldade (ou de Abismo) no meio do andar: os inimigos vivos mudam na hora
@@ -294,6 +297,7 @@ export function setDifficulty(key) {
     // o Abismo fica embaixo da Morte: saindo dela, desliga
     if (key !== 'death') G.settings.abyss = 0;
   });
+  keepCharDiff();
   return true;
 }
 // escolhe o nível do Abismo (liga a Morte junto, se precisar); só até o nível liberado
@@ -304,7 +308,14 @@ export function setAbyss(n) {
     if (n > 0) G.settings.difficulty = 'death';
     G.settings.abyss = n;
   });
+  keepCharDiff();
   return true;
+}
+// a dificuldade fica salva no personagem em jogo (cada classe volta com a sua)
+function keepCharDiff() {
+  if (!G.char) return;
+  G.char.diff = G.settings.difficulty;
+  G.char.abyss = G.settings.abyss | 0;
 }
 
 export function floorScale(f) {
