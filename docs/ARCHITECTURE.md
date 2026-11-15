@@ -378,6 +378,7 @@ Reading the result:
 
 Gotchas:
 
+- For real-time captures (README screenshots, effects in motion) start headless Edge with the GPU instead of SwiftShader: `--enable-gpu --ignore-gpu-blocklist --use-angle=d3d11`. It then runs at 60 fps, so you can dispatch `KeyboardEvent`s (`Digit1`…`Digit7`, `Space`) and capture skills mid-fight.
 - Headless Chrome/Edge throttles `requestAnimationFrame` to about 1 fps, so input that depends on frames seems to be ignored. Step frames by hand: `Input.update(1/60); ui.uiPadUpdate(); Input.endFrame();`.
 - To fake a gamepad, replace `navigator.getGamepads` with a function that returns an object with `id`, `mapping: 'standard'`, `axes` and 17 `buttons` (`{ pressed, value }`), then dispatch a `gamepadconnected` event. Standard button indices: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 View, 9 Start, 12–15 D-pad.
 - Use `__dbg.sim(seconds)` to run game logic quickly without rendering (balance checks, spawn tests).

@@ -5,6 +5,33 @@
 A cyberpunk isometric action RPG that runs right in the browser, on desktop and mobile.
 The game is shown in **English or Portuguese** based on your browser language.
 
+![A Netrunner holding off a horde of drones and mechs in the Data Core](docs/screenshots/horde-data-core.jpg)
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/valkyrie-star-swamp.jpg" alt="Valkyrie calling down lightning in the Fallen Star Swamp"><br><sub><b>Valkyrie</b> calling down lightning in the Fallen Star Swamp</sub></td>
+    <td width="50%"><img src="docs/screenshots/blade-volcano.jpg" alt="Blade carving through a horde in the Volcanic Caldera"><br><sub><b>Blade</b> carving through a horde in the Volcanic Caldera</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/boss-omega-core.jpg" alt="Boss fight against the Omega Core"><br><sub>Boss fight: the <b>Omega Core</b> on the Sleeping God Mountain</sub></td>
+    <td><img src="docs/screenshots/boss-gunship.jpg" alt="Boss fight against the Assault Gunship"><br><sub>Boss fight: the <b>Assault Gunship</b> in Hive City</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/huntress-orbital-station.jpg" alt="Huntress fighting elites on the Orbital Station"><br><sub><b>Huntress</b> against elites on the Orbital Station</sub></td>
+    <td><img src="docs/screenshots/final-battle.jpg" alt="The final battle on floor 30"><br><sub>The <b>final battle</b> on floor 30: the bosses come in waves</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/event-gladiator-arena.jpg" alt="Gladiator Arena floor event"><br><sub>Floor event: the <b>Gladiator Arena</b></sub></td>
+    <td><img src="docs/screenshots/event-mirror-duel.jpg" alt="Mirror Duel floor event"><br><sub>Floor event: the <b>Mirror Duel</b> against your own reflection</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/class-select.jpg" alt="Class selection screen"><br><sub>10 classes, each with its own skill tree</sub></td>
+    <td><img src="docs/screenshots/mobile-touch.jpg" alt="Playing on a phone with touch controls"><br><sub>Plays on phones too, with touch controls (and on gamepad)</sub></td>
+  </tr>
+</table>
+
 ## Goal
 
 Descend through 30 dungeon floors, defeat enemies, collect gear and level up your character.

@@ -77,7 +77,7 @@ index.html            all HUD/menu markup; importmap maps "three" -> vendor/thre
 manifest.webmanifest  PWA manifest (icons point into img/)
 css/style.css         all UI styles
 img/                  app icons (icon.svg, icon-192/512.png, icon-maskable-512.png; letters are drawn as paths, no fonts) and og-image.png (link preview)
-docs/                 ARCHITECTURE.md, CONTENT.md and screenshots/ (reference only, not loaded by the game)
+docs/                 ARCHITECTURE.md, CONTENT.md and screenshots/ (used by README.md and as reference, not loaded by the game)
 js/                   game modules (see below)
 vendor/three/         Three.js r160 + the postprocessing addons in use. Don't edit; copy new addons from r160 with their deps
 web.config            IIS Express settings for Visual Studio (ignored by Pages)
