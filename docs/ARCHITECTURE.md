@@ -278,7 +278,7 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
 - All panels already exist in `index.html` and are shown and hidden with classes. `ui.js` fills them (`renderChar`, `renderClassCards`, `openShop`, `openForge`, `openAch`, …).
 - **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the stash `{A}` stores or takes the item, `{X}` equips it from the stash and `{RT}` recycles it (stash items log the withdrawal in `stashOut`). In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is "Recycle all" on the equipment tab, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
 - Feedback: `toast(html, cls, key)` (a `key` replaces the previous toast with the same key), `banner(title, sub)`, `confirmDialog(title, text, onYes)`, `floatText`.
-- HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()`, `mythHud()`.
+- HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()` (on touch or small screens it shows only the nearest mission, or the one that just progressed, and the others as icons), `mythHud()`.
 - Layout must work from phone landscape (around 640×360) up to desktop. The `max-width: 760px` and `max-height: 520px` media queries handle small screens.
 
 ## i18n (`i18n.js`)

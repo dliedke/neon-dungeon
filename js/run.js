@@ -20,7 +20,7 @@ import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
-import { setupEvents, updateEvents, eventsHud, eventKill, eventsBusy, announceEvents } from './events.js';
+import { setupEvents, updateEvents, eventsHud, eventMissions, eventKill, eventsBusy, announceEvents } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -542,23 +542,90 @@ export function updateRun(dt) {
   }
 }
 
+// celular (ou tela pequena): só a missão mais próxima fica escrita; as outras viram ícones embaixo
+let compactMQ = null;
+function hudCompact() {
+  if (document.body.classList.contains('touch')) return true;
+  compactMQ = compactMQ || matchMedia('(max-height: 520px), (max-width: 640px)');
+  return compactMQ.matches;
+}
+const MIS_HOLD = 4; // segundos em destaque depois que a missão avança
+const mis = { floor: -1, cur: null, seen: new Map(), list: [] };
+// relógios mudam sozinhos: não contam como avanço
+const misKey = (s) => s.replace(/\d+:\d\d|\b\d+s\b|\d+\.\.\./g, '');
+
+function compactHud(A, C, K) {
+  const p = G.player;
+  const px = p ? p.x : 0, pz = p ? p.z : 0;
+  const list = mis.list;
+  list.length = 0;
+  if (C) {
+    const left = C.limit && !C.done && !C.failed ? Math.max(0, C.limit - C.t) : null;
+    const prog = C.done ? '✔' : C.failed ? '✖' : `${Math.min(C.cur, C.goal)}/${C.goal}${left != null ? ` · ${clock(Math.floor(left))}` : ''}`;
+    // fenda e ladrão têm lugar no mapa; os outros contratos valem em qualquer canto
+    let d2 = Infinity;
+    const at = C.kind === 'rift' ? G.pickups.find((pk) => pk.type === 'rift') : C.kind === 'thief' ? G.enemies.find((e) => e.alive && e.type === 'thief') : null;
+    if (at) d2 = (at.x - px) * (at.x - px) + (at.z - pz) * (at.z - pz);
+    list.push({ id: 'con', icon: '📜', css: '#ffd23d', text: C.text, prog, d2, cls: C.done ? 'done' : C.failed ? 'fail' : '', fin: C.done || C.failed });
+  }
+  eventMissions(list, px, pz);
+  if (K && K.done) list.push({ id: 'clear', icon: '🧹', css: '#39ff88', text: L('Andar limpo', 'Floor cleared'), prog: '✔', d2: Infinity, cls: 'ri-clear done', fin: true });
+  else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) list.push({ id: 'clear', icon: '👾', css: '#39ff88', text: L(`Restam ${K.left} inimigos`, `${K.left} enemies left`), prog: `+${clearBonus()}¢`, d2: Infinity, cls: 'ri-clear' });
+
+  // marca quando cada missão avançou por último (a primeira vez que aparece não conta)
+  if (mis.floor !== G.floor) {
+    mis.floor = G.floor;
+    mis.seen.clear();
+    mis.cur = null;
+  }
+  let recent = null, best = null, cur = null;
+  for (const m of list) {
+    const k = misKey(m.text + '|' + m.prog);
+    let s = mis.seen.get(m.id);
+    if (!s) mis.seen.set(m.id, (s = { k, t: -1e9 }));
+    else if (s.k !== k) {
+      s.k = k;
+      s.t = G.t;
+    }
+    m.t = s.t;
+    if (G.t - m.t < MIS_HOLD && (!recent || m.t > recent.t)) recent = m;
+    if (m.fin) continue;
+    if (!best || m.d2 < best.d2) best = m;
+    if (m.id === mis.cur) cur = m;
+  }
+  // a que acabou de avançar ganha; senão a mais perto, trocando só se a outra estiver bem mais perto
+  let pick = recent;
+  if (!pick && best) pick = cur && (cur.d2 === best.d2 || Math.sqrt(cur.d2) - Math.sqrt(best.d2) < 3) ? cur : best;
+  if (pick && !pick.fin) mis.cur = pick.id;
+
+  let h = '';
+  if (pick) h += `<div class="ri-con ri-one ${pick.cls || ''}" style="--c:${pick.css}"><span class="ri-tx">${pick.icon} ${pick.text}</span><b>${pick.prog}</b></div>`;
+  let more = A ? `<span class="ri-a" style="--c:${A.css}">${A.icon}</span>` : '';
+  for (const m of list) if (m !== pick && !m.fin) more += `<span>${m.icon}</span>`;
+  if (more) h += `<div class="ri-more">${more}</div>`;
+  return h;
+}
+
 // HUD: anomalia, contrato e combo
 const hudCache = {};
 export function runHud() {
   const A = G.anomaly && ANOMALIES[G.anomaly];
   const C = G.contract;
   let h = '';
-  if (A) h += `<div class="ri-anom" style="--c:${A.css}">${A.icon} ${A.name}</div>`;
-  if (C) {
-    const left = C.limit && !C.done && !C.failed ? Math.max(0, C.limit - C.t) : null;
-    const time = left != null ? ` · ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}` : '';
-    const st = C.done ? 'done' : C.failed ? 'fail' : '';
-    h += `<div class="ri-con ${st}">📜 ${C.text}<b>${C.done ? ' ✔' : C.failed ? ' ✖' : ` ${Math.min(C.cur, C.goal)}/${C.goal}${time}`}</b></div>`;
+  if (hudCompact()) h = compactHud(A, C, G.clear);
+  else {
+    if (A) h += `<div class="ri-anom" style="--c:${A.css}">${A.icon} ${A.name}</div>`;
+    if (C) {
+      const left = C.limit && !C.done && !C.failed ? Math.max(0, C.limit - C.t) : null;
+      const time = left != null ? ` · ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}` : '';
+      const st = C.done ? 'done' : C.failed ? 'fail' : '';
+      h += `<div class="ri-con ${st}">📜 ${C.text}<b>${C.done ? ' ✔' : C.failed ? ' ✖' : ` ${Math.min(C.cur, C.goal)}/${C.goal}${time}`}</b></div>`;
+    }
+    h += eventsHud();
+    const K = G.clear;
+    if (K && K.done) h += `<div class="ri-con ri-clear done">🧹 ${L('Andar limpo', 'Floor cleared')}<b> ✔</b></div>`;
+    else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${clearBonus()}¢</b></div>`;
   }
-  h += eventsHud();
-  const K = G.clear;
-  if (K && K.done) h += `<div class="ri-con ri-clear done">🧹 ${L('Andar limpo', 'Floor cleared')}<b> ✔</b></div>`;
-  else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${clearBonus()}¢</b></div>`;
   if (hudCache.info !== h) {
     hudCache.info = h;
     $('run-info').innerHTML = h;

@@ -1165,6 +1165,12 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .ri-evfin .ko { opacity: 0.4; filter: grayscale(1); }
 .ri-clear { border-right-color: #39ff88; color: #c8ffe0; }
 .ri-clear b { color: #39ff88; }
+/* HUD compacto: só a missão mais próxima, em até 2 linhas, e os ícones das outras embaixo */
+.ri-one { display: flex; align-items: flex-start; justify-content: flex-end; gap: 5px; max-width: 100%; border-right-color: var(--c); }
+.ri-one .ri-tx { min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ri-one b { margin-left: 0; flex-shrink: 0; }
+.ri-more { display: flex; gap: 5px; font-size: 11px; line-height: 1.3; padding: 1px 6px; background: rgba(0, 0, 0, 0.45); }
+.ri-more .ri-a { padding: 0 2px; border: 1px solid var(--c); box-shadow: 0 0 5px var(--c); }
 
 /* combo de abates */
 #combo {

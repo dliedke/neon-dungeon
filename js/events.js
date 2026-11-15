@@ -3282,6 +3282,38 @@ export function eventsHud() {
   return h;
 }
 
+// distância (ao quadrado) do ponto (px, pz) até o próximo alvo do evento, igual às marcas do minimapa
+function evDist2(E, px, pz) {
+  let best = Infinity;
+  const at = (x, z) => {
+    if (x == null || z == null) return;
+    const d = (x - px) * (x - px) + (z - pz) * (z - pz);
+    if (d < best) best = d;
+  };
+  if (E.kind === 'bomb') for (const c of E.cons) { if (!c.off) at(c.x, c.z); }
+  else if (E.kind === 'shards') for (const s of E.list) { if (!s.got) at(s.x, s.z); }
+  else if (E.kind === 'servers') for (const s of E.list) { if (s.e.alive) at(s.x, s.z); }
+  else if (E.kind === 'wanted') { if (E.e.alive) at(E.e.x, E.e.z); }
+  else if (E.kind === 'relay') { const g = E.list[E.idx]; if (g) at(g.x, g.z); }
+  else if (E.kind === 'signal') at(E.cx, E.cz);
+  else if (E.kind === 'ball') at(E.bx, E.bz);
+  else if (E.kind === 'race') { if (E.st === 'idle') at(E.x, E.z); else at(E.fx, E.fz); }
+  else at(E.x, E.z);
+  return best;
+}
+
+// HUD compacto (celular): eventos ativos como lista, com a distância até o jogador
+export function eventMissions(out, px, pz) {
+  const evs = G.events || [];
+  for (let i = 0; i < evs.length; i++) {
+    const E = evs[i];
+    const K = KIND[E.kind];
+    if (!K.hud || E.st === 'done' || E.st === 'failed') continue;
+    const I = EVENT_INFO[E.kind];
+    out.push({ id: `ev${i}:${E.kind}`, icon: I.icon, css: I.css, text: I.short || I.name, prog: K.hud(E), d2: evDist2(E, px, pz) });
+  }
+}
+
 // retrato do andar (save) e volta
 export function eventsSnapshot() {
   return (G.events || []).map((E) => ({ k: E.kind, st: E.st, ...KIND[E.kind].save(E) }));
