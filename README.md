@@ -244,7 +244,7 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Pandora's Box** | Touch it to open it: treasure, or a curse that summons elites and doubles the prize once you beat them. |
 | **Chest Shuffle** | Watch which of 3 chests holds the prize, follow the shuffle and touch the right one. The wrong one is a mimic. |
 | **Mirror Duel** | Your dark reflection steps out of a mirror: a tough copy of your class that dashes in a straight line (warned on the ground) and releases shockwaves when hurt. |
-| **Plasma Ball** | Push the ball by walking into it (attacks kick it) into the green goal. Score 3 goals in 90 s; it runs over enemies on the way. |
+| **Plasma Ball** | Push the ball by walking into it (attacks kick it) into the green goal. Score 3 goals in 75 s; it runs over enemies on the way. |
 | **Watcher's Eye** | Move while the giant eye is green and freeze when it turns red (yellow warns you). Moving on red zaps you and pushes you back. Touch the eye to win. |
 | **Ghost Race** | Step on the START pad and, after a 3-2-1, follow the glowing arrows to the FINISH arch (a light column, with the route drawn on the map) before a ghost runner. Teleport counts; rematches are unlimited. |
 | **Laser Spinner** | Laser beams spin around a green center and sometimes reverse (they flash white first). Reach the center and stay 2 s. |

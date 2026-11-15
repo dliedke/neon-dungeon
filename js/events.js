@@ -520,21 +520,45 @@ const prisms = {
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 2 * PS + 0.7, PS + 0.9);
     if (!s) return null;
-    // caminho garantido: emissor -> P1 (a, j0) -> P2 (a, b) -> receptor (3, b)
+    // caminho garantido: o raio entra pela esquerda na linha j0, passa por células da grade 3x3 sem
+    // repetir e sai pela direita na linha b, onde fica o receptor. Cada curva é um prisma.
+    // (entra e sai pela direita, então são sempre curvas em par): 2 nos primeiros andares, 4 a partir do 4
     const j0 = ri(0, 2);
-    const b = pick([0, 1, 2].filter((v) => v !== j0));
-    const a = ri(0, 2);
-    const list = [
-      { i: a, j: j0, sol: b > j0 ? 1 : 3 },
-      { i: a, j: b, sol: 0 },
-    ];
-    // prisma extra fora do caminho (para confundir)
-    const onPath = (i, j) => (j === j0 && i <= a) || (i === a && j >= Math.min(j0, b) && j <= Math.max(j0, b)) || (j === b && i >= a);
-    const extra = [];
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (!onPath(i, j)) extra.push({ i, j });
-    if (extra.length && floor >= 4) list.push({ ...pick(extra), sol: -1 });
+    const nTurns = floor >= 4 ? 4 : 2;
+    const paths = [];
+    const walk = (i, j, din, cells, used) => {
+      for (let dout = 0; dout < 4; dout++) {
+        if (dout === (din + 2) % 4) continue;
+        const ni = i + DV[dout][0];
+        const nj = j + DV[dout][1];
+        const here = [...cells, { i, j, din, dout }];
+        if (ni === 3) {
+          if (dout === 0) paths.push(here);
+          continue;
+        }
+        if (ni < 0 || nj < 0 || nj > 2 || used & (1 << (ni * 3 + nj))) continue;
+        walk(ni, nj, dout, here, used | (1 << (ni * 3 + nj)));
+      }
+    };
+    walk(0, j0, 0, [], 1 << j0);
+    const turns = (pt) => pt.filter((c) => c.din !== c.dout).length;
+    const path = pick(paths.filter((pt) => turns(pt) === nTurns));
+    const b = path[path.length - 1].j;
+    const list = path.filter((c) => c.din !== c.dout).map((c) => ({ i: c.i, j: c.j, sol: c.dout }));
+    // a partir do andar 10, um prisma numa reta do caminho também precisa apontar certo
+    const straight = path.filter((c) => c.din === c.dout);
+    if (floor >= 10 && straight.length) {
+      const c = pick(straight);
+      list.push({ i: c.i, j: c.j, sol: c.dout });
+    }
+    // prismas extras fora do caminho (para confundir): 1 no começo, 2 a partir do andar 10
+    const extra = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8].filter((k) => !path.some((c) => c.i * 3 + c.j === k)));
+    const nExtra = floor >= 10 ? 2 : 1;
+    for (const k of extra.slice(0, nExtra)) list.push({ i: Math.floor(k / 3), j: k % 3, sol: -1 });
+    // começa embaralhado: pelo menos dois prismas do caminho fora do lugar
     for (const pr of list) pr.dir = ri(0, 3);
-    if (list[0].dir === list[0].sol && list[1].dir === list[1].sol) list[1].dir = (list[1].dir + 1) % 4;
+    const need = list.filter((pr) => pr.sol >= 0);
+    if (need.filter((pr) => pr.dir !== pr.sol).length < 2) for (const pr of shuffle(need.slice()).slice(0, 2)) pr.dir = (pr.sol + ri(1, 3)) % 4;
     const g = groupAt(s.x, s.z);
     const E = { kind: 'prisms', x: s.x, z: s.z, g, j0, b, list, st: 'play', last: -1, segs: [], hinted: false };
     const cell = (i, j) => [(i - 1) * PS, (j - 1) * PS];
@@ -2547,13 +2571,13 @@ const mirror = {
 };
 
 // ==================================================================
-// 22. Bola de Plasma: empurre (andando) ou chute (golpes) a bola até o gol; 3 gols em 75s
+// 22. Bola de Plasma: empurre (andando) ou chute (golpes) a bola até o gol; 3 gols em BALL_TIME
 // ==================================================================
 const BALL_COL = 0x00f0ff;
 const GOAL_COL = 0x39ff88;
 const BALL_R = 0.42;
 const GOALS = 3;
-const BALL_TIME = 90;
+const BALL_TIME = 75;
 const GOAL_R = 2.1; // raio do gol (anel verde)
 const BALL_MAX = 13; // velocidade máxima da bola empurrada (jogador muito rápido não a lança para outra sala)
 const KICK_SP = 11;
@@ -2570,12 +2594,12 @@ const ball = {
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 2.4);
     if (!s) return null;
-    // gol: 6–10m do centro, à vista, com espaço em volta
+    // gol: 8–11m do centro, à vista, com espaço em volta
     let goal = null;
     // (primeiro tenta um lugar com folga para o gol maior)
-    for (let t = 0; t < 50 && !goal; t++) {
+    for (let t = 0; t < 70 && !goal; t++) {
       const a = rr(0, Math.PI * 2);
-      const r = rr(6, 10);
+      const r = t < 35 ? rr(8, 11) : rr(6, 10); // sem espaço longe, aceita mais perto
       const gx = Math.floor(s.x + Math.cos(a) * r) + 0.5;
       const gz = Math.floor(s.z + Math.sin(a) * r) + 0.5;
       const h = t < 30 ? 1.8 : 1.2;
@@ -2613,7 +2637,7 @@ const ball = {
       dz = E.bz - p.z;
     }
     const l = Math.hypot(dx, dz) || 1;
-    [dx, dz] = ballAssist(E, dx / l, dz / l, 0.7);
+    [dx, dz] = ballAssist(E, dx / l, dz / l, 0.82);
     E.vx = dx * sp;
     E.vz = dz * sp;
     ringFx(E.bx, E.bz, 0.9, BALL_COL, 0.25);
@@ -2671,7 +2695,7 @@ const ball = {
         dx /= l;
         dz /= l;
       }
-      [dx, dz] = ballAssist(E, dx, dz, 0.75);
+      [dx, dz] = ballAssist(E, dx, dz, 0.88);
       const sp = Math.min(BALL_MAX, Math.max(pv * 1.8, 5));
       // já saindo mais rápido nessa direção (empurrão anterior): não mexe
       if (E.vx * dx + E.vz * dz < sp * 0.9) {
@@ -2699,10 +2723,10 @@ const ball = {
       const gdx = E.gx - E.bx;
       const gdz = E.gz - E.bz;
       const gd = Math.hypot(gdx, gdz);
-      if (E.st === 'play' && gd < GOAL_R + 2.5 && gd > 0.01) {
-        const k = 9 * dt * (1 - gd / (GOAL_R + 2.5));
-        E.vx += (gdx / gd) * k * 6;
-        E.vz += (gdz / gd) * k * 6;
+      if (E.st === 'play' && gd < GOAL_R + 1.8 && gd > 0.01) {
+        const k = 9 * dt * (1 - gd / (GOAL_R + 1.8));
+        E.vx += (gdx / gd) * k * 4;
+        E.vz += (gdz / gd) * k * 4;
       }
       const f = Math.exp(-dt * 1.6);
       E.vx *= f;
