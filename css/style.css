@@ -429,7 +429,7 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
   background: rgba(3, 2, 10, 0.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); overflow: auto;
 }
 #menu { background: radial-gradient(ellipse at center, rgba(5, 3, 12, 0.35), rgba(5, 3, 12, 0.85)); backdrop-filter: none; }
-#panel-opts, #panel-help, #panel-confirm { z-index: 25; }
+#panel-opts, #panel-help, #panel-confirm, #panel-debug { z-index: 25; }
 .panel {
   background: var(--panel); border: 1px solid var(--line); padding: 20px; width: 100%; max-height: 100%; overflow: auto;
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.06);
@@ -626,6 +626,11 @@ body.pad .pad-hints { display: block; }
 .help h3 { margin: 0 0 6px; color: var(--accent); font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
 .help p { margin: 4px 0; font-size: 14px; line-height: 1.35; color: #c3c8ea; }
 .help .tip { margin-top: 14px; text-align: center; color: var(--muted); }
+/* painel de debug (?debug): grade com todos os eventos */
+.panel.debug { max-width: 760px; }
+.debug .tip { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+.debug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 8px; }
+.debug-grid .btn { padding: 8px 10px; font-size: 13px; letter-spacing: 0.5px; text-transform: none; min-height: 40px; text-align: left; }
 .dead h2 { color: #ff4466; text-shadow: 0 0 14px #ff2244; }
 .glitch { animation: glitch 2s infinite; }
 @keyframes glitch { 0%, 90%, 100% { transform: none; } 92% { transform: translateX(-3px) skewX(8deg); } 94% { transform: translateX(3px); } }

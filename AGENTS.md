@@ -17,11 +17,12 @@ ES modules need HTTP, so `file://` won't work. Serve the repo root:
 - `npx http-server -p 8000 -c-1` (Python isn't installed on this machine; elsewhere `python3 -m http.server 8000` works too).
 - Visual Studio: open `neon-dungeon.sln` and press F5. This runs IIS Express on port 8000 using `web.config`, which sets the `.webmanifest` and `.js` MIME types. GitHub Pages ignores `web.config`.
 - Force a language with `?lang=en` or `?lang=pt`. Otherwise the browser language decides.
+- Debug mode: add `?debug` to the URL (e.g. `?debug&lang=pt`, also works on the live site). The pause menu gets a "🐞 Debug: events" button that lists every floor event; picking one rebuilds the floor with only that event and puts the player 3m from it (max floor reached is kept).
 
 Debug handles in the console (set at the end of `boot()` in `js/main.js`):
 - `window.__G`: the global state `G`.
 - `window.__classes`: `CLASSES`.
-- `window.__dbg`: `spawnEnemy`, `spawnPet`, `nextFloor`, `startFloor`, `makeItem`, `spawnPickup`, `spawnChest`, `findPath`, `lineOfSight`, `Input`, `refresh` (recomputes player stats).
+- `window.__dbg`: `spawnEnemy`, `spawnPet`, `nextFloor`, `startFloor`, `debugEvent(kind)` (same as the debug panel, e.g. `'ball'`), `makeItem`, `spawnPickup`, `spawnChest`, `findPath`, `lineOfSight`, `Input`, `refresh` (recomputes player stats).
 - `__dbg.sim(seconds, onStep)`: runs game logic without rendering, for automated checks.
 
 ## Verifying changes

@@ -60,6 +60,11 @@ export const EVENT_INFO = {
 let lastMain = [];
 // continuar um andar salvo: os eventos principais que ele tinha (undefined = sorteia normalmente)
 let forcedMain;
+// modo debug (?debug na URL): o próximo andar criado tem só este evento (inclusive a Sala Secreta e a Máquina de Apostas)
+let dbgEvent = null;
+export function eventsDebugForce(k) {
+  dbgEvent = k;
+}
 export function eventsResume(h) {
   forcedMain = h && Array.isArray(h.ev) ? h.ev.filter((s) => s && MAIN_EVENTS.includes(s.k)).map((s) => s.k) : undefined;
 }
@@ -1164,7 +1169,10 @@ export function carveSecret(d, floor) {
   G.events = [];
   d.secret = null;
   d.hidden = null;
-  if (floor < 2 || isFinalFloor(floor) || !chance(0.35)) return;
+  if (floor < 2 || isFinalFloor(floor)) return;
+  if (dbgEvent) {
+    if (dbgEvent !== 'secret') return;
+  } else if (!chance(0.35)) return;
   const { W, H, grid } = d;
   // só paredes viradas para a câmera (porta a -x ou -z), assim a rachadura aparece
   const DIRS = [
@@ -2545,7 +2553,18 @@ const BALL_COL = 0x00f0ff;
 const GOAL_COL = 0x39ff88;
 const BALL_R = 0.42;
 const GOALS = 3;
-const BALL_TIME = 75;
+const BALL_TIME = 90;
+const GOAL_R = 2.1; // raio do gol (anel verde)
+const BALL_MAX = 8.5; // velocidade máxima da bola empurrada: jogador rápido conduz a bola em vez de lançá-la longe
+const KICK_SP = 11;
+// direção para o gol, com ajuda: se (dx, dz) aponta perto do gol (cos > cmin), a bola vai reto para ele
+function ballAssist(E, dx, dz, cmin) {
+  const gx = E.gx - E.bx;
+  const gz = E.gz - E.bz;
+  const gl = Math.hypot(gx, gz) || 1;
+  if ((dx * gx + dz * gz) / gl > cmin) return [gx / gl, gz / gl];
+  return [dx, dz];
+}
 let ballGeo = null;
 const ball = {
   setup(d, floor, rooms) {
@@ -2553,23 +2572,25 @@ const ball = {
     if (!s) return null;
     // gol: 6–10m do centro, à vista, com espaço em volta
     let goal = null;
-    for (let t = 0; t < 30 && !goal; t++) {
+    // (primeiro tenta um lugar com folga para o gol maior)
+    for (let t = 0; t < 50 && !goal; t++) {
       const a = rr(0, Math.PI * 2);
       const r = rr(6, 10);
       const gx = Math.floor(s.x + Math.cos(a) * r) + 0.5;
       const gz = Math.floor(s.z + Math.sin(a) * r) + 0.5;
-      if (spotOk(d, gx, gz, 1.2, 1.2) && lineOfSight(d, s.x, s.z, gx, gz)) goal = { x: gx, z: gz };
+      const h = t < 30 ? 1.8 : 1.2;
+      if (spotOk(d, gx, gz, h, h) && lineOfSight(d, s.x, s.z, gx, gz)) goal = { x: gx, z: gz };
     }
     if (!goal) return null;
     const g = groupAt(s.x, s.z);
     put(g, mats().ring, lightMat(BALL_COL, 1), 0, 0.03, 0, 0.8, 1, 0.8);
     const gg = groupAt(goal.x, goal.z);
     const goalMat = lightMat(GOAL_COL, 1.5);
-    put(gg, mats().ring, goalMat, 0, 0.03, 0, 1.3, 1, 1.3);
-    put(gg, mats().disc, flatMat(GOAL_COL, 0.14), 0, 0.02, 0, 1.3, 1, 1.3);
+    put(gg, mats().ring, goalMat, 0, 0.03, 0, GOAL_R, 1, GOAL_R);
+    put(gg, mats().disc, flatMat(GOAL_COL, 0.14), 0, 0.02, 0, GOAL_R, 1, GOAL_R);
     gg.rotation.y = Math.atan2(s.x - goal.x, s.z - goal.z);
-    for (const sx of [-1.3, 1.3]) put(gg, mats().cyl, mats().metal, sx, 0.8, 0, 0.07, 1.6, 0.07);
-    put(gg, box(2.7, 0.08, 0.08), goalMat, 0, 1.62, 0);
+    for (const sx of [-GOAL_R, GOAL_R]) put(gg, mats().cyl, mats().metal, sx, 0.8, 0, 0.07, 1.6, 0.07);
+    put(gg, box(GOAL_R * 2 + 0.1, 0.08, 0.08), goalMat, 0, 1.62, 0);
     if (!ballGeo) ballGeo = new THREE.IcosahedronGeometry(BALL_R, 1);
     const bm = new THREE.Group();
     bm.add(new THREE.Mesh(ballGeo, glowMat(BALL_COL, 2.2)));
@@ -2584,11 +2605,17 @@ const ball = {
   },
   kick(E, sp) {
     const p = G.player;
-    const dx = E.bx - p.x;
-    const dz = E.bz - p.z;
+    // o chute vai para onde você mira (com ajuda para o gol), não só para longe de você
+    let dx = p.aim.dx;
+    let dz = p.aim.dz;
+    if (Math.hypot(E.bx - p.x, E.bz - p.z) > 4) {
+      dx = E.bx - p.x;
+      dz = E.bz - p.z;
+    }
     const l = Math.hypot(dx, dz) || 1;
-    E.vx = (dx / l) * sp;
-    E.vz = (dz / l) * sp;
+    [dx, dz] = ballAssist(E, dx / l, dz / l, 0.7);
+    E.vx = dx * sp;
+    E.vz = dz * sp;
     ringFx(E.bx, E.bz, 0.9, BALL_COL, 0.25);
     sfx.punch();
     ball.start(E);
@@ -2627,14 +2654,26 @@ const ball = {
       ringFx(E.x, E.z, 1.2, BALL_COL, 0.4);
     }
     // golpes chutam a bola; andando nela você empurra
-    if (hitsOf(E)) ball.kick(E, 13);
+    if (hitsOf(E)) ball.kick(E, KICK_SP);
     const dist = Math.hypot(E.bx - p.x, E.bz - p.z);
-    if (p.alive && dist < p.r + BALL_R + 0.08) {
+    if (p.alive && dist < p.r + BALL_R + 0.3) {
       const nx = (E.bx - p.x) / (dist || 1);
       const nz = (E.bz - p.z) / (dist || 1);
-      const sp = Math.max(Math.hypot(E.vx, E.vz), Math.hypot(p.ivx || 0, p.ivz || 0) * 1.6, 4);
-      E.vx = nx * sp;
-      E.vz = nz * sp;
+      // conduzir: a bola segue mais o rumo do jogador que o ponto de contato, e não passa de BALL_MAX
+      const pv = Math.hypot(p.ivx || 0, p.ivz || 0);
+      let dx = nx;
+      let dz = nz;
+      if (pv > 0.5) {
+        dx = nx * 0.35 + (p.ivx / pv) * 0.65;
+        dz = nz * 0.35 + (p.ivz / pv) * 0.65;
+        const l = Math.hypot(dx, dz) || 1;
+        dx /= l;
+        dz /= l;
+      }
+      [dx, dz] = ballAssist(E, dx, dz, 0.5);
+      const sp = Math.min(BALL_MAX, Math.max(pv * 1.15, 3.5));
+      E.vx = dx * sp;
+      E.vz = dz * sp;
       const ox = p.x + nx * (p.r + BALL_R + 0.1);
       const oz = p.z + nz * (p.r + BALL_R + 0.1);
       if (isWalkable(d, ox, oz)) {
@@ -2652,7 +2691,16 @@ const ball = {
       const nz = E.bz + E.vz * dt;
       if (!isWalkable(d, E.bx, nz + Math.sign(E.vz) * BALL_R)) E.vz = -E.vz * 0.8;
       else E.bz = nz;
-      const f = Math.exp(-dt * 1.1);
+      // perto do gol, um ímã puxa a bola para dentro
+      const gdx = E.gx - E.bx;
+      const gdz = E.gz - E.bz;
+      const gd = Math.hypot(gdx, gdz);
+      if (E.st === 'play' && gd < GOAL_R + 2.5 && gd > 0.01) {
+        const k = 9 * dt * (1 - gd / (GOAL_R + 2.5));
+        E.vx += (gdx / gd) * k * 6;
+        E.vz += (gdz / gd) * k * 6;
+      }
+      const f = Math.exp(-dt * 1.6);
       E.vx *= f;
       E.vz *= f;
       E.bm.rotation.x += (E.vz * dt) / BALL_R;
@@ -2672,11 +2720,23 @@ const ball = {
       E.bz = E.z;
       E.vx = E.vz = 0;
     }
+    // bola fugiu para longe (outra sala/corredor): volta sozinha para o centro
+    // presa parada num canto/parede por 3s: também volta
+    const wr = BALL_R + 0.3;
+    const atWall = !isWalkable(d, E.bx + wr, E.bz) || !isWalkable(d, E.bx - wr, E.bz) || !isWalkable(d, E.bx, E.bz + wr) || !isWalkable(d, E.bx, E.bz - wr);
+    E.stuckT = E.st === 'play' && atWall && Math.hypot(E.vx, E.vz) < 0.5 ? (E.stuckT || 0) + dt : 0;
+    if (E.stuckT > 3 || (E.st === 'play' && Math.hypot(E.bx - E.x, E.bz - E.z) > 14)) {
+      E.stuckT = 0;
+      ringFx(E.bx, E.bz, 1, BALL_COL, 0.3);
+      E.bm.visible = false;
+      E.vx = E.vz = 0;
+      E.resetT = 0.6;
+    }
     E.e.x = E.bx;
     E.e.z = E.bz;
     E.bm.position.set(E.bx, BALL_R + 0.05, E.bz);
     // gol!
-    if (E.st === 'play' && Math.hypot(E.bx - E.gx, E.bz - E.gz) < 1.25) {
+    if (E.st === 'play' && Math.hypot(E.bx - E.gx, E.bz - E.gz) < GOAL_R) {
       E.goals++;
       for (const c of [GOAL_COL, BALL_COL, 0xffd23d]) burst(E.gx, 1.2, E.gz, c, 25, 7, 0.08, 0.9, { up: 1.8 });
       ringFx(E.gx, E.gz, 3, GOAL_COL, 0.6);
@@ -3184,8 +3244,15 @@ export function setupEvents(d, floor, boss, rooms) {
   if (!G.events) G.events = [];
   const forced = forcedMain;
   forcedMain = undefined;
+  const dbg = dbgEvent;
+  dbgEvent = null;
   if (floor < 2 || isFinalFloor(floor)) return;
   const free = rooms.filter((r) => !r.safe);
+  if (dbg) {
+    const E = dbg === 'secret' ? (d.secret ? secret.setup(d) : null) : dbg === 'gamble' ? gamble.setup(d, floor, free.length ? free : rooms) : KIND[dbg].setup(d, floor, free);
+    if (E) G.events.push(E);
+    return;
+  }
   // sempre gasta os mesmos sorteios (continuar o andar refaz igual)
   const roll = chance(floor < 4 ? 0.55 : 0.7);
   const fresh = MAIN_EVENTS.filter((k) => !lastMain.includes(k));

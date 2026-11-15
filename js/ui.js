@@ -9,7 +9,7 @@ import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ROMAN } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
 import { skipFinale } from './finale.js';
-import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier } from './main.js';
+import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier, debugEvent } from './main.js';
 import { fmt, fmtPlay, short } from './utils.js';
 import { L, t } from './i18n.js';
 import { glyph, glyphText, padText, padName } from './padglyphs.js';
@@ -20,7 +20,7 @@ import { achAdd, achList, achProgress, playTotal, devId, TIERS as MEDAL_TIERS } 
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
-import { drawEventMarks, eventArrows } from './events.js';
+import { drawEventMarks, eventArrows, EVENT_KINDS, EVENT_INFO } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -94,6 +94,22 @@ export function initUI() {
   });
   $('opts-close').onclick = () => closeOverlay('panel-opts');
   $('help-close').onclick = () => closeOverlay('panel-help');
+  // modo debug (?debug na URL): botão na pausa que abre a lista de eventos
+  if (new URLSearchParams(location.search).has('debug')) {
+    $('pause-debug').classList.remove('hidden');
+    $('pause-debug').onclick = () => {
+      $('debug-list').innerHTML = EVENT_KINDS.map((k) => `<button class="btn ghost" data-nav data-dbg-ev="${k}">${EVENT_INFO[k].icon} ${EVENT_INFO[k].name}</button>`).join('');
+      openOverlay('panel-debug');
+    };
+    $('debug-close').onclick = () => closeOverlay('panel-debug');
+    $('debug-list').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-dbg-ev]');
+      if (!b) return;
+      closeOverlay('panel-debug');
+      closePause();
+      if (!debugEvent(b.dataset.dbgEv)) toast(L('Esse evento não coube em nenhum andar próximo.', 'That event did not fit on any nearby floor.'), 'warn');
+    });
+  }
   $('dead-retry').onclick = () => {
     $('panel-dead').classList.add('hidden');
     respawn();
@@ -1777,7 +1793,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -1925,6 +1941,7 @@ export function uiBack(root = activePanel()) {
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
+    case 'panel-debug':
       closeOverlay(root.id);
       break;
     case 'panel-ach':
@@ -1950,7 +1967,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-ach'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------

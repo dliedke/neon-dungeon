@@ -229,6 +229,7 @@
         <button class="btn ghost" data-nav id="pause-help" data-i18n="controls">Controles</button>
         <button class="btn ghost" data-nav id="pause-ach" data-i18n="medals">🏅 Medalhas</button>
         <button class="btn ghost" data-nav id="pause-sync" data-i18n="cloud">Nuvem (Google)</button>
+        <button class="btn ghost hidden" data-nav id="pause-debug" data-i18n="debugEvents">🐞 Debug: eventos</button>
         <button class="btn danger" data-nav id="pause-quit" data-i18n="saveQuit">Salvar e sair</button>
       </div>
     </div>
@@ -285,6 +286,16 @@
       </div>
       <p class="tip" data-i18n-html="help.tip"></p>
       <div class="stack"><button class="btn" data-nav id="help-close" data-i18n="back">Voltar</button></div>
+    </div>
+  </div>
+
+  <!-- DEBUG (só com ?debug na URL): testar qualquer evento -->
+  <div id="panel-debug" class="screen hidden">
+    <div class="panel narrow debug">
+      <h2 data-i18n="debugTitle">DEBUG · EVENTOS</h2>
+      <p class="tip" data-i18n="debugTip">Escolha um evento: o andar é refeito só com ele e você aparece ao lado.</p>
+      <div id="debug-list" class="debug-grid"></div>
+      <div class="stack"><button class="btn" data-nav id="debug-close" data-i18n="back">Voltar</button></div>
     </div>
   </div>
 

@@ -29,7 +29,7 @@ import {
 } from './ui.js';
 import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
-import { carveSecret, eventsSnapshot, eventsRestore, eventsResume } from './events.js';
+import { carveSecret, eventsSnapshot, eventsRestore, eventsResume, eventsDebugForce } from './events.js';
 import { playFinale, closeFinale } from './finale.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
@@ -346,6 +346,41 @@ export function startFloor(floor) {
   if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   announceFloor(floor);
   saveGame();
+}
+
+// Modo debug (?debug na URL): refaz o andar atual (ou o seguinte, se o evento não couber) só com o evento k
+// e põe o jogador ao lado dele. Não mexe no andar máximo alcançado.
+export function debugEvent(k) {
+  if (!G.char || !G.player) return false;
+  const c = G.char;
+  const maxFloor = c.maxFloor;
+  let f = Math.max(2, G.floor || 2);
+  for (let t = 0; t < 16; t++, f++) {
+    if (isFinalFloor(f)) f = 2;
+    if (isBossFloor(f)) continue;
+    eventsDebugForce(k);
+    startFloor(f);
+    c.maxFloor = maxFloor;
+    const E = (G.events || []).find((o) => o.kind === k);
+    if (!E) continue;
+    // ponto de referência: o próprio evento ou a 1ª peça dele (fragmentos, consoles, servidores, o Procurado)
+    const at = [E, E.pts && E.pts[0], E.list && E.list[0], E.cons && E.cons[0], E.e].find((q) => q && q.x != null);
+    if (!at) return true;
+    const ex = at.x;
+    const ez = at.z;
+    // um lugar livre a 3–5m do evento, à vista dele
+    for (let r = 3; r <= 6; r++)
+      for (let a = 0; a < 16; a++) {
+        const x = ex + Math.cos((a / 16) * Math.PI * 2) * r;
+        const z = ez + Math.sin((a / 16) * Math.PI * 2) * r;
+        if (isWalkable(G.dungeon, x, z) && lineOfSight(G.dungeon, x, z, ex, ez)) {
+          placePlayer(x, z);
+          return true;
+        }
+      }
+    return true;
+  }
+  return false;
 }
 
 // ------------------------------------------------------------------
@@ -867,7 +902,7 @@ function boot() {
   window.__G = G; // útil para depuração no console
   window.__classes = CLASSES;
   window.__dbg = {
-    spawnEnemy, spawnPet, nextFloor, startFloor, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
+    spawnEnemy, spawnPet, nextFloor, startFloor, debugEvent, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
     // roda a lógica sem renderizar (usado em testes automatizados)
     sim(seconds, onStep) {
       const step = 1 / 30;
