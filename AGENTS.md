@@ -26,12 +26,29 @@ Debug handles in the console (set at the end of `boot()` in `js/main.js`):
 
 ## Verifying changes
 
-There are no automated tests. Check changes in a real browser:
+There are no automated tests. **Every feature must be checked in two browsers before committing: desktop and mobile.** A change that only looks right on desktop is not done (example of a past miss: the touch skill buttons covered the mission texts in the HUD; a mobile screenshot plus the overlap check would have caught it).
 
-- Play the change with keyboard+mouse, then with a gamepad, then in touch mode (DevTools device emulation, landscape on a small phone).
+1. **Desktop pass** (1600×1000, keyboard+mouse): play the change, take a screenshot, check it with a gamepad too (fake one over CDP, see Testing tips).
+2. **Mobile pass** (touch mode, landscape small phone): emulate at least **667×375** and **740×360** with `mobile: true` and touch emulation, call `setTouchMode()` (or dispatch a touch), and take a screenshot of the HUD **with the feature on screen** (mission/event active, boss bar, toasts, panels open). Also look at **portrait** (the rotate overlay must show) and a tablet size (1024×768).
+3. **Look at the screenshots yourself** (Read the PNG). Don't trust that "no errors" means it looks right.
+
+What to check in both passes (mobile especially):
+
+- **Nothing overlaps:** no button, joystick, skill button, minimap or bar on top of text (mission/event HUD, `#run-info`, toasts, banners, interact prompt, boss bar, combo, item cards). Run the overlap checker from [Testing tips](docs/ARCHITECTURE.md#layout-checks-overlap-and-overflow) and fix every hit it reports for the new/changed elements.
+- **Nothing off-screen or clipped:** text fits its box (no cut words, no `...` hiding info), panels scroll when taller than the screen, nothing hides behind the notch (`--safe-*` insets).
+- **Long text:** check both languages (`?lang=pt` is usually longer than `en`) and the worst case (big numbers, long item/enemy names, several missions at once, Abyss row visible).
+- **Tap targets:** touch buttons at least ~40px and not stacked on each other; every new button reachable and working with a tap.
+- **Gamepad:** every new menu element has `data-nav`, focus is visible, `{B}` closes the panel, glyphs render (`padText`).
+- **No console errors:** listen to `Runtime.exceptionThrown` and `console.error` during both passes.
+- **Performance on mobile:** no new per-frame allocations or extra draw calls; the game still feels smooth with phone quality settings.
+- **Saves:** if the change touches the character or items, reload the page and continue the run (old saves must still load, see `sanitizeChar`).
+
+Tools:
+
 - Headless screenshots: `msedge --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --screenshot=out.png --window-size=1600,1000 http://127.0.0.1:8000/`. Save screenshots outside the repo or in the root (root `*.png` files are gitignored).
-- Scripted checks: run headless Edge with `--remote-debugging-port=9333` and drive it over the Chrome DevTools Protocol with Node's built-in `WebSocket` (Node 22+, no puppeteer needed). Use `Runtime.evaluate` to `import('/js/main.js')`, call `startGame('blade', true)` and inspect `window.__G`. See [Testing tips](docs/ARCHITECTURE.md#testing-tips) for the gamepad and frame-stepping tricks.
+- Scripted checks: run headless Edge with `--remote-debugging-port=9333` and drive it over the Chrome DevTools Protocol with Node's built-in `WebSocket` (Node 22+, no puppeteer needed). Use `Runtime.evaluate` to `import('/js/main.js')`, call `startGame('blade', true)` and inspect `window.__G`. See [Testing tips](docs/ARCHITECTURE.md#testing-tips) for the mobile emulation, overlap checker, gamepad and frame-stepping tricks.
 - Serve with `-c-1` (no cache) while testing, or the browser keeps old modules.
+- In the final report, say which passes ran (desktop / mobile sizes / gamepad) and what the overlap checker found.
 
 ## Deploy: always report when the Pages build is live
 

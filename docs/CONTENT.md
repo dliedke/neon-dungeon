@@ -8,7 +8,7 @@ Rules that apply to every recipe:
 - Comments in Portuguese, commit messages in Portuguese.
 - **Keys are save data.** Class ids, skill indices, affix keys, legendary/mythic keys, implant keys and medal ids end up in players' saves. Never rename or remove them. Add new ones instead.
 - New menus and buttons need `data-nav` (gamepad) and must work with touch.
-- Test with keyboard+mouse, gamepad and a small landscape touch screen. `window.__dbg` helps: `spawnEnemy`, `makeItem`, `startFloor`, `nextFloor`.
+- **Test every recipe on desktop and mobile** ([Verifying changes](../AGENTS.md#verifying-changes)): a desktop pass (1600×1000, keyboard+mouse, plus a fake gamepad) and a mobile pass in touch mode (740×360 and 667×375 landscape, `setTouchMode()`). Take screenshots with the new thing on screen, Read them, and run the [overlap checker](ARCHITECTURE.md#layout-checks-overlap-and-overflow): on mobile no touch button, joystick or minimap may cover its texts. `window.__dbg` helps: `spawnEnemy`, `makeItem`, `startFloor`, `nextFloor`.
 - Update the public docs when counts change (see [the checklist](#public-docs-checklist)).
 
 ## Contents
@@ -69,7 +69,7 @@ Rules that apply to every recipe:
 10. **Medals:** `class10_<id>` is generated automatically. Rename the `winAll` medal ("Os Dez Heróis" / "The Ten Heroes") to match the new count, but keep its id.
 11. **Docs:** README "Classes" table and counts, the meta descriptions in `index.html`, `img/og-image.png` and AGENTS.md.
 
-Test: pick the class from the menu, use every skill at rank 1 and after leveling (`G.char.level = 15; G.char.skillPoints = 30; __dbg.refresh()`), check the skill tree with the gamepad, and win or lose a boss fight.
+Test: pick the class from the menu, use every skill at rank 1 and after leveling (`G.char.level = 15; G.char.skillPoints = 30; __dbg.refresh()`), check the skill tree with the gamepad, and win or lose a boss fight. On mobile: the class card fits the menu, the skill tree and the actions table fit and scroll in landscape, and the touch buttons show the new icons.
 
 ## Skill or passive
 
@@ -95,7 +95,7 @@ Test: pick the class from the menu, use every skill at rank 1 and after leveling
 5. **Medals:** the bestiary medals pick it up automatically (`BESTIARY()` in `ach.js` excludes bosses, barrels, pylons, the thief and the behemoth).
 6. **Docs:** README "Enemies" table.
 
-Test: `__dbg.spawnEnemy('newfoe', G.player.x + 4, G.player.z)`, also as an elite: `__dbg.spawnEnemy('newfoe', x, z, { elite: true })`.
+Test: `__dbg.spawnEnemy('newfoe', G.player.x + 4, G.player.z)`, also as an elite: `__dbg.spawnEnemy('newfoe', x, z, { elite: true })`. On mobile: its name/affix label and the target bar don't collide with the HUD, and its attacks read well on a small screen.
 
 ## Elite affix
 
@@ -112,7 +112,7 @@ Add an entry to `ELITE` (`enemies.js`): `{ name, color, minF, apply: (e) => { ..
 7. **Hardcoded "7":** the banner in `startFloor` (`main.js`), the help text in `i18n.js` (`DICT`), the README goal text, and Portuguese comments in `dungeon.js` / `enemies.js`.
 8. **Docs:** README "Bosses" table, `index.html` meta ("7 chefes"), `og-image.png` and AGENTS.md.
 
-Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `__dbg.startFloor(30)` for the final battle.
+Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `__dbg.startFloor(30)` for the final battle. On desktop and mobile: the boss bar (and the second bar, if any) fits next to the minimap and over the missions without covering them, and the name is not cut in `?lang=pt`.
 
 ## Biome
 
@@ -133,7 +133,7 @@ Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `
 5. **Medals:** `biomesAll` counts `THEMES.length` automatically.
 6. **Docs:** README "Biomes" table, `index.html` meta ("23 biomas"), `og-image.png` and AGENTS.md.
 
-Test: find a floor that maps to the new biome with `themeFor(n)`, or temporarily return it from `themeFor`, then `__dbg.startFloor(n)`. Check it on phone quality settings too (fog and lights matter more there).
+Test: find a floor that maps to the new biome with `themeFor(n)`, or temporarily return it from `themeFor`, then `__dbg.startFloor(n)`. Check it on phone quality settings too (fog and lights matter more there): screenshot it at 740×360 in touch mode and confirm the floor, walls and hazards stay readable behind the touch buttons, and the frame rate holds.
 
 ## Biome feature or hazard
 
@@ -168,7 +168,7 @@ Add to `AFFIXES` (`js/items.js`): `{ fmt: (v) => L(...), roll: (ilvl) => number,
 
 Divine powers work the same way: `DIVINES` in `items.js` has one entry per slot (`slot` decides which items get it), checked with `hasDiv('key')` in `mythic.js`. Pure stat bonuses go in `computeStats` (`player.js`, see `olympus` and `hermes`). Primordial powers too: `PRIMORDIALS` (one per slot) and `hasPrim('key')` in `mythic.js` (hooks `primOnHit`, `primDmgMult`, `primDodge`, `updatePrimordial`; stat parts like `gaia`/`erebus` in `computeStats`).
 
-Test: `G.char.inv.push(__dbg.makeItem({ ilvl: 10, rarity: 4, slot: 'chip', cls: G.char.cls }))`, then set `.myth = 'key'` on it and equip it.
+Test: `G.char.inv.push(__dbg.makeItem({ ilvl: 10, rarity: 4, slot: 'chip', cls: G.char.cls }))`, then set `.myth = 'key'` on it and equip it. Open the item card on desktop and on mobile: the power text fits the card (no clipping, the card stays on screen), and any HUD it adds (`mythHud`) doesn't overlap the missions or touch buttons.
 
 ## Anomaly, implant or shrine
 
@@ -195,6 +195,8 @@ All in `js/events.js`. See [Floor events](ARCHITECTURE.md#floor-events-eventsjs)
 5. Add the minimap mark in `drawEventMarks` and, if it needs one, an arrow in `eventArrows`.
 6. Medals: `complete` already marks `evDone`. Add the kind to the `evMedals` table in `ach.js` (it creates the `ev_<kind>` medal); `evAll` counts it automatically.
 7. Add it to the README "Puzzles and challenges" table and update the medal count.
+
+Test: force it with `eventsResume({ ev: [{ k: kind }] })` before `startFloor`, then play it to completion and to failure. On mobile (touch mode, 740×360 and 667×375) take screenshots of the HUD with the event active **together with other missions**: its line in `#run-info`, the intro toast, arrows and prompts must not sit under the touch buttons, the joystick or the minimap (run the overlap checker). Also check that it is playable with taps only.
 
 ## Medal
 
@@ -237,6 +239,8 @@ Add a kind to `PET_KINDS` (`js/pets.js`): `{ name, icon, speed, fly? }`, a model
 3. Handler in `initUI()` (`js/ui.js`) next to `opt-shake`: update the label, change `G.settings`, call `saveSettings()` and apply the effect.
 4. To change a default for existing players, bump `sv` and migrate in `loadSave()` (`main.js`), as was done for `glow`.
 
+Test: the options panel still fits on phone landscape with the new row (it scrolls, the label doesn't wrap under the button), and the value survives a reload.
+
 ## UI panel
 
 1. Markup in `index.html` (`<div id="panel-x" class="screen hidden">`), with `data-i18n*` texts and `data-nav` on every interactive element.
@@ -244,6 +248,8 @@ Add a kind to `PET_KINDS` (`js/pets.js`): `{ name, icon, speed, fly? }`, a model
 3. Open and close it with `openOverlay(id)` / `closeOverlay(id)` (or set `G.mode` if the game must pause).
 4. Gamepad hints use `{A}` / `{B}` placeholders through `padText` or `data-pad-text`.
 5. Styles in `css/style.css`. Check phone landscape (the `max-height: 520px` query) and portrait.
+
+Test: open it on desktop (1600×1000 and 1280×720), on phone landscape (740×360, 667×375) and on a tablet (1024×768). Everything fits or scrolls, no button covers text (overlap checker), tap targets are big enough, the gamepad reaches every `data-nav` element and `{B}` closes it.
 
 ## Character field
 

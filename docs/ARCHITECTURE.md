@@ -306,14 +306,78 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
 There are no automated tests. The cheapest reliable check is a scripted headless browser:
 
 1. Serve the repo: `npx http-server -p 8123 -s -c-1 .`
-2. Start Edge: `msedge --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --remote-debugging-port=9333 about:blank`
-3. From Node 22+, `fetch('http://127.0.0.1:9333/json')`, open the page's `webSocketDebuggerUrl` with the built-in `WebSocket`, and send CDP commands: `Page.navigate`, `Emulation.setDeviceMetricsOverride` (screen size, `mobile: true` for touch), `Runtime.evaluate` (with `awaitPromise` and `returnByValue`) and `Page.captureScreenshot`.
+2. Start Edge with its own profile: `msedge --headless=new --use-angle=swiftshader --enable-unsafe-swiftshader --remote-debugging-port=9333 --user-data-dir=<temp dir> about:blank`
+3. From Node 22+, `fetch('http://127.0.0.1:9333/json')`, open the page's `webSocketDebuggerUrl` with the built-in `WebSocket`, and send CDP commands: `Page.navigate`, `Emulation.setDeviceMetricsOverride`, `Emulation.setTouchEmulationEnabled`, `Runtime.evaluate` (with `awaitPromise` and `returnByValue`) and `Page.captureScreenshot`.
 4. Inside `Runtime.evaluate`, import modules directly: `const m = await import('/js/main.js'); m.startGame('blade', true);`, then use `window.__G` and `window.__dbg` (`makeItem`, `spawnEnemy`, `nextFloor`, `sim`).
+5. Run the same script for **every viewport** below, put the feature on screen (force the event, spawn the boss, open the panel), screenshot, run the overlap checker, and Read the screenshots.
+
+### Viewports (desktop and mobile)
+
+Every feature is checked on desktop **and** mobile (see [Verifying changes](../AGENTS.md#verifying-changes)):
+
+| Pass | `setDeviceMetricsOverride` | Notes |
+|---|---|---|
+| Desktop | `{ width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false }` | Keyboard+mouse HUD with the skill bar. Also try 1280×720. |
+| Phone landscape | `{ width: 740, height: 360, mobile: true }` and `{ width: 667, height: 375, mobile: true }` | The `max-height: 520px` layouts. Touch buttons, joystick, compact missions. |
+| Tablet | `{ width: 1024, height: 768, mobile: true }` | Touch buttons with the bigger layout. |
+| Phone portrait | `{ width: 375, height: 740, mobile: true }` | Must show the rotate overlay (`body.portrait`) and pause. |
+
+For the mobile passes also send `Emulation.setTouchEmulationEnabled({ enabled: true, maxTouchPoints: 5 })` and switch the game to touch mode before starting: `(await import('/js/input.js')).setTouchMode()`. Without it the desktop skill bar is shown instead of the touch buttons, and the test misses the real phone layout.
+
+Put the worst case on screen: `?lang=pt` (longer texts), several missions/events active at once, a boss bar, the Abyss row, a long toast, the interact prompt, and open panels (inventory, skill tree, shop, forge).
+
+### Layout checks (overlap and overflow)
+
+Paste this into `Runtime.evaluate` (as `expression`, `returnByValue: true`) after the feature is on screen. It lists text that sits under a control (button, touch button, joystick, minimap, skill slot), text that goes off-screen, and text clipped by its box:
+
+```js
+(() => {
+  const W = innerWidth, H = innerHeight, out = [];
+  const shown = (el) => {
+    for (let e = el; e && e !== document.body; e = e.parentElement) {
+      const s = getComputedStyle(e);
+      if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity < 0.05) return false;
+    }
+    const r = el.getBoundingClientRect();
+    return r.width > 2 && r.height > 2;
+  };
+  const name = (el) => el.id ? '#' + el.id : el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).join('.') : '') + (el.parentElement?.id ? ' in #' + el.parentElement.id : '');
+  const texts = [...document.querySelectorAll('body *')].filter((el) => [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && shown(el));
+  const ctrls = [...document.querySelectorAll('button, [data-nav], .tbtn, #joy, #minimap-wrap, .skill, #top-buttons')].filter(shown);
+  const inter = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  for (const t of texts) {
+    const rt = t.getBoundingClientRect(), txt = '"' + t.textContent.trim().slice(0, 30) + '"';
+    if (rt.left < -1 || rt.top < -1 || rt.right > W + 1 || rt.bottom > H + 1) out.push('OFF-SCREEN ' + name(t) + ' ' + txt);
+    if (t.scrollWidth > t.clientWidth + 2 && getComputedStyle(t).overflowX !== 'visible') out.push('CLIPPED ' + name(t) + ' ' + txt);
+    for (const c of ctrls) {
+      if (c.contains(t) || t.contains(c)) continue;
+      const a = inter(rt, c.getBoundingClientRect());
+      if (a > 16) out.push('OVERLAP ' + name(t) + ' ' + txt + ' x ' + name(c) + ' (' + Math.round(a) + 'px²)');
+    }
+  }
+  return [...new Set(out)];
+})()
+```
+
+Reading the result:
+
+- Wait ~3 s after `startGame` so the menu fade-out is over; otherwise the menu buttons show up as overlaps with the skill bar.
+- The floor banner (`#banner-*`) and the first intro toasts are temporary and may cross the minimap; run the check again after they fade (or ignore them). Everything else that overlaps, especially mission/event texts (`#run-info`, `#exit-prompt`, `#interact`, `#combo`, toasts) under touch buttons or the joystick, is a bug to fix.
+- The checker can't see canvas drawings (minimap marks, 3D labels in `#labels` that follow the world). Check those in the screenshot.
+- Re-run it with the panel or event state that the change introduces, not only the plain HUD.
+
+### Other checks worth doing
+
+- **Errors:** listen to `Runtime.exceptionThrown` and `Runtime.consoleAPICalled` (type `error`) during every pass.
+- **Taps:** for a new touch button, dispatch `Input.dispatchTouchEvent` (`touchStart` / `touchEnd`) at its center and check the effect, so the button is really reachable (not covered by another element: `document.elementFromPoint(x, y)` should be the button or its child).
+- **Gamepad:** fake a pad (below), walk the new menu with the D-pad and confirm every element gets focus and `{B}` closes it.
+- **Save round trip:** for character or item changes, save, reload the page, continue the run and compare the field.
+- **Resize/rotation:** switch the viewport between landscape and portrait mid-game and back; the HUD must recover and the game must unpause cleanly.
+- **Long runs:** `__dbg.sim(60)` with the feature active, to catch errors and runaway counts (enemies, particles, `G.fx`) without rendering.
 
 Gotchas:
 
 - Headless Chrome/Edge throttles `requestAnimationFrame` to about 1 fps, so input that depends on frames seems to be ignored. Step frames by hand: `Input.update(1/60); ui.uiPadUpdate(); Input.endFrame();`.
 - To fake a gamepad, replace `navigator.getGamepads` with a function that returns an object with `id`, `mapping: 'standard'`, `axes` and 17 `buttons` (`{ pressed, value }`), then dispatch a `gamepadconnected` event. Standard button indices: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 View, 9 Start, 12–15 D-pad.
 - Use `__dbg.sim(seconds)` to run game logic quickly without rendering (balance checks, spawn tests).
-- Listen to `Runtime.exceptionThrown` and `Runtime.consoleAPICalled` to catch errors.
-- Clean up: saves made by tests stay in that browser profile's localStorage. Use a temporary `--user-data-dir`.
+- Clean up: saves made by tests stay in that browser profile's localStorage, so always use a temporary `--user-data-dir`. When done, stop only the Edge process you started (by its PID), never every `msedge.exe`: the user may have their own browser open.
