@@ -1274,7 +1274,12 @@ export function showEnding(info = {}) {
   const step = 1.4; // segundos entre cada parágrafo
   $('end-story').innerHTML = lines.map((txt, i) => `<p style="animation-delay:${0.6 + i * step}s"${i === lines.length - 1 ? ' class="tease"' : ''}>${txt}</p>`).join('');
   const tm = info.time || 0;
-  const D = DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
+  // dificuldade em que venceu: no Morte com Abismo mostra o nível do Abismo (I..X), com a cor dele
+  const dk = DIFFICULTY[G.settings.difficulty] ? G.settings.difficulty : 'normal';
+  const ab = abyssLvl();
+  const diffTxt = ab
+    ? `<span style="color:${abyssColor(ab)}">🕳️ ${abyssName(ab)}</span>`
+    : `<span style="color:${DIFF_COLORS[Math.max(0, DIFF_ORDER.indexOf(dk))]}">${DIFFICULTY[dk].name}</span>`;
   const stats = [
     [L('Herói', 'Hero'), `${C.name} · ${L('Nível', 'Level')} ${c.level}`],
     [L('Batalha final', 'Final battle'), `${Math.floor(tm / 60)}:${String(Math.floor(tm % 60)).padStart(2, '0')}`],
@@ -1282,7 +1287,7 @@ export function showEnding(info = {}) {
     [L('Mortes', 'Deaths'), fmt(c.deaths || 0)],
     [L('Abates', 'Kills'), fmt(c.kills || 0)],
     [L('Créditos', 'Credits'), fmt(c.credits || 0)],
-    [L('Dificuldade', 'Difficulty'), D.name],
+    [L('Dificuldade', 'Difficulty'), diffTxt],
     ...(c.tier ? [[L('Modo', 'Mode'), `${tierOf(c).icon} ${tierOf(c).name}`]] : []),
     [L('Vitórias', 'Wins'), c.wins || 1],
   ];
