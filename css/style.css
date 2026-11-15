@@ -1187,19 +1187,23 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
   #combo { top: 50%; }
   #combo b { font-size: 28px; }
   #run-info { max-width: 170px; }
-  /* toque: objetivo e créditos encostados na borda, longe dos botões de poder */
-  body.touch #run-info { max-width: 160px; margin-right: calc(-10px - var(--safe-r) * 0.5); }
+  /* toque: a missão do andar fica à esquerda do minimapa (abaixo da barra do chefe), longe dos botões de poder */
+  body.touch #run-info { position: absolute; top: 88px; right: calc(100% + 30px); width: max-content; max-width: 170px; }
+  /* toque: créditos encostados na borda */
   body.touch #credits { margin-right: calc(-8px - var(--safe-r) * 0.5); }
-  /* toque: créditos logo abaixo do minimapa e eventos só com ícone + progresso (sobra espaço para os botões) */
+  /* toque: créditos logo abaixo do minimapa */
   body.touch #credits { order: 1; }
-  body.touch #run-info { order: 2; }
-  body.touch .ri-ev .ri-nm { display: none; }
   #xp-bar { height: 15px; }
   #xp-bar span { font-size: 12px; }
   .ri-con, .ri-anom { font-size: 10px; }
   body.touch #combo { right: auto; left: calc(16px + var(--safe-l, 0px)); top: 30%; text-align: left; }
   body.touch #combo .combo-bar { margin: 4px auto 0 0; }
   body.touch #combo .combo-bar i { transform-origin: left; }
+}
+
+/* telas bem baixas (celular antigo): sem a linha de ícones, para a missão não encostar nos botões */
+@media (max-height: 340px) {
+  body.touch .ri-more { display: none; }
 }
 
 /* escolha de implante */
