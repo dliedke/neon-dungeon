@@ -342,7 +342,8 @@ export function startFloor(floor) {
   if (isFinalFloor(floor)) {
     banner(L('ANDAR FINAL', 'FINAL FLOOR'), L('Os 7 chefes esperam no coração da corporação', 'All 7 bosses await at the heart of the corporation'));
     setTimeout(() => G.floor === floor && toast(L('Batalha final: os chefes vêm em ondas de 2. Derrote os 7 para vencer o jogo!', 'Final battle: the bosses come in waves of 2. Defeat all 7 to win the game!'), 'warn'), 2800);
-  } else banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : G.theme.name);
+  } else banner(`${word} ${floor}`, isBossFloor(floor) ? `${G.theme.name} · ${L('Chefe à frente', 'Boss ahead')}` : d.huge ? `${G.theme.name} · ${L('Andar gigante!', 'Huge floor!')}` : G.theme.name);
+  if (d.huge) setTimeout(() => G.floor === floor && toast(L('🗺️ Andar gigante: bem maior que o normal, com mais inimigos, mais eventos e um baú extra.', '🗺️ Huge floor: much bigger than usual, with more enemies, more events and an extra chest.'), 'item'), 4200);
   if (G.theme.hint && !isFinalFloor(floor)) setTimeout(() => G.floor === floor && toast(G.theme.hint), 2800);
   announceFloor(floor);
   saveGame();

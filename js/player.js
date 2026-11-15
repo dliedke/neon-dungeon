@@ -9,7 +9,7 @@ import { resolveCircle, findPath, lineOfSight, revealAround, isWalkable } from '
 import { hitEnemy, enemiesInRadius, healPlayer, nearestEnemy, explosion, damagePlayer } from './combat.js';
 import { groundEffect, openNpc } from './biomes.js';
 import { formMods } from './powers.js';
-import { DIFFICULTY } from './enemies.js';
+import { DIFFICULTY, abyssFx } from './enemies.js';
 import { achAdd, achTotal } from './ach.js';
 import { amod, implantMods } from './run.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
@@ -116,9 +116,11 @@ export function computeStats(c) {
   s.costRed = Math.min(s.costRed, 40);
   // dificuldade: no difícil o jogador tem menos vida, blindagem e regeneração; no fácil, mais
   const D = DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
-  s.maxHp *= D.pHp;
-  s.armor = Math.round(s.armor * D.pArmor);
-  s.hpRegen *= D.pRegen;
+  // Abismo XII+: Coração Frágil, Armadura Rachada e Sem Fôlego
+  const X = abyssFx();
+  s.maxHp *= D.pHp * X.php;
+  s.armor = Math.round(s.armor * D.pArmor * X.parm);
+  s.hpRegen *= D.pRegen * X.regen;
   s.crit = Math.min(s.crit, 75);
   s.cdr = Math.min(s.cdr, 40);
   s.lifeSteal = Math.min(s.lifeSteal, 20);
@@ -196,7 +198,8 @@ export function skillCd(i) {
   const sk = CLASSES[G.char.cls].skills[i];
   // Passos Velozes: o Teleporte (e o Salto de Rede) recarregam mais rápido
   const warp = sk.id === 'warp' || sk.id === 'blink' ? 1 - Math.min(G.player.stats.warpCd || 0, 80) / 100 : 1;
-  return sk.cd * (1 - G.player.stats.cdr / 100) * warp * amod('cd');
+  // Abismo XVI: Mente Lenta
+  return sk.cd * (1 - G.player.stats.cdr / 100) * warp * amod('cd') * abyssFx().cd;
 }
 
 export function gainXp(n) {

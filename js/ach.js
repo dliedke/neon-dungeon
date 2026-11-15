@@ -134,6 +134,8 @@ export function achList() {
   add('abyss1', '🕳️', 3, L('Olhando o Abismo', 'Gazing into the Abyss'), L('Derrote um chefe no Abismo I ou acima', 'Defeat a boss on Abyss I or above'), () => (abyssBest() >= 1 ? 1 : 0));
   add('abyss5', '🌑', 3, L('O Abismo Olha de Volta', 'The Abyss Gazes Back'), L('Derrote um chefe no Abismo V ou acima', 'Defeat a boss on Abyss V or above'), () => (abyssBest() >= 5 ? 1 : 0));
   add('abyss10', '👁️', 3, L('Senhor do Abismo', 'Lord of the Abyss'), L('Derrote um chefe no Abismo X', 'Defeat a boss on Abyss X'), () => (abyssBest() >= 10 ? 1 : 0));
+  add('abyss20', '🌋', 3, L('Fogo do Abismo', 'Abyssal Fire'), L('Derrote um chefe no Abismo XX ou acima', 'Defeat a boss on Abyss XX or above'), () => (abyssBest() >= 20 ? 1 : 0));
+  add('abyss30', '🌌', 3, L('Fundo do Vazio', 'Bottom of the Void'), L('Derrote um chefe no Abismo XXX', 'Defeat a boss on Abyss XXX'), () => (abyssBest() >= 30 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 30)
@@ -263,6 +265,16 @@ export function achList() {
     watcher: ['👁️', 0, L('Estátua', 'Statue'), L('Chegue ao Olho Vigia', "Reach the Watcher's Eye")],
     race: ['👻', 0, L('Mais Rápido que um Fantasma', 'Faster Than a Ghost'), L('Vença uma Corrida Fantasma', 'Win a Ghost Race')],
     spinner: ['🌀', 0, L('Olho do Furacão', 'Eye of the Storm'), L('Chegue ao centro de um Laser Giratório', 'Reach the center of a Laser Spinner')],
+    herd: ['🐑', 0, L('Pastor Digital', 'Digital Shepherd'), L('Recolha o Rebanho de Drones', 'Pen the Drone Herd')],
+    trap: ['🧭', 0, L('Pé Leve', 'Light Feet'), L('Atravesse um Piso Falso', 'Cross a Trap Floor')],
+    lasers: ['🚧', 0, L('Contorcionista', 'Contortionist'), L('Pegue a joia numa Travessia de Lasers', 'Grab the gem in a Laser Crossing')],
+    purge: ['🦠', 0, L('Antivírus', 'Antivirus'), L('Limpe toda a corrupção num Expurgo', 'Clean all the corruption in a Purge')],
+    runner: ['🪙', 0, L('Pega-Pega', "Tag, You're It"), L('Capture o Drone Fujão', 'Catch the Runaway Drone')],
+    totems: ['🗿', 0, L('Contador de Anéis', 'Ring Counter'), L('Golpeie os Totens Dançantes na ordem', 'Hit the Dancing Totems in order')],
+    altar: ['🩸', 1, L('Pacto de Sangue', 'Blood Pact'), L('Faça as 3 oferendas num Altar de Sangue', 'Make all 3 offerings at a Blood Altar')],
+    gallery: ['🎯', 1, L('Atirador de Elite', 'Sharpshooter'), L('Acerte todos os alvos pedidos numa Galeria de Tiro', 'Hit every required target in a Shooting Gallery')],
+    idol: ['🏺', 1, L('Arqueólogo', 'Archaeologist'), L('Leve o Ídolo Amaldiçoado até o altar', 'Carry the Cursed Idol to its altar')],
+    dance: ['🕺', 0, L('Pé de Valsa', 'Dancing Queen'), L('Conclua uma Dança Neon', 'Finish a Neon Dance')],
     secret: ['🧱', 0, L('Olho Clínico', 'Keen Eye'), L('Encontre uma Sala Secreta', 'Find a Secret Room')],
     gamble: ['🎰', 0, L('Apostador', 'High Roller'), L('Jogue na Máquina de Apostas', 'Play a Slot Machine')],
   };

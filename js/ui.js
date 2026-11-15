@@ -208,7 +208,7 @@ export function initUI() {
     applyQuality();
     saveSettings();
   };
-  // Abismo: 10 marcadores entre o − e o + (clique direto num nível; clicar no atual desce um)
+  // Abismo: 30 marcadores (3 linhas de 10) entre o − e o + (clique direto num nível; clicar no atual desce um)
   const pips = $('abyss-pips');
   for (let n = 1; n <= ABYSS_MAX; n++) {
     const pip = document.createElement('i');
@@ -782,7 +782,7 @@ export function updDiffUi() {
   $('abyss-lock').classList.toggle('hidden', !!un);
   if (!un) $('abyss-lock').textContent = L('🔒 Abismo: vença um chefe', '🔒 Abyss: defeat a boss');
   row.title = !un
-    ? L('Derrote um chefe no Morte para abrir o Abismo: 10 níveis acima do Morte, cada um com uma regra nova, mais créditos e itens melhores.', 'Defeat a boss on Death to open the Abyss: 10 levels above Death, each adding a new rule, more credits and better items.')
+    ? L(`Derrote um chefe no Morte para abrir o Abismo: ${ABYSS_MAX} níveis acima do Morte, cada um com uma regra nova, mais créditos e itens melhores.`, `Defeat a boss on Death to open the Abyss: ${ABYSS_MAX} levels above Death, each adding a new rule, more credits and better items.`)
     : ab
       ? `${abyssName(ab)}\n${abyssRulesText(ab)}`
       : L(`Abismo: escolha um dos ${un} níveis. Cada nível soma uma regra e dá mais créditos e itens melhores.`, `Abyss: pick any of the ${un} levels. Each level adds a rule and gives more credits and better items.`);
@@ -800,7 +800,7 @@ export function updDiffUi() {
   ob.classList.toggle('on', ab > 0);
   // a borda da tela escurece conforme o nível
   document.body.classList.toggle('abyss', ab > 0);
-  document.body.style.setProperty('--abv', (0.14 + 0.04 * ab).toFixed(2));
+  document.body.style.setProperty('--abv', Math.min(0.62, 0.14 + 0.04 * ab).toFixed(2));
 }
 function applyAbyss(n) {
   const prev = abyssLvl();

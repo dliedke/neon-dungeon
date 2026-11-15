@@ -10,7 +10,7 @@ import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, abyssDepth } from './enemies.js';
+import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, abyssDepth, abyssFx } from './enemies.js';
 import { dropLoot, spawnPickup } from './loot.js';
 import { after, explosion, damagePlayer, healPlayer, capHeal } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
@@ -402,13 +402,13 @@ export function runKill(e) {
   // anomalias
   const kh = amod('killHeal', 0);
   if (kh) healPlayer(capHeal('moon', (p.stats.maxHp * kh) / 100, (p.stats.maxHp * kh * 1.5) / 100), false);
-  // Reação em Cadeia (todos) ou Abismo VI (elites): explode ao morrer, com aviso no chão
-  const abBoom = abyssOn(6) && e.elite;
+  // Reação em Cadeia (todos) ou Abismo VI (elites; XXI: todos): explode ao morrer, com aviso no chão
+  const abBoom = abyssOn(6) && (e.elite || abyssFx().boom > 0);
   if ((amod('explode', false) || abBoom) && !e.boss && !e.explodeOnDeath && !e.rift) {
     const x = e.x;
     const z = e.z;
     const dmg = e.dmg * 0.8;
-    const R = abBoom ? 3 : 2.3;
+    const R = abBoom && e.elite ? 3 : abBoom ? 2.2 : 2.3;
     const col = abBoom ? 0xb04dff : 0xff7a1a;
     const t = abBoom ? 0.75 : 0.55;
     telegraphFx(x, z, R, t, col);

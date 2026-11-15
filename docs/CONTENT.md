@@ -190,7 +190,7 @@ All in `js/events.js`. See [Floor events](ARCHITECTURE.md#floor-events-eventsjs)
    - `hud(E)` returns the short text after the name. `intro(E)` is the explanation toast (shown when the player gets close, or on arrival if the event has no `x`).
    - Damage to the player: `eventHurt(frac, x, z, knock)` (never lethal). Things to hit: `hitTarget` + `hitsOf`. Extra positions: `E.pts`.
    - `save(E)` / `load(E, s)` keep its progress across a resume.
-3. Register it in `KIND`. Main events also go in `MAIN_EVENTS`; a small event needs its own roll in `setupEvents`.
+3. Register it in `KIND`. Main events also go in `MAIN_EVENTS`; a small event needs its own roll in `setupEvents`. If it has a clock (time limit or countdown), add it to `TIMED` so two timed events never share a floor.
 4. Make it playable with every input method: walk-over pads, things you hit, or an NPC prop (see the slot machine).
 5. Add the minimap mark in `drawEventMarks` and, if it needs one, an arrow in `eventArrows`.
 6. Medals: `complete` already marks `evDone`. Add the kind to the `evMedals` table in `ach.js` (it creates the `ev_<kind>` medal); `evAll` counts it automatically.

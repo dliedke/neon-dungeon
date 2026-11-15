@@ -3,7 +3,8 @@
 // Procurado, Caça aos Fragmentos, Prisioneiro, Circuito Neon, Sinal Perdido, Servidores Corrompidos,
 // Escolta do Drone, Pares de Memória, Chuva de Meteoros, Cofre Rachado, Arena de Gladiadores,
 // Caixa de Pandora, Jogo dos Baús, Duelo de Espelho, Bola de Plasma, Olho Vigia, Corrida Fantasma
-// e Laser Giratório. Pequenos: Sala Secreta e Máquina de Apostas.
+// Laser Giratório, Rebanho de Drones, Piso Falso, Travessia de Lasers, Expurgo, Drone Fujão,
+// Totens Dançantes, Altar de Sangue, Galeria de Tiro, Ídolo Amaldiçoado e Dança Neon. Pequenos: Sala Secreta e Máquina de Apostas.
 // Tudo funciona só andando (pisar, ficar perto) e com o botão de interagir, então vale para
 // teclado+mouse, controle e toque. O sorteio usa a semente do andar (continuar o andar refaz igual);
 // o estado de cada evento vai no retrato do andar (eventsSnapshot/eventsRestore).
@@ -18,7 +19,7 @@ import { toast, banner } from './ui.js';
 import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion, damagePlayer, hitEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
-import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime } from './dungeon.js';
+import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime, resolveCircle } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { tierOf, tierFloor, applyAnomalyToEnemy, runHurt } from './run.js';
@@ -26,8 +27,10 @@ import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.
 import { CLASSES, CLASS_ORDER } from './classes.js';
 
 // eventos principais (de 3 a 6 por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner'];
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'];
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
+// eventos com contagem de tempo: só um deles por andar
+const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance'];
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
   lights: { icon: '💡', css: '#7affc8', name: L('Piso de Luzes', 'Light Floor') },
@@ -52,6 +55,16 @@ export const EVENT_INFO = {
   watcher: { icon: '👁️', css: '#39ff88', name: L('Olho Vigia', "Watcher's Eye"), short: L('Olho', 'Eye') },
   race: { icon: '👻', css: '#7affc8', name: L('Corrida Fantasma', 'Ghost Race'), short: L('Corrida', 'Race') },
   spinner: { icon: '🌀', css: '#ff2244', name: L('Laser Giratório', 'Laser Spinner'), short: L('Giratório', 'Spinner') },
+  herd: { icon: '🐑', css: '#9dff5a', name: L('Rebanho de Drones', 'Drone Herd'), short: L('Rebanho', 'Herd') },
+  trap: { icon: '🧭', css: '#5ad1ff', name: L('Piso Falso', 'Trap Floor') },
+  lasers: { icon: '🚧', css: '#ff3df0', name: L('Travessia de Lasers', 'Laser Crossing'), short: L('Travessia', 'Crossing') },
+  purge: { icon: '🦠', css: '#b040ff', name: L('Expurgo', 'Purge') },
+  runner: { icon: '🪙', css: '#ffe14d', name: L('Drone Fujão', 'Runaway Drone'), short: L('Fujão', 'Runaway') },
+  totems: { icon: '🗿', css: '#ff9f5a', name: L('Totens Dançantes', 'Dancing Totems'), short: L('Totens', 'Totems') },
+  altar: { icon: '🩸', css: '#ff2e4d', name: L('Altar de Sangue', 'Blood Altar'), short: L('Altar', 'Altar') },
+  gallery: { icon: '🎯', css: '#ffcf3d', name: L('Galeria de Tiro', 'Shooting Gallery'), short: L('Galeria', 'Gallery') },
+  idol: { icon: '🏺', css: '#d6a2ff', name: L('Ídolo Amaldiçoado', 'Cursed Idol'), short: L('Ídolo', 'Idol') },
+  dance: { icon: '🕺', css: '#ff4df0', name: L('Dança Neon', 'Neon Dance'), short: L('Dança', 'Dance') },
   secret: { icon: '🧱', css: '#ffaa33', name: L('Sala Secreta', 'Secret Room') },
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
 };
@@ -369,6 +382,7 @@ const terminals = {
 // 2. Piso de Luzes: 3x3 placas; pisar inverte a placa e as vizinhas. Acenda todas.
 // ==================================================================
 const LS = 1.75;
+const LIGHT_HINT = 12; // segundos sem resolver até cada dica
 const lights = {
   setup(d, floor, rooms) {
     // a placa de recomeçar fica a 3,9 do centro (no lado +z): a área livre precisa cobrir ela
@@ -454,8 +468,8 @@ const lights = {
   },
   update(E, dt) {
     if (E.st !== 'play') return;
-    // Conta só o tempo perto do quebra-cabeça; uma dica não revela a sequência toda.
-    if (!G.player.alive || !near(E, 5.5)) {
+    // Conta só o tempo perto do quebra-cabeça (a cada 12s sem resolver); uma dica não revela a sequência toda.
+    if (!G.player.alive || !near(E, 8)) {
       E.hintWait = E.hintLeft = 0;
       E.hint.visible = false;
     } else if (E.hintLeft > 0) {
@@ -463,14 +477,14 @@ const lights = {
       if (!E.hintLeft) E.hint.visible = false;
     } else {
       E.hintWait += dt;
-      if (E.hintWait >= 30) {
+      if (E.hintWait >= LIGHT_HINT) {
         E.hintWait = 0;
         lights.showHint(E);
       }
     }
     if (!E.hinted && near(E, 5.5)) {
       E.hinted = true;
-      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. Ande pelos espaços entre as placas; o círculo vermelho recomeça. <b>Se demorar, um anel dourado dará uma dica breve.</b>', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. Walk through the gaps between plates; the red circle resets. <b>If you get stuck, a gold ring will offer a brief hint.</b>'), 'leg', 'ev');
+      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. Ande pelos espaços entre as placas; o círculo vermelho recomeça. <b>A cada 12s sem resolver, um anel dourado mostra uma placa certa.</b>', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. Walk through the gaps between plates; the red circle resets. <b>Every 12s without solving it, a gold ring shows a right plate.</b>'), 'leg', 'ev');
     }
     const k = lights.under(E);
     if (k === E.last) return;
@@ -503,7 +517,7 @@ const lights = {
     E.hintWait = 0;
     lights.paint(E);
   },
-  intro: () => L('acenda as 9 placas por um cofre especial. Ande pelos espaços entre elas; se demorar, aparece uma dica breve em dourado.', 'light all 9 plates for a special cache. Walk through the gaps between them; if you get stuck, a brief gold hint appears.'),
+  intro: () => L('acenda as 9 placas por um cofre especial. Ande pelos espaços entre elas; a cada 12s sem resolver aparece uma dica em dourado.', 'light all 9 plates for a special cache. Walk through the gaps between them; every 12s without solving it a gold hint appears.'),
 };
 
 // ==================================================================
@@ -3262,9 +3276,1090 @@ const spinner = {
 };
 
 // ------------------------------------------------------------------
+// Peças dos eventos novos: drones que andam sozinhos (fogem do jogador sem atravessar paredes)
+// ------------------------------------------------------------------
+// anda (o.x, o.z) na direção a; se a parede bloquear, desvia (até ~145°) e devolve o ângulo usado
+const DODGE = [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.5, -2.5];
+function steer(o, a, step, look = 0.75) {
+  const d = G.dungeon;
+  for (const da of DODGE) {
+    const b = a + da;
+    const cx = Math.cos(b);
+    const cz = Math.sin(b);
+    if (!isWalkable(d, o.x + cx * look, o.z + cz * look)) continue;
+    o.x += cx * step;
+    o.z += cz * step;
+    resolveCircle(d, o);
+    return b;
+  }
+  return a;
+}
+// fuga: para longe do jogador, puxando de volta para casa (hx, hz) quando passa de `leash`
+function fleeAngle(o, p, hx, hz, leash) {
+  let fx = o.x - p.x;
+  let fz = o.z - p.z;
+  const fl = Math.hypot(fx, fz) || 1;
+  fx /= fl;
+  fz /= fl;
+  const hd = Math.hypot(hx - o.x, hz - o.z);
+  if (hd > leash) {
+    const k = Math.min(2, (hd - leash) / 2);
+    fx += ((hx - o.x) / hd) * k;
+    fz += ((hz - o.z) / hd) * k;
+  }
+  return Math.atan2(fz, fx);
+}
+function droneModel(color, s = 1) {
+  const g = new THREE.Group();
+  put(g, mats().disc, flatMat(0x000000, 0.35), 0, 0.02, 0, 0.32 * s, 1, 0.32 * s);
+  const body = new THREE.Group();
+  body.position.y = 0.62;
+  g.add(body);
+  put(body, mats().oct, glowMat(color, 1.8), 0, 0, 0, 0.26 * s, 0.2 * s, 0.26 * s);
+  put(body, mats().ring, lightMat(color, 1.2), 0, 0.1, 0, 0.42 * s, 1, 0.42 * s);
+  put(body, box(0.09, 0.09, 0.09), glowMat(0xffffff, 2), 0, 0.02, 0.22 * s);
+  G.world.add(g);
+  return { g, body };
+}
+// coordenadas locais (grupo girado em y) <-> mundo
+const toLocal = (E, x, z) => {
+  const dx = x - E.x;
+  const dz = z - E.z;
+  return { x: dx * E.cos - dz * E.sin, z: dx * E.sin + dz * E.cos };
+};
+const toWorld = (E, lx, lz) => ({ x: E.x + lx * E.cos + lz * E.sin, z: E.z - lx * E.sin + lz * E.cos });
+
+// ==================================================================
+// 26. Rebanho de Drones: 3 drones medrosos fogem de você; empurre-os para o curral
+// ==================================================================
+const HERD_COL = 0x9dff5a;
+const HERD_N = 3;
+const HERD_R = 1.7;
+const herd = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 2.4);
+    if (!s) return null;
+    // os drones começam espalhados pela sala, a 4,5–8 do curral (sorteio com a semente do andar)
+    const pts = [];
+    for (let t = 0; t < 40 && pts.length < HERD_N; t++) {
+      const a = rr(0, Math.PI * 2);
+      const r = rr(4.5, 8);
+      const x = s.x + Math.cos(a) * r;
+      const z = s.z + Math.sin(a) * r;
+      if (isWalkable(d, x, z) && isWalkable(d, x + 0.5, z) && isWalkable(d, x - 0.5, z) && isWalkable(d, x, z + 0.5) && isWalkable(d, x, z - 0.5) && lineOfSight(d, s.x, s.z, x, z)) pts.push({ x, z });
+    }
+    if (pts.length < HERD_N) return null;
+    const g = groupAt(s.x, s.z);
+    const penMat = lightMat(HERD_COL, 1.2);
+    put(g, mats().ring, penMat, 0, 0.03, 0, HERD_R, 1, HERD_R);
+    put(g, mats().disc, flatMat(HERD_COL, 0.08), 0, 0.02, 0, HERD_R, 1, HERD_R);
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      put(g, mats().cyl, mats().metal, Math.cos(a) * HERD_R, 0.3, Math.sin(a) * HERD_R, 0.06, 0.6, 0.06);
+    }
+    const drones = pts.map((q) => ({ x: q.x, z: q.z, r: 0.3, a: rr(0, 6), wt: 0, pen: false, m: droneModel(HERD_COL, 0.9) }));
+    for (const o of drones) o.m.g.position.set(o.x, 0, o.z);
+    return { kind: 'herd', x: s.x, z: s.z, g, penMat, drones, st: 'idle' };
+  },
+  update(E, dt) {
+    const p = G.player;
+    for (let i = 0; i < E.drones.length; i++) {
+      const o = E.drones[i];
+      o.m.body.position.y = 0.62 + Math.sin(G.t * 4 + i) * 0.06;
+      o.m.body.rotation.y += dt * (o.pen ? 1 : 3);
+      if (E.st === 'done') continue;
+      if (o.pen) {
+        // no curral: vai para a vaga dele e fica
+        const a = (i / HERD_N) * Math.PI * 2;
+        const tx = E.x + Math.cos(a) * 0.7;
+        const tz = E.z + Math.sin(a) * 0.7;
+        o.x += (tx - o.x) * Math.min(1, dt * 3);
+        o.z += (tz - o.z) * Math.min(1, dt * 3);
+      } else {
+        const dp = p.alive ? Math.hypot(o.x - p.x, o.z - p.z) : 99;
+        if (dp < 3.4) {
+          // foge: mais rápido quanto mais perto (um pouco mais devagar que o jogador)
+          const sp = Math.min(p.stats.speed * 0.8, 4.6) * (0.55 + 0.45 * (1 - dp / 3.4));
+          o.a = steer(o, fleeAngle(o, p, E.x, E.z, 9), sp * dt);
+        } else {
+          // passeia devagar, sem se afastar muito do curral
+          o.wt -= dt;
+          if (o.wt <= 0) {
+            o.wt = 1 + Math.random() * 2;
+            const hd = Math.hypot(E.x - o.x, E.z - o.z);
+            o.a = hd > 8 ? Math.atan2(E.z - o.z, E.x - o.x) : Math.random() * Math.PI * 2;
+          }
+          o.a = steer(o, o.a, 0.55 * dt);
+        }
+        if (Math.hypot(o.x - E.x, o.z - E.z) < HERD_R - 0.35) {
+          o.pen = true;
+          sfx.seq(E.drones.filter((q) => q.pen).length);
+          burst(o.x, 0.8, o.z, HERD_COL, 16, 3, 0.06, 0.5, { up: 1.2 });
+          floatText(o.x, 1.8, o.z, `${E.drones.filter((q) => q.pen).length}/${HERD_N}`, 'up');
+        }
+      }
+      o.m.g.position.set(o.x, 0, o.z);
+      o.m.g.rotation.y = -o.a + Math.PI / 2;
+    }
+    if (E.st === 'done') return;
+    if (E.st === 'idle' && near(E, 9)) E.st = 'play';
+    if (E.drones.every((o) => o.pen)) {
+      setLight(E.penMat, 0x39ff88, 1.8);
+      complete(E, 1.5, L('REBANHO RECOLHIDO!', 'HERD PENNED!'), L('Os drones estão seguros no curral', 'The drones are safe in the pen'), E.x, E.z);
+    }
+  },
+  hud: (E) => `${E.drones.filter((o) => o.pen).length}/${HERD_N}`,
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    setLight(E.penMat, 0x39ff88, 1.8);
+    E.drones.forEach((o, i) => {
+      const a = (i / HERD_N) * Math.PI * 2;
+      o.pen = true;
+      o.x = E.x + Math.cos(a) * 0.7;
+      o.z = E.z + Math.sin(a) * 0.7;
+      o.m.g.position.set(o.x, 0, o.z);
+    });
+  },
+  intro: () => L(`${HERD_N} drones medrosos fugiram do curral verde. Eles correm de você: chegue por trás e empurre cada um para dentro do curral.`, `${HERD_N} skittish drones escaped the green pen. They run away from you: come from behind and drive each one into the pen.`),
+};
+
+// ==================================================================
+// 27. Piso Falso: 5x5 placas, só um caminho é seguro. Decore o caminho e acenda todas as placas dele
+// ==================================================================
+const TRAP_COL = 0x5ad1ff;
+const TRAP_N = 5;
+const TRAP_S = 1.25;
+const TRAP_START = -(2 * TRAP_S + 1.4);
+const trap = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.4, 4.6);
+    if (!s) return null;
+    // caminho: começa numa coluna da primeira fileira, anda de lado (0 a 2) e sobe uma fileira
+    const safe = new Array(TRAP_N * TRAP_N).fill(0);
+    const order = [];
+    let c = ri(0, TRAP_N - 1);
+    for (let r = 0; r < TRAP_N; r++) {
+      safe[r * TRAP_N + c] = 1;
+      order.push(r * TRAP_N + c);
+      if (r === TRAP_N - 1) break;
+      const side = ri(0, 2);
+      const dir = c === 0 ? 1 : c === TRAP_N - 1 ? -1 : chance(0.5) ? 1 : -1;
+      for (let k = 0; k < side; k++) {
+        const nc = c + dir;
+        if (nc < 0 || nc >= TRAP_N) break;
+        c = nc;
+        safe[r * TRAP_N + c] = 1;
+        order.push(r * TRAP_N + c);
+      }
+    }
+    const g = groupAt(s.x, s.z);
+    const M = { off: mats().plateOff, show: glowMat(TRAP_COL, 1.5), lit: glowMat(0x39ff88, 1.3), bad: glowMat(0xff3355, 1.4) };
+    const tiles = [];
+    for (let k = 0; k < TRAP_N * TRAP_N; k++) {
+      const ox = ((k % TRAP_N) - 2) * TRAP_S;
+      const oz = (Math.floor(k / TRAP_N) - 2) * TRAP_S;
+      put(g, box(1.18, 0.04, 1.18), mats().dark, ox, 0.02, oz);
+      tiles.push({ x: s.x + ox, z: s.z + oz, m: put(g, box(1.06, 0.06, 1.06), M.off, ox, 0.035, oz), lit: 0, bad: 0 });
+    }
+    // placa de mostrar o caminho (antes da primeira fileira)
+    const padMat = lightMat(TRAP_COL, 1.3);
+    put(g, mats().ring, padMat, 0, 0.03, TRAP_START, 0.6, 1, 0.6);
+    put(g, mats().disc, flatMat(TRAP_COL, 0.2), 0, 0.025, TRAP_START, 0.55, 1, 0.55);
+    // seta para a primeira fileira
+    put(g, mats().cone, glowMat(TRAP_COL, 1.6), 0, 0.15, TRAP_START + 0.85, 1.4, 1.4, 1.4);
+    return { kind: 'trap', x: s.x, z: s.z, introR: 7, g, M, tiles, safe, order, padMat, pad: { x: s.x, z: s.z + TRAP_START }, st: 'idle', showT: -1, last: -1, onPad: false, errs: 0, step: floor >= 10 ? 0.26 : 0.36 };
+  },
+  paint(E) {
+    E.tiles.forEach((t) => (t.m.material = t.bad ? E.M.bad : t.lit ? E.M.lit : E.M.off));
+  },
+  show(E) {
+    E.showT = 0;
+    E.st = 'show';
+    sfx.click();
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    const p = G.player;
+    if (E.st === 'idle') {
+      if (!near(E, 6)) return;
+      trap.show(E);
+    }
+    // mostrando: as placas do caminho acendem em ordem e depois somem
+    if (E.st === 'show') {
+      const prev = Math.floor(E.showT / E.step);
+      E.showT += dt;
+      const n = Math.floor(E.showT / E.step);
+      if (n !== prev && n < E.order.length) sfx.seq(n % 4);
+      E.tiles.forEach((t, k) => {
+        const i = E.order.indexOf(k);
+        t.m.material = t.bad ? E.M.bad : t.lit ? E.M.lit : i >= 0 && i <= n && E.showT < E.order.length * E.step + 1.2 ? E.M.show : E.M.off;
+      });
+      if (E.showT >= E.order.length * E.step + 1.2) {
+        E.st = 'play';
+        trap.paint(E);
+      }
+    }
+    // placa de mostrar de novo
+    const onPad = p.alive && Math.hypot(p.x - E.pad.x, p.z - E.pad.z) < 0.6;
+    if (onPad && !E.onPad && E.st === 'play') trap.show(E);
+    E.onPad = onPad;
+    // enquanto o caminho está sendo mostrado, pisar não conta (nem dá choque)
+    if (E.st === 'show') {
+      E.last = -2;
+      return;
+    }
+    // placa embaixo do jogador
+    let k = -1;
+    if (p.alive) for (let i = 0; i < E.tiles.length; i++) if (Math.abs(p.x - E.tiles[i].x) < 0.6 && Math.abs(p.z - E.tiles[i].z) < 0.6) k = i;
+    if (k === E.last) return;
+    E.last = k;
+    if (k < 0) return;
+    const t = E.tiles[k];
+    if (E.safe[k]) {
+      if (t.lit) return;
+      t.lit = 1;
+      sfx.seq(3);
+      burst(t.x, 0.2, t.z, 0x39ff88, 8, 2, 0.05, 0.4, { up: 1 });
+    } else {
+      // armadilha: choque, empurrão e a placa fica vermelha (marcada)
+      t.bad = 1;
+      E.errs++;
+      sfx.zap();
+      beamFx(t.x, 2.5, t.z, t.x, 0.1, t.z, 0xff3355, 0.25, 6);
+      eventHurt(0.05, t.x, t.z, 12);
+      floatText(p.x, 2.2, p.z, L('FALSO!', 'TRAP!'), 'hurt');
+    }
+    if (E.st !== 'show') trap.paint(E);
+    if (E.order.every((i) => E.tiles[i].lit)) {
+      trap.paint(E);
+      complete(E, Math.max(0.9, 1.8 - 0.15 * E.errs), L('CAMINHO SEGURO!', 'SAFE PATH!'), E.errs ? L(`${E.errs} armadilha(s)`, `${E.errs} trap(s)`) : L('Sem pisar em nenhuma armadilha!', 'Without stepping on a single trap!'), E.x, E.z, { extra: true });
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto', 'get close') : `${E.order.filter((i) => E.tiles[i].lit).length}/${E.order.length}${E.errs ? ` <span style="color:#ff4466">✖${E.errs}</span>` : ''}`),
+  save: (E) => ({ errs: E.errs }),
+  load(E, s) {
+    E.errs = s.errs | 0;
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    for (const i of E.order) E.tiles[i].lit = 1;
+    trap.paint(E);
+  },
+  intro: () => L('só um caminho deste piso é seguro. Ele acende em azul quando você chega: decore e pise em todas as placas dele (as falsas dão choque e ficam vermelhas). O círculo azul mostra o caminho de novo.', 'only one path across this floor is safe. It lights up blue when you arrive: memorize it and step on all of its plates (fake ones shock you and turn red). The blue circle shows the path again.'),
+};
+
+// ==================================================================
+// 28. Travessia de Lasers: paredes de laser com uma brecha que anda; atravesse até a joia
+// ==================================================================
+const LZ_COL = 0xff3df0;
+const LZ_W = 2.0;
+const LZ_Z0 = -3.2;
+const LZ_Z1 = 4.4;
+const lasers = {
+  setup(d, floor, rooms) {
+    const rot = ri(0, 3);
+    const s = rot % 2 ? findSpot(d, rooms, 5, 2.6) : findSpot(d, rooms, 2.6, 5);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    g.rotation.y = (rot * Math.PI) / 2;
+    const beamMat = lightMat(LZ_COL, 2.6);
+    // cerca dos lados e do fundo (a entrada fica na frente)
+    for (const sx of [-1, 1]) {
+      const f = put(g, mats().beam, beamMat, sx * LZ_W, 0.55, (LZ_Z0 + LZ_Z1) / 2, LZ_Z1 - LZ_Z0, 4, 1.4);
+      f.rotation.y = Math.PI / 2;
+      put(g, box(0.18, 0.9, 0.18), mats().metal, sx * LZ_W, 0.45, LZ_Z0);
+      put(g, box(0.18, 0.9, 0.18), mats().metal, sx * LZ_W, 0.45, LZ_Z1);
+    }
+    put(g, mats().beam, beamMat, 0, 0.55, LZ_Z1, LZ_W * 2, 4, 1.4);
+    // paredes com brecha (3 até o andar 5, depois 4)
+    const zs = floor >= 6 ? [-2.0, -0.4, 1.2, 2.6] : [-1.7, 0.2, 2.1];
+    const walls = zs.map((z, i) => ({
+      z,
+      w: rr(0.8, 1.3) + floor * 0.01,
+      ph: rr(0, 6),
+      a: put(g, mats().beam, beamMat, 0, 0.55, z, 1, 6, 2),
+      b: put(g, mats().beam, beamMat, 0, 0.55, z, 1, 6, 2),
+      gap: 0,
+      dir: i % 2 ? -1 : 1,
+    }));
+    for (const w of walls) {
+      put(g, box(0.16, 0.8, 0.16), mats().metal, -LZ_W, 0.4, w.z);
+      put(g, box(0.16, 0.8, 0.16), mats().metal, LZ_W, 0.4, w.z);
+    }
+    // joia no fundo e largada na frente
+    put(g, mats().cyl, mats().dark, 0, 0.3, LZ_Z1 - 0.9, 0.35, 0.6, 0.35);
+    const gem = put(g, mats().oct, glowMat(0xffd23d, 2.6), 0, 1.0, LZ_Z1 - 0.9, 0.22, 0.32, 0.22);
+    put(g, mats().ring, lightMat(0x39ff88, 1.2), 0, 0.03, LZ_Z0 - 0.9, 0.6, 1, 0.6);
+    const a = (rot * Math.PI) / 2;
+    const E = { kind: 'lasers', x: s.x, z: s.z, introR: 8, g, cos: Math.cos(a), sin: Math.sin(a), beamMat, walls, gem, gh: Math.max(0.62, 0.85 - floor * 0.006), st: 'idle', hitCd: 0, hits: 0, t: 0 };
+    lasers.place(E);
+    return E;
+  },
+  // brecha de cada parede: vai e volta de um lado ao outro
+  place(E) {
+    const gh = E.gh;
+    for (const w of E.walls) {
+      w.gap = Math.sin(E.t * w.w * w.dir + w.ph) * (LZ_W - gh - 0.05);
+      const l = w.gap - gh + LZ_W;
+      const r = LZ_W - (w.gap + gh);
+      w.a.scale.x = Math.max(0.01, l);
+      w.a.position.x = -LZ_W + l / 2;
+      w.b.scale.x = Math.max(0.01, r);
+      w.b.position.x = LZ_W - r / 2;
+    }
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    E.t += dt;
+    E.gem.rotation.y += dt * 2;
+    lasers.place(E);
+    const p = G.player;
+    if (E.st === 'idle') {
+      if (!near(E, 7)) return;
+      E.st = 'play';
+    }
+    E.hitCd -= dt;
+    if (!p.alive) return;
+    const q = toLocal(E, p.x, p.z);
+    const pr = p.r + 0.06;
+    // pegou a joia
+    if (Math.hypot(q.x, q.z - (LZ_Z1 - 0.9)) < 0.85) {
+      E.gem.visible = false;
+      setLight(E.beamMat, 0x333344, 0.4);
+      for (const w of E.walls) w.a.visible = w.b.visible = false;
+      complete(E, Math.max(0.9, 1.8 - 0.12 * E.hits), L('TRAVESSIA PERFEITA!', 'CLEAN CROSSING!'), E.hits ? L(`${E.hits} queimadura(s)`, `${E.hits} burn(s)`) : L('Sem encostar em nenhum laser!', 'Without touching a single laser!'), E.x, E.z, { extra: true });
+      return;
+    }
+    if (E.hitCd > 0) return;
+    // empurrão em coordenadas locais (kx, kz)
+    let kx = 0;
+    let kz = 0;
+    for (const w of E.walls) {
+      if (Math.abs(q.z - w.z) < pr + 0.05 && Math.abs(q.x) < LZ_W && Math.abs(q.x - w.gap) > E.gh - pr * 0.5) {
+        kz = q.z < w.z ? -1 : 1;
+        break;
+      }
+    }
+    if (!kz && q.z > LZ_Z0 - 0.2 && q.z < LZ_Z1 + 0.2) {
+      if (Math.abs(Math.abs(q.x) - LZ_W) < pr) kx = Math.sign(q.x) * (Math.abs(q.x) > LZ_W ? 1 : -1);
+    }
+    if (!kz && !kx && Math.abs(q.x) < LZ_W && Math.abs(q.z - LZ_Z1) < pr) kz = q.z > LZ_Z1 ? 1 : -1;
+    if (!kx && !kz) return;
+    // a fonte do empurrão fica do outro lado do jogador
+    const src = toWorld(E, q.x - kx, q.z - kz);
+    if (!eventHurt(0.05, src.x, src.z, 12)) return;
+    E.hitCd = 0.7;
+    E.hits++;
+    sfx.zap();
+    burst(p.x, 0.8, p.z, LZ_COL, 14, 4, 0.06, 0.4);
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto', 'get close') : E.hits ? `<span style="color:#ff4466">✖${E.hits}</span> · ${L('pegue a joia', 'grab the gem')}` : L('pegue a joia', 'grab the gem')),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.gem.visible = false;
+    setLight(E.beamMat, 0x333344, 0.4);
+    for (const w of E.walls) w.a.visible = w.b.visible = false;
+  },
+  intro: () => L('uma joia está atrás de paredes de laser. Cada parede tem uma brecha que anda de um lado para o outro: entre pelo círculo verde, passe pelas brechas e pegue a joia. Encostar no laser queima e empurra.', 'a gem sits behind laser walls. Each wall has a gap that slides back and forth: enter through the green circle, slip through the gaps and grab the gem. Touching a laser burns and pushes you.'),
+};
+
+// ==================================================================
+// 29. Expurgo: a corrupção se espalha pelas placas; pise nelas para limpar todas
+// ==================================================================
+const PUR_COL = 0xb040ff;
+const PUR_N = 7;
+const PUR_S = 0.95;
+const purge = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.6);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const M = { clean: lightMat(0x1f6d78, 0.6), bad: glowMat(PUR_COL, 1.5) };
+    const tiles = [];
+    for (let k = 0; k < PUR_N * PUR_N; k++) {
+      const ox = ((k % PUR_N) - 3) * PUR_S;
+      const oz = (Math.floor(k / PUR_N) - 3) * PUR_S;
+      tiles.push({ x: s.x + ox, z: s.z + oz, bad: chance(0.55) ? 1 : 0, m: put(g, box(0.86, 0.05, 0.86), M.clean, ox, 0.03, oz) });
+    }
+    tiles[24].bad = 1;
+    // pilar corrompido no meio
+    const core = put(g, mats().oct, glowMat(PUR_COL, 2.4), 0, 1.4, 0, 0.3, 0.45, 0.3);
+    const E = { kind: 'purge', x: s.x, z: s.z, g, M, tiles, core, st: 'idle', spreadT: 2, foeT: 6, foes: [], last: -1 };
+    purge.paint(E);
+    return E;
+  },
+  paint(E) {
+    for (const t of E.tiles) t.m.material = t.bad ? E.M.bad : E.M.clean;
+  },
+  nb(k) {
+    const i = k % PUR_N;
+    const j = Math.floor(k / PUR_N);
+    const out = [];
+    if (i > 0) out.push(k - 1);
+    if (i < PUR_N - 1) out.push(k + 1);
+    if (j > 0) out.push(k - PUR_N);
+    if (j < PUR_N - 1) out.push(k + PUR_N);
+    return out;
+  },
+  update(E, dt) {
+    E.core.rotation.y += dt * 2;
+    if (E.st === 'done') return;
+    const p = G.player;
+    const R = (PUR_N / 2) * PUR_S;
+    const inside = p.alive && Math.abs(p.x - E.x) < R && Math.abs(p.z - E.z) < R;
+    if (E.st === 'idle') {
+      if (!inside) return;
+      E.st = 'play';
+      banner(L('EXPURGO', 'PURGE'), L('Pise nas placas roxas para limpar todas', 'Step on the purple plates to clean them all'));
+      sfx.alarm();
+    }
+    // limpa a placa embaixo do jogador
+    if (inside) {
+      const i = Math.round((p.x - E.x) / PUR_S) + 3;
+      const j = Math.round((p.z - E.z) / PUR_S) + 3;
+      const k = i >= 0 && i < PUR_N && j >= 0 && j < PUR_N ? j * PUR_N + i : -1;
+      if (k >= 0 && E.tiles[k].bad) {
+        E.tiles[k].bad = 0;
+        E.tiles[k].m.material = E.M.clean;
+        burst(E.tiles[k].x, 0.3, E.tiles[k].z, 0x5affd2, 6, 2, 0.05, 0.35, { up: 1 });
+        if (Math.random() < 0.5) sfx.click();
+      }
+    }
+    const bad = E.tiles.filter((t) => t.bad).length;
+    if (!bad) {
+      E.core.visible = false;
+      E.foes = E.foes.filter((e) => e.alive);
+      complete(E, 1.6, L('ÁREA LIMPA!', 'AREA PURGED!'), L('A corrupção sumiu', 'The corruption is gone'), E.x, E.z, { extra: true });
+      return;
+    }
+    // a corrupção se espalha para as vizinhas (mais rápido nos andares fundos)
+    E.spreadT -= dt;
+    if (E.spreadT <= 0) {
+      E.spreadT = Math.max(0.55, 0.95 - G.floor * 0.01);
+      const n = G.floor >= 10 ? 3 : 2;
+      for (let c = 0; c < n; c++) {
+        const src = [];
+        E.tiles.forEach((t, k) => t.bad && purge.nb(k).some((q) => !E.tiles[q].bad) && src.push(k));
+        if (!src.length) break;
+        const from = src[Math.floor(Math.random() * src.length)];
+        const free = purge.nb(from).filter((q) => !E.tiles[q].bad);
+        const to = free[Math.floor(Math.random() * free.length)];
+        E.tiles[to].bad = 1;
+        E.tiles[to].m.material = E.M.bad;
+      }
+    }
+    // de vez em quando a corrupção cospe inimigos
+    E.foeT -= dt;
+    if (E.foeT <= 0) {
+      E.foeT = 8;
+      E.foes = E.foes.filter((e) => e.alive);
+      spawnWave(E, Math.min(4, 1 + Math.floor(G.floor / 8)), E.x, E.z, 2, 4, PUR_COL);
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre na área', 'step in') : `${Math.round((E.tiles.filter((t) => !t.bad).length / E.tiles.length) * 100)}% ${L('limpo', 'clean')}`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    for (const t of E.tiles) t.bad = 0;
+    purge.paint(E);
+    E.core.visible = false;
+  },
+  busy: (E) => E.st === 'play',
+  intro: () => L('uma corrupção roxa toma conta das placas e se espalha sozinha. Pise nelas para limpar; limpe todas antes que voltem a se espalhar.', 'a purple corruption covers the plates and keeps spreading. Step on them to clean them; clean them all before they spread back.'),
+};
+
+// ==================================================================
+// 30. Drone Fujão: um drone dourado foge de você; alcance ele 3 vezes (ele cansa de vez em quando)
+// ==================================================================
+const RUN_COL = 0xffe14d;
+const RUN_NEED = 3;
+const runner = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1.6);
+    if (!s) return null;
+    const m = droneModel(RUN_COL, 1.15);
+    m.g.position.set(s.x, 0, s.z);
+    const ringMat = lightMat(RUN_COL, 1.2);
+    const ring = put(m.g, mats().ring, ringMat, 0, 0.04, 0, 0.9, 1, 0.9);
+    return { kind: 'runner', x: s.x, z: s.z, hx: s.x, hz: s.z, r: 0.32, m, ring, st: 'idle', got: 0, a: 0, run: 0, tired: 0, cd: 0 };
+  },
+  update(E, dt) {
+    const p = G.player;
+    E.m.body.position.y = 0.62 + Math.sin(G.t * 5) * 0.07;
+    E.m.body.rotation.y += dt * (E.tired > 0 ? 1 : 6);
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      if (!near(E, 6)) return;
+      E.st = 'run';
+      E.run = 3.5;
+      banner(L('DRONE FUJÃO!', 'RUNAWAY DRONE!'), L(`Alcance o drone ${RUN_NEED} vezes`, `Catch the drone ${RUN_NEED} times`));
+      sfx.alarm();
+    }
+    E.cd -= dt;
+    // corre ~3,5s e cansa ~1,8s (fica lento e solta faíscas)
+    if (E.tired > 0) {
+      E.tired -= dt;
+      if (E.tired <= 0) E.run = 3 + Math.random();
+      if (Math.random() < dt * 12) burst(E.x, 0.7, E.z, RUN_COL, 1, 1.5, 0.05, 0.4, { up: 0.5 });
+    } else {
+      E.run -= dt;
+      if (E.run <= 0) {
+        E.tired = 1.8;
+        floatText(E.x, 1.6, E.z, L('cansou!', 'tired!'), 'shield');
+      }
+    }
+    const dp = p.alive ? Math.hypot(E.x - p.x, E.z - p.z) : 99;
+    if (dp < 7) {
+      const sp = Math.min(p.stats.speed * 1.02, 7.5) * (E.tired > 0 ? 0.35 : 1);
+      E.a = steer(E, fleeAngle(E, p, E.hx, E.hz, 12), sp * dt);
+    }
+    E.m.g.position.set(E.x, 0, E.z);
+    E.m.g.rotation.y = -E.a + Math.PI / 2;
+    if (dp > 0.95 || E.cd > 0) return;
+    // pegou!
+    E.got++;
+    sfx.coin();
+    for (let k = 0; k < 4; k++) spawnPickup('credits', E.x, E.z, { amount: Math.max(1, Math.round(eventCredits(0.08))) });
+    burst(E.x, 0.8, E.z, RUN_COL, 24, 5, 0.07, 0.6, { up: 1.4 });
+    floatText(E.x, 1.8, E.z, `${E.got}/${RUN_NEED}`, 'crit');
+    if (E.got >= RUN_NEED) {
+      E.m.g.visible = false;
+      complete(E, 1.7, L('DRONE CAPTURADO!', 'DRONE CAUGHT!'), L('Ele estava cheio de créditos', 'It was full of credits'), E.x, E.z);
+      return;
+    }
+    // escapa: pisca para outro lugar perto de casa
+    const pt = freeAround(G.dungeon, E.hx, E.hz, 4, 9);
+    if (pt && Math.hypot(pt.x - p.x, pt.z - p.z) > 3) {
+      E.x = pt.x;
+      E.z = pt.z;
+    }
+    ringFx(E.x, E.z, 1.2, RUN_COL, 0.4);
+    E.tired = 0;
+    E.run = 3.5;
+    E.cd = 0.8;
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto', 'get close') : `${E.got}/${RUN_NEED}${E.tired > 0 ? L(' · cansado!', ' · tired!') : ''}`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.m.g.visible = false;
+  },
+  intro: () => L(`um drone dourado cheio de créditos. Ele foge de você, mas cansa de vez em quando (fica lento e solta faíscas): encoste nele ${RUN_NEED} vezes.`, `a golden drone full of credits. It runs from you, but tires now and then (slows down and sparks): touch it ${RUN_NEED} times.`),
+};
+
+// ==================================================================
+// 31. Totens Dançantes: 4 totens com 1 a 4 anéis; golpeie em ordem crescente (nos andares 6+ eles trocam)
+// ==================================================================
+const TOT_COL = 0xff9f5a;
+const TOT_N = 4;
+const TOT_D = 2.3;
+const totems = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.1);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const nums = shuffle([1, 2, 3, 4]);
+    const list = [];
+    for (let k = 0; k < TOT_N; k++) {
+      const ox = (k % 2 ? 1 : -1) * TOT_D;
+      const oz = (k < 2 ? -1 : 1) * TOT_D;
+      const t = new THREE.Group();
+      t.position.set(ox, 0, oz);
+      g.add(t);
+      put(t, box(0.6, 0.2, 0.6), mats().dark, 0, 0.1, 0);
+      put(t, mats().cyl, mats().metal, 0, 1.0, 0, 0.22, 1.8, 0.22);
+      const mat = lightMat(TOT_COL, 1.5);
+      const rings = [];
+      for (let r = 0; r < 4; r++) rings.push(put(t, mats().cyl, mat, 0, 0.45 + r * 0.38, 0, 0.36, 0.1, 0.36));
+      const top = put(t, mats().oct, glowMat(TOT_COL, 2), 0, 2.15, 0, 0.18, 0.26, 0.18);
+      list.push({ x: s.x + ox, z: s.z + oz, n: nums[k], mat, rings, top, lit: false, e: null, hits: 0 });
+    }
+    const E = { kind: 'totems', x: s.x, z: s.z, g, list, st: 'idle', next: 1, grace: 0, swapT: 8, errs: 0, swaps: floor >= 6 };
+    totems.paint(E);
+    return E;
+  },
+  paint(E) {
+    for (const t of E.list) {
+      t.rings.forEach((r, i) => (r.visible = i < t.n));
+      setLight(t.mat, t.lit ? 0x39ff88 : TOT_COL, t.lit ? 1.8 : 1.5);
+      t.top.visible = !t.lit;
+    }
+  },
+  arm(E) {
+    for (const t of E.list) {
+      if (t.e) continue;
+      t.e = hitTarget(t.x, t.z, 0.5, 1.9, L('Totem', 'Totem'));
+      t.hits = 0;
+    }
+  },
+  update(E, dt) {
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      if (!near(E, 7)) return;
+      E.st = 'play';
+      totems.arm(E);
+    }
+    E.grace -= dt;
+    let good = false;
+    let bad = null;
+    for (const t of E.list) {
+      if (!t.e) continue;
+      const k = hitsOf(t);
+      if (!k || t.lit) continue;
+      if (t.n === E.next) good = t;
+      else bad = t;
+    }
+    if (good) {
+      good.lit = true;
+      E.next++;
+      E.grace = 0.6;
+      sfx.seq(good.n - 1);
+      burst(good.x, 2, good.z, 0x39ff88, 20, 4, 0.07, 0.5, { up: 1.2 });
+      totems.paint(E);
+      if (E.next > TOT_N) {
+        for (const t of E.list) {
+          if (t.e && t.e.alive) killQuiet(t.e);
+          t.e = null;
+        }
+        complete(E, Math.max(0.9, 1.6 - 0.15 * E.errs), L('TOTENS EM ORDEM!', 'TOTEMS IN ORDER!'), E.errs ? L(`${E.errs} erro(s)`, `${E.errs} mistake(s)`) : L('Sem errar nenhum!', 'Without a single mistake!'), E.x, E.z, { extra: true });
+      }
+      return;
+    }
+    if (bad && E.grace <= 0) {
+      // ordem errada: todos apagam e o totem dá choque
+      E.errs++;
+      E.next = 1;
+      for (const t of E.list) t.lit = false;
+      totems.paint(E);
+      sfx.deny();
+      const p = G.player;
+      beamFx(bad.x, 2.1, bad.z, p.x, 1, p.z, 0xff3355, 0.25, 6);
+      eventHurt(0.04, bad.x, bad.z, 8);
+      floatText(bad.x, 2.6, bad.z, L('ORDEM ERRADA!', 'WRONG ORDER!'), 'hurt');
+      E.grace = 0.6;
+    }
+    // andares 6+: os números dos totens apagados trocam de lugar de vez em quando
+    if (!E.swaps) return;
+    E.swapT -= dt;
+    if (E.swapT > 0) return;
+    E.swapT = 8;
+    const off = E.list.filter((t) => !t.lit);
+    if (off.length < 2) return;
+    const ns = off.map((t) => t.n);
+    for (let i = ns.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ns[i], ns[j]] = [ns[j], ns[i]];
+    }
+    off.forEach((t, i) => {
+      t.n = ns[i];
+      burst(t.x, 1.4, t.z, TOT_COL, 10, 3, 0.06, 0.4, { up: 1 });
+    });
+    totems.paint(E);
+    sfx.spin();
+    floatText(E.x, 2.8, E.z, L('TROCARAM!', 'SHUFFLED!'), 'shield');
+  },
+  hud: (E) => (E.st === 'idle' ? L('chegue perto', 'get close') : `${L('próximo', 'next')}: ${E.next}${E.errs ? ` <span style="color:#ff4466">✖${E.errs}</span>` : ''}`),
+  save: (E) => ({ errs: E.errs }),
+  load(E, s) {
+    E.errs = s.errs | 0;
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    for (const t of E.list) t.lit = true;
+    totems.paint(E);
+  },
+  intro: () => L('4 totens com 1, 2, 3 e 4 anéis. Golpeie na ordem crescente de anéis (1, 2, 3, 4); errar apaga tudo e dá choque. Do andar 6 em diante, os anéis dos apagados trocam de totem de vez em quando.', '4 totems with 1, 2, 3 and 4 rings. Hit them in rising ring order (1, 2, 3, 4); a mistake resets them and shocks you. From floor 6 on, the unlit totems swap their rings now and then.'),
+};
+
+// ==================================================================
+// 32. Altar de Sangue: fique no altar para oferecer 30% da vida; cada oferenda dá um prêmio maior (até 3)
+// ==================================================================
+const ALT_COL = 0xff2e4d;
+const ALT_HOLD = 1.8;
+const ALT_MAX = 3;
+const altar = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1.4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, box(0.9, 0.5, 0.9), mats().dark, 0, 0.25, 0);
+    put(g, box(1.0, 0.08, 1.0), mats().metal, 0, 0.52, 0);
+    const pool = put(g, mats().cyl, glowMat(ALT_COL, 2), 0, 0.58, 0, 0.32, 0.06, 0.32);
+    const ringMat = lightMat(ALT_COL, 1.4);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, 1.3, 1, 1.3);
+    const fill = put(g, mats().disc, flatMat(ALT_COL, 0.3), 0, 0.025, 0, 0.001, 1, 0.001);
+    const gems = [];
+    for (let k = 0; k < ALT_MAX; k++) {
+      const a = (k / ALT_MAX) * Math.PI * 2;
+      gems.push(put(g, mats().oct, glowMat(0x553344, 1), Math.cos(a) * 0.95, 1.05, Math.sin(a) * 0.95, 0.12, 0.18, 0.12));
+    }
+    return { kind: 'altar', x: s.x, z: s.z, g, pool, ringMat, fill, gems, st: 'idle', n: 0, hold: 0, wait: false };
+  },
+  paint(E) {
+    E.gems.forEach((m, k) => (m.material = glowMat(k < E.n ? ALT_COL : 0x553344, k < E.n ? 2.4 : 1)));
+  },
+  update(E, dt) {
+    for (const m of E.gems) m.rotation.y += dt * 2;
+    if (E.st === 'done') return;
+    const p = G.player;
+    const on = near(E, 1.15);
+    if (!on) E.wait = false;
+    if (E.wait) return;
+    E.hold = on ? E.hold + dt : Math.max(0, E.hold - dt * 2);
+    const k = Math.min(1, E.hold / ALT_HOLD) * 1.25;
+    E.fill.scale.set(Math.max(0.001, k), 1, Math.max(0.001, k));
+    if (on && Math.random() < dt * 8) burst(E.x, 0.7, E.z, ALT_COL, 1, 1.5, 0.05, 0.5, { up: 1.5 });
+    if (E.hold < ALT_HOLD) return;
+    E.hold = 0;
+    E.wait = true;
+    E.fill.scale.set(0.001, 1, 0.001);
+    if (p.hp <= p.stats.maxHp * 0.34) {
+      sfx.deny();
+      toast(L('🩸 O altar recusa: você está fraco demais (precisa de mais de 34% de vida).', '🩸 The altar refuses: you are too weak (you need more than 34% health).'), 'warn', 'ev');
+      return;
+    }
+    if (!eventHurt(0.3, E.x, E.z, 0)) return;
+    E.n++;
+    altar.paint(E);
+    beamFx(p.x, 1.2, p.z, E.x, 0.6, E.z, ALT_COL, 0.4, 6);
+    burst(E.x, 0.8, E.z, ALT_COL, 30, 5, 0.08, 0.7, { up: 2 });
+    G.shake = Math.max(G.shake, 0.25);
+    if (E.n >= ALT_MAX) {
+      setLight(E.ringMat, 0x553344, 0.5);
+      complete(E, 2.4, L('PACTO DE SANGUE!', 'BLOOD PACT!'), L('O altar aceitou as 3 oferendas', 'The altar accepted all 3 offerings'), E.x, E.z, { extra: true, loot: { chest: true } });
+      return;
+    }
+    // oferenda parcial: créditos e um item, cada vez maiores
+    const cr = eventCredits(0.5 * E.n);
+    G.char.credits += cr;
+    achAdd('credits', cr);
+    dropLoot(E.x, E.z, { contract: true });
+    sfx.legendary();
+    banner(L(`OFERENDA ${E.n}/${ALT_MAX}`, `OFFERING ${E.n}/${ALT_MAX}`), L(`+${fmt(cr)}¢ · saia e volte para oferecer de novo`, `+${fmt(cr)}¢ · step out and back in to offer again`));
+    saveGame();
+  },
+  hud: (E) => (E.n ? `${E.n}/${ALT_MAX} ${L('oferendas', 'offerings')}` : L('fique no altar', 'stand on the altar')),
+  save: (E) => ({ n: E.n }),
+  load(E, s) {
+    E.n = Math.min(ALT_MAX, s.n | 0);
+    altar.paint(E);
+    if (s.st === 'done') {
+      E.st = 'done';
+      setLight(E.ringMat, 0x553344, 0.5);
+    }
+  },
+  intro: () => L(`fique ${ALT_HOLD}s no altar para oferecer 30% da sua vida. Cada oferenda dá créditos e um item, e a 3ª dá um baú especial. Só aceita se você tiver mais de 34% de vida.`, `stand on the altar for ${ALT_HOLD}s to offer 30% of your health. Each offering gives credits and an item, and the 3rd gives a special cache. It only accepts if you have more than 34% health.`),
+};
+
+// ==================================================================
+// 33. Galeria de Tiro: entre no anel; por 30s alvos aparecem: acerte 14 (nos andares 6+, não acerte os roxos)
+// ==================================================================
+const GAL_COL = 0xffcf3d;
+const GAL_R = 4.2;
+const GAL_TIME = 30;
+const GAL_NEED = 14;
+let galGeo = null;
+const gallery = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.6);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const ringMat = lightMat(GAL_COL, 1.4);
+    put(g, mats().ring, ringMat, 0, 0.03, 0, GAL_R, 1, GAL_R);
+    put(g, mats().disc, flatMat(GAL_COL, 0.06), 0, 0.02, 0, GAL_R, 1, GAL_R);
+    put(g, box(0.5, 1.1, 0.5), mats().metal, 0, 0.55, 0);
+    const lamp = put(g, mats().oct, glowMat(GAL_COL, 2.4), 0, 1.4, 0, 0.2, 0.3, 0.2);
+    return { kind: 'gallery', x: s.x, z: s.z, g, ringMat, lamp, st: 'idle', t: GAL_TIME, score: 0, targets: [], spawnT: 0, bad: floor >= 6 };
+  },
+  target(E) {
+    let pt = null;
+    for (let k = 0; k < 10 && !pt; k++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 1.2 + Math.random() * (GAL_R - 1.8);
+      const x = E.x + Math.cos(a) * r;
+      const z = E.z + Math.sin(a) * r;
+      if (isWalkable(G.dungeon, x, z) && !E.targets.some((t) => Math.hypot(t.x - x, t.z - z) < 1.4)) pt = { x, z };
+    }
+    if (!pt) return;
+    const bad = E.bad && Math.random() < 0.25;
+    if (!galGeo) galGeo = new THREE.CircleGeometry(1, 20);
+    const g = new THREE.Group();
+    g.position.set(pt.x, 0, pt.z);
+    g.rotation.y = Math.PI / 4; // de frente para a câmera
+    G.world.add(g);
+    put(g, mats().cyl, mats().metal, 0, 0.45, 0, 0.05, 0.9, 0.05);
+    const c1 = bad ? 0xb040ff : 0xff3355;
+    // placa inclinada para trás (de frente para a câmera), com anéis alternados
+    const face = new THREE.Group();
+    face.position.y = 1.15;
+    face.rotation.x = -0.75;
+    g.add(face);
+    put(face, galGeo, mats().dark, 0, 0, 0.0, 0.5, 0.5, 1);
+    put(face, galGeo, glowMat(0xffffff, 0.9), 0, 0, 0.01, 0.44, 0.44, 1);
+    put(face, galGeo, glowMat(c1, 1.3), 0, 0, 0.02, 0.33, 0.33, 1);
+    put(face, galGeo, glowMat(0xffffff, 0.9), 0, 0, 0.03, 0.2, 0.2, 1);
+    put(face, galGeo, glowMat(c1, 1.6), 0, 0, 0.04, 0.09, 0.09, 1);
+    g.scale.setScalar(0.01);
+    const e = hitTarget(pt.x, pt.z, 0.45, 1.6, bad ? L('Alvo Proibido', 'Forbidden Target') : L('Alvo', 'Target'));
+    E.targets.push({ x: pt.x, z: pt.z, g, e, bad, life: (G.floor >= 10 ? 2.1 : 2.6) + (bad ? 1 : 0), age: 0, hits: 0 });
+  },
+  drop(E, t) {
+    G.world.remove(t.g);
+    if (t.e.alive) killQuiet(t.e);
+  },
+  end(E) {
+    for (const t of E.targets) gallery.drop(E, t);
+    E.targets = [];
+    E.lamp.visible = false;
+    setLight(E.ringMat, 0x333344, 0.3);
+    if (E.score >= GAL_NEED) complete(E, 2, L('ATIRADOR DE ELITE!', 'SHARPSHOOTER!'), L(`${E.score} alvos`, `${E.score} targets`), E.x, E.z, { extra: true });
+    else if (E.score >= 6) complete(E, (1.4 * E.score) / GAL_NEED, L('FIM DA RODADA', 'ROUND OVER'), L(`${E.score}/${GAL_NEED} alvos`, `${E.score}/${GAL_NEED} targets`), E.x, E.z);
+    else failed(E, L('Poucos alvos acertados na galeria.', 'Too few targets hit in the gallery.'));
+  },
+  update(E, dt) {
+    if (E.st === 'done' || E.st === 'failed') return;
+    E.lamp.rotation.y += dt * (E.st === 'run' ? 6 : 1.2);
+    if (E.st === 'idle') {
+      if (!near(E, GAL_R - 0.3)) return;
+      E.st = 'run';
+      banner(L('GALERIA DE TIRO!', 'SHOOTING GALLERY!'), E.bad ? L(`Acerte ${GAL_NEED} alvos em ${GAL_TIME}s (não os roxos!)`, `Hit ${GAL_NEED} targets in ${GAL_TIME}s (not the purple ones!)`) : L(`Acerte ${GAL_NEED} alvos em ${GAL_TIME}s`, `Hit ${GAL_NEED} targets in ${GAL_TIME}s`));
+      sfx.alarm();
+      ringFx(E.x, E.z, GAL_R, GAL_COL, 0.6);
+    }
+    E.t -= dt;
+    E.spawnT -= dt;
+    if (E.spawnT <= 0 && E.targets.length < 3 && E.t > 0.8) {
+      E.spawnT = 0.35;
+      gallery.target(E);
+    }
+    for (const t of E.targets) {
+      t.age += dt;
+      t.g.scale.setScalar(Math.min(1, t.age * 6));
+      const hit = t.e.alive && t.e.maxHp - t.e.hp > 0;
+      if (hit) {
+        t.life = 0;
+        if (t.bad) {
+          E.score = Math.max(0, E.score - 1);
+          sfx.zap();
+          eventHurt(0.04, t.x, t.z, 6);
+          floatText(t.x, 2, t.z, '-1', 'hurt');
+        } else {
+          E.score++;
+          sfx.coin();
+          floatText(t.x, 2, t.z, `${E.score}/${GAL_NEED}`, 'up');
+          burst(t.x, 1.15, t.z, GAL_COL, 14, 4, 0.06, 0.4, { up: 1 });
+        }
+      } else t.life -= dt;
+      if (t.life <= 0) gallery.drop(E, t);
+    }
+    E.targets = E.targets.filter((t) => t.life > 0);
+    if (E.t <= 0) gallery.end(E);
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre no anel', 'step in') : `${E.score}/${GAL_NEED} · ${Math.ceil(Math.max(0, E.t))}s`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done' && s.st !== 'failed') return;
+    E.st = s.st;
+    E.lamp.visible = false;
+    setLight(E.ringMat, 0x333344, 0.3);
+  },
+  busy: (E) => E.st === 'run',
+  intro: () => L(`entre no anel amarelo: por ${GAL_TIME}s alvos aparecem lá dentro. Acerte ${GAL_NEED} com qualquer ataque antes que sumam (do andar 6 em diante, acertar um roxo tira ponto).`, `step into the yellow ring: for ${GAL_TIME}s targets pop up inside. Hit ${GAL_NEED} with any attack before they vanish (from floor 6 on, hitting a purple one costs a point).`),
+};
+
+// ==================================================================
+// 34. Ídolo Amaldiçoado: pegue o ídolo e leve até o altar distante; enquanto carrega, caçadores aparecem
+// ==================================================================
+const IDOL_COL = 0xd6a2ff;
+const idol = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 1.2);
+    if (!s) return null;
+    // altar longe, mas nem tanto: de preferência a 16–40 de distância
+    const dist = (r) => Math.hypot(r.x + r.w / 2 - s.x, r.y + r.h / 2 - s.z);
+    const mid = rooms.filter((r) => dist(r) > 16 && dist(r) < 40);
+    const far = rooms.filter((r) => dist(r) > 16);
+    const t = (mid.length && findSpot(d, mid, 1.3, 1.3, [{ x: s.x, z: s.z, r: 15 }])) || findSpot(d, far, 1.3, 1.3, [{ x: s.x, z: s.z, r: 15 }]);
+    if (!t) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, mats().cyl, mats().metal, 0, 0.4, 0, 0.4, 0.8, 0.4);
+    put(g, mats().ring, lightMat(IDOL_COL, 1.2), 0, 0.03, 0, 1.0, 1, 1.0);
+    // o ídolo (anda com o jogador quando é pego)
+    const it = new THREE.Group();
+    G.world.add(it);
+    put(it, mats().oct, glowMat(IDOL_COL, 2.4), 0, 0, 0, 0.22, 0.34, 0.22);
+    put(it, box(0.12, 0.12, 0.12), glowMat(0xffd23d, 2.6), 0, 0.3, 0);
+    it.position.set(s.x, 1.15, s.z);
+    // altar de destino
+    const a = groupAt(t.x, t.z);
+    const altMat = lightMat(IDOL_COL, 0.8);
+    put(a, mats().ring, altMat, 0, 0.03, 0, 1.3, 1, 1.3);
+    put(a, box(0.8, 0.5, 0.8), mats().dark, 0, 0.25, 0);
+    for (const [ox, oz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) put(a, mats().cyl, mats().metal, ox * 0.9, 0.6, oz * 0.9, 0.1, 1.2, 0.1);
+    return { kind: 'idol', x: s.x, z: s.z, tx: t.x, tz: t.z, pts: [{ x: t.x, z: t.z }], g, a, it, altMat, st: 'idle', waveT: 0, foes: [] };
+  },
+  update(E, dt) {
+    const p = G.player;
+    E.it.rotation.y += dt * 2;
+    if (E.st === 'done') return;
+    if (E.st === 'idle') {
+      E.it.position.set(E.x, 1.15 + Math.sin(G.t * 2) * 0.08, E.z);
+      if (!near(E, 1.1)) return;
+      E.st = 'carry';
+      E.waveT = 4;
+      setLight(E.altMat, IDOL_COL, 1.8);
+      banner(L('ÍDOLO AMALDIÇOADO!', 'CURSED IDOL!'), L('Leve o ídolo até o altar (marcado no mapa)', 'Carry the idol to the altar (marked on the map)'));
+      sfx.roar();
+      return;
+    }
+    // morreu: o ídolo volta ao pedestal
+    if (!p.alive) {
+      E.st = 'idle';
+      setLight(E.altMat, IDOL_COL, 0.8);
+      return;
+    }
+    E.it.position.set(p.x, 2.5 + Math.sin(G.t * 4) * 0.1, p.z);
+    if (Math.random() < dt * 10) burst(p.x, 2.4, p.z, IDOL_COL, 1, 1, 0.05, 0.5, { grav: -2 });
+    E.waveT -= dt;
+    if (E.waveT <= 0) {
+      E.waveT = 8;
+      spawnWave(E, Math.min(6, 2 + Math.floor(G.floor / 6)), p.x, p.z, 6, 9, IDOL_COL);
+      sfx.telegraph();
+    }
+    if (Math.hypot(p.x - E.tx, p.z - E.tz) < 1.3) {
+      E.it.position.set(E.tx, 1.2, E.tz);
+      setLight(E.altMat, 0x39ff88, 1.6);
+      complete(E, 2.2, L('MALDIÇÃO SELADA!', 'CURSE SEALED!'), L('O ídolo voltou ao altar', 'The idol is back on its altar'), E.tx, E.tz, { extra: true });
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('pegue o ídolo', 'grab the idol') : `${Math.round(Math.hypot(G.player.x - E.tx, G.player.z - E.tz))}m ${L('até o altar', 'to the altar')}`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done') return;
+    E.st = 'done';
+    E.it.position.set(E.tx, 1.2, E.tz);
+    setLight(E.altMat, 0x39ff88, 1.6);
+  },
+  busy: (E) => E.st === 'carry',
+  intro: () => L('um ídolo amaldiçoado. Encoste para pegar e leve até o altar distante (marcado no mapa); enquanto você carrega, caçadores aparecem. Se você morrer, ele volta ao pedestal.', 'a cursed idol. Touch it to pick it up and carry it to the distant altar (marked on the map); hunters appear while you carry it. If you die, it returns to its pedestal.'),
+};
+
+// ==================================================================
+// 35. Dança Neon: pise na placa que acende, no ritmo da batida (24 batidas)
+// ==================================================================
+const DAN_COL = 0xff4df0;
+const DAN_COLS = [0xff3355, 0x39ff88, 0x3d8bff, 0xffd23d];
+const DAN_OFF = [
+  [0, -1.6],
+  [1.6, 0],
+  [0, 1.6],
+  [-1.6, 0],
+];
+const DAN_BEATS = 24;
+const DAN_NEED = 18;
+const dance = {
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 2.6);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const pads = DAN_OFF.map(([ox, oz], k) => {
+      put(g, box(1.2, 0.04, 1.2), mats().dark, ox, 0.02, oz);
+      const mat = lightMat(DAN_COLS[k], 0.35);
+      put(g, box(1.06, 0.07, 1.06), mat, ox, 0.035, oz);
+      // anel que encolhe até a batida
+      const ring = put(g, mats().ring, lightMat(0xffffff, 1.6), ox, 0.09, oz, 1, 1, 1);
+      ring.visible = false;
+      return { x: s.x + ox, z: s.z + oz, mat, ring };
+    });
+    const startMat = lightMat(DAN_COL, 1.3);
+    put(g, mats().ring, startMat, 0, 0.03, 0, 0.6, 1, 0.6);
+    // sequência das placas (com a semente do andar): nunca a mesma duas vezes seguidas
+    const seq = [];
+    for (let k = 0; k < DAN_BEATS; k++) {
+      let n = ri(0, 3);
+      if (k && n === seq[k - 1]) n = (n + ri(1, 3)) % 4;
+      seq.push(n);
+    }
+    return { kind: 'dance', x: s.x, z: s.z, g, pads, startMat, seq, st: 'idle', beat: floor >= 10 ? 0.72 : 0.85, t: 0, i: -3, score: 0 };
+  },
+  paint(E) {
+    E.pads.forEach((pd, k) => {
+      const cur = E.i >= 0 && E.seq[E.i] === k;
+      const nxt = E.i + 1 >= 0 && E.i + 1 < DAN_BEATS && E.seq[E.i + 1] === k;
+      setLight(pd.mat, DAN_COLS[k], cur ? 2.2 : nxt ? 0.9 : 0.35);
+      pd.ring.visible = cur;
+    });
+  },
+  update(E, dt) {
+    if (E.st === 'done' || E.st === 'failed') return;
+    const p = G.player;
+    if (E.st === 'idle') {
+      if (!near(E, 0.7)) return;
+      E.st = 'run';
+      E.t = 0;
+      E.i = -3;
+      E.score = 0;
+      banner(L('DANÇA NEON!', 'NEON DANCE!'), L('Pise na placa acesa quando o anel fechar', 'Step on the lit plate when the ring closes'));
+      sfx.click();
+      dance.paint(E);
+      return;
+    }
+    E.t += dt;
+    // anel da batida atual encolhe até a hora certa
+    if (E.i >= 0) {
+      const pd = E.pads[E.seq[E.i]];
+      const k = Math.max(0.45, 1.35 - (E.t / E.beat) * 0.9);
+      pd.ring.scale.set(k, 1, k);
+    }
+    if (E.t < E.beat) return;
+    E.t -= E.beat;
+    // hora da batida: está na placa certa?
+    if (E.i < 0) {
+      sfx.click();
+      floatText(E.x, 2.4, E.z, String(-E.i), 'crit');
+    } else {
+      const pd = E.pads[E.seq[E.i]];
+      if (p.alive && Math.hypot(p.x - pd.x, p.z - pd.z) < 0.8) {
+        E.score++;
+        sfx.seq(E.seq[E.i]);
+        burst(pd.x, 0.3, pd.z, DAN_COLS[E.seq[E.i]], 12, 3, 0.06, 0.4, { up: 1.4 });
+      } else {
+        floatText(pd.x, 1.2, pd.z, L('errou', 'miss'), 'hurt');
+        sfx.deny();
+      }
+    }
+    E.i++;
+    if (E.i >= DAN_BEATS) {
+      E.pads.forEach((pd, k) => {
+        setLight(pd.mat, DAN_COLS[k], 0.25);
+        pd.ring.visible = false;
+      });
+      setLight(E.startMat, 0x333344, 0.3);
+      if (E.score >= DAN_NEED) complete(E, 1.8, L('RAINHA DA PISTA!', 'DANCE FLOOR STAR!'), L(`${E.score}/${DAN_BEATS} passos`, `${E.score}/${DAN_BEATS} steps`), E.x, E.z, { extra: true });
+      else if (E.score >= 10) complete(E, (1.3 * E.score) / DAN_BEATS, L('FIM DA MÚSICA', 'SONG OVER'), L(`${E.score}/${DAN_BEATS} passos`, `${E.score}/${DAN_BEATS} steps`), E.x, E.z);
+      else failed(E, L('Fora do ritmo: poucos passos certos.', 'Off beat: too few right steps.'));
+      return;
+    }
+    dance.paint(E);
+  },
+  hud: (E) => (E.st === 'idle' ? L('pise no centro', 'step on the center') : `${E.score}/${DAN_NEED} · ${Math.max(0, DAN_BEATS - Math.max(0, E.i))} ${L('batidas', 'beats')}`),
+  save: () => ({}),
+  load(E, s) {
+    if (s.st !== 'done' && s.st !== 'failed') return;
+    E.st = s.st;
+    setLight(E.startMat, 0x333344, 0.3);
+  },
+  intro: () => L(`pise no círculo do meio para a música começar. A cada batida uma placa acende e um anel branco fecha em cima dela: esteja na placa quando o anel fechar. Acerte ${DAN_NEED} de ${DAN_BEATS}.`, `step on the middle circle to start the song. On each beat a plate lights up and a white ring closes on it: be on that plate when the ring closes. Hit ${DAN_NEED} of ${DAN_BEATS}.`),
+};
+
+// ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, secret, gamble };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble };
 
 // Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (3 no começo, 4 do andar 4,
 // 5 do andar 8, e às vezes um a mais) e o pequeno
@@ -3287,7 +4382,8 @@ export function setupEvents(d, floor, boss, rooms) {
   const first = pick(fresh);
   const second = pick(fresh.filter((k) => k !== first));
   const base = floor < 4 ? 3 : floor < 8 ? 4 : 5;
-  const want = boss || !free.length ? 0 : Math.min(base + (roll && floor >= 4 ? 1 : 0), Math.max(1, free.length));
+  // andar gigante: 2 eventos a mais
+  const want = boss || !free.length ? 0 : Math.min(base + (roll && floor >= 4 ? 1 : 0) + (d.huge ? 2 : 0), Math.max(1, free.length));
   // cada tentativa começa do mesmo ponto da semente: se uma não couber, a próxima sai igual ao continuar
   // embaralha a lista inteira (mesmo número de sorteios com ou sem andar salvo)
   const rest = shuffle(MAIN_EVENTS.slice()).filter((k) => k !== first && k !== second && fresh.includes(k));
@@ -3295,6 +4391,8 @@ export function setupEvents(d, floor, boss, rooms) {
   const got = [];
   for (const k of order) {
     if (forced === undefined && got.length >= want) break;
+    // no máximo um evento com relógio por andar (dois ao mesmo tempo obrigam a escolher um e perder o outro)
+    if (forced === undefined && TIMED.includes(k) && got.some((g) => TIMED.includes(g))) continue;
     const E = isolateRandom(() => KIND[k].setup(d, floor, free));
     if (!E) continue;
     G.events.push(E);
@@ -3393,6 +4491,8 @@ function evDist2(E, px, pz) {
   else if (E.kind === 'signal') at(E.cx, E.cz);
   else if (E.kind === 'ball') at(E.bx, E.bz);
   else if (E.kind === 'race') { if (E.st === 'idle') at(E.x, E.z); else at(E.fx, E.fz); }
+  else if (E.kind === 'idol') { if (E.st === 'carry') at(E.tx, E.tz); else at(E.x, E.z); }
+  else if (E.kind === 'herd') for (const o of E.drones) { if (!o.pen) at(o.x, o.z); }
   else at(E.x, E.z);
   return best;
 }
@@ -3527,6 +4627,22 @@ export function drawEventMarks(ctx, d) {
         ctx.fill();
         ctx.globalAlpha = 1;
       }
+    } else if (E.kind === 'idol') {
+      // pedestal (ou o jogador carregando) e o altar de destino
+      if (E.st !== 'carry') diamond(ctx, E.x, E.z, 1.1 * pulse, I.css);
+      ctx.strokeStyle = I.css;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.arc(E.tx, E.tz, (E.st === 'carry' ? 2 * pulse : 1.6), 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (E.kind === 'runner') {
+      diamond(ctx, E.x, E.z, 1.1 * pulse, I.css);
+    } else if (E.kind === 'herd') {
+      ctx.strokeStyle = I.css;
+      ctx.lineWidth = 0.7;
+      ctx.strokeRect(E.x - 1.7, E.z - 1.7, 3.4, 3.4);
+      ctx.fillStyle = I.css;
+      for (const o of E.drones) if (!o.pen) { ctx.beginPath(); ctx.arc(o.x, o.z, 0.7 * pulse, 0, Math.PI * 2); ctx.fill(); }
     } else if (E.kind === 'secret') {
       continue; // segredo não aparece no mapa
     } else if (E.kind === 'gamble') {
@@ -3551,5 +4667,7 @@ export function eventArrows(arrow) {
     else if (E.kind === 'escort' && E.st === 'move') arrow(E.stall ? E.x : E.tx, E.stall ? E.z : E.tz, '#5ab8ff', 0.85);
     else if (E.kind === 'race' && E.st !== 'idle') arrow(E.fx, E.fz, '#7affc8', 1);
     else if (E.kind === 'ball' && E.st === 'play') arrow(E.gx, E.gz, '#39ff88', 0.85);
+    else if (E.kind === 'idol' && E.st === 'carry') arrow(E.tx, E.tz, '#d6a2ff', 1);
+    else if (E.kind === 'runner' && E.st === 'run') arrow(E.x, E.z, '#ffe14d', 0.85);
   }
 }

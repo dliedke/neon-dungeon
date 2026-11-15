@@ -9,7 +9,7 @@ import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { dropLoot, killBounty } from './loot.js';
 import { gainXp, playerDie } from './player.js';
-import { onEnemyKilled, abyssOn } from './enemies.js';
+import { onEnemyKilled, abyssOn, abyssFx } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
 import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia, primDmgMult, primOnHit, primDodge } from './mythic.js';
 import { achKill } from './ach.js';
@@ -381,7 +381,7 @@ export function capHeal(k, amount, perSec) {
 export function healPlayer(a, show = true) {
   const p = G.player;
   if (!p.alive) return;
-  if (abyssOn(3)) a *= 0.7; // Abismo III: Feridas Profundas
+  if (abyssOn(3)) a *= 0.7 * abyssFx().heal; // Abismo III: Feridas Profundas (XIII: Hemorragia)
   const before = p.hp;
   p.hp = Math.min(p.stats.maxHp, p.hp + a);
   const got = p.hp - before;
@@ -400,9 +400,11 @@ export function spawnProjectile(o) {
   G.world.add(m);
   const pr = { ...o, y, mesh: m, life: o.life ?? 1, hit: new Set(), pierce: o.pierce || 0, alive: true, trail: 0 };
   // Abismo VII: tiros inimigos mais rápidos (o alcance continua o mesmo)
+  // Abismo XXIII: mais ainda (Chuva de Balas)
   if (o.from === 'enemy' && o.speed && abyssOn(7)) {
-    pr.speed = o.speed * 1.25;
-    pr.life /= 1.25;
+    const k = 1.25 * abyssFx().shot;
+    pr.speed = o.speed * k;
+    pr.life /= k;
   }
   G.projectiles.push(pr);
   return pr;

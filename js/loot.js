@@ -31,24 +31,25 @@ function mythChance(o, find) {
 }
 // Chance de um item virar divino (acima do mítico): do Caos para cima (no Caos, metade do Apocalipse),
 // ou no Pesadelo/Inferno a partir do Brutal. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
-// No Abismo sobe +10% da chance da Morte por nível (Abismo X: o dobro da Morte).
+// No Abismo sobe +10% da chance da Morte por nível (Abismo X: o dobro da Morte). Tudo x1,6 (DIV_K).
 function divChance(o, find) {
   const t = G.char.tier | 0;
   const dr = Math.floor(rewardRank() + 1e-6);
   const k = dr >= 8 ? 3 * (1 + 0.1 * (dr - 8)) : dr >= 7 ? 2 : t < 1 ? (dr >= 6 ? 0.6 : 0) : dr >= 6 ? 1.2 : dr >= 5 ? 1 : dr >= 4 ? 0.8 : 0;
   if (!k || effFloor() < 8) return 0;
   const base = o.boss ? 0.02 : o.rift ? 0.015 : o.thief || o.beast ? 0.0125 : o.contract ? 0.0075 : o.chest ? 0.004 : o.elite ? 0.002 : 0.0003;
-  return base * k * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
+  return base * k * DIV_K * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }
+const DIV_K = 1.6;
 // Chance de um item virar primordial (acima do divino): só na Morte/Abismo (ou Apocalipse+ no Pesadelo/Inferno),
-// do andar efetivo 15 em diante e só de chefes, fendas, feras, ladrões e baús. Um décimo da chance do divino,
-// mais 10% por nível de Abismo (por cima dos 10% que o divino já ganha).
+// do andar efetivo 15 em diante e só de chefes, fendas, feras, ladrões e baús. 15% da chance do divino,
+// mais 15% por nível de Abismo (por cima dos 10% que o divino já ganha).
 function primChance(o, find) {
   if (!(o.boss || o.rift || o.beast || o.thief || o.chest)) return 0;
   const t = G.char.tier | 0;
   const dr = Math.floor(rewardRank() + 1e-6);
   if (!(dr >= 8 || (t >= 1 && dr >= 7)) || effFloor() < 15) return 0;
-  return divChance(o, find) * 0.1 * (1 + 0.1 * Math.max(0, dr - 8));
+  return divChance(o, find) * 0.15 * (1 + 0.15 * Math.max(0, dr - 8));
 }
 let labelRoot = null;
 

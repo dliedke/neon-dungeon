@@ -8,7 +8,7 @@ import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
-import { makeItem, itemScore, isUpgrade, unforged, SLOTS } from './items.js';
+import { makeItem, itemScore, isUpgrade, unforged, SLOTS, recycleValue } from './items.js';
 import { openShop, openForge, openStash } from './ui.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
@@ -588,6 +588,8 @@ function upgradeFor(slot, floor, minRarity) {
   }
   const gain = curScore > 0 ? Math.max(0, itemScore(best) / curScore - 1) : 1;
   best.price = Math.round((40 + floor * 25) * [1, 1.6, 3, 6, 7, 8, 8][best.rarity] * (1 + Math.min(gain, 0.6)));
+  // nunca mais barato que reciclar (senão comprar e reciclar dava lucro)
+  best.price = Math.max(best.price, Math.round(recycleValue(best) * 1.3));
   return best;
 }
 

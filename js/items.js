@@ -252,8 +252,9 @@ export function forgeSpent(it) {
 }
 
 // reciclar devolve o valor do item mais tudo o que foi gasto no ferreiro
+// (míticos para cima valem bem mais: ajuda a pagar o ferreiro para maximizar os melhores)
 export function recycleValue(it) {
-  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 40, 100, 250][it.rarity]) + forgeSpent(it);
+  return Math.round((6 + it.ilvl * 2) * [1, 2.5, 6, 15, 110, 260, 600][it.rarity]) + forgeSpent(it);
 }
 
 export function itemStatLines(it) {
