@@ -2015,7 +2015,7 @@ function renderShop() {
     const better = !it.sold && isUpgrade(it, c.equip);
     const tag = better ? `<div class="it-cmp" style="color:#39ff88">▲ ${L('Melhor que o equipado', 'Better than equipped')}</div>` : '';
     const btn = it.sold
-      ? `<button class="btn small ghost" disabled>${L('Vendido', 'Sold')}</button>`
+      ? `<button class="btn small ghost" data-nav data-buy="${k}" disabled>${L('Vendido', 'Sold')}</button>`
       : `<button class="btn small${full ? ' ghost' : ''}" data-nav data-buy="${k}" ${c.credits < it.price ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
     html += `<div class="shop-item${better ? ' better-card' : ''}${it.sold ? ' sold' : ''}">${itemCardHtml(it, tag)}${btn}</div>`;
   });
@@ -2046,8 +2046,12 @@ function buy(what) {
     sfx.coin();
     toast(`${L('Comprado', 'Bought')}: ${itemName(copy)}`);
   }
+  // o seletor do controle fica no mesmo lugar (o botão vendido continua focável, só desativado)
+  const had = !!focused;
   renderShop();
-  clearFocus();
+  const el = had && $('shop-items').querySelector(`[data-buy="${what}"]`);
+  if (el) setFocus(el);
+  else clearFocus();
 }
 
 // ------------------------------------------------------------------

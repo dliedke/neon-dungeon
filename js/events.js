@@ -2555,7 +2555,7 @@ const BALL_R = 0.42;
 const GOALS = 3;
 const BALL_TIME = 90;
 const GOAL_R = 2.1; // raio do gol (anel verde)
-const BALL_MAX = 8.5; // velocidade máxima da bola empurrada: jogador rápido conduz a bola em vez de lançá-la longe
+const BALL_MAX = 13; // velocidade máxima da bola empurrada (jogador muito rápido não a lança para outra sala)
 const KICK_SP = 11;
 // direção para o gol, com ajuda: se (dx, dz) aponta perto do gol (cos > cmin), a bola vai reto para ele
 function ballAssist(E, dx, dz, cmin) {
@@ -2659,21 +2659,25 @@ const ball = {
     if (p.alive && dist < p.r + BALL_R + 0.3) {
       const nx = (E.bx - p.x) / (dist || 1);
       const nz = (E.bz - p.z) / (dist || 1);
-      // conduzir: a bola segue mais o rumo do jogador que o ponto de contato, e não passa de BALL_MAX
+      // empurrão: a bola sai pelo ponto de contato (como uma bola de verdade), com um pouco do rumo
+      // do jogador, e mais rápida que ele: não fica grudada no pé. Teto BALL_MAX para não voar longe
       const pv = Math.hypot(p.ivx || 0, p.ivz || 0);
       let dx = nx;
       let dz = nz;
       if (pv > 0.5) {
-        dx = nx * 0.35 + (p.ivx / pv) * 0.65;
-        dz = nz * 0.35 + (p.ivz / pv) * 0.65;
+        dx = nx * 0.7 + (p.ivx / pv) * 0.3;
+        dz = nz * 0.7 + (p.ivz / pv) * 0.3;
         const l = Math.hypot(dx, dz) || 1;
         dx /= l;
         dz /= l;
       }
-      [dx, dz] = ballAssist(E, dx, dz, 0.5);
-      const sp = Math.min(BALL_MAX, Math.max(pv * 1.15, 3.5));
-      E.vx = dx * sp;
-      E.vz = dz * sp;
+      [dx, dz] = ballAssist(E, dx, dz, 0.75);
+      const sp = Math.min(BALL_MAX, Math.max(pv * 1.8, 5));
+      // já saindo mais rápido nessa direção (empurrão anterior): não mexe
+      if (E.vx * dx + E.vz * dz < sp * 0.9) {
+        E.vx = dx * sp;
+        E.vz = dz * sp;
+      }
       const ox = p.x + nx * (p.r + BALL_R + 0.1);
       const oz = p.z + nz * (p.r + BALL_R + 0.1);
       if (isWalkable(d, ox, oz)) {
