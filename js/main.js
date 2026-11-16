@@ -19,6 +19,7 @@ import { placeFeatures, buildFeatures, updateBiome, npcUnderCursor } from './bio
 import { updateMythic, resetMythic } from './mythic.js';
 import { updatePowers, clearPowers } from './powers.js';
 import { makeItem } from './items.js';
+import { sanitizeGems, addGem } from './gems.js';
 import { L, translateDom } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
@@ -450,6 +451,7 @@ function floorSnapshot() {
     if (pk.type === 'item') ground.push({ t: 'item', x: r2(pk.x), z: r2(pk.z), item: pk.item });
     else if (pk.type === 'credits') ground.push({ t: 'credits', x: r2(pk.x), z: r2(pk.z), amount: pk.amount });
     else if (pk.type === 'stim') ground.push({ t: 'stim', x: r2(pk.x), z: r2(pk.z) });
+    else if (pk.type === 'gem') ground.push({ t: 'gem', x: r2(pk.x), z: r2(pk.z), g: pk.g, gt: pk.gt });
   }
   const buffs = {};
   for (const k in p.buffs) if (typeof p.buffs[k] === 'number' && p.buffs[k] > 0) buffs[k] = r2(p.buffs[k]);
@@ -508,7 +510,7 @@ function resumeFloor(c) {
   // o que estava no chão
   for (const g of h.ground || []) {
     if (!isWalkable(d, g.x, g.z)) continue;
-    const pk = g.t === 'item' && g.item ? spawnPickup('item', g.x, g.z, { item: g.item, quiet: true }) : g.t === 'credits' ? spawnPickup('credits', g.x, g.z, { amount: g.amount | 0 }) : g.t === 'stim' ? spawnPickup('stim', g.x, g.z, {}) : null;
+    const pk = g.t === 'item' && g.item ? spawnPickup('item', g.x, g.z, { item: g.item, quiet: true }) : g.t === 'credits' ? spawnPickup('credits', g.x, g.z, { amount: g.amount | 0 }) : g.t === 'stim' ? spawnPickup('stim', g.x, g.z, {}) : g.t === 'gem' && g.g ? spawnPickup('gem', g.x, g.z, { g: g.g, gt: g.gt | 0 }) : null;
     if (pk) {
       pk.vx = pk.vz = 0;
       pk.vy = 0;
@@ -581,6 +583,8 @@ export function startGame(cls, fresh) {
 }
 
 function sanitizeChar(c) {
+  // gemas (bolsa e engastes): saves antigos não têm
+  sanitizeGems(c);
   // saves antigos: tinham 4 habilidades, todas liberadas
   const n = CLASSES[c.cls].skills.length;
   c.skills = c.skills || [1, 1, 1, 1];
@@ -917,6 +921,11 @@ function boot() {
   window.__classes = CLASSES;
   window.__dbg = {
     spawnEnemy, spawnPet, nextFloor, startFloor, debugEvent, Input, findPath, lineOfSight, refresh: refreshStats, makeItem, spawnPickup, spawnChest,
+    // dá gemas: __dbg.gems(nível, quantidade de cada tipo)
+    gems(t = 0, n = 3) {
+      for (const g of ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'diamond']) addGem(G.char, g, t, n);
+      refreshStats();
+    },
     // roda a lógica sem renderizar (usado em testes automatizados)
     sim(seconds, onStep) {
       const step = 1 / 30;

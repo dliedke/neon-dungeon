@@ -20,6 +20,8 @@ import { achAdd, achList, achProgress, playTotal, devId, TIERS as MEDAL_TIERS } 
 import { runHud, implantSummary, tierOf, TIERS as MODES, MAX_TIER, armorTaken } from './run.js';
 import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
+import { GEMS, GEM_KEYS, GEM_TIERS, GEM_TOP, TIER_ROMAN, gemSvg, gemName, gemTierName, gemEffectText, gemCount, gemTotal, gemMods, slotGems, slotSockets, freeSockets, fusableCount, fuseCost, fuseAllCost, fuseGem, fuseAll, socketGem, unsocketGem, addGem, bestInPouch } from './gems.js';
+import { PFMT } from './classes.js';
 import { drawEventMarks, eventArrows, EVENT_KINDS, EVENT_INFO } from './events.js';
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +44,7 @@ export function initUI() {
   document.querySelectorAll('.tab-btn').forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
   $('btn-buy-stim').onclick = buyStim;
   $('btn-recycle-all').onclick = recycleAll;
+  $('btn-fuse-all').onclick = gemFuseAll;
 
   $('pause-resume').onclick = () => closePause();
   $('pause-char').onclick = () => {
@@ -1338,8 +1341,9 @@ function setTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   $('tab-equip').classList.toggle('hidden', tab !== 'equip');
   $('tab-skills').classList.toggle('hidden', tab !== 'skills');
+  $('tab-gems').classList.toggle('hidden', tab !== 'gems');
   const hints = document.querySelector('.pad-hints');
-  hints.dataset.padText = tab === 'skills' ? 'padHintsTree' : 'padHints';
+  hints.dataset.padText = tab === 'skills' ? 'padHintsTree' : tab === 'gems' ? 'padHintsGems' : 'padHints';
   hints.innerHTML = padText(t(hints.dataset.padText));
   // no controle, a seleção já começa num poder (de preferência um que dá para desbloquear)
   if (tab === 'skills' && G.lastInput === 'pad') {
@@ -1349,6 +1353,13 @@ function setTab(tab) {
     }, 0);
   }
   renderChar();
+  // no controle, a seleção começa na bolsa (na gema selecionada ou na primeira que houver)
+  if (tab === 'gems' && G.lastInput === 'pad') {
+    setTimeout(() => {
+      const target = (gemSel && document.querySelector(gemCellSel(gemSel))) || document.querySelector('#gem-bag .gcell:not(.none)') || document.querySelector('#gem-sockets .gsock');
+      if (target) setFocus(target);
+    }, 0);
+  }
 }
 
 export function renderChar() {
@@ -1357,7 +1368,9 @@ export function renderChar() {
   const C = CLASSES[c.cls];
   $('sp-badge').textContent = c.skillPoints;
   $('sp-badge').classList.toggle('hidden', !(c.skillPoints > 0));
-  if (currentTab === 'equip') {
+  updateGemBadge();
+  if (currentTab === 'gems') renderGems();
+  else if (currentTab === 'equip') {
     $('char-title').textContent = `${C.name} · ${L('Nível', 'Level')} ${c.level}`;
     // equipamento
     $('equip-slots').innerHTML = SLOTS.map((slot) => {
@@ -1423,6 +1436,220 @@ export function renderChar() {
   } else {
     renderTree();
   }
+}
+
+// ------------------------------------------------------------------
+// Gemas: encaixes do equipamento, bolsa, fusão
+// ------------------------------------------------------------------
+// gemSel: { k: 'bag', g, t } ou { k: 'sock', slot, i }
+let gemSel = null;
+const gemIcon = (g, t) => `<span class="gico">${gemSvg(g, t)}</span>`;
+const gemCellSel = (s) => (s.k === 'bag' ? `#gem-bag [data-g="${s.g}"][data-t="${s.t}"]` : `#gem-sockets [data-gslot="${s.slot}"][data-gi="${s.i}"]`);
+
+// linha de gemas no cartão do item equipado
+function gemsCardHtml(c, slot) {
+  const list = slotGems(c, slot);
+  if (!list.length) return '';
+  const n = slotSockets(c, slot);
+  return `<div class="it-gems">${list.map((x, i) => `<div class="${i < n ? '' : 'off'}">${gemIcon(x.g, x.t)}<span style="color:${GEMS[x.g].css}">${gemName(x.g, x.t)}</span> ${i < n ? gemEffectText(x.g, x.t, slot) : L('(inativa: faltam encaixes)', '(inactive: not enough sockets)')}</div>`).join('')}</div>`;
+}
+
+function updateGemBadge() {
+  const c = G.char;
+  // aviso: encaixe vazio com gema na bolsa, ou fusão possível
+  const free = freeSockets(c) > 0 && gemTotal(c) > 0;
+  const fus = fusableCount(c);
+  const b = $('gem-badge');
+  b.textContent = free ? '!' : fus ? fus : '';
+  b.classList.toggle('hidden', !free && !fus);
+}
+
+function renderGems() {
+  const c = G.char;
+  $('gem-credits').textContent = fmt(c.credits);
+  // encaixes por espaço do equipamento
+  let sh = '';
+  for (const slot of SLOTS) {
+    const it = c.equip[slot];
+    const list = slotGems(c, slot);
+    const n = slotSockets(c, slot);
+    let socks = '';
+    for (let i = 0; i < Math.max(n, list.length); i++) {
+      const x = list[i];
+      const sel = gemSel && gemSel.k === 'sock' && gemSel.slot === slot && gemSel.i === i ? ' sel' : '';
+      socks += x
+        ? `<button class="gsock full${i < n ? '' : ' off'}${sel}" data-nav data-gslot="${slot}" data-gi="${i}" style="--gc:${GEMS[x.g].css}">${gemSvg(x.g, x.t)}</button>`
+        : `<button class="gsock${sel}" data-nav data-gslot="${slot}" data-gi="${i}"></button>`;
+    }
+    sh += `<div class="gsrow"><div class="cell${it ? ' r' + it.rarity : ' empty'}">${slotIconSvg(slot)}</div><div class="gs-name">${SLOT_NAMES[slot]}</div><div class="gs-socks">${socks || '<span class="gs-none">—</span>'}</div></div>`;
+  }
+  $('gem-sockets').innerHTML = sh;
+  // soma dos bônus ativos
+  const m = gemMods(c);
+  const keys = Object.keys(m);
+  $('gem-bonus').innerHTML = keys.length ? `<div class="gb-title">${L('Bônus das gemas', 'Gem bonuses')}</div>${keys.map((k) => `<div>${PFMT[k](m[k])}</div>`).join('')}` : '';
+  // bolsa: uma linha por tipo, uma coluna por nível
+  let bh = `<div class="gb-head"><span></span>${TIER_ROMAN.map((r) => `<span>${r}</span>`).join('')}</div>`;
+  for (const g of GEM_KEYS) {
+    bh += `<div class="gb-row"><span class="gb-type" style="color:${GEMS[g].css}">${gemSvg(g, 2)}</span>`;
+    for (let t = 0; t < GEM_TIERS; t++) {
+      const n = gemCount(c, g, t);
+      const sel = gemSel && gemSel.k === 'bag' && gemSel.g === g && gemSel.t === t ? ' sel' : '';
+      bh += `<div class="gcell${n ? '' : ' none'}${n >= 3 && t < GEM_TOP ? ' fuse' : ''}${sel}" data-nav data-g="${g}" data-t="${t}" style="--gc:${GEMS[g].css}">${n ? gemSvg(g, t) : ''}${n ? `<b>${n}</b>` : ''}</div>`;
+    }
+    bh += '</div>';
+  }
+  $('gem-bag').innerHTML = bh;
+  const cost = fuseAllCost(c);
+  $('btn-fuse-all').innerHTML = `⚗ ${L('Fundir tudo', 'Fuse all')}${cost ? ` · ${fmt(cost)}¢` : ''}${padKey('y')}`;
+  $('btn-fuse-all').disabled = !fusableCount(c) || c.credits < fuseCost(firstFusableTier(c));
+  renderGemDetail();
+}
+// nível mais baixo com 3 gemas iguais (de um tipo ou de todos): o primeiro que a fusão em lote paga
+function firstFusableTier(c, only) {
+  for (let t = 0; t < GEM_TOP; t++) for (const g of only ? [only] : GEM_KEYS) if (gemCount(c, g, t) >= 3) return t;
+  return GEM_TOP;
+}
+
+function renderGemDetail() {
+  const c = G.char;
+  const el = $('gem-detail');
+  const s = gemSel;
+  let h = '';
+  if (s && s.k === 'bag') {
+    const { g, t } = s;
+    const n = gemCount(c, g, t);
+    h += `<div class="gd-head">${gemIcon(g, t)}<div><div class="gd-name" style="color:${GEMS[g].css}">${gemName(g, t)}</div><div class="gd-sub">${L('Nível', 'Tier')} ${TIER_ROMAN[t]} · ${L('na bolsa', 'in pouch')}: <b>${n}</b></div></div></div>`;
+    h += `<div class="gd-eff"><div>⚔ ${L('Na arma', 'In weapon')}: <b>${gemEffectText(g, t, 'weapon')}</b></div><div>🛡 ${L('Nas outras peças', 'In other gear')}: <b>${gemEffectText(g, t, 'armor')}</b></div></div>`;
+    let acts = '';
+    if (t < GEM_TOP) {
+      const fc = fuseCost(t);
+      acts += `<button class="btn small" data-nav data-gact="fuse" ${n >= 3 && c.credits >= fc ? '' : 'disabled'}>⚗ ${L('Fundir', 'Fuse')} 3 → 1 ${gemTierName(t + 1)} · ${fmt(fc)}¢</button>`;
+      if (fusableCount(c, g) > 1) acts += `<button class="btn small ghost" data-nav data-gact="fuseType" ${c.credits >= fuseCost(firstFusableTier(c, g)) ? '' : 'disabled'}>⚗ ${L('Fundir todas', 'Fuse all')} (${GEMS[g][L('pt', 'en')]}) · ${fmt(fuseAllCost(c, g))}¢</button>`;
+    } else acts += `<div class="gd-note">★ ${L('Nível máximo', 'Highest tier')}</div>`;
+    if (n > 0) {
+      const opts = SLOTS.filter((sl) => slotSockets(c, sl) > 0);
+      if (opts.length) {
+        acts += `<div class="gd-sub2">${L('Engastar em', 'Socket into')}:</div><div class="gd-slots">${opts.map((sl) => {
+          const full = slotGems(c, sl).length >= slotSockets(c, sl);
+          return `<button class="btn small ghost" data-nav data-gact="sock" data-slot="${sl}">${SLOT_NAMES[sl]} <small>${gemEffectText(g, t, sl)}${full ? ' ⇄' : ''}</small></button>`;
+        }).join('')}</div>`;
+      } else acts += `<div class="gd-note">${L('Equipe itens para ter encaixes.', 'Equip items to get sockets.')}</div>`;
+    } else acts += `<div class="gd-note">${L('Você não tem esta gema. Gemas caem de inimigos de elite, chefes, baús, contratos e fendas.', 'You don’t have this gem. Gems drop from elites, bosses, chests, contracts and rifts.')}</div>`;
+    h += `<div class="gd-acts">${acts}</div>`;
+  } else if (s && s.k === 'sock') {
+    const list = slotGems(c, s.slot);
+    const x = list[s.i];
+    const n = slotSockets(c, s.slot);
+    if (x) {
+      h += `<div class="gd-head">${gemIcon(x.g, x.t)}<div><div class="gd-name" style="color:${GEMS[x.g].css}">${gemName(x.g, x.t)}</div><div class="gd-sub">${SLOT_NAMES[s.slot]} · ${s.i < n ? `${L('encaixe', 'socket')} ${s.i + 1}/${n}` : L('inativa', 'inactive')}</div></div></div>`;
+      h += `<div class="gd-eff"><div><b>${gemEffectText(x.g, x.t, s.slot)}</b></div>${s.i < n ? '' : `<div class="gd-off">${L('Inativa: o item equipado não tem encaixe para ela. Volta a valer com um item de raridade maior (ou aprimorado até o máximo).', 'Inactive: the equipped item has no socket for it. It works again with a higher rarity item (or one fully upgraded).')}</div>`}</div>`;
+      h += `<div class="gd-acts"><button class="btn small danger" data-nav data-gact="unsock">${L('Remover (volta para a bolsa)', 'Remove (back to pouch)')}${padKey('x')}</button></div>`;
+    } else {
+      h += `<div class="gd-head"><span class="gico empty"></span><div><div class="gd-name">${L('Encaixe vazio', 'Empty socket')}</div><div class="gd-sub">${SLOT_NAMES[s.slot]}</div></div></div>`;
+    }
+    const best = bestInPouch(c);
+    if (best.length) {
+      h += `<div class="gd-sub2">${x ? L('Trocar por', 'Swap for') : L('Engastar', 'Socket')}:</div><div class="gd-slots">${best.map(([g, t]) => `<button class="btn small ghost" data-nav data-gact="put" data-g="${g}" data-t="${t}">${gemIcon(g, t)} ${gemName(g, t)} <small>${gemEffectText(g, t, s.slot)}</small></button>`).join('')}</div>`;
+    } else if (!x) h += `<div class="gd-note">${L('Sua bolsa de gemas está vazia.', 'Your gem pouch is empty.')}</div>`;
+  } else {
+    h = `<div class="empty-detail">${L('Selecione uma gema da bolsa ou um encaixe.<br><br>Encaixes por raridade: 1 (Comum a Raro), 2 (Protótipo e Mítico), 3 (Divino e Primordial), +1 aprimorando o item até o máximo no ferreiro.', 'Select a gem in the pouch or a socket.<br><br>Sockets by rarity: 1 (Common to Rare), 2 (Prototype and Mythic), 3 (Divine and Primordial), +1 by fully upgrading the item at the blacksmith.')}</div>`;
+  }
+  el.innerHTML = h;
+  el.querySelectorAll('[data-gact]').forEach((b) => (b.onclick = () => gemAction(b)));
+}
+
+function gemSelect(el) {
+  gemSel = el.matches('.gcell') ? { k: 'bag', g: el.dataset.g, t: +el.dataset.t } : { k: 'sock', slot: el.dataset.gslot, i: +el.dataset.gi };
+  document.querySelectorAll('#tab-gems .sel').forEach((x) => x.classList.remove('sel'));
+  el.classList.add('sel');
+  renderGemDetail();
+}
+
+// depois de mudar gemas: recalcula atributos, redesenha e mantém o seletor onde estava
+function gemsChanged(focusSel) {
+  refreshStats();
+  renderGems();
+  updateGemBadge();
+  if (G.lastInput === 'pad') restoreFocus(focusSel || (gemSel && gemCellSel(gemSel)));
+}
+// seletor de um botão, se ele ainda existir e estiver ativo
+const liveBtn = (sel) => {
+  const b = document.querySelector(sel);
+  return b && !b.disabled ? sel : null;
+};
+
+function gemAction(b) {
+  const c = G.char;
+  const a = b.dataset.gact;
+  const s = gemSel;
+  if (!s) return;
+  if (a === 'fuse' || a === 'fuseType') {
+    const t0 = s.t;
+    const r = a === 'fuse' ? (fuseGem(c, s.g, s.t) ? { made: 1, best: [s.g, s.t + 1] } : { made: 0 }) : fuseAll(c, s.g);
+    if (!r.made) return sfx.deny();
+    fuseFx(r.best);
+    // acabou o trio: a seleção vai para a gema nova
+    if (gemCount(c, s.g, t0) < 3) gemSel = { k: 'bag', g: s.g, t: r.best[1] };
+    renderGems();
+    return gemsChanged(liveBtn(`#gem-detail [data-gact="${a}"]`) || gemCellSel(gemSel));
+  }
+  if (a === 'sock') {
+    const slot = b.dataset.slot;
+    const r = socketGem(c, s.g, s.t, slot);
+    if (r === 'full') {
+      toast(L('Os encaixes deste espaço já têm gemas melhores.', 'This slot’s sockets already hold better gems.'), 'warn');
+      return sfx.deny();
+    }
+    if (typeof r === 'string' && r !== 'ok') return sfx.deny();
+    sfx.gemSocket();
+    toast(`💎 ${gemName(s.g, s.t)} → ${SLOT_NAMES[slot]}${r.swapped ? ` <small>(${gemName(r.swapped.g, r.swapped.t)} ${L('voltou para a bolsa', 'went back to the pouch')})</small>` : ''}`, 'item');
+    renderGems();
+    return gemsChanged(liveBtn(`#gem-detail [data-gact="sock"][data-slot="${slot}"]`) || gemCellSel(s));
+  }
+  if (a === 'put') {
+    const g = b.dataset.g;
+    const t = +b.dataset.t;
+    const list = slotGems(c, s.slot);
+    if (list[s.i]) {
+      // troca a gema deste encaixe (a antiga volta para a bolsa)
+      const old = list[s.i];
+      addGem(c, old.g, old.t, 1);
+      addGem(c, g, t, -1);
+      list[s.i] = { g, t };
+      achAdd('gemSocket');
+    } else {
+      const r = socketGem(c, g, t, s.slot);
+      if (typeof r === 'string' && r !== 'ok') return sfx.deny();
+    }
+    sfx.gemSocket();
+    return gemsChanged(gemCellSel(s));
+  }
+  if (a === 'unsock') {
+    if (unsocketGem(c, s.slot, s.i)) sfx.click();
+    return gemsChanged(gemCellSel(s));
+  }
+}
+function fuseFx(best) {
+  if (!best) return;
+  const [g, t] = best;
+  sfx.gemFuse(t);
+  toast(`⚗ ${L('Fusão', 'Fused')}: <span style="color:${GEMS[g].css}">${gemName(g, t)}</span>`, t >= 4 ? 'leg' : 'item');
+}
+function gemFuseAll() {
+  const c = G.char;
+  const r = fuseAll(c);
+  if (!r.made) {
+    sfx.deny();
+    if (fusableCount(c)) toast(L('Créditos insuficientes para fundir.', 'Not enough credits to fuse.'), 'warn');
+    return;
+  }
+  fuseFx(r.best);
+  if (r.made > 1) toast(`⚗ ${r.made} ${L('fusões', 'fusions')} · -${fmt(r.spent)}¢`, 'item');
+  // redesenha antes de escolher o foco (o botão pode ter ficado desativado); sem botão, vai para a melhor gema feita
+  renderGems();
+  const [bg, bt] = r.best || [];
+  gemsChanged(liveBtn('#btn-fuse-all') || (bg && gemCellSel({ k: 'bag', g: bg, t: bt })) || (gemSel && gemCellSel(gemSel)));
 }
 
 // ------------------------------------------------------------------
@@ -1658,8 +1885,8 @@ function renderDetail() {
   const cur = selected.where === 'inv' ? c.equip[it.slot] : null;
   if (cur) {
     // selecionado e equipado lado a lado (no celular fica tudo visível sem rolar)
-    el.innerHTML = `<div class="cmp-wrap"><div class="cmp-new">${itemCardHtml(it, itemDiffHtml(it, cur), { base: true })}${actions}</div><div class="cmp-cur"><div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(cur, '', { base: true })}</div></div>`;
-  } else el.innerHTML = itemCardHtml(it) + actions;
+    el.innerHTML = `<div class="cmp-wrap"><div class="cmp-new">${itemCardHtml(it, itemDiffHtml(it, cur), { base: true })}${actions}</div><div class="cmp-cur"><div class="it-cmp">${L('Equipado atualmente', 'Currently equipped')}</div>${itemCardHtml(cur, '', { base: true, gems: gemsCardHtml(c, cur.slot) })}</div></div>`;
+  } else el.innerHTML = itemCardHtml(it, '', { gems: selected.where === 'equip' ? gemsCardHtml(c, it.slot) : '' }) + actions;
   el.querySelectorAll('[data-act]').forEach((b) => (b.onclick = () => {
     const a = b.dataset.act;
     if (a === 'equip') equipItem(it.uid);
@@ -1682,6 +1909,8 @@ function selectCell(cell, render = true) {
 function onCharClick(e) {
   const cell = e.target.closest('.cell[data-uid]');
   if (cell) selectCell(cell);
+  const gc = e.target.closest('.gcell, .gsock');
+  if (gc) gemSelect(gc);
 }
 function onCharDblClick(e) {
   const cell = e.target.closest('.cell[data-uid]');
@@ -1830,6 +2059,7 @@ function setFocus(el) {
   el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   if (el.matches('.cell[data-swhere]') && G.lastInput === 'pad') stashSelect(el);
   else if (el.matches('.cell[data-uid]') && G.lastInput === 'pad') selectCell(el);
+  else if (el.matches('.gcell, .gsock') && G.lastInput === 'pad') gemSelect(el);
   if (el.matches('[data-node]') && G.lastInput === 'pad' && +el.dataset.node !== treeSel) {
     treeSel = +el.dataset.node;
     renderTree();
@@ -1907,6 +2137,11 @@ export function uiPadUpdate() {
       aHoldOk = !focused.disabled;
       aHoldEl = focused.dataset.forge;
       focused.click();
+    } else if (focused.matches('.gcell, .gsock')) {
+      // gema/encaixe: seleciona e leva o seletor para a primeira ação do detalhe
+      gemSelect(focused);
+      const b = [...document.querySelectorAll('#gem-detail [data-gact]')].find((x) => !x.disabled);
+      if (b) setFocus(b);
     } else if (focused.matches('.cell[data-swhere]')) {
       stashMove(focused.dataset.swhere, focused.dataset.uid); // baú: guarda ou pega
     } else if (focused.matches('.cell[data-uid]')) {
@@ -1938,8 +2173,19 @@ export function uiPadUpdate() {
   }
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
   if (Input.nav('rt') && focused && focused.matches('[data-node]')) treeRefund(+focused.dataset.node); // {RT}: devolver os pontos do poder
+  if (Input.nav('x') && focused && focused.matches('.gsock.full')) {
+    // {X}: tirar a gema do encaixe
+    gemSelect(focused);
+    const b = document.querySelector('#gem-detail [data-gact="unsock"]');
+    if (b) gemAction(b);
+  }
+  // {LB}/{RB}: aba anterior/próxima (Equipamento, Habilidades, Gemas)
+  const CHAR_TABS = ['equip', 'skills', 'gems'];
+  const ti = CHAR_TABS.indexOf(currentTab);
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
-  else if ((Input.nav('y') || Input.nav('lb') || Input.nav('rb')) && root.id === 'panel-char') setTab(currentTab === 'equip' ? 'skills' : 'equip');
+  else if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'gems') gemFuseAll(); // {Y}: fundir tudo
+  else if ((Input.nav('y') || Input.nav('rb')) && root.id === 'panel-char') setTab(CHAR_TABS[(ti + 1) % 3]);
+  else if (Input.nav('lb') && root.id === 'panel-char') setTab(CHAR_TABS[(ti + 2) % 3]);
   if (Input.nav('b')) uiBack(root);
 }
 
@@ -2102,7 +2348,7 @@ function renderForge() {
     let next;
     let btn;
     if (lv >= max) {
-      next = `<span class="fr-max">★ ${L('Aprimoramento máximo', 'Fully upgraded')}</span>`;
+      next = `<span class="fr-max">★ ${L('Aprimoramento máximo', 'Fully upgraded')} · 💎 +1 ${L('encaixe de gema', 'gem socket')}</span>`;
       btn = `<button class="btn small ghost" disabled>${L('Máximo', 'Maxed')}</button>`;
     } else {
       const sim = JSON.parse(JSON.stringify(it));
@@ -2110,6 +2356,7 @@ function renderForge() {
       const cost = forgeCost(it);
       next = `${forgeMain(it)} → <b>${forgeMain(sim)}</b> · ${L('atributos', 'stats')} +2,5%`;
       if (isMilestone(lv + 1)) next += ` · <span class="fr-ms">★ ${L('marco: atributo novo', 'milestone: new stat')}</span>`;
+      if (lv + 1 >= max) next += ` · <span class="fr-ms">💎 ${L('máximo: +1 encaixe de gema', 'max: +1 gem socket')}</span>`;
       btn = `<button class="btn small" data-nav data-forge="${slot}" ${c.credits < cost ? 'disabled' : ''}>⚒ ${fmt(cost)}¢</button>`;
     }
     html += `<div class="forge-row">

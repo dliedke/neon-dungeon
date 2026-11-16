@@ -170,7 +170,10 @@ export function itemName(it) {
 // ganha um atributo novo (ou reforça um dos que já tem).
 export const FORGE_MAX = [4, 6, 8, 10, 12, 15, 18];
 export const forgeMax = (it) => FORGE_MAX[it.rarity] ?? 4;
-export const isMilestone = (lv) => lv > 0 && lv % 4 === 0;
+// encaixes de gema do item: sobem com a raridade; aprimorar até o máximo no ferreiro dá +1
+export const SOCKETS = [1, 1, 1, 2, 2, 3, 3];
+export const socketsOf = (it) => (it ? (SOCKETS[it.rarity] ?? 1) + ((it.plus | 0) >= forgeMax(it) ? 1 : 0) : 0);
+export const isMilestone =(lv) => lv > 0 && lv % 4 === 0;
 // valores pequenos ficam com uma casa decimal para o aprimoramento sempre aparecer
 const fround = (v) => (Math.abs(v) < 20 ? Math.round(v * 10) / 10 : Math.round(v));
 export function forgeCost(it) {
@@ -277,6 +280,7 @@ export function itemCardHtml(it, extra = '', o = {}) {
     <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
     <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}${nb ? ` · ${L('valores sem aprimoramento', 'values without upgrades')}` : ''}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
     ${itemStatLines(nb ? unforged(it) : it)}
+    ${o.noSock ? '' : `<div class="it-sock">${'◇'.repeat(socketsOf(it))} ${socketsOf(it)} ${socketsOf(it) > 1 ? L('encaixes de gema', 'gem sockets') : L('encaixe de gema', 'gem socket')}</div>`}${o.gems || ''}
     ${extra}
   </div>`;
 }

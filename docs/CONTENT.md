@@ -23,6 +23,7 @@ Rules that apply to every recipe:
 - [Item affix](#item-affix)
 - [Legendary (Prototype) power](#legendary-prototype-power)
 - [Mythic power](#mythic-power) (and divine powers)
+- [Gem](#gem)
 - [Anomaly, implant or shrine](#anomaly-implant-or-shrine)
 - [Floor event (puzzle or challenge)](#floor-event-puzzle-or-challenge)
 - [Medal](#medal)
@@ -169,6 +170,13 @@ Add to `AFFIXES` (`js/items.js`): `{ fmt: (v) => L(...), roll: (ilvl) => number,
 Divine powers work the same way: `DIVINES` in `items.js` has one entry per slot (`slot` decides which items get it), checked with `hasDiv('key')` in `mythic.js`. Pure stat bonuses go in `computeStats` (`player.js`, see `olympus` and `hermes`). Primordial powers too: `PRIMORDIALS` (one per slot) and `hasPrim('key')` in `mythic.js` (hooks `primOnHit`, `primDmgMult`, `primDodge`, `updatePrimordial`; stat parts like `gaia`/`erebus` in `computeStats`).
 
 Test: `G.char.inv.push(__dbg.makeItem({ ilvl: 10, rarity: 4, slot: 'chip', cls: G.char.cls }))`, then set `.myth = 'key'` on it and equip it. Open the item card on desktop and on mobile: the power text fits the card (no clipping, the card stays on screen), and any HUD it adds (`mythHud`) doesn't overlap the missions or touch buttons.
+
+## Gem
+
+1. **Never reorder or rename** `GEMS` keys in `js/gems.js`: they are save data (`c.gems`, `c.sockets`). Append a new kind at the end: `{ pt, en, f (0 masc. / 1 fem., for the tier adjective), css, hex, w: [statKey, 7 values], a: [statKey, 7 values] }`. `w` applies in the weapon, `a` in every other slot.
+2. The stat keys must be ones `computeStats` already reads from the mods (`dmgPct`, `hpPct`, `atkSpd`, `cdr`, `crit`, `critDmg`, `lifeSteal`, `dodge`, `findPct`, `dmgRed`, `eliteDmg`, `armorPct`); the text comes from `PFMT` in `classes.js`. Watch the caps in `computeStats`.
+3. Tier count, names and fuse costs are `GEM_TIERS`, `TIER_NAMES` and `FUSE_COST`; changing the tier count means the bag grid columns in `css/style.css` (`.gb-head`, `.gb-row`) too.
+4. Docs: README "Loot and progression" (gem list).
 
 ## Anomaly, implant or shrine
 

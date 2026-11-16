@@ -12,6 +12,7 @@ import { formMods } from './powers.js';
 import { DIFFICULTY, abyssFx } from './enemies.js';
 import { achAdd, achTotal } from './ach.js';
 import { amod, implantMods } from './run.js';
+import { gemMods } from './gems.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
@@ -34,7 +35,7 @@ export function newCharacter(cls) {
   return {
     cls, level: 1, xp: 0, credits: 0, stims: 4, floor: 1, maxFloor: 1,
     skills: CLASSES[cls].skills.map((_, i) => (i < 2 ? 1 : 0)), slots: [1, ...Array(SLOT_N - 1).fill(null)], atk: 0, skillPoints: 0, spV: 2,
-    equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(),
+    equip: { weapon: starterWeapon(cls) }, inv: [], kills: 0, created: Date.now(), gems: {}, sockets: {},
   };
 }
 
@@ -104,6 +105,8 @@ export function computeStats(c) {
   const pm = { ...passiveMods(c) };
   // implantes escolhidos depois dos chefes
   for (const [k, v] of Object.entries(implantMods(c))) pm[k] = (pm[k] || 0) + v;
+  // gemas engastadas no equipamento
+  for (const [k, v] of Object.entries(gemMods(c))) pm[k] = (pm[k] || 0) + v;
   for (const [k, v] of Object.entries(pm)) {
     if (k === 'hpPct' || k === 'armorPct') continue;
     s[k] = (s[k] || 0) + v;

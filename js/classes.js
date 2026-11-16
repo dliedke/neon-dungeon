@@ -432,7 +432,7 @@ export const CLASSES = {
 // Não vão para os botões; dão bônus permanentes que crescem com o nível (1–10).
 // --------------------------------------------------------------
 const nfmt = (v) => (+v).toLocaleString(L('pt-BR', 'en-US'), { maximumFractionDigits: 1 });
-const PFMT = {
+export const PFMT = {
   crit: (v) => L(`+${nfmt(v)}% de chance de crítico`, `+${nfmt(v)}% critical chance`),
   critDmg: (v) => L(`+${nfmt(v)}% de dano crítico`, `+${nfmt(v)}% critical damage`),
   dmgPct: (v) => L(`+${nfmt(v)}% de dano`, `+${nfmt(v)}% damage`),

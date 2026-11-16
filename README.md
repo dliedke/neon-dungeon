@@ -266,9 +266,9 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**181 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**185 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
-legendaries, mythics, divine and primordial items, the blacksmith, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
+legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
 
 ## Bosses
@@ -313,6 +313,15 @@ Medals and their counters sync with the Google cloud save; progress from every d
   - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
+  - **Gems** 💎: six kinds drop during floors (elites, bosses, rifts, contracts, chests and, rarely, any enemy; item find helps) and are magnetized like credits.
+    Each kind gives one bonus in the weapon and another in any other piece:
+    **Ruby** (damage / max health), **Sapphire** (attack speed / skill cooldown), **Emerald** (life steal / dodge), **Topaz** (crit chance / item find),
+    **Amethyst** (crit damage / damage taken) and **Diamond** (damage to elites and bosses / armor).
+    There are 7 tiers (Chipped, Rough, Cut, Polished, Perfect, Radiant and Neon); deeper floors, harder difficulties and the Abyss drop higher ones.
+    **Fuse 3 equal gems into 1 of the next tier** for credits (one at a time, a whole type, or "Fuse all") in the **Gems** tab of the inventory.
+    Items have sockets by rarity: 1 (Common to Rare), 2 (Prototype and Mythic), 3 (Divine and Primordial), plus one more when the blacksmith upgrades the item to its maximum.
+    Sockets belong to the equipment slot, so your gems stay when you swap an item (with fewer sockets, the extra gems just go inactive until a better item arrives). Removing a gem is free and it goes back to the pouch.
+    The equipped item card shows its gems, and on a gamepad A selects/sockets, X removes, Y fuses all and LB/RB switch tabs.
   - Upgrade highlighting for items better than what you have equipped.
   - **Shared stash:** a chest a few steps from the start of every floor holds up to 500 items in 5 tabs of 100, shared by all your characters (and synced to the cloud). It is always sorted by item level, highest first, whatever the item type (then rarity and stats); each slot shows the item level, the ▲ marks upgrades for the current character, and LB/RB switch tabs on a gamepad. **Recycle** breaks an item down right from the stash (or from your inventory while the stash is open) for credits (RT on a gamepad); favorites (★) are protected. It also stores **credits**: store half, all or a custom amount (✏️: type it, or use − / + on a gamepad) and any character can take them back (handy for funding a new class, and stored credits are safe from the death penalty).
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
@@ -367,6 +376,7 @@ js/enemies.js          enemies, AI and bosses
 js/combat.js           damage, statuses, projectiles and hazards
 js/items.js            item generation
 js/loot.js             ground loot and loot caches
+js/gems.js             gems: drops, fusion, sockets and their bonuses
 js/fx.js               particles and visual effects
 js/models.js           low-poly models built from primitives
 js/input.js            keyboard, mouse, gamepad and touch input

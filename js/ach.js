@@ -197,6 +197,11 @@ export function achList() {
   add('prim6', '🔆', 3, L('Gênese', 'Genesis'), L('Use 6 itens primordiais ao mesmo tempo', 'Wear 6 primordial items at once'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 6).length), SLOTS.length);
   add('forge1', '⚒️', 0, L('Aprendiz de Ferreiro', 'Apprentice Smith'), L('Aprimore um item no ferreiro', 'Upgrade an item at the blacksmith'), () => total('forges'));
   add('forge50', '🔨', 2, L('Mestre Forjador', 'Master Forger'), L('Aprimore itens 50 vezes no ferreiro', 'Upgrade items 50 times at the blacksmith'), () => total('forges'), 50);
+  // gemas
+  add('gem1', '💎', 0, L('Garimpeiro', 'Prospector'), L('Engaste uma gema no equipamento', 'Socket a gem into your gear'), () => total('gemSocket'));
+  add('gemFuse25', '⚗️', 1, L('Lapidador', 'Gemcutter'), L('Funda gemas 25 vezes', 'Fuse gems 25 times'), () => total('gemFuse'), 25);
+  add('gemPerfect', '🔷', 2, L('Joia Perfeita', 'Perfect Jewel'), L('Crie uma gema Perfeita', 'Create a Perfect gem'), () => (has('flags', 'gemPerfect') ? 1 : 0));
+  add('gemNeon', '🌈', 3, L('Coração de Neon', 'Neon Heart'), L('Crie uma gema Neon, o nível máximo', 'Create a Neon gem, the highest tier'), () => (has('flags', 'gemNeon') ? 1 : 0));
   add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));
 
   // mundo

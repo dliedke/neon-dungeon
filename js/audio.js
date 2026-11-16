@@ -147,6 +147,27 @@ export const sfx = {
   rare() {
     [660, 880, 1320].forEach((f, i) => tone({ type: 'triangle', f, dur: 0.18, vol: 0.09, delay: i * 0.06 }));
   },
+  // gema coletada: plim cristalino, mais alto e mais longo nos níveis altos
+  gem(t = 0) {
+    if (throttle('gem', 60)) return;
+    const b = 1568 * Math.pow(2, Math.min(t, 6) / 12);
+    tone({ type: 'sine', f: b, dur: 0.25 + t * 0.05, vol: 0.08 });
+    tone({ type: 'sine', f: b * 1.5, dur: 0.3 + t * 0.05, vol: 0.05, delay: 0.05 });
+    if (t >= 3) tone({ type: 'triangle', f: b * 2, dur: 0.4, vol: 0.04, delay: 0.1 });
+  },
+  // fusão de gemas: três toques subindo e um brilho
+  gemFuse(t = 0) {
+    if (throttle('gemFuse', 90)) return;
+    [0, 0.07, 0.14].forEach((d, i) => tone({ type: 'sine', f: 988 * Math.pow(1.26, i) * (1 + t * 0.06), dur: 0.16, vol: 0.07, delay: d }));
+    noise({ dur: 0.35, vol: 0.05, type: 'highpass', f: 5000, delay: 0.18 });
+    tone({ type: 'triangle', f: 2637 * (1 + t * 0.06), dur: 0.5, vol: 0.06, delay: 0.22 });
+  },
+  // engastar: clique metálico curto
+  gemSocket() {
+    if (throttle('gemSocket', 60)) return;
+    tone({ type: 'square', f: 2200, f2: 1700, dur: 0.05, vol: 0.05, lp: 7000 });
+    tone({ type: 'sine', f: 1318, dur: 0.18, vol: 0.06, delay: 0.04 });
+  },
   punch() {
     if (throttle('punch', 40)) return;
     noise({ dur: 0.07, vol: 0.22, type: 'lowpass', f: 900 });

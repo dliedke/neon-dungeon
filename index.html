@@ -137,6 +137,7 @@
         <div class="tabs">
           <button class="tab-btn active" data-tab="equip" data-nav><span data-i18n="equipment">Equipamento</span></button>
           <button class="tab-btn" data-tab="skills" data-nav><span data-i18n="skills">Habilidades</span> <span id="sp-badge" class="badge hidden"></span></button>
+          <button class="tab-btn" data-tab="gems" data-nav>💎 <span data-i18n="gems">Gemas</span> <span id="gem-badge" class="badge hidden"></span></button>
         </div>
         <button class="close" id="char-close" data-nav>✕</button>
       </div>
@@ -157,6 +158,16 @@
         <div class="col detail-col"><div id="item-detail"><div class="empty-detail" data-i18n="selectItem">Selecione um item para ver os detalhes.</div></div></div>
       </div>
       <div id="tab-skills" class="tab-body hidden"><div id="skill-list"></div></div>
+      <div id="tab-gems" class="tab-body hidden">
+        <div class="col gsock-col"><h4 data-i18n="gemSockets">Encaixes</h4><div id="gem-sockets"></div><div id="gem-bonus"></div></div>
+        <div class="col gbag-col">
+          <div class="inv-head"><span data-i18n="gemBag">Bolsa de gemas</span><span class="cr-line">¢ <b id="gem-credits">0</b></span></div>
+          <div id="gem-bag"></div>
+          <div class="inv-actions"><button class="btn small" id="btn-fuse-all" data-nav data-i18n="fuseAll">Fundir tudo</button></div>
+          <div class="gem-help" data-i18n="gemHelp">3 gemas iguais viram 1 do nível seguinte. Engaste gemas nos encaixes do equipamento: na arma elas dão um bônus, nas outras peças outro.</div>
+        </div>
+        <div class="col detail-col"><div id="gem-detail"></div></div>
+      </div>
       <div class="pad-hints" data-pad-text="padHints"></div>
     </div>
   </div>

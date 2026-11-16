@@ -15,6 +15,7 @@ import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
 import { rewardK, rewardRank, diffIlvl } from './enemies.js';
+import { GEMS, dropGems, addGem, gemName } from './gems.js';
 
 export const INV_SIZE = 100;
 const UP_COLOR = 0x39ff88;
@@ -140,6 +141,7 @@ export function dropLoot(x, z, o = {}) {
       spawnPickup('credits', x, z, { amount });
     }
   }
+  dropGems(x, z, o);
   if (o.thief || o.beast || o.rift) spawnPickup('stim', x, z, {});
   if (chance(o.boss ? 1 : o.elite ? 0.35 : o.chest ? 0.3 : 0.04)) spawnPickup('stim', x, z, {});
   // orbes de vida: ajudam a se recuperar no meio da luta
@@ -155,6 +157,7 @@ const upBeamGeo = new THREE.CylinderGeometry(0.09, 0.14, 4.2, 10, 1, true).trans
 const upRingGeo = new THREE.RingGeometry(0.42, 0.52, 28).rotateX(-Math.PI / 2);
 const mythBeamGeo = new THREE.CylinderGeometry(0.12, 0.3, 9, 12, 1, true).translate(0, 4.5, 0);
 const mythGemGeo = new THREE.OctahedronGeometry(0.42, 0);
+const gemGeo = new THREE.OctahedronGeometry(0.15, 0).scale(1, 1.35, 1);
 
 function beamMat(color, opacity) {
   return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(gk(1.6)), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -176,6 +179,12 @@ export function spawnPickup(type, x, z, data) {
   } else if (type === 'orb') {
     color = 0xff2b5a;
     mesh = new THREE.Mesh(orbGeo, glowMat(color, 2.4));
+  } else if (type === 'gem') {
+    // gema: losango brilhante; maior e com coluna de luz nos níveis altos
+    color = GEMS[data.g].hex;
+    mesh = new THREE.Mesh(gemGeo, glowMat(color, 2 + data.gt * 0.35));
+    mesh.scale.setScalar(1 + data.gt * 0.12);
+    if (data.gt >= 2) g.add(new THREE.Mesh(beamGeo, beamMat(color, data.gt >= 4 ? 0.6 : 0.3)));
   } else {
     const R = RARITY[data.item.rarity];
     color = R.hex;
@@ -696,7 +705,7 @@ export function updatePickups(dt, camera) {
 
     if (!p.alive || pk.t < 0.4) continue;
     const d = Math.hypot(p.x - pk.x, p.z - pk.z);
-    if ((pk.type === 'credits' || pk.type === 'orb') && d < 3) {
+    if ((pk.type === 'credits' || pk.type === 'orb' || pk.type === 'gem') && d < 3) {
       const k = Math.min(1, dt * 10);
       pk.x += (p.x - pk.x) * k;
       pk.z += (p.z - pk.z) * k;
@@ -712,6 +721,16 @@ export function updatePickups(dt, camera) {
         p.en = Math.min(p.stats.maxEn, p.en + p.stats.maxEn * 0.1);
         burst(p.x, 1, p.z, 0xff2b5a, 10, 2, 0.06, 0.4, { grav: -2 });
         sfx.stim();
+        pk.dead = true;
+      } else if (pk.type === 'gem') {
+        addGem(c, pk.g, pk.gt, 1);
+        achAdd('gems');
+        const col = GEMS[pk.g].css;
+        burst(pk.x, 0.6, pk.z, pk.color, 8 + pk.gt * 3, 2.5, 0.06, 0.4, { grav: -2 });
+        floatText(p.x, 2.2, p.z, '+💎', 'info');
+        sfx.gem(pk.gt);
+        toast(`💎 <span style="color:${col}">${gemName(pk.g, pk.gt)}</span>${c.gemTip ? '' : ` <small>${G.isTouch ? L('— engaste no menu do personagem, aba Gemas', '— socket it in the character menu, Gems tab') : L('— engaste no inventário (I), aba Gemas', '— socket it in the inventory (I), Gems tab')}</small>`}`, 'item');
+        c.gemTip = 1;
         pk.dead = true;
       } else if (pk.type === 'stim') {
         if (c.stims < MAX_STIMS) {

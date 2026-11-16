@@ -99,6 +99,7 @@ Module map (`js/`):
 | `combat.js` | Damage (`hitEnemy`, `damageEnemy`, `damagePlayer`), statuses, projectiles, hazards, turrets. |
 | `items.js` | Slots, rarities, affixes, legendary and mythic powers, `makeItem`, forging, `itemScore`, item cards. |
 | `loot.js` | Ground loot, pickups, chests, shrines, `INV_SIZE`. |
+| `gems.js` | Gems: the 6 kinds and 7 tiers (`GEMS`), drops (`dropGems`), the pouch `c.gems`, sockets per equip slot `c.sockets`, fusion and `gemMods` (stats into `computeStats`). |
 | `mythic.js` | Runtime effects of mythic items (orbital laser, phantom blades, reaper, singularity, phoenix, avatar). |
 | `finale.js` | True-ending cinematic after beating the Inferno: 2D canvas in the `#finale` overlay, its own theme song (`ANTHEM` in `music.js`). |
 | `run.js` | Per-floor events: anomalies, contracts, challenge rifts, kill combo, floor-clear bonus, implants, tiers (Nightmare/Inferno, New Game+). |
