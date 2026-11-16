@@ -250,12 +250,13 @@ export function initUI() {
     updS();
     saveSettings();
   };
-  $('opt-full').onclick = () => {
-    const on = document.fullscreenElement || document.webkitFullscreenElement;
-    mobileFullOptOut = !!on;
-    if (!on) (G.isTouch ? enterMobileFullscreen() : enterDesktopFullscreen(true));
-    else (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+  $('opt-full').onclick = toggleFullscreen;
+  // desktop: botão pequeno de tela cheia no menu principal e no HUD
+  $('menu-full').onclick = $('btn-full').onclick = (e) => {
+    toggleFullscreen();
+    e.currentTarget.blur(); // espaço/enter voltam para o jogo
   };
+  syncFullIcon();
 
   // botões de toque
   bindTouchButton($('tb-primary'), 'primary');
@@ -2633,9 +2634,27 @@ export function enterDesktopFullscreen(force) {
   if (document.fullscreenElement || !el.requestFullscreen || (fullOptOut && !force)) return;
   el.requestFullscreen({ navigationUI: 'hide' }).then(lockEsc).catch(() => {});
 }
+export function toggleFullscreen() {
+  const on = document.fullscreenElement || document.webkitFullscreenElement;
+  mobileFullOptOut = !!on;
+  if (!on) (G.isTouch ? enterMobileFullscreen() : enterDesktopFullscreen(true));
+  else (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+}
+// ícone dos botões de tela cheia (entrar / sair) segue o estado real
+function syncFullIcon() {
+  const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  document.body.classList.toggle('is-full', on);
+  const t = on ? L('Sair da tela cheia', 'Exit fullscreen') : L('Tela cheia', 'Fullscreen');
+  for (const id of ['menu-full', 'btn-full']) {
+    const b = document.getElementById(id);
+    if (b) b.title = t;
+  }
+}
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && !G.isTouch) fullOptOut = true;
+  syncFullIcon();
 });
+document.addEventListener('webkitfullscreenchange', syncFullIcon);
 
 // Precisa ser chamado dentro de um toque/clique (exigência dos navegadores)
 export function enterMobileFullscreen() {

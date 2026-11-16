@@ -110,6 +110,17 @@ button { font-family: inherit; }
 }
 #top-buttons button:hover { border-color: var(--accent); color: var(--accent); }
 #top-buttons svg { width: 100%; height: 100%; }
+/* tela cheia: só no desktop (no celular a tela cheia é automática e fica nas Opções) */
+.fs-toggle .fs-out, body.is-full .fs-toggle .fs-in { display: none; }
+body.is-full .fs-toggle .fs-out { display: block; }
+body.touch .fs-toggle { display: none !important; }
+#menu-full {
+  position: absolute; top: calc(12px + var(--safe-t)); right: calc(12px + var(--safe-r)); z-index: 1;
+  width: 38px; height: 38px; padding: 7px; border: 1px solid var(--line); background: rgba(8, 8, 22, 0.8);
+  color: var(--text); display: grid; place-items: center; cursor: pointer;
+}
+#menu-full:hover, #menu-full:focus-visible { border-color: var(--accent); color: var(--accent); }
+#menu-full svg { width: 100%; height: 100%; }
 .badge {
   position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--yellow);
   color: #000; font-size: 12px; font-weight: 700; display: grid; place-items: center; padding: 0 4px;

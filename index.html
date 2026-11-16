@@ -52,6 +52,7 @@
     <div id="hud-tr">
       <div id="top-buttons">
         <button id="btn-char" data-i18n-title="charTitle"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="8" width="20" height="18" rx="2"/><path d="M12 8V5h8v3M6 15h20"/></svg><span id="char-badge" class="badge hidden">!</span></button>
+        <button id="btn-full" class="fs-toggle" data-i18n-title="fullscreen"><svg class="fs-in" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12V6h6M20 6h6v6M26 20v6h-6M12 26H6v-6"/></svg><svg class="fs-out" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6H6M26 12h-6V6M20 26v-6h6M6 20h6v6"/></svg></button>
         <button id="btn-pause" data-i18n-title="pauseTitle"><svg viewBox="0 0 32 32" fill="currentColor"><rect x="9" y="7" width="5" height="18" rx="1"/><rect x="18" y="7" width="5" height="18" rx="1"/></svg></button>
       </div>
       <div id="minimap-wrap"><canvas id="minimap" width="168" height="168"></canvas><div id="mm-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20M10 7.5v5M7.5 10h5"/></svg><span id="mm-key"></span></div></div>
@@ -112,6 +113,7 @@
 
   <!-- MENU PRINCIPAL -->
   <div id="menu" class="screen hidden">
+    <button id="menu-full" class="fs-toggle" data-nav data-i18n-title="fullscreen"><svg class="fs-in" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12V6h6M20 6h6v6M26 20v6h-6M12 26H6v-6"/></svg><svg class="fs-out" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6H6M26 12h-6V6M20 26v-6h6M6 20h6v6"/></svg></button>
     <div class="menu-inner">
       <div class="logo">
         <div class="logo-top">NEON</div>
