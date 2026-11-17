@@ -26,12 +26,13 @@ import { ensureAch, achAdd, achMark, achCheck } from './ach.js';
 import { setSyncHooks, syncReadRedirect, syncShouldRefresh, syncAuthRedirect, syncStart, syncDirty, syncNow, syncRefreshSoon } from './sync.js';
 import {
   initUI, showMenu, showHUD, updateHUD, banner, resetMinimap, markMinimap, uiPadUpdate, openPause, closePause,
-  toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, renderSync, showEnding, updDiffUi,
+  toggleChar, closeChar, bossBar, toggleBigMap, bigMapOpen, exitPrompt, toast, uiBack, anyOverlayOpen, updateOrientation, renderClassCards, refreshBackups, renderSync, showEnding, updDiffUi,
 } from './ui.js';
 import { isTouchDevice, clamp, newSeed, seedRandom } from './utils.js';
 import { rollAnomaly, announceFloor, updateRun, runFloorDone, tierOf, MAX_TIER } from './run.js';
 import { carveSecret, eventsSnapshot, eventsRestore, eventsResume, eventsDebugForce } from './events.js';
 import { playFinale, closeFinale } from './finale.js';
+import { loadBackups, backupTick, addBackup } from './backup.js';
 
 const SAVE_KEY = 'neon-dungeon-save-v1';
 // aba que estava jogando quando a página foi recarregada (classe), para voltar direto ao jogo
@@ -72,6 +73,7 @@ function loadSave() {
   // créditos guardados no baú: { aparelho: { in, out } } (saves antigos não têm)
   if (!save.bank || typeof save.bank !== 'object' || Array.isArray(save.bank)) save.bank = {};
   ensureAch(save);
+  for (const c of Object.values(save.slots)) if (c) charDiff(c);
   G.save = save;
   try {
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
@@ -101,6 +103,7 @@ export function saveGame(fromSync) {
     const h = floorSnapshot();
     if (h !== undefined) G.char.here = h;
     G.save.slots[G.char.cls] = G.char;
+    backupTick(G.char); // cópia automática a cada 10 min (backup.js)
   }
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(G.save));
@@ -553,6 +556,9 @@ export function startGame(cls, fresh) {
   if (fresh || !G.save.slots[cls]) {
     const old = G.save.slots[cls];
     G.char = newCharacter(cls);
+    // o personagem apagado fica guardado nos backups (dá para restaurar no menu)
+    const kept = old && addBackup('reset', old);
+    if (kept) setTimeout(() => toast(L(`${CLASSES[cls].name} nível ${old.level} salvo em 🛟 Backups, no menu.`, `${CLASSES[cls].name} level ${old.level} saved in 🛟 Backups, in the menu.`), 'heal'), 5200);
     if (old) {
       G.char.resetAt = G.char.created; // recomeço vale mais que o progresso antigo na nuvem
       // recomeçar mantém a dificuldade que o personagem usava
@@ -580,6 +586,16 @@ export function startGame(cls, fresh) {
   if (G.char.level === 1 && G.char.kills === 0) {
     setTimeout(() => toast(G.isTouch ? L('Arraste à esquerda para mover · botões à direita para atacar', 'Drag on the left to move · buttons on the right to attack') : G.lastInput === 'pad' ? padText(L('Analógico para mover · {A} para atacar · {X} {Y} {B} {LB} {RB} {LT} {RT} poderes', 'Left stick to move · {A} to attack · {X} {Y} {B} {LB} {RB} {LT} {RT} powers')) : L('Clique para mover/atacar · 1–7 poderes · F stim · I inventário', 'Click to move/attack · 1–7 powers · F stim · I inventory')), 2800);
   }
+}
+
+// dificuldade de cada personagem: nunca vem da escolha global (que é a do último personagem jogado).
+// Personagem novo ou save antigo sem dificuldade começa no Normal; depois cada um guarda a sua.
+function charDiff(c) {
+  if (!DIFFICULTY[c.diff]) {
+    c.diff = 'normal';
+    c.abyss = 0;
+  }
+  c.abyss = c.diff === 'death' ? Math.max(0, Math.min(ABYSS_MAX, c.abyss | 0)) : 0;
 }
 
 function sanitizeChar(c) {
@@ -628,9 +644,7 @@ function sanitizeChar(c) {
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
-  // dificuldade do personagem (saves antigos não têm: ficam com a dificuldade que estava escolhida)
-  if (!DIFFICULTY[c.diff]) c.diff = DIFFICULTY[G.settings.difficulty] ? G.settings.difficulty : 'normal';
-  c.abyss = c.diff === 'death' ? Math.max(0, Math.min(ABYSS_MAX, (c.abyss ?? G.settings.abyss) | 0)) : 0;
+  charDiff(c);
 }
 
 export function quitToMenu() {
@@ -866,6 +880,7 @@ function boot() {
   }
   translateDom();
   loadSave();
+  loadBackups();
   initRenderer();
   initFx(scene);
   initInput(canvas);
@@ -891,8 +906,10 @@ function boot() {
   setSyncHooks({
     save: () => saveGame(true),
     applied: () => {
+      for (const c of Object.values(G.save.slots)) if (c) charDiff(c); // nuvem pode trazer personagem sem dificuldade
       achCheck();
       if (G.mode === 'menu') renderClassCards();
+      refreshBackups();
     },
     render: renderSync,
     say: (m) => toast(m),

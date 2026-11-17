@@ -126,6 +126,7 @@
         <button class="btn ghost" data-nav id="menu-help" data-i18n="controls">Controles</button>
         <button class="btn ghost" data-nav id="menu-ach" data-i18n="medals">🏅 Medalhas</button>
         <button class="btn ghost" data-nav id="menu-sync">☁ Google</button>
+        <button class="btn ghost" data-nav id="menu-backup" data-i18n="backups">🛟 Backups</button>
       </div>
     </div>
   </div>
@@ -285,6 +286,18 @@
       <h2 data-i18n="cloudTitle">NUVEM</h2>
       <div id="sync-box"></div>
       <div class="stack"><button class="btn" data-nav id="sync-close" data-i18n="back">Voltar</button></div>
+    </div>
+  </div>
+
+  <!-- BACKUPS DOS PERSONAGENS (backup.js) -->
+  <div id="panel-backup" class="screen hidden">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 data-i18n="backupsTitle">🛟 BACKUPS</h2>
+        <button class="close" id="backup-close" data-nav>✕</button>
+      </div>
+      <p class="bk-intro" data-i18n="backupsIntro"></p>
+      <div id="backup-list"></div>
     </div>
   </div>
 

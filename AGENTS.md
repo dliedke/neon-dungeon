@@ -115,6 +115,7 @@ Module map (`js/`):
 | `i18n.js` | Language detection, `L()`, the `DICT` for `index.html`, `translateDom`. |
 | `ach.js` | Medals (achievements) and their counters. |
 | `sync.js` | Google sign-in and Google Drive cloud save, including the merge. |
+| `backup.js` | Character backups (2 automatic copies per class, the one erased by "New", undo of a restore), stored in localStorage and in the cloud. |
 | `utils.js` | Random, math and formatting helpers. |
 
 ## Conventions and gotchas
@@ -130,7 +131,7 @@ Module map (`js/`):
   - Menu elements must have the `data-nav` attribute, or the gamepad can't reach them.
   - New panels must be added to `PANEL_ORDER` in `ui.js` (the topmost open panel gets gamepad focus) and close with `{B}`.
   - Check touch layouts in landscape on small screens.
-- **Saves:** stored in localStorage under `neon-dungeon-save-v1`, one slot per class (`G.save.slots[cls]`). Settings are under `neon-dungeon-settings-v1`.
+- **Saves:** stored in localStorage under `neon-dungeon-save-v1`, one slot per class (`G.save.slots[cls]`). Settings are under `neon-dungeon-settings-v1` and backups under `neon-dungeon-backup-v1`.
   - **Never change the key names**; that would wipe players' progress.
   - When you add a character field, backfill it in `sanitizeChar()` in `main.js` so old saves keep loading.
   - Check that cloud merge in `sync.js` (`mergeChar`, `progressOf`) still treats the field correctly.

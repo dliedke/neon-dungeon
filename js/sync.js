@@ -14,10 +14,13 @@ import { SLOTS, itemScore } from './items.js';
 import { L } from './i18n.js';
 import { INV_SIZE } from './loot.js';
 import { ensureAch, mergeStats, mergeAch } from './ach.js';
+import { BK, progressOf, addBackup, worthKeeping, mergeBackups, applyMergedBackups } from './backup.js';
 
 const GOOGLE_CLIENT_ID = '737867009905-hc0ilsd0gdedsen98tfmg0qakpnqn0ah.apps.googleusercontent.com';
 const SCOPE = 'openid email profile https://www.googleapis.com/auth/drive.appdata';
 const FILE = 'neon-dungeon.json';
+// backups dos personagens (backup.js) ficam num arquivo à parte: são maiores e mudam pouco
+const FILE_BK = 'neon-dungeon-backup.json';
 const DRIVE = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UP = 'https://www.googleapis.com/upload/drive/v3/files';
 // precisa bater com o "URI de redirecionamento" do cliente OAuth (https://dliedke.github.io/neon-dungeon)
@@ -26,7 +29,7 @@ const K_SYNC = 'neon-dungeon:sync';
 const K_OAUTH = 'neon-dungeon:oauth';
 const K_TRIED = 'neon-dungeon:silentTried';
 
-export const sync = { user: null, token: null, exp: 0, timer: null, busy: null, again: false, status: 'off', last: 0 };
+export const sync = { user: null, token: null, exp: 0, timer: null, busy: null, again: false, status: 'off', last: 0, bkRev: -1 };
 let hooks = { save: () => {}, applied: () => {}, render: () => {}, say: () => {} };
 export function setSyncHooks(h) {
   hooks = { ...hooks, ...h };
@@ -39,8 +42,7 @@ function canon(v) {
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 // ---------- mescla ----------
-// o modo (Pesadelo/Inferno) vem primeiro: quem já desceu de novo está mais adiantado, mesmo num andar menor
-const progressOf = (c) => [c.tier || 0, c.level || 0, c.maxFloor || c.floor || 0, c.kills || 0, c.xp || 0];
+// progressOf (backup.js): o modo (Pesadelo/Inferno) vem primeiro, depois nível, andar, abates e XP
 function better(a, b) {
   const pa = progressOf(a);
   const pb = progressOf(b);
@@ -139,6 +141,9 @@ function syncMerge(cloud) {
   let changed = false;
   for (const cls in merged.slots) {
     if (cls === keep || canon(merged.slots[cls]) === canon(local.slots[cls])) continue;
+    // recomeço (ou restauração) feito em outro aparelho trocou este personagem: o daqui vira backup
+    const old = local.slots[cls];
+    if (old && merged.slots[cls] && merged.slots[cls].created !== old.created && worthKeeping(old)) addBackup('reset', old, 'sync');
     G.save.slots[cls] = merged.slots[cls];
     changed = true;
   }
@@ -311,6 +316,8 @@ export function syncNow() {
         if (behind || files.length > 1) await gfetch(`${DRIVE_UP}/${files[0].id}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
         for (const f of files.slice(1)) await gfetch(`${DRIVE}/${f.id}`, { method: 'DELETE' });
       }
+      // backups: baixa na primeira sincronização e sempre que mudaram aqui
+      if (sync.bkRev !== BK.rev) await syncBackups();
       sync.last = Date.now();
       setStatus('ok');
     } catch (e) {
@@ -322,6 +329,32 @@ export function syncNow() {
       syncNow();
     }
   })();
+}
+
+// arquivo de backups: mescla local + nuvem (união, com os limites de cada tipo) e grava onde estiver atrás
+async function syncBackups() {
+  const q = encodeURIComponent(`name='${FILE_BK}' and trashed=false`);
+  const { files = [] } = await (await gfetch(`${DRIVE}?spaces=appDataFolder&q=${q}&orderBy=createdTime&fields=files(id)`)).json();
+  let cloud = null;
+  for (const f of files) {
+    const data = await (await gfetch(`${DRIVE}/${f.id}?alt=media`)).json().catch(() => null);
+    if (data && typeof data === 'object') cloud = mergeBackups(cloud, data);
+  }
+  const merged = mergeBackups(BK.data, cloud);
+  const changedHere = applyMergedBackups(merged);
+  const rev = BK.rev; // o que mudar durante o envio vai na próxima sincronização
+  const body = JSON.stringify(merged);
+  if (!files.length) {
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({ name: FILE_BK, parents: ['appDataFolder'] })], { type: 'application/json' }));
+    form.append('file', new Blob([body], { type: 'application/json' }));
+    await gfetch(`${DRIVE_UP}?uploadType=multipart&fields=id`, { method: 'POST', body: form });
+  } else {
+    if (!cloud || canon(merged) !== canon(cloud) || files.length > 1) await gfetch(`${DRIVE_UP}/${files[0].id}?uploadType=media`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+    for (const f of files.slice(1)) await gfetch(`${DRIVE}/${f.id}`, { method: 'DELETE' });
+  }
+  sync.bkRev = rev;
+  if (changedHere) hooks.applied();
 }
 
 // o jogo salvou: envia depois de `delay` (junta várias gravações seguidas; durante a partida

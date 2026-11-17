@@ -276,9 +276,12 @@ export function itemStatLines(it) {
 export function itemCardHtml(it, extra = '', o = {}) {
   const R = RARITY[it.rarity];
   const nb = o.base && it.plus && it.base;
+  // arma: mostra de que classe ela é (na cor da classe)
+  const C = it.slot === 'weapon' && CLASSES[it.cls];
+  const slot = C ? `<span class="nowrap" style="color:${C.css}">${L(`Arma de ${C.name}`, `${C.name} weapon`)}</span>` : SLOT_NAMES[it.slot];
   return `<div class="item-card r${it.rarity}">
     <div class="it-name" style="color:${R.color}">${itemName(it)}</div>
-    <div class="it-type">${R.name} · ${SLOT_NAMES[it.slot]} · ${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}${nb ? ` · ${L('valores sem aprimoramento', 'values without upgrades')}` : ''}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
+    <div class="it-type">${R.name} · ${slot} ·${L('Nível', 'Level')} ${it.ilvl}${it.plus ? ` · <span class="it-plus">⚒ +${it.plus}/${forgeMax(it)}${nb ? ` · ${L('valores sem aprimoramento', 'values without upgrades')}` : ''}</span>` : ''}${it.fav ? ` · <span class="it-fav">★ ${L('Favorito', 'Favorite')}</span>` : ''}</div>
     ${itemStatLines(nb ? unforged(it) : it)}
     ${o.noSock ? '' : `<div class="it-sock">${'◇'.repeat(socketsOf(it))} ${socketsOf(it)} ${socketsOf(it) > 1 ? L('encaixes de gema', 'gem sockets') : L('encaixe de gema', 'gem socket')}</div>`}${o.gems || ''}
     ${extra}

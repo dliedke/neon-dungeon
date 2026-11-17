@@ -1046,6 +1046,24 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 #sync-box .who small { display: block; color: var(--muted); font-size: 12px; }
 #sync-box .sync-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+/* backups dos personagens */
+#panel-backup .panel { max-width: 720px; }
+#panel-backup .panel-head h2 { margin: 0; }
+#panel-backup .bk-intro { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+.bk-class { border: 1px solid var(--line); border-left: 3px solid var(--c); padding: 10px 12px; margin-bottom: 10px; }
+.bk-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 6px; }
+.bk-head b { font-family: Orbitron, sans-serif; color: var(--c); text-shadow: 0 0 10px var(--c); letter-spacing: 1px; font-size: 15px; }
+.bk-head span { color: var(--muted); font-size: 12.5px; }
+.bk-head span b { font-family: inherit; color: var(--text); text-shadow: none; font-size: inherit; letter-spacing: 0; }
+.bk-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.bk-info { flex: 1; min-width: 0; }
+.bk-kind { font-size: 13.5px; font-weight: 700; }
+.bk-kind small { color: var(--muted); font-weight: 400; }
+.bk-stats { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.bk-stats b { color: var(--text); }
+.bk-row .btn { flex: 0 0 auto; min-height: 40px; }
+.bk-none { color: var(--muted); text-align: center; }
+
 /* medalhas */
 #panel-ach .panel-head h2 { margin: 0; }
 #ach-sum { margin: 8px 0 12px; }

@@ -9,6 +9,7 @@ import { INV_SIZE, SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ROMAN } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
 import { skipFinale } from './finale.js';
+import { backupsOf, restoreBackup, backupId } from './backup.js';
 import { startGame, quitToMenu, saveGame, saveSettings, applyQuality, replayFinal, startTier, debugEvent } from './main.js';
 import { fmt, fmtPlay, short } from './utils.js';
 import { L, t } from './i18n.js';
@@ -61,6 +62,12 @@ export function initUI() {
   $('menu-help').onclick = () => openOverlay('panel-help');
   $('menu-sync').onclick = () => openSync();
   $('menu-ach').onclick = () => openAch();
+  $('menu-backup').onclick = () => openBackups();
+  $('backup-close').onclick = () => closeOverlay('panel-backup');
+  $('backup-list').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bk-id]');
+    if (b) askRestore(b.dataset.bk, b.dataset.bkId);
+  });
   $('pause-ach').onclick = () => openAch();
   $('ach-close').onclick = () => {
     closeMedal();
@@ -348,22 +355,138 @@ export function renderClassCards() {
   root.querySelectorAll('[data-new]').forEach((b) => (b.onclick = () => {
     const id = b.dataset.new;
     enterMobileFullscreen();
-    confirmDialog(L('Recomeçar?', 'Start over?'), L(`O progresso de ${CLASSES[id].name} será apagado.`, `${CLASSES[id].name}'s progress will be erased.`), () => {
-      $('menu').classList.add('hidden');
-      startGame(id, true);
-    });
+    const old = G.save.slots[id];
+    const what = old ? L(` (nível ${old.level}, andar ${old.floor})`, ` (level ${old.level}, floor ${old.floor})`) : '';
+    confirmDialog(
+      L('Recomeçar do zero?', 'Start over from scratch?'),
+      L(`${CLASSES[id].name}${what} volta para o nível 1. Uma cópia fica em 🛟 Backups, no menu, e dá para restaurar quando quiser.`, `${CLASSES[id].name}${what} goes back to level 1. A copy is kept in 🛟 Backups, in the menu, and you can restore it anytime.`),
+      () => {
+        $('menu').classList.add('hidden');
+        startGame(id, true);
+      },
+      { wait: 2, yes: L('Recomeçar', 'Start over') },
+    );
   }));
 }
 
-export function confirmDialog(title, text, onYes) {
+// Cancelar é sempre o padrão (o seletor do controle começa nele) e o "Sim" ignora cliques logo
+// depois de abrir (toque duplo ou {A} repetido não confirmam sem querer).
+// opts.wait: segundos com o "Sim" desativado (contagem no botão); opts.yes: texto do "Sim"
+let confirmAt = 0;
+let confirmTimer = null;
+export function confirmDialog(title, text, onYes, opts = {}) {
   $('confirm-title').textContent = title;
   $('confirm-text').textContent = text;
   confirmBack = focused; // ao fechar, o seletor volta para onde estava
-  $('confirm-yes').onclick = () => {
+  const yes = $('confirm-yes');
+  const label = opts.yes || L('Sim', 'Yes');
+  let left = opts.wait | 0;
+  const tick = () => {
+    yes.disabled = left > 0;
+    yes.textContent = left > 0 ? `${label} (${left})` : label;
+  };
+  clearInterval(confirmTimer);
+  tick();
+  if (left > 0) {
+    confirmTimer = setInterval(() => {
+      left--;
+      tick();
+      if (left <= 0) clearInterval(confirmTimer);
+    }, 1000);
+  }
+  yes.onclick = () => {
+    if (yes.disabled || performance.now() - confirmAt < 450) return;
+    clearInterval(confirmTimer);
     closeOverlay('panel-confirm');
     onYes();
   };
   openOverlay('panel-confirm');
+  confirmAt = performance.now();
+  setFocus($('confirm-no'));
+}
+
+// ------------------------------------------------------------------
+// Backups dos personagens (backup.js)
+// ------------------------------------------------------------------
+function openBackups() {
+  renderBackups();
+  openOverlay('panel-backup');
+}
+
+// atualiza o painel se ele estiver aberto (a nuvem trouxe backups novos)
+export function refreshBackups() {
+  if ($('panel-backup').classList.contains('hidden')) return;
+  const sel = focused && focused.dataset.bkId ? `[data-bk-id="${focused.dataset.bkId}"]` : null;
+  renderBackups();
+  if (sel && G.lastInput === 'pad') restoreFocus(document.querySelector(sel) || $('backup-close'));
+}
+
+function bkWhen(at) {
+  const m = Math.floor((Date.now() - at) / 60000);
+  const d = new Date(at);
+  const hm = d.toLocaleTimeString(L('pt-BR', 'en-US'), { hour: '2-digit', minute: '2-digit' });
+  if (m < 1) return L('agora', 'just now');
+  if (m < 60) return L(`há ${m} min`, `${m} min ago`);
+  if (d.toDateString() === new Date().toDateString()) return L(`hoje, ${hm}`, `today, ${hm}`);
+  return `${d.toLocaleDateString(L('pt-BR', 'en-US'), { day: '2-digit', month: '2-digit' })}, ${hm}`;
+}
+
+function bkLine(c) {
+  const t = c.tier ? MODES[Math.min(MAX_TIER, c.tier)] : null;
+  return L(`Nível <b>${c.level}</b> · Andar <b>${c.floor}</b> · ${fmt(c.kills || 0)} abates`, `Level <b>${c.level}</b> · Floor <b>${c.floor}</b> · ${fmt(c.kills || 0)} kills`) + ` · <span class="nowrap">⏱ ${fmtPlay(c.playTime)}</span>` + (t ? ` · <span class="nowrap" style="color:${t.css}">${t.icon} ${t.name}</span>` : '');
+}
+
+function bkKind(e, list) {
+  if (e.kind === 'auto') {
+    const autos = list.filter((x) => x.kind === 'auto');
+    return autos[0] === e ? L('💾 Automático · recente', '💾 Automatic · latest') : L('💾 Automático · anterior', '💾 Automatic · previous');
+  }
+  if (e.kind === 'reset') return e.from === 'sync' ? L('↺ Antes do recomeço (outro aparelho)', '↺ Before starting over (other device)') : L('↺ Antes do recomeço', '↺ Before starting over');
+  return L('⟲ Antes de restaurar', '⟲ Before restoring');
+}
+
+function renderBackups() {
+  const last = G.settings.lastClass;
+  const order = [...CLASS_ORDER].sort((a, b) => (b === last) - (a === last));
+  let h = '';
+  for (const cls of order) {
+    const list = backupsOf(cls);
+    if (!list.length) continue;
+    const C = CLASSES[cls];
+    const cur = G.save.slots[cls];
+    h += `<div class="bk-class" style="--c:${C.css}">
+      <div class="bk-head"><b>${C.name.toUpperCase()}</b><span>${cur ? L('Atual: ', 'Current: ') + bkLine(cur) : L('Sem personagem agora', 'No character right now')}</span></div>`;
+    for (const e of list) {
+      h += `<div class="bk-row">
+        <div class="bk-info"><div class="bk-kind">${bkKind(e, list)} <small>· ${bkWhen(e.at)}</small></div><div class="bk-stats">${bkLine(e.char)}</div></div>
+        <button class="btn small" data-nav data-bk="${cls}" data-bk-id="${backupId(e)}">${L('Restaurar', 'Restore')}</button>
+      </div>`;
+    }
+    h += '</div>';
+  }
+  $('backup-list').innerHTML = h || `<p class="bk-none">${L('Nenhum backup ainda. Eles são criados sozinhos enquanto você joga (personagens a partir do nível 2).', 'No backups yet. They are created automatically while you play (characters from level 2 on).')}</p>`;
+}
+
+function askRestore(cls, id) {
+  const e = backupsOf(cls).find((x) => backupId(x) === id);
+  if (!e) return;
+  const C = CLASSES[cls];
+  const cur = G.save.slots[cls];
+  const now = cur ? L(` O atual (nível ${cur.level}, andar ${cur.floor}) fica guardado como "Antes de restaurar".`, ` The current one (level ${cur.level}, floor ${cur.floor}) is kept as "Before restoring".`) : '';
+  confirmDialog(
+    L('Restaurar backup?', 'Restore backup?'),
+    L(`${C.name} volta para o nível ${e.char.level}, andar ${e.char.floor} (backup de ${bkWhen(e.at)}).`, `${C.name} goes back to level ${e.char.level}, floor ${e.char.floor} (backup from ${bkWhen(e.at)}).`) + now,
+    () => {
+      const c = restoreBackup(cls, id);
+      if (!c) return;
+      saveGame();
+      renderClassCards();
+      renderBackups();
+      toast(L(`🛟 ${C.name} restaurado: nível ${c.level}, andar ${c.floor}.`, `🛟 ${C.name} restored: level ${c.level}, floor ${c.floor}.`), 'heal');
+      if (G.lastInput === 'pad') restoreFocus('#backup-close');
+    },
+    { yes: L('Restaurar', 'Restore') },
+  );
 }
 
 // ------------------------------------------------------------------
@@ -2037,7 +2160,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-backup', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -2202,6 +2325,7 @@ export function uiBack(root = activePanel()) {
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
+    case 'panel-backup':
     case 'panel-debug':
       closeOverlay(root.id);
       break;
@@ -2228,7 +2352,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-backup', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------
