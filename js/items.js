@@ -339,10 +339,11 @@ export function itemDiffHtml(it, cur) {
   return `<div class="it-diff"><div class="it-diff-h">${L('Comparado ao equipado', 'Compared to equipped')}${note}</div>${rows.join('')}</div>`;
 }
 
-// Ordem do inventário: melhorias primeiro, depois raridade, tipo e pontuação
-export function sortInventory(inv, equip) {
-  const key = inv.map((it) => ({ it, up: isUpgrade(it, equip) ? 1 : 0, s: itemScore(it) }));
-  key.sort((a, b) => b.up - a.up || b.it.rarity - a.it.rarity || SLOTS.indexOf(a.it.slot) - SLOTS.indexOf(b.it.slot) || b.s - a.s);
+// Ordem do inventário: raridade e nível do maior para o menor; no empate, a pontuação
+// (as melhorias continuam marcadas com ▲, mas não furam a ordem)
+export function sortInventory(inv) {
+  const key = inv.map((it) => ({ it, s: itemScore(it) }));
+  key.sort((a, b) => b.it.rarity - a.it.rarity || (b.it.ilvl | 0) - (a.it.ilvl | 0) || b.s - a.s);
   key.forEach((k, i) => (inv[i] = k.it));
 }
 
