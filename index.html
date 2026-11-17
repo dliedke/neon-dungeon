@@ -51,6 +51,7 @@
 
     <div id="hud-tr">
       <div id="top-buttons">
+        <div id="clock"></div>
         <button id="btn-char" data-i18n-title="charTitle"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="6" y="8" width="20" height="18" rx="2"/><path d="M12 8V5h8v3M6 15h20"/></svg><span id="char-badge" class="badge hidden">!</span></button>
         <button id="btn-full" class="fs-toggle" data-i18n-title="fullscreen"><svg class="fs-in" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12V6h6M20 6h6v6M26 20v6h-6M12 26H6v-6"/></svg><svg class="fs-out" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6H6M26 12h-6V6M20 26v-6h6M6 20h6v6"/></svg></button>
         <button id="btn-pause" data-i18n-title="pauseTitle"><svg viewBox="0 0 32 32" fill="currentColor"><rect x="9" y="7" width="5" height="18" rx="1"/><rect x="18" y="7" width="5" height="18" rx="1"/></svg></button>
@@ -59,6 +60,7 @@
       <div id="floor-label"></div>
       <div id="run-info"></div>
       <div id="credits"><span class="cr">¢</span> <span id="credits-val">0</span></div>
+      <div id="clock-m"></div>
       <div id="diff-ctl" data-i18n-title="diffTitle"><div id="diff-top"><span id="diff-name"></span><span id="diff-rew"></span></div><input type="range" id="diff-range" min="0" max="8" step="1" value="1" /><div id="abyss-row" class="hidden"><button id="abyss-dn" aria-label="-">−</button><div id="abyss-pips"></div><button id="abyss-up" aria-label="+">+</button><span id="abyss-lock" class="hidden"></span></div></div>
     </div>
 
@@ -154,6 +156,7 @@
           <div class="inv-actions">
             <button class="btn small" id="btn-buy-stim" data-nav data-i18n="buyStim">Comprar Stim</button>
             <button class="btn small danger" id="btn-recycle-all" data-nav data-i18n="recycleAll">Reciclar tudo</button>
+            <button class="btn small danger" id="btn-recycle-myth" data-nav data-i18n="recycleMyth">♻ Míticos</button>
           </div>
         </div>
         <div class="col detail-col"><div id="item-detail"><div class="empty-detail" data-i18n="selectItem">Selecione um item para ver os detalhes.</div></div></div>
@@ -361,6 +364,24 @@
   </div>
 
   <!-- CONFIRMAÇÃO -->
+  <!-- RECICLAR MÍTICOS ABAIXO DE UM NÍVEL -->
+  <div id="panel-mrec" class="screen hidden">
+    <div class="panel narrow">
+      <h2 data-i18n="mrecTitle">♻ RECICLAR MÍTICOS</h2>
+      <p class="mrec-text" data-i18n="mrecText">Recicla os itens míticos do inventário abaixo do nível escolhido. Favoritos (★) e melhorias (▲) ficam.</p>
+      <div class="mrec-row">
+        <button class="btn small" data-nav id="mrec-dn">−10</button>
+        <div class="mrec-lvl"><small data-i18n="mrecBelow">abaixo do nível</small><b id="mrec-lvl">0</b></div>
+        <button class="btn small" data-nav id="mrec-up">+10</button>
+      </div>
+      <p id="mrec-sum"></p>
+      <div class="stack row">
+        <button class="btn danger" data-nav id="mrec-yes" data-i18n="recycle">Reciclar</button>
+        <button class="btn ghost" data-nav id="mrec-no" data-i18n="cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="panel-confirm" class="screen hidden">
     <div class="panel narrow">
       <h2 id="confirm-title"></h2>

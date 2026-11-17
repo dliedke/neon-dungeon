@@ -45,6 +45,11 @@ export function initUI() {
   document.querySelectorAll('.tab-btn').forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
   $('btn-buy-stim').onclick = buyStim;
   $('btn-recycle-all').onclick = recycleAll;
+  $('btn-recycle-myth').onclick = openMythRecycle;
+  $('mrec-dn').onclick = () => mythCutStep(-10);
+  $('mrec-up').onclick = () => mythCutStep(10);
+  $('mrec-yes').onclick = mythRecycle;
+  $('mrec-no').onclick = () => closeOverlay('panel-mrec');
   $('btn-fuse-all').onclick = gemFuseAll;
 
   $('pause-resume').onclick = () => closePause();
@@ -764,6 +769,12 @@ export function updateHUD(dt) {
   setText('lvl', String(c.level));
   if (cache.l3 !== c.level >= 100) $('portrait').classList.toggle('l3', (cache.l3 = c.level >= 100)); // nível com 3 dígitos: fonte menor
   setText('credits-val', fmt(c.credits));
+  // relógio: só refaz o texto quando o minuto muda
+  const min = Math.floor(Date.now() / 60000);
+  if (cache.clockMin !== min) {
+    cache.clockMin = min;
+    $('clock').textContent = $('clock-m').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
   // recompensa atual da dificuldade (sobe aos poucos depois de aumentar)
   const crK = rewardK('cr');
   setText('diff-rew', `¢×${crK.toFixed(crK >= 10 ? 0 : 1)} · ★×${rewardK('loot').toFixed(1)}${rewardRamping() ? ' ▲' : ''}`);
@@ -1528,6 +1539,7 @@ export function renderChar() {
     // no controle cada botão mostra o atalho ({Y}: reciclar tudo)
     $('btn-recycle-all').innerHTML = L('Reciclar tudo', 'Recycle all') + padKey('y');
     $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
+    $('btn-recycle-myth').disabled = !c.inv.some((it) => it.rarity === MYTHIC && !it.fav);
     // atributos
     const s = p.stats;
     const rows = [
@@ -2159,6 +2171,56 @@ function recycleAll() {
   saveGame();
 }
 
+// ------------------------------------------------------------------
+// Reciclar míticos abaixo de um nível (escolhido com −10/+10; favoritos e melhorias ficam)
+// ------------------------------------------------------------------
+let mythCut = 0;
+const mythRecyclable = (c) => c.inv.filter((it) => it.rarity === MYTHIC && !it.fav && (it.ilvl | 0) < mythCut && !isUpgrade(it, c.equip));
+function openMythRecycle() {
+  const c = G.char;
+  const lv = c.inv.filter((it) => it.rarity === MYTHIC && !it.fav).map((it) => it.ilvl | 0);
+  if (!lv.length) return;
+  // padrão: o nível do item equipado mais fraco (o que está abaixo dele já ficou para trás)
+  if (!mythCut) {
+    const eq = Object.values(c.equip).filter(Boolean).map((it) => it.ilvl | 0);
+    mythCut = Math.max(10, Math.floor((eq.length ? Math.min(...eq) : Math.max(...lv)) / 10) * 10);
+  }
+  renderMythRecycle();
+  openOverlay('panel-mrec');
+  setFocus($('mrec-no'));
+}
+function mythCutStep(d) {
+  const top = Math.max(10, ...G.char.inv.filter((it) => it.rarity === MYTHIC).map((it) => Math.ceil(((it.ilvl | 0) + 1) / 10) * 10));
+  mythCut = Math.max(10, Math.min(top, mythCut + d));
+  sfx.click();
+  renderMythRecycle();
+}
+function renderMythRecycle() {
+  const list = mythRecyclable(G.char);
+  const total = list.reduce((s, it) => s + recycleValue(it), 0);
+  $('mrec-lvl').textContent = String(mythCut);
+  $('mrec-sum').innerHTML = list.length
+    ? L(`<b>${list.length}</b> ${list.length === 1 ? 'mítico' : 'míticos'} → <b>+${fmt(total)}¢</b>`, `<b>${list.length}</b> ${list.length === 1 ? 'mythic' : 'mythics'} → <b>+${fmt(total)}¢</b>`)
+    : L('Nenhum mítico abaixo desse nível.', 'No mythics below this level.');
+  $('mrec-yes').disabled = !list.length;
+}
+function mythRecycle() {
+  const c = G.char;
+  const list = mythRecyclable(c);
+  if (!list.length) return;
+  const set = new Set(list);
+  const total = list.reduce((s, it) => s + recycleValue(it), 0);
+  c.inv = c.inv.filter((it) => !set.has(it));
+  c.credits += total;
+  sfx.coin();
+  toast(L(`♻ ${list.length} ${list.length === 1 ? 'mítico reciclado' : 'míticos reciclados'}: +${fmt(total)}¢`, `♻ ${list.length} ${list.length === 1 ? 'mythic' : 'mythics'} recycled: +${fmt(total)}¢`));
+  closeOverlay('panel-mrec');
+  selected = null;
+  renderChar();
+  saveGame();
+  if (G.lastInput === 'pad') restoreFocus('#btn-recycle-myth');
+}
+
 function buyStim() {
   const c = G.char;
   const price = stimPrice();
@@ -2176,7 +2238,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-backup', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-mrec', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-backup', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -2338,6 +2400,7 @@ export function uiBack(root = activePanel()) {
     case 'panel-implant':
       break; // o final só fecha pelos botões
     case 'panel-confirm':
+    case 'panel-mrec':
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
@@ -2368,7 +2431,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-opts', 'panel-help', 'panel-sync', 'panel-backup', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-mrec', 'panel-opts', 'panel-help', 'panel-sync', 'panel-backup', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------

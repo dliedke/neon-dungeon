@@ -3667,22 +3667,25 @@ const lasers = {
 };
 
 // ==================================================================
-// 29. Expurgo: a corrupção se espalha pelas placas; pise nelas para limpar todas
+// 29. Expurgo: a corrupção se espalha pelas placas; passe por cima delas para limpar todas
+// (limpa num raio em volta do jogador e a placa limpa fica protegida por uns segundos)
 // ==================================================================
 const PUR_COL = 0xb040ff;
 const PUR_N = 7;
 const PUR_S = 0.95;
+const PUR_SAFE = 5; // segundos que a placa limpa fica protegida
+const PUR_R2 = 0.85 * 0.85; // raio de limpeza em volta do jogador
 const purge = {
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 3.6);
     if (!s) return null;
     const g = groupAt(s.x, s.z);
-    const M = { clean: lightMat(0x1f6d78, 0.6), bad: glowMat(PUR_COL, 1.5) };
+    const M = { clean: lightMat(0x1f6d78, 0.6), bad: glowMat(PUR_COL, 1.5), safe: glowMat(0x5affd2, 0.9) };
     const tiles = [];
     for (let k = 0; k < PUR_N * PUR_N; k++) {
       const ox = ((k % PUR_N) - 3) * PUR_S;
       const oz = (Math.floor(k / PUR_N) - 3) * PUR_S;
-      tiles.push({ x: s.x + ox, z: s.z + oz, bad: chance(0.55) ? 1 : 0, m: put(g, box(0.86, 0.05, 0.86), M.clean, ox, 0.03, oz) });
+      tiles.push({ x: s.x + ox, z: s.z + oz, bad: chance(0.55) ? 1 : 0, safe: 0, m: put(g, box(0.86, 0.05, 0.86), M.clean, ox, 0.03, oz) });
     }
     tiles[24].bad = 1;
     // pilar corrompido no meio
@@ -3692,7 +3695,7 @@ const purge = {
     return E;
   },
   paint(E) {
-    for (const t of E.tiles) t.m.material = t.bad ? E.M.bad : E.M.clean;
+    for (const t of E.tiles) t.m.material = t.bad ? E.M.bad : t.safe > 0 ? E.M.safe : E.M.clean;
   },
   nb(k) {
     const i = k % PUR_N;
@@ -3713,21 +3716,24 @@ const purge = {
     if (E.st === 'idle') {
       if (!inside) return;
       E.st = 'play';
-      banner(L('EXPURGO', 'PURGE'), L('Pise nas placas roxas para limpar todas', 'Step on the purple plates to clean them all'));
+      banner(L('EXPURGO', 'PURGE'), L('Corra por cima das placas roxas: as que você limpa ficam protegidas (verdes) por uns segundos', 'Run over the purple plates: the ones you clean stay protected (green) for a few seconds'));
       sfx.alarm();
     }
-    // limpa a placa embaixo do jogador
-    if (inside) {
-      const i = Math.round((p.x - E.x) / PUR_S) + 3;
-      const j = Math.round((p.z - E.z) / PUR_S) + 3;
-      const k = i >= 0 && i < PUR_N && j >= 0 && j < PUR_N ? j * PUR_N + i : -1;
-      if (k >= 0 && E.tiles[k].bad) {
-        E.tiles[k].bad = 0;
-        E.tiles[k].m.material = E.M.clean;
-        burst(E.tiles[k].x, 0.3, E.tiles[k].z, 0x5affd2, 6, 2, 0.05, 0.35, { up: 1 });
-        if (Math.random() < 0.5) sfx.click();
-      }
+    // limpa as placas em volta do jogador; a placa limpa fica protegida (verde) por PUR_SAFE segundos
+    let snd = false;
+    for (const t of E.tiles) {
+      if (t.safe > 0 && (t.safe -= dt) <= 0 && !t.bad) t.m.material = E.M.clean;
+      if (!inside || !t.bad) continue;
+      const dx = t.x - p.x;
+      const dz = t.z - p.z;
+      if (dx * dx + dz * dz > PUR_R2) continue;
+      t.bad = 0;
+      t.safe = PUR_SAFE;
+      t.m.material = E.M.safe;
+      burst(t.x, 0.3, t.z, 0x5affd2, 6, 2, 0.05, 0.35, { up: 1 });
+      snd = true;
     }
+    if (snd) sfx.click();
     const bad = E.tiles.filter((t) => t.bad).length;
     if (!bad) {
       E.core.visible = false;
@@ -3735,17 +3741,18 @@ const purge = {
       complete(E, 1.6, L('ÁREA LIMPA!', 'AREA PURGED!'), L('A corrupção sumiu', 'The corruption is gone'), E.x, E.z, { extra: true });
       return;
     }
-    // a corrupção se espalha para as vizinhas (mais rápido nos andares fundos)
+    // a corrupção se espalha para as vizinhas sem proteção (um pouco mais rápido nos andares fundos)
     E.spreadT -= dt;
     if (E.spreadT <= 0) {
-      E.spreadT = Math.max(0.55, 0.95 - G.floor * 0.01);
-      const n = G.floor >= 10 ? 3 : 2;
+      E.spreadT = Math.max(0.8, 1.4 - G.floor * 0.015);
+      const n = G.floor >= 20 ? 2 : 1;
+      const open = (q) => !E.tiles[q].bad && !(E.tiles[q].safe > 0);
       for (let c = 0; c < n; c++) {
         const src = [];
-        E.tiles.forEach((t, k) => t.bad && purge.nb(k).some((q) => !E.tiles[q].bad) && src.push(k));
+        E.tiles.forEach((t, k) => t.bad && purge.nb(k).some(open) && src.push(k));
         if (!src.length) break;
         const from = src[Math.floor(Math.random() * src.length)];
-        const free = purge.nb(from).filter((q) => !E.tiles[q].bad);
+        const free = purge.nb(from).filter(open);
         const to = free[Math.floor(Math.random() * free.length)];
         E.tiles[to].bad = 1;
         E.tiles[to].m.material = E.M.bad;
@@ -3759,17 +3766,17 @@ const purge = {
       spawnWave(E, Math.min(4, 1 + Math.floor(G.floor / 8)), E.x, E.z, 2, 4, PUR_COL);
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('entre na área', 'step in') : `${Math.round((E.tiles.filter((t) => !t.bad).length / E.tiles.length) * 100)}% ${L('limpo', 'clean')}`),
+  hud: (E) => { if (E.st === 'idle') return L('entre na área', 'step in'); const n = E.tiles.filter((t) => t.bad).length; return L(`faltam ${n} placas roxas`, `${n} purple plates left`); },
   save: () => ({}),
   load(E, s) {
     if (s.st !== 'done') return;
     E.st = 'done';
-    for (const t of E.tiles) t.bad = 0;
+    for (const t of E.tiles) { t.bad = 0; t.safe = 0; }
     purge.paint(E);
     E.core.visible = false;
   },
   busy: (E) => E.st === 'play',
-  intro: () => L('uma corrupção roxa toma conta das placas e se espalha sozinha. Pise nelas para limpar; limpe todas antes que voltem a se espalhar.', 'a purple corruption covers the plates and keeps spreading. Step on them to clean them; clean them all before they spread back.'),
+  intro: () => L('uma corrupção roxa toma conta das placas e se espalha sozinha. Corra por cima das placas roxas para limpar (limpa as que estão em volta de você). Cada placa limpa fica verde e protegida por uns segundos; limpe todas antes que a corrupção volte.', 'a purple corruption covers the plates and keeps spreading. Run over the purple plates to clean them (it cleans the ones around you). Each cleaned plate turns green and stays protected for a few seconds; clean them all before the corruption comes back.'),
 };
 
 // ==================================================================

@@ -110,6 +110,12 @@ button { font-family: inherit; }
 }
 #top-buttons button:hover { border-color: var(--accent); color: var(--accent); }
 #top-buttons svg { width: 100%; height: 100%; }
+/* relógio com a hora atual, ao lado dos botões */
+#clock {
+  height: 42px; padding: 0 10px; display: grid; place-items: center; border: 1px solid var(--line); background: rgba(8, 8, 22, 0.8);
+  font-family: Orbitron, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--accent); pointer-events: none; white-space: nowrap;
+}
+#clock-m { display: none; font-family: Orbitron, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: var(--accent); text-shadow: 0 0 6px rgba(0, 0, 0, 0.9); pointer-events: none; }
 /* tela cheia: só no desktop (no celular a tela cheia é automática e fica nas Opções) */
 .fs-toggle .fs-out, body.is-full .fs-toggle .fs-in { display: none; }
 body.is-full .fs-toggle .fs-out { display: block; }
@@ -447,6 +453,15 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
   clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
 }
 .panel.narrow { max-width: 420px; text-align: center; }
+/* reciclar míticos abaixo de um nível */
+.mrec-text { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.mrec-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0; }
+.mrec-row .btn { min-width: 64px; min-height: 42px; font-size: 18px; }
+.mrec-lvl { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
+.mrec-lvl small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.mrec-lvl b { font-family: Orbitron, sans-serif; font-size: 30px; color: #b04dff; text-shadow: 0 0 10px #b04dff; }
+#mrec-sum { font-size: 15px; min-height: 2.6em; }
+#mrec-sum b { color: var(--yellow); }
 .panel.wide { max-width: 1100px; }
 /* inventário de 100 casas (10 por linha, a grade rola): painel do personagem mais largo para as casas não ficarem miúdas */
 #panel-char .panel.wide { max-width: 1320px; }
@@ -1227,6 +1242,9 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
   body.touch #credits { margin-right: calc(-8px - var(--safe-r) * 0.5); }
   /* toque: créditos logo abaixo do minimapa */
   body.touch #credits { order: 1; }
+  /* toque em tela pequena: o relógio sai de perto dos avisos do topo e fica embaixo dos créditos */
+  body.touch #clock { display: none; }
+  body.touch #clock-m { display: block; order: 1; margin-right: calc(-8px - var(--safe-r) * 0.5); }
   #xp-bar { height: 15px; }
   #xp-bar span { font-size: 12px; }
   .ri-con, .ri-anom { font-size: 10px; }

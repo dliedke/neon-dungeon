@@ -252,7 +252,7 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Drone Herd** | 3 skittish drones escaped a green pen and run away from you. Come from behind and drive each one back into the pen. |
 | **Trap Floor** | Only one path across the floor is safe. It lights up blue when you arrive: memorize it and step on every plate of it (fake plates shock you). The blue circle replays the path. |
 | **Laser Crossing** | A gem sits behind laser walls whose gaps slide back and forth. Slip through the gaps and grab the gem; touching a laser burns and pushes you back. |
-| **Purge** | A purple corruption covers the plates and keeps spreading. Step on the plates to clean them all before it takes them back. |
+| **Purge** | A purple corruption covers the plates and keeps spreading. Run over the plates to clean the ones around you; each cleaned plate turns green and stays protected for a few seconds. Clean them all. |
 | **Runaway Drone** | A golden drone full of credits flees from you but tires now and then (it slows down and sparks). Touch it 3 times. |
 | **Dancing Totems** | 4 totems with 1 to 4 rings. Hit them in rising ring order; a mistake resets them and shocks you. From floor 6 on, the unlit totems swap rings now and then. |
 | **Blood Altar** | Stand on the altar to offer 30% of your health. Each offering gives credits and an item, and the third gives a special cache. It only accepts if you have more than 34% health. |
@@ -292,7 +292,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
-    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic, divine or primordial items. Recycling a mythic, divine or primordial item pays a lot of credits, which helps fund the blacksmith.
+    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic, divine or primordial items; the **♻ Mythics** button next to it recycles only the mythics below a level you pick (−10/+10, it shows how many and how many credits first, and keeps favorites and upgrades). Recycling a mythic, divine or primordial item pays a lot of credits, which helps fund the blacksmith.
   - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, from Chaos difficulty up (rarer on Chaos, more on Apocalypse,
     Death and each Abyss level), or on Brutal and above in Nightmare/Inferno, from floor 8 onwards. They are rarer than mythics: bosses are the best source
     (about 40% of bosses drop one on Death, about 80% on Abyss X, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power

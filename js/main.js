@@ -777,7 +777,7 @@ function handleGlobalInput() {
     if (G.mode === 'play' && bigMapOpen()) toggleBigMap(false); // Esc fecha o mapa antes de pausar
     else if (G.mode === 'play') openPause();
     else if (G.mode === 'pause' && !anyOverlayOpen()) closePause();
-    else if (G.mode === 'char') closeChar();
+    else if (G.mode === 'char' && !anyOverlayOpen()) closeChar(); // com uma janela aberta por cima, o Esc fecha só ela
     else uiBack();
   }
   if (Input.pressed('inv') || Input.pressed('skills')) {
