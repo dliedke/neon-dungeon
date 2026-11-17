@@ -201,7 +201,8 @@ export function achList() {
   add('gem1', '💎', 0, L('Garimpeiro', 'Prospector'), L('Engaste uma gema no equipamento', 'Socket a gem into your gear'), () => total('gemSocket'));
   add('gemFuse25', '⚗️', 1, L('Lapidador', 'Gemcutter'), L('Funda gemas 25 vezes', 'Fuse gems 25 times'), () => total('gemFuse'), 25);
   add('gemPerfect', '🔷', 2, L('Joia Perfeita', 'Perfect Jewel'), L('Crie uma gema Perfeita', 'Create a Perfect gem'), () => (has('flags', 'gemPerfect') ? 1 : 0));
-  add('gemNeon', '🌈', 3, L('Coração de Neon', 'Neon Heart'), L('Crie uma gema Neon, o nível máximo', 'Create a Neon gem, the highest tier'), () => (has('flags', 'gemNeon') ? 1 : 0));
+  add('gemNeon', '🌈', 3, L('Coração de Neon', 'Neon Heart'), L('Crie uma gema Neon (nível VII, libera o poder da gema)', 'Create a Neon gem (tier VII, unlocks the gem’s power)'), () => (has('flags', 'gemNeon') ? 1 : 0));
+  add('gemSingular', '✴️', 3, L('Joia Singular', 'Singular Jewel'), L('Crie uma gema Singular, o nível máximo (X)', 'Create a Singular gem, the highest tier (X)'), () => (has('flags', 'gemSingular') ? 1 : 0));
   add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));
 
   // mundo

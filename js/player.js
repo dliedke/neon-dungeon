@@ -12,7 +12,7 @@ import { formMods } from './powers.js';
 import { DIFFICULTY, abyssFx } from './enemies.js';
 import { achAdd, achTotal } from './ach.js';
 import { amod, implantMods } from './run.js';
-import { gemMods } from './gems.js';
+import { gemMods, gemPowers, GEM_POW } from './gems.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
@@ -70,6 +70,7 @@ export function computeStats(c) {
     myths: new Set(),
     divs: new Set(),
     prims: new Set(),
+    gpow: gemPowers(c), // poderes das gemas Neon ou melhores: { tipo: força 1..4 }
   };
   for (const slot of SLOTS) {
     const it = c.equip[slot];
@@ -134,6 +135,8 @@ export function computeStats(c) {
   s.maxEn = Math.round(s.maxEn);
   // Pele de Gaia (primordial): regenera 1% da vida máxima por segundo
   if (s.prims.has('gaia')) s.hpRegen += s.maxHp * 0.01 * D.pRegen;
+  // Seiva Viva (gema Esmeralda Neon+): regenera % da vida máxima por segundo
+  if (s.gpow.emerald) s.hpRegen += (s.maxHp * GEM_POW.emerald.regen[s.gpow.emerald - 1] / 100) * D.pRegen;
   return s;
 }
 

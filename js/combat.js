@@ -11,7 +11,7 @@ import { dropLoot, killBounty } from './loot.js';
 import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled, abyssOn, abyssFx } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
-import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia, primDmgMult, primOnHit, primDodge } from './mythic.js';
+import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia, primDmgMult, primOnHit, primDodge, gemOnHit, gemOnKill, gemBlock } from './mythic.js';
 import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
@@ -118,6 +118,7 @@ export function hitEnemy(e, mult, o = {}) {
   if (ps.myths.size || p.buffs.avatar > 0) mythOnHit(e, r.crit, o);
   if (ps.divs && ps.divs.size) divOnHit(e, o);
   if (ps.prims && ps.prims.size) primOnHit(e, r.crit, o);
+  if (ps.gpow && (ps.gpow.topaz || ps.gpow.amethyst)) gemOnHit(e, r.crit, o);
 }
 
 // Efeitos de status causados pelo jogador
@@ -260,6 +261,7 @@ export function killEnemy(e) {
     runKill(e);
     if (p.stats.legs.has('nano')) healPlayer(capHeal('nano', p.stats.maxHp * 0.04, p.stats.maxHp * 0.06));
     if (p.stats.myths.size) mythOnKill();
+    if (p.stats.gpow && (p.stats.gpow.ruby || p.stats.gpow.sapphire)) gemOnKill(e);
     if (p.stats.killHeal) healPlayer(capHeal('kill', (p.stats.maxHp * p.stats.killHeal) / 100, (p.stats.maxHp * p.stats.killHeal * 1.5) / 100), false);
     if (p.stats.killEn) p.en = Math.min(p.stats.maxEn, p.en + p.stats.killEn);
     if (p.stats.legs.has('core')) {
@@ -324,6 +326,8 @@ export function damagePlayer(amount) {
     if (p.stats.prims && p.stats.prims.size) primDodge();
     return;
   }
+  // Pele de Diamante (gema): bloqueia o golpe inteiro
+  if (p.stats.gpow && p.stats.gpow.diamond && gemBlock()) return;
   // Égide Divina: bloqueia o golpe inteiro
   if (p.stats.divs && p.stats.divs.size && divBlock()) return;
   amount *= armorTaken(p.stats.armor);

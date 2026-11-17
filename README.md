@@ -317,7 +317,10 @@ Medals and their counters sync with the Google cloud save; progress from every d
     Each kind gives one bonus in the weapon and another in any other piece:
     **Ruby** (damage / max health), **Sapphire** (attack speed / skill cooldown), **Emerald** (life steal / dodge), **Topaz** (crit chance / item find),
     **Amethyst** (crit damage / damage taken) and **Diamond** (damage to elites and bosses / armor).
-    There are 7 tiers (Chipped, Rough, Cut, Polished, Perfect, Radiant and Neon); deeper floors, harder difficulties and the Abyss drop higher ones.
+    There are 10 tiers (Chipped, Rough, Cut, Polished, Perfect, Radiant, Neon, Stellar, Quantum and Singular); deeper floors, harder difficulties and the Abyss drop higher ones.
+    From **Neon (VII)** up, a socketed gem also unlocks its kind's **power**, stronger at VIII, IX and X (the best gem of each kind counts):
+    Ruby **Ember Heart** (kills explode), Sapphire **Cobalt Tide** (kills shorten all cooldowns), Emerald **Living Sap** (health regen),
+    Topaz **Golden Thunder** (hits may chain lightning), Amethyst **Violet Rift** (crits may open an exploding rift) and Diamond **Diamond Skin** (blocks a hit every few seconds).
     **Fuse 3 equal gems into 1 of the next tier** for credits (one at a time, a whole type, or "Fuse all") in the **Gems** tab of the inventory.
     Items have sockets by rarity: 1 (Common to Rare), 2 (Prototype and Mythic), 3 (Divine and Primordial), plus one more when the blacksmith upgrades the item to its maximum.
     Sockets belong to the equipment slot, so your gems stay when you swap an item (with fewer sockets, the extra gems just go inactive until a better item arrives). Removing a gem is free and it goes back to the pouch.

@@ -1322,7 +1322,7 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 #gem-bonus { margin-top: 10px; font-size: 13px; color: #8fb8ff; }
 #gem-bonus .gb-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
 #gem-bag { display: flex; flex-direction: column; gap: 4px; }
-.gb-head, .gb-row { display: grid; grid-template-columns: 24px repeat(7, minmax(0, 58px)); gap: 5px; align-items: center; }
+.gb-head, .gb-row { display: grid; grid-template-columns: 24px repeat(10, minmax(0, 46px)); gap: 4px; align-items: center; }
 .gb-head span { text-align: center; font-size: 11px; color: var(--muted); font-weight: 700; }
 .gb-type { width: 22px; height: 22px; }
 .gb-type svg { width: 100%; height: 100%; }
@@ -1350,16 +1350,26 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .gd-slots .btn { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .gd-slots .btn small { color: #8fb8ff; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .gd-note { font-size: 13px; color: var(--muted); }
+/* poder da gema (Neon ou melhor) */
+.gd-pow { margin-top: 6px; padding: 5px 8px; font-size: 13px; line-height: 1.3; color: #dfe6ff; border-left: 3px solid var(--gc); background: color-mix(in srgb, var(--gc) 10%, transparent); }
+.gd-pow b { color: var(--gc); }
+.gd-pow.off { opacity: 0.6; }
+#gem-bonus .gb-pow { margin-top: 6px; }
 @media (max-height: 520px) {
-  #tab-gems.tab-body { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1.05fr); gap: 10px; }
+  /* 10 níveis: a bolsa fica com a maior parte da largura; os encaixes mostram só o ícone da peça */
+  #tab-gems.tab-body { grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.6fr) minmax(0, 0.85fr); gap: 8px; }
   #tab-gems .col h4 { margin-bottom: 4px; font-size: 11px; }
   #gem-sockets { gap: 3px; }
-  .gsrow { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px; }
-  .gs-name { font-size: 9px; letter-spacing: 0; }
+  .gsrow { grid-template-columns: 26px minmax(0, 1fr); gap: 4px; }
+  .gs-name { display: none; }
   .gsock { width: 27px; height: 27px; padding: 2px; }
   .gs-socks { gap: 2px; }
-  .gb-head, .gb-row { grid-template-columns: 18px repeat(7, minmax(0, 1fr)); gap: 3px; }
-  .gb-type { width: 16px; height: 16px; }
+  .gb-head, .gb-row { grid-template-columns: 13px repeat(10, minmax(0, 1fr)); gap: 2px; }
+  .gb-head span { font-size: 9px; }
+  .gb-type { width: 13px; height: 13px; }
+  .gcell { padding: 10%; }
+  .gcell b { font-size: 10px; }
+  .gd-pow { font-size: 11px; padding: 4px 6px; }
   #gem-bag { gap: 3px; }
   .gem-help { display: none; }
   #gem-bonus { font-size: 11px; margin-top: 6px; }

@@ -9,6 +9,7 @@ import { glowMat } from './models.js';
 import { sfx } from './audio.js';
 import { banner } from './ui.js';
 import { L } from './i18n.js';
+import { GEM_POW } from './gems.js';
 
 const MC = 0xb04dff; // cor mítica
 const has = (k) => G.player && G.player.stats.myths && G.player.stats.myths.has(k);
@@ -47,6 +48,7 @@ export function resetMythic() {
   erebusCd = 0;
   uranusT = 4;
   genesisCd = 0;
+  topazCd = riftCd = rubyCd = diamondCd = 0;
 }
 
 // ---------- Lâminas Fantasmas: 3 lâminas presas ao modelo do jogador ----------
@@ -209,6 +211,7 @@ export function updateMythic(dt) {
   if (!p) return;
   phoenixCd = Math.max(0, phoenixCd - dt);
   singCd = Math.max(0, singCd - dt);
+  gemTick(dt);
   updateBlades(p, dt);
   if (!p.alive) return;
   updateOrbital(p, dt);
@@ -224,6 +227,8 @@ export function mythHud() {
   if (p.buffs.avatar > 0) out.push(`${L('Avatar Neon', 'Neon Avatar')} ${p.buffs.avatar.toFixed(0)}s`);
   if (hasDiv('aegisDiv')) out.push(aegisCd > 0 ? `${L('Égide', 'Aegis')} ${Math.ceil(aegisCd)}s` : L('Égide pronta', 'Aegis ready'));
   if (hasDiv('ambrosia')) out.push(ambCd > 0 ? `Ambrosia ${Math.ceil(ambCd)}s` : L('Ambrosia pronta', 'Ambrosia ready'));
+  const gh = gemHud();
+  if (gh) out.push(gh);
   if (has('phoenix')) out.push(phoenixCd > 0 ? `${L('Fênix', 'Phoenix')} ${Math.ceil(phoenixCd)}s` : `${L('Fênix pronta', 'Phoenix ready')}`);
   return out;
 }
@@ -406,3 +411,70 @@ function updatePrimordial(p, dt) {
     });
   }
 }
+
+// ================= Poderes das gemas (Neon ou melhor engastada) =================
+// Força k (1..4) vem de p.stats.gpow; os números ficam em GEM_POW (gems.js).
+let topazCd = 0;
+let riftCd = 0;
+let rubyCd = 0;
+let diamondCd = 0;
+const NOGP = {};
+const gp = () => (G.player && G.player.stats.gpow) || NOGP;
+
+function gemTick(dt) {
+  topazCd = Math.max(0, topazCd - dt);
+  riftCd = Math.max(0, riftCd - dt);
+  rubyCd = Math.max(0, rubyCd - dt);
+  diamondCd = Math.max(0, diamondCd - dt);
+}
+
+// depois de um golpe do jogador: Trovão Dourado (Topázio) e Fenda Violeta (Ametista)
+export function gemOnHit(e, crit, o) {
+  if (o.noProc) return;
+  const P = gp();
+  if (P.topaz && topazCd <= 0 && chance(GEM_POW.topaz.ch[P.topaz - 1] / 100)) {
+    topazCd = 0.2;
+    const k = P.topaz - 1;
+    after(0.05, () => chainFrom(e, GEM_POW.topaz.jumps[k], GEM_POW.topaz.mult[k], 6, 0xffd23d, true));
+  }
+  if (crit && P.amethyst && riftCd <= 0 && chance(0.15)) {
+    riftCd = 0.5;
+    const x = e.x;
+    const z = e.z;
+    const m = GEM_POW.amethyst.mult[P.amethyst - 1];
+    telegraphFx(x, z, 2.6, 0.35, 0xb04dff);
+    after(0.35, () => explosion(x, z, 2.6, m, { color: 0xb04dff, noProc: true, small: true, knock: 1 }));
+  }
+}
+
+// inimigo abatido: Coração de Brasa (Rubi) e Maré Cobalto (Safira)
+export function gemOnKill(e) {
+  const P = gp();
+  const p = G.player;
+  if (P.ruby && rubyCd <= 0) {
+    rubyCd = 0.12; // em cadeia, no máximo ~8 explosões por segundo
+    const x = e.x;
+    const z = e.z;
+    const k = P.ruby - 1;
+    after(0.08, () => explosion(x, z, GEM_POW.ruby.r[k], GEM_POW.ruby.mult[k], { color: 0xff3a5a, noProc: true, small: true, burn: 0.35 }));
+  }
+  if (P.sapphire && p) {
+    const d = GEM_POW.sapphire.cd[P.sapphire - 1];
+    for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - d);
+  }
+}
+
+// antes do dano no jogador: Pele de Diamante bloqueia o golpe inteiro? (true = bloqueou)
+export function gemBlock() {
+  const P = gp();
+  if (!P.diamond || diamondCd > 0) return false;
+  const p = G.player;
+  diamondCd = GEM_POW.diamond.cd[P.diamond - 1];
+  floatText(p.x, 1.9, p.z, L('DIAMANTE', 'DIAMOND'), 'shield');
+  ringFx(p.x, p.z, 1.6, 0xbff6ff, 0.35);
+  burst(p.x, 1, p.z, 0xbff6ff, 10, 4, 0.06, 0.4);
+  sfx.gemSocket();
+  return true;
+}
+// texto na barra de buffs
+export const gemHud = () => (gp().diamond ? (diamondCd > 0 ? `${L('Diamante', 'Diamond')} ${Math.ceil(diamondCd)}s` : L('Diamante pronto', 'Diamond ready')) : null);
