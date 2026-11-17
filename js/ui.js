@@ -1539,6 +1539,7 @@ export function renderChar() {
     // no controle cada botão mostra o atalho ({Y}: reciclar tudo)
     $('btn-recycle-all').innerHTML = L('Reciclar tudo', 'Recycle all') + padKey('y');
     $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
+    $('btn-recycle-myth').innerHTML = L('♻ Míticos', '♻ Mythics') + padKey('rs');
     $('btn-recycle-myth').disabled = !c.inv.some((it) => it.rarity === MYTHIC && !it.fav);
     // atributos
     const s = p.stats;
@@ -2187,7 +2188,8 @@ function openMythRecycle() {
   }
   renderMythRecycle();
   openOverlay('panel-mrec');
-  setFocus($('mrec-no'));
+  // o seletor já começa no Reciclar (o {A} confirma); sem nada para reciclar, fica no Cancelar
+  setFocus($('mrec-yes').disabled ? $('mrec-no') : $('mrec-yes'));
 }
 function mythCutStep(d) {
   const top = Math.max(10, ...G.char.inv.filter((it) => it.rarity === MYTHIC).map((it) => Math.ceil(((it.ilvl | 0) + 1) / 10) * 10));
@@ -2199,6 +2201,8 @@ function renderMythRecycle() {
   const list = mythRecyclable(G.char);
   const total = list.reduce((s, it) => s + recycleValue(it), 0);
   $('mrec-lvl').textContent = String(mythCut);
+  $('mrec-dn').innerHTML = '−10' + padKey('lb');
+  $('mrec-up').innerHTML = '+10' + padKey('rb');
   $('mrec-sum').innerHTML = list.length
     ? L(`<b>${list.length}</b> ${list.length === 1 ? 'mítico' : 'míticos'} → <b>+${fmt(total)}¢</b>`, `<b>${list.length}</b> ${list.length === 1 ? 'mythic' : 'mythics'} → <b>+${fmt(total)}¢</b>`)
     : L('Nenhum mítico abaixo desse nível.', 'No mythics below this level.');
@@ -2383,6 +2387,12 @@ export function uiPadUpdate() {
   // {LB}/{RB}: aba anterior/próxima (Equipamento, Habilidades, Gemas)
   const CHAR_TABS = ['equip', 'skills', 'gems'];
   const ti = CHAR_TABS.indexOf(currentTab);
+  if (Input.nav('rs') && root.id === 'panel-char' && currentTab === 'equip' && !$('btn-recycle-myth').disabled) openMythRecycle(); // {RS}: reciclar míticos
+  if (root.id === 'panel-mrec') {
+    // {LB}/{RB}: −10/+10 no nível sem tirar o seletor do Reciclar
+    if (Input.nav('lb')) mythCutStep(-10);
+    if (Input.nav('rb')) mythCutStep(10);
+  }
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
   else if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'gems') gemFuseAll(); // {Y}: fundir tudo
   else if ((Input.nav('y') || Input.nav('rb')) && root.id === 'panel-char') setTab(CHAR_TABS[(ti + 1) % 3]);

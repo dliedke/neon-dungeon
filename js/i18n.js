@@ -31,7 +31,7 @@ const DICT = {
   mrecText: ['Recicla os itens míticos do inventário abaixo do nível escolhido. Favoritos (★) e melhorias (▲) ficam.', 'Recycles the mythic items in your inventory below the chosen level. Favorites (★) and upgrades (▲) are kept.'],
   mrecBelow: ['abaixo do nível', 'below level'],
   selectItem: ['Selecione um item para ver os detalhes.', 'Select an item to see its details.'],
-  padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {RT} Favoritar · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {RT} Favorite · {LB} {RB} Switch tab · {B} Close'],
+  padHints: ['{A} Selecionar/Equipar · {X} Reciclar · {Y} Reciclar tudo · {RS} Míticos · {RT} Favoritar · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Equip · {X} Recycle · {Y} Recycle all · {RS} Mythics · {RT} Favorite · {LB} {RB} Switch tab · {B} Close'],
   padHintsStash: ['{A} Guardar/Pegar · {X} Equipar · {RT} Reciclar · {Y} Guardar todos os míticos · {LB} {RB} Trocar aba · {B} Fechar', '{A} Store/Take · {X} Equip · {RT} Recycle · {Y} Store all mythics · {LB} {RB} Switch tab · {B} Close'],
   padHintsGems: ['{A} Selecionar/Engastar · {X} Remover gema · {Y} Fundir tudo · {LB} {RB} Trocar aba · {B} Fechar', '{A} Select/Socket · {X} Remove gem · {Y} Fuse all · {LB} {RB} Switch tab · {B} Close'],
   gems: ['Gemas', 'Gems'],
@@ -79,8 +79,8 @@ const DICT = {
     '<p><b>Left click</b> on the ground: move · on an enemy: attack</p><p><b>WASD</b>: move · <b>Space</b> or <b>Shift + click</b>: attack</p><p><b>1 to 7</b>: powers (Q / E / R also fire the first 3) · <b>Right click</b>: power 1</p><p><b>F</b>: stim (heals 60% health) · <b>I</b> / <b>Tab</b>: character · <b>M</b> or click the minimap: map · <b>Esc</b>: pause</p>',
   ],
   'help.pad': [
-    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p>{A}: atacar · {X} {Y} {B} {LB} {RB} {LT} {RT}: poderes 1 a 7</p><p>{LS} (apertar o analógico esquerdo): stim, cura 60% da vida · {RS} (apertar o direito): mapa · {SELECT}: personagem · {START}: pausa</p>',
-    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p>{A}: attack · {X} {Y} {B} {LB} {RB} {LT} {RT}: powers 1 to 7</p><p>{LS} (click the left stick): stim, heals 60% health · {RS} (click the right stick): map · {SELECT}: character · {START}: pause</p>',
+    '<p><b>Analógico esquerdo</b>: mover · <b>direito</b>: escolher alvo (opcional)</p><p>{A}: atacar · {X} {Y} {B} {LB} {RB} {LT} {RT}: poderes 1 a 7</p><p>{LS} (apertar o analógico esquerdo): stim, cura 60% da vida · {RS} (apertar o direito): mapa (no inventário: ♻ Míticos) · {SELECT}: personagem · {START}: pausa</p>',
+    '<p><b>Left stick</b>: move · <b>right stick</b>: pick target (optional)</p><p>{A}: attack · {X} {Y} {B} {LB} {RB} {LT} {RT}: powers 1 to 7</p><p>{LS} (click the left stick): stim, heals 60% health · {RS} (click the right stick): map (in the inventory: ♻ Mythics) · {SELECT}: character · {START}: pause</p>',
   ],
   'help.touch': [
     '<p>Toque e arraste do <b>lado esquerdo</b> da tela para mover.</p><p>Botões à direita: ataque (segure), até 7 poderes e stim (o botão verde: cura 60% da vida).</p><p>Toque no minimapa para ver o mapa inteiro.</p>',
