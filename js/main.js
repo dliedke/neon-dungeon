@@ -15,6 +15,7 @@ import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBa
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL, SLOT_N } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
 import { CLASSES } from './classes.js';
+import './mythtree.js'; // poderes míticos (Fase G): acrescenta no fim de CLASSES[cls].skills
 import { placeFeatures, buildFeatures, updateBiome, npcUnderCursor } from './biomes.js';
 import { updateMythic, resetMythic } from './mythic.js';
 import { updatePowers, clearPowers } from './powers.js';

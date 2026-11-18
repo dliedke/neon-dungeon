@@ -3141,3 +3141,6 @@ export function autoTarget(p, range = 11) {
 }
 
 export { clamp };
+
+// Ferramentas compartilhadas com js/mythtree.js (poderes míticos da Fase G)
+export { passive, guard, mend, evade, leech, aura, lineBeam, coneBlast, bigHeal, targetPoint, enemiesOnSegment, streakFx, C_, dur, healF, pct, s1, r1, angleOf };

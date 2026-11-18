@@ -1825,8 +1825,11 @@ const TIERS = [
   // passivos supremos e ataques supremos (marcas sup e apex)
   { label: [72, 96], mark: 'sup' },
   { label: [76, 100], mark: 'apex' },
+  // Fase G: ataques míticos (marca myth) e defesas míticas, ativas e passivas (marca ward)
+  { label: [104, 136], mark: 'myth' },
+  { label: [108, 140], mark: 'ward' },
 ];
-const MARKS = ['late', 'adv', 'sup', 'apex', 'swift'];
+const MARKS = ['late', 'adv', 'sup', 'apex', 'swift', 'myth', 'ward'];
 const tierIdx = (C, t) => [...(t.idx || []), ...(t.mark ? C.skills.map((sk, i) => (sk[t.mark] ? i : -1)).filter((i) => i >= 0) : [])];
 // k = -1 é o ⚔ (botão de ataque: A no controle, Espaço/clique no teclado)
 function slotKey(k) {
@@ -1961,7 +1964,7 @@ function renderTree() {
   let status = '';
   if (locked && c.level < req) status = `<div class="tstatus lock">🔒 ${L(`Liberado no nível ${req}`, `Unlocks at level ${req}`)}</div>`;
   else if (locked) status = `<div class="tstatus">${L('Disponível para desbloquear', 'Available to unlock')}</div>`;
-  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv || sk.apex ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
+  else status = `<div class="tstatus ok">${L('Nível', 'Level')} ${r}/${MAX_RANK}${r < MAX_RANK ? (sk.passive || sk.adv || sk.apex || sk.myth || sk.ward ? ` · ${L('próximo', 'next')}: ${sk.desc(r + 1)}` : L(` · próximo: ${Math.round(rankMult(r + 1) * 100)}% de potência`, ` · next: ${Math.round(rankMult(r + 1) * 100)}% power`)) : ''}</div>`;
   const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
   // devolver os pontos deste poder para reaplicar em outros
   const back = r;
