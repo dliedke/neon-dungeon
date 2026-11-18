@@ -614,12 +614,30 @@ function shrineAuras(dt, p) {
 
 const SHRINE_KEYS = Object.keys(SHRINES);
 const pick2 = (a, b) => (Math.random() < 0.5 ? a : b);
+// posição do personagem no quadro anterior (para pegar itens no caminho quando ele corre rápido)
+let lastPX = NaN;
+let lastPZ = NaN;
+// distância do ponto (x, z) ao segmento a→b
+function segDist(x, z, ax, az, bx, bz) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const l2 = dx * dx + dz * dz;
+  const t = l2 > 0 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
+  return Math.hypot(x - ax - dx * t, z - az - dz * t);
+}
 
 export function updatePickups(dt, camera) {
   const p = G.player;
   const c = G.char;
   fullWarn -= dt;
   shrineAuras(dt, p);
+  // quanto o personagem andou desde o último quadro (teleporte, troca de andar ou 1º quadro não contam)
+  let moved = Math.hypot(p.x - lastPX, p.z - lastPZ);
+  if (!(moved < 4)) moved = 0;
+  // rápido (acima de ~6 m/s): alcance de pegar e ímã maiores, até o dobro do normal a 20 m/s
+  const fast = dt > 0 ? Math.min(1, Math.max(0, (moved / dt - 6) / 14)) : 0;
+  const grab = 0.9 + fast * 0.6;
+  const magnet = 3 + fast * 2.5;
   for (const pk of G.pickups) {
     if (pk.type === 'rift') continue; // a Fenda de Desafio é atualizada em run.js
     pk.t += dt;
@@ -704,13 +722,15 @@ export function updatePickups(dt, camera) {
     }
 
     if (!p.alive || pk.t < 0.4) continue;
-    const d = Math.hypot(p.x - pk.x, p.z - pk.z);
-    if ((pk.type === 'credits' || pk.type === 'orb' || pk.type === 'gem') && d < 3) {
-      const k = Math.min(1, dt * 10);
+    const dNow = Math.hypot(p.x - pk.x, p.z - pk.z);
+    if ((pk.type === 'credits' || pk.type === 'orb' || pk.type === 'gem') && dNow < magnet) {
+      const k = Math.min(1, dt * (10 + fast * 12));
       pk.x += (p.x - pk.x) * k;
       pk.z += (p.z - pk.z) * k;
     }
-    if (d < 0.9) {
+    // distância ao trecho andado neste quadro: correndo rápido não passa por cima do item sem pegar
+    const d = moved > 0 ? segDist(pk.x, pk.z, lastPX, lastPZ, p.x, p.z) : Math.hypot(p.x - pk.x, p.z - pk.z);
+    if (d < grab) {
       if (pk.type === 'credits') {
         c.credits += pk.amount;
         achAdd('credits', pk.amount);
@@ -772,6 +792,8 @@ export function updatePickups(dt, camera) {
       G.pickups.splice(i, 1);
     }
   }
+  lastPX = p.x;
+  lastPZ = p.z;
   // rótulos: os que se sobrepõem sobem em pilha e os que cobrem o personagem ficam quase transparentes
   const w = innerWidth;
   const h = innerHeight;
