@@ -297,6 +297,16 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Delivery** | Carry a package to the green pillar without taking damage; any hit sends it back to the start. |
 | **Ghost Hunt** | Ghosts are only visible inside the lantern circle. Fight inside it and beat them all. |
 | **Giant Piñata** | Hit it: every 3 hits it drops coins and runs off. Burst it with 12 hits. |
+| **Combination Safe** | 3 pillars show a digit (1 to 5) up close; hit each dial of the same color until it matches, then hit the safe. A wrong guess resets the dials and calls an enemy. |
+| **Elements Altar** | Carry the fire, ice and lightning orbs to the torch of the same color. The wrong torch shocks you. |
+| **Light Snake** | Inside the arena you leave a growing light trail; grab 8 orbs without touching it (3 lives). |
+| **Minefield** | Tiles hide 6 mines; stepping on one reveals how many mines are around it. Cross to the green strip. |
+| **Tug of War** | Hit the robot to pull the rope to your side before it gets stronger. |
+| **Beacons** (timed) | Light the 4 beacons at the same time; each one dies after 10 s. |
+| **Juggling** (timed) | Hit each of the 3 balls when its floor ring turns green; 3 drops and you fail. Last 32 s. |
+| **Sculpture** | Memorize the 5 golden blocks, then break only those (3 mistakes). |
+| **Paired Portals** | Orbs are trapped in circles; step on the outer twin of the colored portal inside to get in, grab the orb and come back. |
+| **King of the Hill** (timed) | Stay on the hill for 22 s while enemies fight for it; points stop when one is inside. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -304,7 +314,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**212 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**222 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

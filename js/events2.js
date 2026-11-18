@@ -15,7 +15,7 @@ import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { mats, put, groupAt, lightMat, setLight, flatMat, near, findSpot, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, fighterType, eventCredits } from './events.js';
+import { mmss, mats, put, groupAt, lightMat, setLight, flatMat, near, findSpot, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, fighterType, eventCredits } from './events.js';
 
 // ------------------------------------------------------------------
 // Peças compartilhadas
@@ -1834,12 +1834,830 @@ const pinata = mk({
   intro: () => L('uma piñata gigante! Bata nela: a cada 3 golpes ela solta moedas e sai correndo. Estoure com 12 golpes.', 'a giant piñata! Hit it: every 3 hits it drops coins and runs off. Burst it with 12 hits.'),
 });
 
+// ==================================================================
+// 51. Cofre de Combinação: 3 pilares mostram um dígito de perto; gire os 3 mostradores a golpes e golpeie o cofre
+// ==================================================================
+const LK_COL = [0xff4466, 0x39ff88, 0x39a8ff];
+const lock = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 5.2);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    put(g, box(1.4, 1.2, 1.1), mats().metal, 0, 0.6, 0);
+    const lamp = lightMat(0xff3355, 1.5);
+    put(g, box(0.6, 0.12, 0.06), lamp, 0, 1.0, 0.57);
+    put(g, mats().ring, lightMat(0xffd23d, 1), 0, 0.03, 0, 1.3, 1, 1.3);
+    const code = [ri(1, 5), ri(1, 5), ri(1, 5)];
+    const dials = LK_COL.map((c, i) => {
+      const x = (i - 1) * 1.7;
+      put(g, mats().cyl, mats().metal, x, 0.3, 2.3, 0.5, 0.6, 0.5);
+      put(g, mats().ring, lightMat(c, 1.3), x, 0.03, 2.3, 0.8, 1, 0.8);
+      const nums = [1, 2, 3, 4, 5].map((v) => {
+        const sp = label(g, String(v), c, x, 1.25, 2.3, 0.95);
+        sp.visible = v === 1;
+        return sp;
+      });
+      return { x, nums, v: 1, e: hitTarget(s.x + x, s.z + 2.3, 0.6, 1, L('Mostrador', 'Dial')), hits: 0 };
+    });
+    const clues = [[-4.2, -1.6], [4.2, -1.6], [0, -4.2]].map(([x, z], i) => {
+      put(g, mats().cyl, mats().metal, x, 0.5, z, 0.3, 1, 0.3);
+      put(g, mats().oct, glowMat(LK_COL[i], 2), x, 1.3, z, 0.2, 0.28, 0.2);
+      put(g, mats().ring, lightMat(LK_COL[i], 0.9), x, 0.03, z, 0.8, 1, 0.8);
+      const sp = label(g, String(code[i]), LK_COL[i], x, 2.1, z, 1.2);
+      sp.visible = false;
+      return { x, z, sp };
+    });
+    const safe = { e: hitTarget(s.x, s.z, 0.9, 1.2, L('Cofre', 'Safe')), hits: 0 };
+    return { kind: 'lock', x: s.x, z: s.z, g, lamp, code, dials, clues, safe, foes: [], st: 'idle', tries: 0 };
+  },
+  update(E) {
+    const p = G.player;
+    for (const c of E.clues) c.sp.visible = Math.hypot(p.x - E.x - c.x, p.z - E.z - c.z) < 3.4;
+    E.foes = E.foes.filter((e) => e.alive);
+    const ns = hitsOf(E.safe);
+    for (const dl of E.dials) {
+      if (!hitsOf(dl)) continue;
+      dl.v = (dl.v % 5) + 1;
+      dl.nums.forEach((sp, i) => (sp.visible = i + 1 === dl.v));
+      sfx.click();
+    }
+    if (E.st === 'idle') {
+      if (near(E, 8)) E.st = 'run';
+      return;
+    }
+    if (!ns) return;
+    if (E.dials.every((dl, i) => dl.v === E.code[i])) {
+      for (const o of [E.safe, ...E.dials]) dropTarget(o);
+      setLight(E.lamp, 0x39ff88, 2);
+      sfx.legendary();
+      complete(E, 1.3, L('COFRE ABERTO!', 'SAFE OPEN!'), L('Combinação certa', 'Right combination'), E.x, E.z, { extra: true });
+      return;
+    }
+    E.tries++;
+    sfx.deny();
+    floatText(E.x, 2, E.z, L('errado!', 'wrong!'), 'hurt');
+    for (const dl of E.dials) {
+      dl.v = 1;
+      dl.nums.forEach((sp, i) => (sp.visible = i === 0));
+    }
+    if (E.foes.length < 5) ambush(E, 1, E.x, E.z, 4, 7, 0xff4466);
+    if (E.tries === 1) toast(L('🔐 Errado! Cada pilar colorido mostra o dígito do mostrador da mesma cor (chegue perto).', '🔐 Wrong! Each colored pillar shows the digit for the dial of the same color (get close).'), 'warn');
+  },
+  hud: (E) => (E.st === 'idle' ? L('ache o código', 'find the code') : `${E.dials.map((dl) => dl.v).join('-')} · ${L('bata no cofre', 'hit the safe')}`),
+  dim(E) {
+    for (const o of [E.safe, ...E.dials]) dropTarget(o);
+    setLight(E.lamp, 0x39ff88, 2);
+  },
+  reload(E) {
+    for (const o of [E.safe, ...E.dials]) {
+      o.e.hp = o.e.maxHp;
+      o.hits = 0;
+    }
+  },
+  intro: () => L('3 pilares coloridos mostram um dígito (1 a 5) quando você chega perto. Golpeie cada mostrador da mesma cor até o dígito certo e depois golpeie o cofre.', '3 colored pillars show a digit (1 to 5) when you get close. Hit each dial of the same color until it shows the right digit, then hit the safe.'),
+});
+
+// ==================================================================
+// 52. Altar dos Elementos: leve cada orbe (fogo, gelo, raio) até a tocha da mesma cor
+// ==================================================================
+const EL_COL = [0xff5a2d, 0x39d0ff, 0xffe23d];
+const elements = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 5, 4.4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const torches = shuffle([0, 1, 2]).map((c, i) => {
+      const x = (i - 1) * 3.2;
+      const z = -3.4;
+      put(g, mats().cyl, mats().metal, x, 0.6, z, 0.28, 1.2, 0.28);
+      put(g, mats().cyl, mats().dark, x, 1.3, z, 0.55, 0.25, 0.55);
+      put(g, mats().ring, lightMat(EL_COL[c], 1.2), x, 0.03, z, 0.9, 1, 0.9);
+      const flame = put(g, mats().oct, glowMat(EL_COL[c], 2.8), x, 1.9, z, 0.3, 0.5, 0.3);
+      flame.visible = false;
+      return { x, z, c, flame, lit: false };
+    });
+    const sources = shuffle([0, 1, 2]).map((c, i) => {
+      const x = (i - 1) * 3.2;
+      const z = 3.4;
+      put(g, mats().cyl, mats().metal, x, 0.25, z, 0.55, 0.5, 0.55);
+      put(g, mats().ring, lightMat(EL_COL[c], 1), x, 0.03, z, 0.9, 1, 0.9);
+      const orb = put(g, mats().oct, glowMat(EL_COL[c], 2.6), x, 0.95, z, 0.28, 0.38, 0.28);
+      return { x, z, c, orb, used: false };
+    });
+    const carry = EL_COL.map((c) => {
+      const m = put(g, mats().oct, glowMat(c, 2.8), 0, 2.2, 0, 0.22, 0.3, 0.22);
+      m.visible = false;
+      return m;
+    });
+    return { kind: 'elements', x: s.x, z: s.z, g, torches, sources, carry, foes: [], st: 'idle', held: -1, lit: 0 };
+  },
+  update(E, dt) {
+    const p = G.player;
+    for (const so of E.sources) if (!so.used && so.orb.visible) so.orb.rotation.y += dt * 2;
+    if (E.st === 'idle') {
+      if (!near(E, 9)) return;
+      E.st = 'run';
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    E.carry.forEach((m, i) => {
+      m.visible = E.held >= 0 && E.sources[E.held].c === i;
+      if (m.visible) m.position.set(p.x - E.x, 2.2 + Math.sin(G.t * 5) * 0.06, p.z - E.z);
+    });
+    if (E.held < 0) {
+      E.sources.forEach((so, i) => {
+        if (E.held >= 0 || so.used || Math.hypot(p.x - E.x - so.x, p.z - E.z - so.z) > 1.2) return;
+        E.held = i;
+        so.orb.visible = false;
+        sfx.pickup();
+        if (E.foes.length < 4) ambush(E, 1, E.x + so.x, E.z + so.z, 3, 5, EL_COL[so.c]);
+      });
+    } else {
+      const so = E.sources[E.held];
+      for (const t of E.torches) {
+        if (t.lit || Math.hypot(p.x - E.x - t.x, p.z - E.z - t.z) > 1.3) continue;
+        if (t.c === so.c) {
+          t.lit = true;
+          t.flame.visible = true;
+          so.used = true;
+          E.held = -1;
+          E.lit++;
+          sfx.pickup();
+          burst(E.x + t.x, 1.8, E.z + t.z, EL_COL[t.c], 20, 5, 0.08, 0.7, { up: 2 });
+          ringFx(E.x + t.x, E.z + t.z, 1.4, EL_COL[t.c], 0.4);
+        } else {
+          so.orb.visible = true;
+          E.held = -1;
+          sfx.deny();
+          floatText(p.x, 2.4, p.z, L('elemento errado!', 'wrong element!'), 'hurt');
+          eventHurt(0.1, E.x + t.x, E.z + t.z, 5);
+        }
+        break;
+      }
+    }
+    if (E.lit >= 3) {
+      E.carry.forEach((m) => (m.visible = false));
+      complete(E, 1.2, L('ELEMENTOS EM EQUILÍBRIO!', 'ELEMENTS IN BALANCE!'), L('As 3 tochas acesas', 'All 3 torches lit'), E.x, E.z);
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('leve as orbes às tochas', 'carry the orbs to the torches') : `${E.lit}/3 ${L('tochas', 'torches')}${E.held >= 0 ? ' · ✦' : ''}`),
+  dim(E) {
+    for (const m of E.carry) m.visible = false;
+    for (const t of E.torches) t.flame.visible = true;
+    for (const so of E.sources) so.orb.visible = false;
+  },
+  intro: () => L('3 orbes (fogo, gelo, raio) numa ponta e 3 tochas na outra. Encoste numa orbe para carregá-la e leve até a tocha da mesma cor. Errou, toma um choque.', '3 orbs (fire, ice, lightning) on one end and 3 torches on the other. Touch an orb to carry it and take it to the torch of the same color. Get it wrong and you get shocked.'),
+});
+
+// ==================================================================
+// 53. Cobra de Luz: seu rastro de luz cresce a cada orbe; pegue 8 sem encostar nele (3 vidas)
+// ==================================================================
+const SN_COL = 0x7dff3d;
+const SN_HX = 5;
+const SN_HZ = 3.8;
+const SN_N = 8;
+const snake = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, SN_HX + 0.3, SN_HZ + 0.3);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    frame(g, SN_HX, SN_HZ, lightMat(SN_COL, 0.8));
+    put(g, box(SN_HX * 2, 0.02, SN_HZ * 2), flatMat(SN_COL, 0.05), 0, 0.02, 0);
+    const mat = lightMat(SN_COL, 1.2);
+    const pool = [];
+    for (let i = 0; i < 30; i++) {
+      const m = put(g, mats().disc, mat, 0, 0.06, 0, 0.3, 1, 0.3);
+      m.visible = false;
+      pool.push(m);
+    }
+    const orb = put(g, mats().oct, glowMat(0xffd23d, 2.4), 0, 0.7, 0, 0.25, 0.35, 0.25);
+    orb.visible = false;
+    return { kind: 'snake', x: s.x, z: s.z, g, pool, orb, pts: [], got: 0, lives: 3, ox: 0, oz: 0, st: 'idle' };
+  },
+  newOrb(E) {
+    for (let t = 0; t < 14; t++) {
+      const x = (Math.random() * 2 - 1) * (SN_HX - 0.9);
+      const z = (Math.random() * 2 - 1) * (SN_HZ - 0.9);
+      if (E.pts.every((q) => Math.hypot(q.x - x, q.z - z) > 1.4)) {
+        E.ox = x;
+        E.oz = z;
+        break;
+      }
+    }
+    E.orb.position.set(E.ox, 0.7, E.oz);
+  },
+  update(E, dt) {
+    const p = G.player;
+    E.orb.rotation.y += dt * 3;
+    if (E.st === 'idle') {
+      if (!inRect(E, SN_HX, SN_HZ)) return;
+      E.st = 'run';
+      E.orb.visible = true;
+      snake.newOrb(E);
+      banner(L('COBRA DE LUZ!', 'LIGHT SNAKE!'), L('Pegue as orbes sem tocar no seu rastro', 'Grab the orbs without touching your trail'));
+    }
+    const inside = inRect(E, SN_HX, SN_HZ);
+    if (inside) {
+      const lx = p.x - E.x;
+      const lz = p.z - E.z;
+      const last = E.pts[E.pts.length - 1];
+      if (!last || Math.hypot(last.x - lx, last.z - lz) > 0.7) E.pts.push({ x: lx, z: lz });
+      const len = Math.min(28, 6 + E.got * 3);
+      while (E.pts.length > len) E.pts.shift();
+      for (let i = 0; i < E.pts.length - 6; i++) {
+        if (Math.hypot(E.pts[i].x - lx, E.pts[i].z - lz) > 0.5) continue;
+        E.lives--;
+        E.pts.length = 0;
+        sfx.deny();
+        burst(p.x, 0.8, p.z, 0xff3355, 18, 5, 0.08, 0.5, { up: 1 });
+        floatText(p.x, 2, p.z, L('encostou!', 'touched!'), 'hurt');
+        if (E.lives <= 0) {
+          E.orb.visible = false;
+          failed(E, L('Você se enroscou no próprio rastro 3 vezes.', 'You tangled in your own trail 3 times.'));
+          return;
+        }
+        break;
+      }
+      if (Math.hypot(lx - E.ox, lz - E.oz) < 0.9) {
+        E.got++;
+        sfx.pickup();
+        floatText(p.x, 2, p.z, `${E.got}/${SN_N}`, 'up');
+        burst(E.x + E.ox, 0.8, E.z + E.oz, 0xffd23d, 16, 4, 0.07, 0.6, { up: 2 });
+        if (E.got >= SN_N) {
+          E.orb.visible = false;
+          complete(E, 1.2, L('COBRA GIGANTE!', 'GIANT SNAKE!'), L('Sem se enroscar', 'Without tangling'), E.x, E.z);
+          return;
+        }
+        snake.newOrb(E);
+      }
+    }
+    const n = E.pts.length;
+    E.pool.forEach((m, i) => {
+      m.visible = i < n;
+      if (i < n) {
+        m.position.set(E.pts[i].x, 0.06, E.pts[i].z);
+        m.scale.setScalar(0.15 + 0.3 * ((i + 1) / n));
+      }
+    });
+  },
+  hud: (E) => (E.st === 'idle' ? L('entre na arena', 'enter the arena') : `${E.got}/${SN_N} · ♥${E.lives}`),
+  dim(E) {
+    E.orb.visible = false;
+    for (const m of E.pool) m.visible = false;
+  },
+  intro: () => L('dentro da arena você deixa um rastro de luz que cresce a cada orbe. Pegue 8 orbes sem encostar no próprio rastro. 3 toques e acabou.', 'inside the arena you leave a light trail that grows with every orb. Grab 8 orbs without touching your own trail. 3 touches and it ends.'),
+});
+
+// ==================================================================
+// 54. Campo Minado: pise nos ladrilhos para revelar o número de minas vizinhas e chegue à faixa verde
+// ==================================================================
+const MN_T = 1.4;
+const MN_C = 5;
+const MN_R = 6;
+const mines = mk({
+  setup(d, floor, rooms) {
+    const hx = (MN_C * MN_T) / 2;
+    const hz = (MN_R * MN_T) / 2;
+    const s = findSpot(d, rooms, hx + 0.3, hz + 0.3);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    // no máximo 2 minas por fileira (do meio), então sempre existe caminho
+    const mine = Array.from({ length: MN_R }, () => Array(MN_C).fill(false));
+    let total = 0;
+    for (let r = 1; r < MN_R - 1; r++) {
+      const n = r === 1 || r === MN_R - 2 ? 1 : 2;
+      for (const c of shuffle([0, 1, 2, 3, 4]).slice(0, n)) {
+        mine[r][c] = true;
+        total++;
+      }
+    }
+    const tiles = [];
+    for (let r = 0; r < MN_R; r++) {
+      for (let c = 0; c < MN_C; c++) {
+        const x = (c - (MN_C - 1) / 2) * MN_T;
+        const z = ((MN_R - 1) / 2 - r) * MN_T;
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (mine[r + dr] && mine[r + dr][c + dc]) n++;
+        const mat = lightMat(r === MN_R - 1 ? 0x39ff88 : r === 0 ? 0x39d0ff : 0x3a4258, r === 0 || r === MN_R - 1 ? 0.5 : 0.7);
+        put(g, box(MN_T - 0.12, 0.05, MN_T - 0.12), mat, x, 0.04, z);
+        tiles.push({ x, z, r, c, mine: mine[r][c], n, rev: false, mat });
+      }
+    }
+    return { kind: 'mines', x: s.x, z: s.z, g, tiles, hx, hz, total, st: 'idle', boom: 0 };
+  },
+  update(E) {
+    const p = G.player;
+    if (E.st === 'idle') {
+      if (!near(E, Math.max(E.hx, E.hz) + 5)) return;
+      E.st = 'run';
+    }
+    for (const t of E.tiles) {
+      if (t.rev || Math.abs(p.x - E.x - t.x) > MN_T / 2 || Math.abs(p.z - E.z - t.z) > MN_T / 2) continue;
+      t.rev = true;
+      if (t.mine) {
+        E.boom++;
+        setLight(t.mat, 0xff3355, 1.8);
+        burst(E.x + t.x, 0.6, E.z + t.z, 0xff5a3d, 24, 6, 0.09, 0.6, { up: 3 });
+        ringFx(E.x + t.x, E.z + t.z, 1.8, 0xff3355, 0.4);
+        sfx.explode();
+        floatText(E.x + t.x, 1.6, E.z + t.z, '💥', 'hurt');
+        eventHurt(0.2, E.x + t.x, E.z + t.z, 7);
+        continue;
+      }
+      setLight(t.mat, t.n ? 0x39a8ff : 0x39ff88, 1);
+      if (t.n) label(E.g, String(t.n), t.n > 2 ? 0xff5a3d : t.n > 1 ? 0xffd23d : 0xffffff, t.x, 0.9, t.z, 0.9);
+      sfx.click();
+      if (t.r === MN_R - 1) {
+        complete(E, 1.2, L('CAMPO LIMPO!', 'FIELD CLEARED!'), L('Atravessou sem pisar demais', 'Crossed the minefield'), E.x + t.x, E.z + t.z);
+        return;
+      }
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('atravesse o campo', 'cross the field') : `${E.total} ${L('minas', 'mines')} · ${E.boom} 💥`),
+  dim(E) {
+    for (const t of E.tiles) {
+      t.rev = true;
+      setLight(t.mat, t.mine ? 0xff3355 : 0x39ff88, 0.8);
+    }
+  },
+  intro: () => L('ladrilhos escondem 6 minas. Pisar em um ladrilho revela quantas minas há ao redor. Atravesse do azul até a faixa verde. Mina machuca e empurra.', 'tiles hide 6 mines. Stepping on a tile reveals how many mines are around it. Cross from the blue strip to the green one. Mines hurt and knock you back.'),
+});
+
+// ==================================================================
+// 55. Cabo de Guerra: golpeie o robô para puxar a corda para o seu lado antes que ele ganhe força
+// ==================================================================
+const TG_COL = 0xff9a3d;
+const tug = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 4.6, 2.2);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    frame(g, 4.5, 2.1, lightMat(TG_COL, 0.6));
+    put(g, mats().beam, lightMat(0xc9a36b, 1), 0, 0.9, 0, 6.4, 3, 3);
+    put(g, mats().cyl, mats().metal, -3.4, 0.9, 0, 0.2, 1.8, 0.2);
+    put(g, mats().ring, lightMat(0x39ff88, 1.3), -3.4, 0.03, 0, 1.1, 1, 1.1);
+    put(g, mats().ring, lightMat(0xff3355, 1.3), 3.4, 0.03, 0, 1.1, 1, 1.1);
+    const flag = put(g, box(0.08, 0.5, 0.5), glowMat(TG_COL, 2.2), 0, 1.5, 0);
+    const bot = new THREE.Group();
+    g.add(bot);
+    put(bot, box(0.5, 0.6, 0.4), mats().metal, -0.2, 0.3, 0);
+    put(bot, box(0.5, 0.6, 0.4), mats().metal, 0.2, 0.3, 0);
+    put(bot, box(1.0, 0.9, 0.7), mats().metal, 0, 1.05, 0);
+    put(bot, box(0.55, 0.45, 0.5), mats().metal, 0, 1.7, 0);
+    put(bot, box(0.4, 0.1, 0.06), glowMat(0xff3355, 2.6), 0, 1.72, -0.27);
+    bot.position.set(3.4, 0, 0);
+    bot.rotation.y = -Math.PI / 2;
+    const e = hitTarget(s.x + 3.4, s.z, 0.9, 1.7, L('Robô', 'Robot'));
+    return { kind: 'tug', x: s.x, z: s.z, g, flag, bot, e, hits: 0, pos: 0, t: 0, wob: 0, nt: 9, foes: [], st: 'idle' };
+  },
+  update(E, dt) {
+    E.wob = Math.max(0, E.wob - dt * 4);
+    E.flag.position.x = -E.pos * 2.8;
+    const bx = 3.4 - E.pos * 1.2;
+    E.bot.position.set(bx + Math.sin(G.t * 40) * E.wob * 0.08, 0, 0);
+    E.e.x = E.x + bx;
+    const n = hitsOf(E);
+    if (E.st === 'idle') {
+      if (!near(E, 7)) return;
+      E.st = 'run';
+      banner(L('CABO DE GUERRA!', 'TUG OF WAR!'), L('Golpeie o robô sem parar', 'Keep hitting the robot'));
+      return;
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    E.t += dt;
+    if (n) {
+      E.pos += n * 0.085;
+      E.wob = 1;
+      sfx.click();
+    }
+    E.pos -= Math.min(0.22, 0.1 + E.t * 0.0025) * dt;
+    E.nt -= dt;
+    if (E.nt <= 0 && E.foes.length < 3) {
+      E.nt = 13;
+      ambush(E, 1, E.x, E.z, 4, 7, TG_COL);
+    }
+    if (E.pos >= 1) {
+      dropTarget(E);
+      sfx.legendary();
+      complete(E, 1.2, L('PUXOU!', 'PULLED!'), L('O robô veio junto', 'The robot came along'), E.x, E.z);
+    } else if (E.pos <= -1) {
+      dropTarget(E);
+      failed(E, L('O robô puxou a corda para o lado dele.', 'The robot pulled the rope to its side.'));
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('golpeie o robô', 'hit the robot') : `${L('corda', 'rope')} ${Math.round(((E.pos + 1) / 2) * 100)}%`),
+  dim(E) {
+    dropTarget(E);
+  },
+  reload(E) {
+    E.e.hp = E.e.maxHp;
+    E.hits = 0;
+  },
+  intro: () => L('um robô puxa a corda. Cada golpe nele puxa a corda para o seu lado, mas ele ganha força com o tempo. Leve a bandeira até a ponta verde.', 'a robot pulls the rope. Every hit on it pulls the rope to your side, but it gets stronger over time. Take the flag to the green end.'),
+});
+
+// ==================================================================
+// 56. Faróis (com relógio): acenda os 4 faróis golpeando; cada um se apaga depois de um tempo
+// ==================================================================
+const BE_COL = 0xffa63d;
+const BE_T = 50;
+const BE_BURN = 10;
+const beacon = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 4.7);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const list = [[-3.7, -3.7], [3.7, -3.7], [3.7, 3.7], [-3.7, 3.7]].map(([x, z]) => {
+      put(g, mats().cyl, mats().metal, x, 0.9, z, 0.22, 1.8, 0.22);
+      put(g, mats().ring, lightMat(BE_COL, 0.8), x, 0.03, z, 0.9, 1, 0.9);
+      const mat = lightMat(0x3a2a18, 0.6);
+      put(g, mats().oct, mat, x, 2.1, z, 0.34, 0.46, 0.34);
+      return { x, z, mat, l: 0, e: hitTarget(s.x + x, s.z + z, 0.7, 1.9, L('Farol', 'Beacon')), hits: 0 };
+    });
+    return { kind: 'beacon', x: s.x, z: s.z, g, list, foes: [], st: 'idle', t: BE_T, nt: 12 };
+  },
+  update(E, dt) {
+    if (E.st === 'idle') {
+      if (!near(E, 9)) return;
+      E.st = 'run';
+      banner(L('ACENDA OS FARÓIS!', 'LIGHT THE BEACONS!'), L(`Os 4 acesos ao mesmo tempo em ${BE_T}s`, `All 4 lit at the same time in ${BE_T}s`));
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    E.t -= dt;
+    let lit = 0;
+    for (const b of E.list) {
+      if (hitsOf(b)) {
+        b.l = BE_BURN;
+        sfx.pickup();
+        burst(E.x + b.x, 2.1, E.z + b.z, BE_COL, 14, 4, 0.07, 0.5, { up: 2 });
+      }
+      b.l = Math.max(0, b.l - dt);
+      if (b.l > 0) {
+        lit++;
+        setLight(b.mat, b.l < 3 && Math.floor(G.t * 6) % 2 ? 0xff5a3d : BE_COL, 2.4);
+      } else setLight(b.mat, 0x3a2a18, 0.6);
+    }
+    E.nt -= dt;
+    if (E.nt <= 0 && E.foes.length < 3) {
+      E.nt = 14;
+      ambush(E, 1 + (G.floor >= 25 ? 1 : 0), E.x, E.z, 5, 8, BE_COL);
+    }
+    if (lit >= 4) {
+      for (const b of E.list) dropTarget(b);
+      sfx.legendary();
+      complete(E, 1.5, L('TUDO ILUMINADO!', 'ALL LIT UP!'), L('Os 4 faróis juntos', 'All 4 beacons together'), E.x, E.z, { extra: true });
+    } else if (E.t <= 0) {
+      for (const b of E.list) dropTarget(b);
+      failed(E, L('A escuridão apagou os faróis.', 'The darkness put the beacons out.'));
+    }
+  },
+  busy: (E) => E.st === 'run',
+  hud: (E) => (E.st === 'idle' ? L('acenda os 4 faróis', 'light the 4 beacons') : `⏱ ${mmss(E.t)} · ${E.list.filter((b) => b.l > 0).length}/4`),
+  dim(E) {
+    for (const b of E.list) {
+      dropTarget(b);
+      setLight(b.mat, BE_COL, 1.6);
+    }
+  },
+  reload(E) {
+    for (const b of E.list) {
+      b.e.hp = b.e.maxHp;
+      b.hits = 0;
+    }
+  },
+  intro: () => L('4 faróis nos cantos. Golpeie cada um para acender, mas cada luz se apaga depois de 10s. Mantenha os 4 acesos ao mesmo tempo antes que o tempo acabe.', '4 beacons in the corners. Hit each one to light it, but every light dies after 10s. Keep all 4 lit at the same time before time runs out.'),
+});
+
+// ==================================================================
+// 57. Malabares (com relógio): 3 bolas no ar; golpeie cada uma quando ela estiver descendo (3 quedas e acabou)
+// ==================================================================
+const JG_COL = [0xffd23d, 0x39d0ff, 0xff4df0];
+const JG_T = 32;
+const JG_CYC = 2.8;
+const JG_H = 2.6;
+const juggle = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.8);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const balls = JG_COL.map((c, i) => {
+      const a = Math.PI / 2 + (i * Math.PI * 2) / 3;
+      const x = Math.cos(a) * 2.5;
+      const z = Math.sin(a) * 2.5;
+      const ring = lightMat(c, 0.8);
+      put(g, mats().ring, ring, x, 0.03, z, 0.8, 1, 0.8);
+      const m = put(g, mats().oct, glowMat(c, 2.4), x, 0.4, z, 0.3, 0.3, 0.3);
+      return { x, z, m, ring, c, p: i * 0.33, e: hitTarget(s.x + x, s.z + z, 0.8, 1.5, L('Bola', 'Ball')), hits: 0 };
+    });
+    return { kind: 'juggle', x: s.x, z: s.z, g, balls, st: 'idle', t: JG_T, lives: 3, catches: 0 };
+  },
+  update(E, dt) {
+    if (E.st === 'idle') {
+      if (!near(E, 6)) return;
+      E.st = 'run';
+      banner(L('MALABARES!', 'JUGGLING!'), L(`Mantenha as 3 bolas no ar por ${JG_T}s`, `Keep the 3 balls in the air for ${JG_T}s`));
+    }
+    E.t -= dt;
+    for (const b of E.balls) {
+      b.p += dt / JG_CYC;
+      const win = b.p >= 0.62;
+      b.m.position.y = 0.4 + 4 * JG_H * b.p * (1 - b.p);
+      b.m.rotation.y += dt * 4;
+      setLight(b.ring, win ? 0x39ff88 : b.c, win ? 1.8 : 0.8);
+      if (hitsOf(b)) {
+        if (win) {
+          b.p = 0;
+          E.catches++;
+          sfx.pickup();
+          floatText(E.x + b.x, 2.4, E.z + b.z, '↑', 'up');
+        } else floatText(E.x + b.x, 2.4, E.z + b.z, L('cedo!', 'early!'), 'hurt');
+      }
+      if (b.p >= 1) {
+        b.p = 0;
+        E.lives--;
+        sfx.deny();
+        burst(E.x + b.x, 0.5, E.z + b.z, 0xff3355, 14, 4, 0.07, 0.5, { up: 1 });
+        floatText(E.x + b.x, 1.5, E.z + b.z, L('caiu!', 'dropped!'), 'hurt');
+      }
+    }
+    if (E.lives <= 0) {
+      for (const b of E.balls) dropTarget(b);
+      failed(E, L('As bolas caíram 3 vezes.', 'The balls dropped 3 times.'));
+    } else if (E.t <= 0) {
+      for (const b of E.balls) dropTarget(b);
+      complete(E, 1.3, L('MALABARISTA!', 'JUGGLER!'), L(`${E.catches} defesas`, `${E.catches} catches`), E.x, E.z);
+    }
+  },
+  busy: (E) => E.st === 'run',
+  hud: (E) => (E.st === 'idle' ? L('chegue perto das bolas', 'get near the balls') : `⏱ ${mmss(E.t)} · ♥${E.lives}`),
+  dim(E) {
+    for (const b of E.balls) {
+      dropTarget(b);
+      b.m.position.y = 0.4;
+    }
+  },
+  reload(E) {
+    for (const b of E.balls) {
+      b.e.hp = b.e.maxHp;
+      b.hits = 0;
+    }
+  },
+  intro: () => L('3 bolas sobem e descem. Quando o anel do chão ficar verde (a bola está descendo), golpeie a bola para lançar de novo. 3 quedas e acabou. Aguente 32s.', '3 balls go up and down. When the ring on the floor turns green (the ball is coming down), hit the ball to launch it again. 3 drops and it ends. Last 32s.'),
+});
+
+// ==================================================================
+// 58. Escultura: memorize os 5 blocos dourados e quebre só eles (3 erros e acabou)
+// ==================================================================
+const SCU_COL = 0xffd23d;
+const sculpt = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 3.4, 2.7);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    frame(g, 3.3, 2.6, lightMat(SCU_COL, 0.6));
+    const marked = new Set(shuffle(Array.from({ length: 12 }, (_, i) => i)).slice(0, 5));
+    const blocks = [];
+    for (let i = 0; i < 12; i++) {
+      const x = ((i % 4) - 1.5) * 1.6;
+      const z = (Math.floor(i / 4) - 1) * 1.6;
+      const m = new THREE.Group();
+      m.position.set(x, 0, z);
+      g.add(m);
+      put(m, box(1.2, 1.1, 1.2), mats().metal, 0, 0.55, 0);
+      const mat = lightMat(0x5a6a8a, 0.8);
+      put(m, box(1.0, 0.06, 1.0), mat, 0, 1.12, 0);
+      blocks.push({ x, z, m, mat, mark: marked.has(i), gone: false, e: hitTarget(s.x + x, s.z + z, 0.7, 1.2, L('Bloco', 'Block')), hits: 0 });
+    }
+    return { kind: 'sculpt', x: s.x, z: s.z, g, blocks, foes: [], st: 'idle', show: 0, strikes: 0, broke: 0 };
+  },
+  paint(E) {
+    for (const b of E.blocks) if (!b.gone) setLight(b.mat, b.mark && E.show > 0 ? SCU_COL : 0x5a6a8a, b.mark && E.show > 0 ? 2.4 : 0.8);
+  },
+  update(E, dt) {
+    if (E.st === 'idle') {
+      if (!near(E, 8)) return;
+      E.st = 'run';
+      E.show = 5;
+      sculpt.paint(E);
+      banner(L('MEMORIZE!', 'MEMORIZE!'), L('Os 5 blocos dourados são os certos', 'The 5 golden blocks are the right ones'));
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    if (E.show > 0) {
+      E.show -= dt;
+      if (E.show <= 0) sculpt.paint(E);
+    }
+    for (const b of E.blocks) {
+      if (b.gone || !hitsOf(b)) continue;
+      b.gone = true;
+      b.m.visible = false;
+      dropTarget(b);
+      burst(E.x + b.x, 0.8, E.z + b.z, b.mark ? SCU_COL : 0xff3355, 22, 5, 0.08, 0.6, { up: 2 });
+      if (b.mark) {
+        E.broke++;
+        sfx.pickup();
+        floatText(E.x + b.x, 1.8, E.z + b.z, `${E.broke}/5`, 'up');
+      } else {
+        E.strikes++;
+        sfx.deny();
+        floatText(E.x + b.x, 1.8, E.z + b.z, L('errado!', 'wrong!'), 'hurt');
+        E.show = 1.6;
+        sculpt.paint(E);
+        if (E.foes.length < 4) ambush(E, 1, E.x, E.z, 4, 6, 0xff3355);
+      }
+    }
+    if (E.broke >= 5) {
+      complete(E, 1.2, L('OBRA-PRIMA!', 'MASTERPIECE!'), L('Só os blocos certos', 'Only the right blocks'), E.x, E.z);
+    } else if (E.strikes >= 3) {
+      for (const b of E.blocks) dropTarget(b);
+      failed(E, L('Você quebrou 3 blocos errados.', 'You broke 3 wrong blocks.'));
+    }
+  },
+  hud: (E) => (E.st === 'idle' ? L('quebre só os dourados', 'break only the golden ones') : `${E.broke}/5 · ${E.strikes}/3 ${L('erros', 'miss')}${E.show > 0 ? ' · 👁' : ''}`),
+  dim(E) {
+    for (const b of E.blocks) {
+      dropTarget(b);
+      if (!b.mark) b.m.visible = true;
+      else b.m.visible = false;
+    }
+  },
+  reload(E) {
+    for (const b of E.blocks) {
+      b.e.hp = b.e.maxHp;
+      b.hits = 0;
+    }
+  },
+  intro: () => L('12 blocos; 5 deles brilham em dourado por 5 segundos. Depois todos ficam iguais: golpeie só os 5 certos. Errar mostra os dourados de novo. 3 erros e acabou.', '12 blocks; 5 of them glow gold for 5 seconds. Then they all look the same: hit only the 5 right ones. A mistake shows the golden ones again. 3 mistakes and it ends.'),
+});
+
+// ==================================================================
+// 59. Portais Pareados: cada orbe está presa num círculo; entre no portal de fora que tem a mesma cor do portal de dentro
+// ==================================================================
+const PO_COL = [0xff4466, 0x39ff88, 0x39a8ff];
+const PO_CR = 1.5;
+const portal = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 5.6);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const perm = shuffle([0, 1, 2]);
+    // gaiolas nos 3 cantos, com o portal de volta e a orbe
+    const cages = [0, 1, 2].map((k) => {
+      const a = Math.PI / 2 + (k * Math.PI * 2) / 3;
+      const cx = Math.cos(a) * 3.9;
+      const cz = Math.sin(a) * 3.9;
+      const ux = -Math.cos(a);
+      const uz = -Math.sin(a);
+      put(g, mats().ring, lightMat(0xffffff, 0.9), cx, 0.03, cz, PO_CR, 1, PO_CR);
+      put(g, mats().disc, flatMat(PO_COL[k], 0.1), cx, 0.02, cz, PO_CR, 1, PO_CR);
+      const px = cx + ux * 0.85;
+      const pz = cz + uz * 0.85;
+      put(g, mats().ring, lightMat(PO_COL[k], 1.5), px, 0.03, pz, 0.5, 1, 0.5);
+      put(g, mats().disc, flatMat(PO_COL[k], 0.35), px, 0.03, pz, 0.45, 1, 0.45);
+      const ox = cx - ux * 0.3;
+      const oz = cz - uz * 0.3;
+      const orb = put(g, mats().oct, glowMat(0xffd23d, 2.6), ox, 0.8, oz, 0.25, 0.35, 0.25);
+      // chegada: ao lado da orbe, fora do portal de volta
+      return { cx, cz, px, pz, ox, oz, ax: cx - uz * 0.9, az: cz + ux * 0.9, orb, got: false };
+    });
+    // portais de fora: perm[j] diz para qual gaiola o portal j leva
+    const outs = perm.map((k, j) => {
+      const a = Math.PI / 6 + (j * Math.PI * 2) / 3 + 0.0;
+      const x = Math.cos(a) * 1.6;
+      const z = Math.sin(a) * 1.6;
+      put(g, mats().ring, lightMat(PO_COL[k], 1.5), x, 0.03, z, 0.5, 1, 0.5);
+      put(g, mats().disc, flatMat(PO_COL[k], 0.35), x, 0.03, z, 0.45, 1, 0.45);
+      return { x, z, k };
+    });
+    return { kind: 'portal', x: s.x, z: s.z, g, cages, outs, foes: [], st: 'idle', inside: -1, cd: 0, got: 0 };
+  },
+  update(E, dt) {
+    const p = G.player;
+    for (const c of E.cages) if (!c.got) c.orb.rotation.y += dt * 2;
+    if (E.st === 'idle') {
+      if (!near(E, 9)) return;
+      E.st = 'run';
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    E.cd -= dt;
+    const lx = p.x - E.x;
+    const lz = p.z - E.z;
+    // barreira dos círculos: só entra quem usou o portal
+    E.cages.forEach((c, k) => {
+      const dx = lx - c.cx;
+      const dz = lz - c.cz;
+      const dd = Math.hypot(dx, dz);
+      if (E.inside === k) {
+        if (dd > PO_CR + 0.5) E.inside = -1;
+      } else if (dd < PO_CR) {
+        p.x = E.x + c.cx + (dx / (dd || 1)) * PO_CR;
+        p.z = E.z + c.cz + (dz / (dd || 1)) * PO_CR;
+      }
+    });
+    const tele = (x, z, col, k) => {
+      burst(p.x, 0.8, p.z, col, 18, 5, 0.08, 0.5, { up: 2 });
+      p.x = E.x + x;
+      p.z = E.z + z;
+      E.inside = k;
+      E.cd = 1;
+      sfx.teleport ? sfx.teleport() : sfx.pickup();
+      ringFx(p.x, p.z, 1.4, col, 0.4);
+    };
+    if (E.cd <= 0) {
+      for (const o of E.outs) {
+        if (E.inside >= 0 || Math.hypot(lx - o.x, lz - o.z) > 0.7) continue;
+        const c = E.cages[o.k];
+        tele(c.ax, c.az, PO_COL[o.k], o.k);
+        return;
+      }
+      if (E.inside >= 0) {
+        const c = E.cages[E.inside];
+        if (Math.hypot(lx - c.px, lz - c.pz) < 0.6) {
+          const o = E.outs.find((q) => q.k === E.inside);
+          tele(o.x + 0.9, o.z, PO_COL[E.inside], -1);
+          return;
+        }
+      }
+    }
+    if (E.inside >= 0) {
+      const c = E.cages[E.inside];
+      if (!c.got && Math.hypot(lx - c.ox, lz - c.oz) < 1.1) {
+        c.got = true;
+        c.orb.visible = false;
+        E.got++;
+        sfx.pickup();
+        floatText(p.x, 2.2, p.z, `${E.got}/3`, 'up');
+        if (E.got < 3) ambush(E, 1, E.x + c.cx, E.z + c.cz, 3, 5, PO_COL[E.inside]);
+      }
+    }
+    if (E.got >= 3) complete(E, 1.2, L('PAR PERFEITO!', 'PERFECT PAIRS!'), L('As 3 orbes resgatadas', 'All 3 orbs rescued'), E.x, E.z);
+  },
+  hud: (E) => (E.st === 'idle' ? L('ache os pares de portais', 'find the portal pairs') : `${E.got}/3 ${L('orbes', 'orbs')}`),
+  dim(E) {
+    for (const c of E.cages) c.orb.visible = false;
+  },
+  intro: () => L('3 orbes presas em círculos que ninguém atravessa. O portal colorido dentro do círculo tem um par do lado de fora: entre no par certo, pegue a orbe e volte pelo portal de dentro.', '3 orbs trapped in circles nobody can cross. The colored portal inside each circle has a twin outside: step on the right twin, grab the orb and come back through the inside portal.'),
+});
+
+// ==================================================================
+// 60. Rei da Colina (com relógio): fique na colina somando pontos; se houver inimigo nela, os pontos param
+// ==================================================================
+const KG_R = 3;
+const KG_T = 70;
+const KG_N = 22;
+const king = mk({
+  setup(d, floor, rooms) {
+    const s = findSpot(d, rooms, 4);
+    if (!s) return null;
+    const g = groupAt(s.x, s.z);
+    const ring = lightMat(0xffffff, 1.3);
+    put(g, mats().ring, ring, 0, 0.04, 0, KG_R, 1, KG_R);
+    const fill = flatMat(0xffffff, 0.1);
+    put(g, mats().disc, fill, 0, 0.03, 0, KG_R, 1, KG_R);
+    put(g, box(0.2, 1.6, 0.2), mats().metal, 0, 0.8, 0);
+    put(g, mats().oct, glowMat(0xffd23d, 2.6), 0, 1.9, 0, 0.3, 0.4, 0.3);
+    return { kind: 'king', x: s.x, z: s.z, g, ring, fill, foes: [], st: 'idle', t: KG_T, pts: 0, nt: 0, hold: 0 };
+  },
+  update(E, dt) {
+    const p = G.player;
+    if (E.st === 'idle') {
+      if (!near(E, 10)) return;
+      E.st = 'run';
+      banner(L('REI DA COLINA!', 'KING OF THE HILL!'), L(`${KG_N}s na colina em ${KG_T}s`, `${KG_N}s on the hill within ${KG_T}s`));
+    }
+    E.foes = E.foes.filter((e) => e.alive);
+    E.t -= dt;
+    E.nt -= dt;
+    if (E.nt <= 0 && E.foes.length < 6) {
+      E.nt = 9;
+      ambush(E, 2 + (G.floor >= 25 ? 1 : 0), E.x, E.z, 6, 9, 0xffd23d);
+    }
+    const inHill = Math.hypot(p.x - E.x, p.z - E.z) < KG_R;
+    const foeIn = E.foes.some((f) => Math.hypot(f.x - E.x, f.z - E.z) < KG_R + 0.3);
+    E.hold = foeIn ? -1 : inHill ? 1 : 0;
+    if (E.hold > 0) E.pts += dt;
+    const col = E.hold > 0 ? 0x39ff88 : E.hold < 0 ? 0xff3355 : 0xffffff;
+    setLight(E.ring, col, 1.3);
+    E.fill.color.setHex(col);
+    if (E.pts >= KG_N) {
+      for (const f of E.foes) killQuiet(f);
+      sfx.legendary();
+      complete(E, 1.4, L('REI DA COLINA!', 'KING OF THE HILL!'), L('Ninguém tirou você de lá', 'Nobody moved you off'), E.x, E.z, { extra: true });
+    } else if (E.t <= 0) {
+      for (const f of E.foes) killQuiet(f);
+      failed(E, L('O tempo acabou antes de você reinar.', 'Time ran out before you could rule.'));
+    }
+  },
+  busy: (E) => E.st === 'run',
+  hud: (E) => (E.st === 'idle' ? L('suba na colina', 'climb the hill') : `⏱ ${mmss(E.t)} · ${Math.floor(E.pts)}/${KG_N}${E.hold < 0 ? ' ⚠' : ''}`),
+  dim() {},
+  intro: () => L('fique dentro da colina para somar pontos (verde). Se um inimigo entrar nela os pontos param (vermelho): expulse-o. Junte 22s antes que o tempo acabe.', 'stay inside the hill to score (green). If an enemy enters it the points stop (red): drive it out. Collect 22s before time runs out.'),
+});
+
 // ------------------------------------------------------------------
 // Registro (events.js lê estas tabelas)
 // ------------------------------------------------------------------
 // eventos com relógio entre os novos (só um deles por andar, junto com os de events.js)
-export const NEW_TIMED = ['bounty2'];
-export const NEW_KIND = { sokoban, pipes, piano, scale, maze, bridge, paint: paintFloor, hide, statues, cannon, golem, fishing, dominos, bounty2, tower, bells, garden2, courier, ghosthunt, pinata };
+export const NEW_TIMED = ['bounty2', 'beacon', 'juggle', 'king'];
+export const NEW_KIND = { sokoban, pipes, piano, scale, maze, bridge, paint: paintFloor, hide, statues, cannon, golem, fishing, dominos, bounty2, tower, bells, garden2, courier, ghosthunt, pinata, lock, elements, snake, mines, tug, beacon, juggle, sculpt, portal, king };
 export const NEW_IDS = Object.keys(NEW_KIND);
 export const NEW_INFO = {
   sokoban: { icon: '📦', css: '#ffb347', name: L('Caixas de Energia', 'Power Crates'), short: L('Caixas', 'Crates') },
@@ -1862,4 +2680,14 @@ export const NEW_INFO = {
   courier: { icon: '📦', css: '#ffa63d', name: L('Entrega', 'Delivery'), short: L('Entrega', 'Delivery') },
   ghosthunt: { icon: '👻', css: '#9ad7ff', name: L('Caça-Fantasmas', 'Ghost Hunt'), short: L('Fantasmas', 'Ghosts') },
   pinata: { icon: '🪅', css: '#ff6ad5', name: L('Piñata Gigante', 'Giant Piñata'), short: L('Piñata', 'Piñata') },
+  lock: { icon: '🔐', css: '#ffd23d', name: L('Cofre de Combinação', 'Combination Safe'), short: L('Cofre', 'Safe') },
+  elements: { icon: '🔥', css: '#ff5a2d', name: L('Altar dos Elementos', 'Elements Altar'), short: L('Elementos', 'Elements') },
+  snake: { icon: '🐍', css: '#7dff3d', name: L('Cobra de Luz', 'Light Snake'), short: L('Cobra', 'Snake') },
+  mines: { icon: '💣', css: '#ff5a3d', name: L('Campo Minado', 'Minefield'), short: L('Minas', 'Mines') },
+  tug: { icon: '🪢', css: '#ff9a3d', name: L('Cabo de Guerra', 'Tug of War'), short: L('Cabo', 'Tug') },
+  beacon: { icon: '🏮', css: '#ffa63d', name: L('Faróis', 'Beacons'), short: L('Faróis', 'Beacons') },
+  juggle: { icon: '🤹', css: '#ff4df0', name: L('Malabares', 'Juggling'), short: L('Malabares', 'Juggling') },
+  sculpt: { icon: '🗿', css: '#ffd23d', name: L('Escultura', 'Sculpture'), short: L('Escultura', 'Sculpture') },
+  portal: { icon: '🌀', css: '#39a8ff', name: L('Portais Pareados', 'Paired Portals'), short: L('Portais', 'Portals') },
+  king: { icon: '👑', css: '#ffd23d', name: L('Rei da Colina', 'King of the Hill'), short: L('Colina', 'Hill') },
 };
