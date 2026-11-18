@@ -287,6 +287,16 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Hide and Seek** | A thief hides in one of 6 barrels. Stand next to one to open it; the other rings turn red when close and blue when far. |
 | **Living Statues** | Statues only move while you move. Grab 3 golden orbs in short bursts. |
 | **Neon Cannon** | Each hit on the cannon fires a shell along a sweeping aim line. Hit the 3 targets in 9 shots. |
+| **Parts Golem** | Find 4 glowing parts (each one calls a guard) and the golem assembles and fights by your side for a few seconds. |
+| **Data Fishing** | Stand on the pier and hit the float only when it sinks. Catch 5 fish; 3 escapes and it ends. |
+| **Dominoes** | Step on the rings to fill the gaps in a row of dominoes, then hit the first one so the whole row falls. |
+| **Double Hunt** *(timed)* | Two linked elite targets: after one falls the other must fall within 6 seconds, or the dead one returns and the survivor heals. |
+| **Tower Defense** | Protect a core from 4 waves. Enemies near it damage it, standing in the circle heals you. No clock: it ends with the last wave. |
+| **Tuned Bells** | Hit 5 bells from the biggest (low) to the smallest (high). Wrong order and it restarts. |
+| **Plant Seeds** | Pick up water at the well (one at a time) and water 5 saplings. Pests show up halfway. |
+| **Delivery** | Carry a package to the green pillar without taking damage; any hit sends it back to the start. |
+| **Ghost Hunt** | Ghosts are only visible inside the lantern circle. Fight inside it and beat them all. |
+| **Giant Piñata** | Hit it: every 3 hits it drops coins and runs off. Burst it with 12 hits. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -294,7 +304,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**202 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**212 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
