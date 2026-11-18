@@ -277,6 +277,16 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Shooting Gallery** | Step into the yellow ring: for 30 s targets pop up inside. Hit 14 with any attack before they vanish (from floor 6 on, purple decoys cost a point). |
 | **Cursed Idol** | Pick up the idol and carry it to a distant altar while hunters spawn around you. If you die, it returns to its pedestal. |
 | **Neon Dance** | Step on the middle circle to start the song. On each beat a plate lights up and a ring closes on it: be on that plate in time. Hit 18 of 24 beats. |
+| **Energy Boxes** | Push the 3 cubes onto the 3 green plates by walking into them. You cannot pull; a red pad resets the puzzle. |
+| **Plumbing** | Hit each pipe piece to turn it and connect the water tank to the drain. Area attacks turn several at once. |
+| **Giant Keyboard** | The keyboard plays a melody by lighting its keys; step on them in the same order. Three mistakes and it shuts down. |
+| **Scales** | Carry weighted orbs to the right pan until it matches the number on the left. Overshoot and everything drops. |
+| **Light Maze** | An invisible maze whose walls only light up near you. Reach the golden orb in the far corner. |
+| **Collapsing Bridge** | Cross a bridge of plates that collapse right after you step and have gaps. Falling costs some health and sends you back. |
+| **Paint the Floor** | Walk over the board to paint it your color and cover 85%. Enemies that show up paint it red. |
+| **Hide and Seek** | A thief hides in one of 6 barrels. Stand next to one to open it; the other rings turn red when close and blue when far. |
+| **Living Statues** | Statues only move while you move. Grab 3 golden orbs in short bursts. |
+| **Neon Cannon** | Each hit on the cannon fires a shell along a sweeping aim line. Hit the 3 targets in 9 shots. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -284,7 +294,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**185 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**202 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.

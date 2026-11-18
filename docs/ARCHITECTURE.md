@@ -230,6 +230,7 @@ hitEnemy(e, mult, opts)
 ## Floor events (`events.js`)
 
 Puzzles and challenges. Each floor gets 3 to 6 main events (`MAIN_EVENTS`: terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance; 3 before floor 4, 4 before floor 8, then 5, sometimes +1, +2 on huge floors (`d.huge`), never more than the free rooms). At most one kind from `TIMED` (events with a clock) is picked per floor and one small event (secret room or slot machine). They start on floor 2 and never appear on boss floors or the final floor. Kinds used on the previous floor are skipped.
+- The newer events are in `events2.js` (same contract, registered through `NEW_KIND` / `NEW_INFO` / `NEW_IDS` / `NEW_TIMED`, which `events.js` merges into its tables). It imports the helpers it needs back from `events.js`; the cycle is harmless because both only use each other at runtime.
 - Debug: with `?debug` in the URL the pause menu lists every event (`panel-debug`). `debugEvent(kind)` in `main.js` calls `eventsDebugForce(kind)` and rebuilds the floor, so `setupEvents` (and `carveSecret` for the secret room) creates only that event; if it does not fit, the next non-boss floor is tried.
 
 - Each kind is an object registered in `KIND`:

@@ -106,6 +106,7 @@ Module map (`js/`):
 | `finale.js` | True-ending cinematic after beating the Inferno: 2D canvas in the `#finale` overlay, its own theme song (`ANTHEM` in `music.js`). |
 | `run.js` | Per-floor events: anomalies, contracts, challenge rifts, kill combo, floor-clear bonus, implants, tiers (Nightmare/Inferno, New Game+). |
 | `events.js` | Floor puzzles and challenges (terminals, light floor, laser prisms, upload, time bomb, wanted, shard hunt, prisoner, neon circuit, lost signal, corrupted servers, drone escort, memory pairs, secret room, slot machine). |
+| `events2.js` | The newer floor events (Energy Boxes, Plumbing, Giant Keyboard, Scales, Light Maze, Collapsing Bridge, Paint the Floor, Hide and Seek, Living Statues, Neon Cannon and the batches after them). Same `KIND` contract as `events.js`; exports `NEW_KIND`, `NEW_INFO`, `NEW_IDS`, `NEW_TIMED`, which `events.js` merges into `KIND`, `EVENT_INFO`, `MAIN_EVENTS` and `TIMED`. It imports the shared helpers back from `events.js` (circular, runtime only). |
 | `pets.js` | Decorative pets that wander each biome. |
 | `models.js` | Low-poly models built from primitives (`makePlayerModel`, `makeEnemyModel`, `glowMat`, merged geometry cache). |
 | `fx.js` | Particles, rings, beams, floating numbers. |

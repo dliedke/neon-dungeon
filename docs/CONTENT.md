@@ -188,7 +188,7 @@ All in `js/run.js` except shrines (`js/loot.js`).
 
 ## Floor event (puzzle or challenge)
 
-All in `js/events.js`. See [Floor events](ARCHITECTURE.md#floor-events-eventsjs) for how they run.
+The original ones are in `js/events.js`; the newer ones live in `js/events2.js` (a `mk({...})` factory plus an entry in `NEW_KIND`, `NEW_INFO` and, if it has a clock, `NEW_TIMED`; `events.js` merges them). See [Floor events](ARCHITECTURE.md#floor-events-eventsjs) for how they run.
 
 1. Add `EVENT_INFO[kind]` with `{ icon, css, name }` (plus `short` if the name is long for the HUD).
 2. Write the kind object:

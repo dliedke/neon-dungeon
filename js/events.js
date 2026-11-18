@@ -4,7 +4,9 @@
 // Escolta do Drone, Pares de Memória, Chuva de Meteoros, Cofre Rachado, Arena de Gladiadores,
 // Caixa de Pandora, Jogo dos Baús, Duelo de Espelho, Bola de Plasma, Olho Vigia, Corrida Fantasma
 // Laser Giratório, Rebanho de Drones, Piso Falso, Travessia de Lasers, Expurgo, Drone Fujão,
-// Totens Dançantes, Altar de Sangue, Galeria de Tiro, Ídolo Amaldiçoado e Dança Neon. Pequenos: Sala Secreta e Máquina de Apostas.
+// Totens Dançantes, Altar de Sangue, Galeria de Tiro, Ídolo Amaldiçoado e Dança Neon.
+// Os eventos mais novos (Caixas de Energia, Encanamento, Teclado Gigante, Balança, Labirinto de Luz, Ponte que Desaba,
+// Pintar o Chão, Esconde-esconde, Estátuas Vivas e Canhão de Neon...) ficam em events2.js. Pequenos: Sala Secreta e Máquina de Apostas.
 // Tudo funciona só andando (pisar, ficar perto) e com o botão de interagir, então vale para
 // teclado+mouse, controle e toque. O sorteio usa a semente do andar (continuar o andar refaz igual);
 // o estado de cada evento vai no retrato do andar (eventsSnapshot/eventsRestore).
@@ -25,12 +27,13 @@ import { saveGame } from './main.js';
 import { tierOf, tierFloor, applyAnomalyToEnemy, runHurt } from './run.js';
 import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
+import { NEW_KIND, NEW_INFO, NEW_IDS, NEW_TIMED } from './events2.js';
 
 // eventos principais (de 3 a 6 por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'];
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'].concat(NEW_IDS);
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 // eventos com contagem de tempo: só um deles por andar
-const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'];
+const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'].concat(NEW_TIMED);
 // algum evento do andar corre contra o relógio? (os contratos com relógio não podem coexistir com ele)
 export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.kind));
 export const EVENT_INFO = {
@@ -69,6 +72,7 @@ export const EVENT_INFO = {
   dance: { icon: '🕺', css: '#ff4df0', name: L('Dança Neon', 'Neon Dance'), short: L('Dança', 'Dance') },
   secret: { icon: '🧱', css: '#ffaa33', name: L('Sala Secreta', 'Secret Room') },
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
+  ...NEW_INFO,
 };
 
 // principais do andar anterior (não repetem no seguinte)
@@ -4378,7 +4382,7 @@ const dance = {
 // ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble, ...NEW_KIND };
 
 // Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (3 no começo, 4 do andar 4,
 // 5 do andar 8, e às vezes um a mais) e o pequeno
@@ -4690,3 +4694,6 @@ export function eventArrows(arrow) {
     else if (E.kind === 'runner' && E.st === 'run') arrow(E.x, E.z, '#ffe14d', 0.85);
   }
 }
+
+// peças usadas por events2.js (eventos novos)
+export { mats, put, groupAt, lightMat, setLight, flatMat, near, findSpot, spotOk, freeAround, spawnWave, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, segDist, fighterType, mmss };
