@@ -198,7 +198,7 @@ Sugestões de tema (ajuste livre; nomes em pt/en):
 Pedido: menos míticos no alto nível; 30 eventos novos; 50 andares por tier (era 30, chefe a cada 3, final no 50); 10 biomas novos; 15 inimigos novos; +10 poderes por classe (5 ataques + 5 defesa); no máximo 1 coisa com relógio por andar (eventos, contratos...); Abismo até C (100 níveis) com seletor simples (sem os 50 quadradinhos).
 Uma fase por commit/push. Detalhes completos: este arquivo + o plano aprovado da sessão.
 
-- [ ] **Fase 0** — Terminar a Fase 7 antiga: `SUP_PASSIVES`/`APEX_POWERS` de **lancer** e **biohacker** (hoje faltam; ver aviso do `pSwift` acima). Tem de vir ANTES da Fase G (índices são save).
+- [x] **Fase 0** — Terminar a Fase 7 antiga: `SUP_PASSIVES`/`APEX_POWERS` de **lancer** e **biohacker** (hoje faltam; ver aviso do `pSwift` acima). Tem de vir ANTES da Fase G (índices são save).
 - [x] **Fase A (concluída; mítico por item de chefe: Morte 33→20%, Abismo X ~49→16%)** — Menos míticos (`mythChance` em `loot.js`: `rewardK('loot')` acima de 3,2 cresce só 15%; fator do tier `loot/60`; caça-níquel 3%) + regra de relógio (`TIMED` inclui upload/purge/escort; contrato com relógio nunca junto de evento com relógio; relógio da bomba só começa quando o jogador chega perto).
 - [x] **Fase B** — 50 andares: `FINAL_FLOOR = 50` (50 não é múltiplo de 3: `isBossFloor` e `floorShape` tratam o final), `FLOOR_THEMES` até 49, `TIERS.off` 50/100, `armorK`, `loot.js:113`, `events.js` (tier), `ach.js`, `finale.js` (90→150), `i18n.js`, `index.html`, docs.
 - [ ] **Fase C** — Abismo até C: `ABYSS_MAX = 100`, `ROMAN` por função, 50 regras novas, cor, gemas, medalhas; seletor novo (− / nome / + / slider; sem `#abyss-pips`).

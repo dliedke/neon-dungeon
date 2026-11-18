@@ -100,7 +100,7 @@ The advanced powers, in order (levels 40 / 50 / 60 / 70, attack / defense / atta
 
 The defenses cut the damage you take, heal over time, add dodge or life steal, or wrap you in an aura that hurts nearby enemies.
 
-Two **supreme rows** sit at the top of the tree: four supreme passives (levels 72, 80, 88 and 96) and four apex attacks (levels 76, 84, 92 and 100). The supreme passives add new bonuses such as extra damage to bosses, to enemies below 30% health or above 90% health, and more XP. So far the Blade, the Gunslinger, the Netrunner, the Iron Fist, the Pyro, the Frost, the Juggernaut and the Huntress have them (the other classes are coming):
+Two **supreme rows** sit at the top of the tree: four supreme passives (levels 72, 80, 88 and 96) and four apex attacks (levels 76, 84, 92 and 100). The supreme passives add new bonuses such as extra damage to bosses, to enemies below 30% health or above 90% health, and more XP. All 10 classes have them:
 
 | Class | Supreme passives | Apex attacks (76 / 84 / 92 / 100) |
 | --- | --- | --- |
@@ -112,6 +112,8 @@ Two **supreme rows** sit at the top of the tree: four supreme passives (levels 7
 | Frost | Living Crystal, Glacier Heart, Eternal Blizzard, Ice Queen | Crystal Swarm, Glacial Prison, Avalanche, Ice Age |
 | Juggernaut | Infinite Ammo, Titanic Chassis, Heavy Caliber, Living Arsenal | Missile Barrage, Heavy Turret, Battle Mech, Tactical Bomb |
 | Huntress | Wild Instinct, Shadow Hide, Rare Venom, Jungle Queen | Piercing Arrow, Hunting Traps, Legendary Beast, Celestial Arrow |
+| Valkyrie | Thunder Tip, Einherjar, Storm Rider, Valkyrie Queen | Thunder Volley, Valkyrie's Charge, Valkyrie Host, Odin's Judgement |
+| Biohacker | Toxic Blood, Symbiote, Pandemic Gene, Patient Zero | Plague Cloud, Nanobot Swarm, Alpha Mutant, Pandemic |
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 

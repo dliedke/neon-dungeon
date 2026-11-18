@@ -104,6 +104,14 @@ export const ICONS = {
   // ícones dos poderes passivos
   pHeart: '<path d="M16 27C8 21 4 17 4 12a6 6 0 0 1 12-2 6 6 0 0 1 12 2c0 5-4 9-12 15z"/><path d="M9 15h4l2-3 3 6 2-3h3"/>',
   pTarget: '<circle cx="16" cy="16" r="9"/><circle cx="16" cy="16" r="3"/><path d="M16 2v6M16 24v6M2 16h6M24 16h6"/>',
+  thunderVolley: '<path d="M16 28V6M16 28L6 10M16 28l10-18"/><path d="M16 3l-3 4h6z"/><path d="M6 7l1 4M26 7l-1 4" opacity=".6"/>',
+  valkCharge: '<path d="M4 20h14M4 14h9M4 26h9" opacity=".6"/><path d="M17 8l4-4 8 12-8 4-2-5z"/><path d="M22 20l-3 7"/>',
+  valkHost: '<circle cx="16" cy="9" r="3"/><path d="M16 12v10M10 16l6-2 6 2"/><path d="M4 14c3 0 5 1 6 4M28 14c-3 0-5 1-6 4"/><path d="M9 28l7-6 7 6"/>',
+  judgement: '<path d="M16 2l-6 12h5l-4 12 12-16h-6l5-8z"/><path d="M4 29h24" opacity=".6"/><path d="M8 24l2-4M24 24l-2-4" opacity=".6"/>',
+  plagueCloud: '<path d="M9 22a6 6 0 0 1 1-12 7 7 0 0 1 13 2 5 5 0 0 1-1 10z"/><circle cx="12" cy="17" r="1.2"/><circle cx="18" cy="15" r="1.2"/><circle cx="20" cy="20" r="1.2"/><path d="M10 27v2M16 27v2M22 27v2" opacity=".6"/>',
+  nanoSwarm: '<circle cx="8" cy="9" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="25" cy="16" r="2"/><circle cx="13" cy="19" r="2"/><circle cx="22" cy="26" r="2"/><circle cx="6" cy="26" r="2"/><path d="M9 11l3 6M21 8l3 6M15 21l6 4M8 24l4-4" opacity=".6"/>',
+  mutantAlpha: '<path d="M9 28V16l-4-5 5-1 2-5h6l2 5 5 1-4 5v12"/><path d="M13 14h2M19 14h2M13 20h6"/><path d="M12 28v-4M20 28v-4" opacity=".6"/>',
+  pandemic: '<circle cx="16" cy="16" r="5"/><path d="M16 3v6M16 23v6M3 16h6M23 16h6M7 7l4 4M21 21l4 4M25 7l-4 4M11 21l-4 4"/><circle cx="16" cy="16" r="12" opacity=".4"/>',
   pSwift: '<path d="M14 5h7v12l6 3a2 2 0 0 1 1 2v3H13z"/><path d="M13 25h15M3 11h7M5 16h6M3 21h8"/>',
   pWind: '<path d="M3 11h16a4 4 0 1 0-4-4M3 17h22a4 4 0 1 1-4 4M3 23h10"/>',
   pDrop: '<path d="M16 3c5 7 9 12 9 17a9 9 0 0 1-18 0c0-5 4-10 9-17z"/><path d="M12 20a4 4 0 0 0 4 4"/>',
@@ -768,13 +776,45 @@ for (const [id, list] of Object.entries(APEX_POWERS)) CLASSES[id].skills.push(..
 
 // Passos Velozes: passivo de mobilidade igual para todas as classes (caminhada mais rápida e Teleporte/Salto de Rede
 // recarregando antes). Fica no fim da lista para não mudar a posição dos poderes nos saves (swift: entra no andar 10–15).
-// ATENÇÃO: os supremos que ainda faltam (lancer e biohacker) têm de ser empurrados DEPOIS deste, nunca antes.
+// Os supremos da Lanceira e do Biohacker (SUP_LATE/APEX_LATE, logo abaixo) são empurrados DEPOIS deste, nunca antes.
 // 4x mais forte: a velocidade (swiftSpd) soma por fora do teto de 50% dos itens, e o Teleporte recarrega 4x mais rápido
 // que a fórmula antiga (3 + 1,5·r)% de redução — convertida em velocidade de recarga, multiplicada por 4 e de volta em redução.
 const swiftWarp = (r) => { const o = (3 + 1.5 * r) / 100; return r1(100 * (1 - 1 / (1 + 4 * (1 / (1 - o) - 1)))); };
 for (const id of Object.keys(CLASSES)) {
   CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ swiftSpd: 4 * (3 + r), warpCd: swiftWarp(r) })), swift: true });
 }
+
+// Supremos da Lanceira e do Biohacker (níveis 72–100). Ficam DEPOIS do Passos Velozes para não mexer nos índices dos saves.
+const SUP_LATE = {
+  lancer: [
+    sup('pThunderTip', 72, L('Ponta de Trovão', 'Thunder Tip'), 'pSword', (r) => ({ dmgPct: 3 * r, crit: r1(1.0 * r) })),
+    sup('pEinherjar', 80, 'Einherjar', 'pPlate', (r) => ({ armorPct: 6 * r, hpRegen: r1(1.0 * r) })),
+    sup('pStormRider', 88, L('Cavaleira da Tempestade', 'Storm Rider'), 'pWind', (r) => ({ atkSpd: 2 * r, execDmg: 4 * r })),
+    sup('pValkQueen', 96, L('Rainha das Valquírias', 'Valkyrie Queen'), 'pCrown', (r) => ({ bossDmg: 5 * r, hpPct: 3 * r, xpPct: 2 * r })),
+  ],
+  biohacker: [
+    sup('pToxicBlood', 72, L('Sangue Tóxico', 'Toxic Blood'), 'pDrop', (r) => ({ burnPct: 12 * r, dmgPct: 2 * r })),
+    sup('pSymbiote', 80, 'Simbionte', 'pHeart', (r) => ({ hpPct: 3 * r, hpRegen: r1(1.0 * r) })),
+    sup('pPandemicGene', 88, L('Gene Pandêmico', 'Pandemic Gene'), 'pSkull', (r) => ({ execDmg: 4 * r, killHeal: r1(0.3 * r) })),
+    sup('pPatientZero', 96, L('Paciente Zero', 'Patient Zero'), 'pCrown', (r) => ({ bossDmg: 5 * r, burnPct: 8 * r, xpPct: 2 * r })),
+  ],
+};
+const APEX_LATE = {
+  lancer: [
+    apex('thunderVolley', 76, L('Salva de Trovões', 'Thunder Volley'), 'thunderVolley', 45, 9, (r) => L(`5 lanças de luz em leque atravessam tudo por 16m, cada uma causando ${pct(3.0 * rankMult(r))} e soltando raios que saltam entre os inimigos.`, `5 lances of light fan out and pierce everything for 16m, each dealing ${pct(3.0 * rankMult(r))} and releasing lightning that jumps between enemies.`)),
+    apex('valkCharge', 84, L('Investida da Valquíria', "Valkyrie's Charge"), 'valkCharge', 50, 11, (r) => L(`Avança até 11m na direção da mira, invulnerável, causando ${pct(4.0 * rankMult(r))} em todos no caminho e uma explosão de trovão de ${pct(3.5 * rankMult(r))} no fim.`, `Charges up to 11m toward your aim, invulnerable, dealing ${pct(4.0 * rankMult(r))} to everything in the path and a thunder blast of ${pct(3.5 * rankMult(r))} at the end.`)),
+    apex('valkHost', 92, L('Legião das Valquírias', 'Valkyrie Host'), 'valkHost', 60, 26, (r) => L(`Invoca 3 valquírias que lutam ao seu lado por 14s (${pct(1.8 * rankMult(r))} por golpe).`, `Summons 3 valkyries that fight by your side for 14s (${pct(1.8 * rankMult(r))} per strike).`)),
+    apex('odinJudgement', 100, L('Julgamento de Odin', "Odin's Judgement"), 'judgement', 85, 26, (r) => L(`Marca o chão onde você mira; 1,2s depois um trovão colossal causa ${pct(10 * rankMult(r))} em 5,5m e atordoa, seguido de 20 raios (${pct(1.6 * rankMult(r))} cada).`, `Marks the ground where you aim; 1.2s later a colossal thunderbolt deals ${pct(10 * rankMult(r))} within 5.5m and stuns, followed by 20 lightning bolts (${pct(1.6 * rankMult(r))} each).`)),
+  ],
+  biohacker: [
+    apex('plagueCloud', 76, L('Nuvem de Peste', 'Plague Cloud'), 'plagueCloud', 45, 12, (r) => L(`Solta uma nuvem de peste de 7m onde você mira por 8s: ${pct(0.9 * rankMult(r))} a cada 0,5s, veneno forte e lentidão em quem estiver dentro.`, `Releases a 7m plague cloud where you aim for 8s: ${pct(0.9 * rankMult(r))} every 0.5s, heavy poison and slow on anyone inside.`)),
+    apex('nanoSwarm', 84, L('Enxame de Nanorrobôs', 'Nanobot Swarm'), 'nanoSwarm', 50, 10, (r) => L(`Solta 12 nanorrobôs teleguiados, cada um causando ${pct(2.2 * rankMult(r))} e envenenando.`, `Releases 12 homing nanobots, each dealing ${pct(2.2 * rankMult(r))} and poisoning.`)),
+    apex('mutantAlpha', 92, L('Mutante Alfa', 'Alpha Mutant'), 'mutantAlpha', 60, 26, (r) => L(`Libera um mutante alfa que luta ao seu lado por 18s, esmagando o chão (${pct(2.8 * rankMult(r))} em área e atordoa).`, `Unleashes an alpha mutant that fights by your side for 18s, smashing the ground (${pct(2.8 * rankMult(r))} in an area and stuns).`)),
+    apex('pandemic', 100, L('Pandemia', 'Pandemic'), 'pandemic', 85, 26, (r) => L(`Infecta todos os inimigos em 14m: ${pct(3.0 * rankMult(r))} na hora e mais 6 pulsos de ${pct(1.2 * rankMult(r))}, com veneno forte e lentidão. Você recupera vida a cada pulso.`, `Infects every enemy within 14m: ${pct(3.0 * rankMult(r))} instantly and 6 more pulses of ${pct(1.2 * rankMult(r))}, with heavy poison and slow. You heal on every pulse.`)),
+  ],
+};
+for (const [id, list] of Object.entries(SUP_LATE)) CLASSES[id].skills.push(...list);
+for (const [id, list] of Object.entries(APEX_LATE)) CLASSES[id].skills.push(...list);
 
 // Bônus somados de todos os passivos aprendidos (usado em computeStats)
 export function passiveMods(c) {
@@ -2928,6 +2968,170 @@ Object.assign(SKILL_FN, {
       G.shake = Math.max(G.shake, 0.7);
       sfx.nova();
     });
+    return true;
+  },
+});
+
+Object.assign(SKILL_FN, {
+  // Lanceira
+  thunderVolley(p, r) {
+    const rm = rankMult(r);
+    const col = C_('lancer');
+    const a0 = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = 0; k < 5; k++) {
+      const a = a0 + (k - 2) * 0.17;
+      const dx = Math.cos(a);
+      const dz = Math.sin(a);
+      let len = 0.5;
+      while (len < 16 && isWalkable(G.dungeon, p.x + dx * len, p.z + dz * len)) len += 0.25;
+      const x2 = p.x + dx * len;
+      const z2 = p.z + dz * len;
+      for (const e of enemiesOnSegment(p.x, p.z, x2, z2, 0.6)) hitEnemy(e, 3.0 * rm, { knock: 3, kx: e.x - dx, kz: e.z - dz });
+      streakFx(p.x, p.z, x2, z2, col, 0.4, 0.4);
+      streakFx(p.x, p.z, x2, z2, 0xffffff, 0.1, 0.3);
+      burst(x2, 1, z2, col, 8, 4, 0.07, 0.4);
+    }
+    PW.chainLightningFrom(p, 5, 1.2 * rm, 0x88ccff, 9);
+    G.shake = Math.max(G.shake, 0.3);
+    sfx.zap();
+    sfx.shoot();
+    p.swing = 1;
+    return true;
+  },
+  valkCharge(p, r) {
+    const rm = rankMult(r);
+    const col = C_('lancer');
+    const sx = p.x;
+    const sz = p.z;
+    const dx = p.aim.dx;
+    const dz = p.aim.dz;
+    let len = 0;
+    while (len < 11 && isWalkable(G.dungeon, sx + dx * (len + 0.25), sz + dz * (len + 0.25))) len += 0.25;
+    const ex = sx + dx * len;
+    const ez = sz + dz * len;
+    for (const e of enemiesOnSegment(sx, sz, ex, ez, 1.3)) hitEnemy(e, 4.0 * rm, { knock: 3, kx: sx, kz: sz });
+    ghostFx(p.model, col);
+    p.x = ex;
+    p.z = ez;
+    p.path = null;
+    p.target = null;
+    p.dash = null;
+    p.invuln = Math.max(p.invuln, 0.7);
+    streakFx(sx, sz, ex, ez, 0xffffff, 0.12, 0.5);
+    streakFx(sx, sz, ex, ez, col, 0.5, 0.4);
+    sfx.dash();
+    explosion(ex, ez, 3.5, 3.5 * rm, { color: col, stun: 0.8, knock: 4, small: true });
+    ringFx(ex, ez, 3.5, 0xffffff, 0.4, { from: 0.5 });
+    G.shake = Math.max(G.shake, 0.4);
+    sfx.zap();
+    return true;
+  },
+  valkHost(p, r) {
+    const rm = rankMult(r);
+    const base = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = 0; k < 3; k++) {
+      const a = base + (k - 1) * 1.4;
+      let x = p.x + Math.cos(a) * 1.5;
+      let z = p.z + Math.sin(a) * 1.5;
+      if (!isWalkable(G.dungeon, x, z)) {
+        x = p.x;
+        z = p.z;
+      }
+      PW.spawnAlly('valk', x, z, { dur: 14, mult: 1.8 * rm });
+    }
+    ringFx(p.x, p.z, 3.5, 0xb36bff, 0.5, { from: 0.5 });
+    burst(p.x, 1.2, p.z, 0xe0c8ff, 24, 6, 0.1, 0.6, { up: 2 });
+    sfx.nova();
+    return true;
+  },
+  odinJudgement(p, r) {
+    const rm = rankMult(r);
+    const col = C_('lancer');
+    const t = targetPoint(p, 12);
+    telegraphFx(t.x, t.z, 5.5, 1.2, col);
+    ringFx(t.x, t.z, 7, col, 0.7, { from: 1.5 });
+    sfx.zap();
+    p.swing = 1;
+    after(1.2, () => {
+      if (!G.player || !G.player.alive) return;
+      explosion(t.x, t.z, 5.5, 10 * rm, { color: col, stun: 1.5, knock: 6 });
+      ringFx(t.x, t.z, 8, 0xffffff, 0.6, { from: 1 });
+      burst(t.x, 1, t.z, 0xe8f4ff, 40, 9, 0.12, 0.8, { up: 4 });
+      G.shake = Math.max(G.shake, 0.7);
+      sfx.nova();
+      PW.meteorShower(t.x, t.z, 20, 1.6 * rm, 0xb36bff, { gap: 0.08 });
+    });
+    return true;
+  },
+
+  // Biohacker
+  plagueCloud(p, r) {
+    const rm = rankMult(r);
+    const col = C_('biohacker');
+    const t = targetPoint(p, 10);
+    lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.5, color: col, onLand: (x, z) => {
+      ringFx(x, z, 7, col, 0.6, { from: 1 });
+      burst(x, 1, z, col, 30, 6, 0.1, 0.7, { up: 2 });
+      spawnHazard(x, z, 7, 8, 0, { faction: 'player', mult: 0.9 * rm, burn: 1.2, slow: 2, color: col, opacity: 0.4 });
+    } });
+    sfx.flame();
+    p.swing = 1;
+    return true;
+  },
+  nanoSwarm(p, r) {
+    const rm = rankMult(r);
+    const col = C_('biohacker');
+    const a0 = angleOf(p.aim.dx, p.aim.dz);
+    for (let k = 0; k < 12; k++) {
+      after(k * 0.04, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const a = a0 + (k - 5.5) * 0.2;
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, y: 1.2, dx: Math.cos(a), dz: Math.sin(a), speed: 17, life: 1.5, mult: 2.2 * rm, color: col, size: 0.14, r: 0.3, homing: 9, burn: 0.8, quiet: k % 2 === 1 });
+        if (k % 3 === 0) sfx.shoot();
+      });
+    }
+    burst(p.x + p.aim.dx * 0.6, 1.2, p.z + p.aim.dz * 0.6, col, 16, 5, 0.08, 0.4);
+    p.swing = 1;
+    return true;
+  },
+  mutantAlpha(p, r) {
+    const rm = rankMult(r);
+    for (const a of G.allies) if (a.kind === 'mutant') a.t = Math.min(a.t, 0.01);
+    let x = p.x + p.aim.dx * 1.6;
+    let z = p.z + p.aim.dz * 1.6;
+    if (!isWalkable(G.dungeon, x, z)) {
+      x = p.x;
+      z = p.z;
+    }
+    PW.spawnAlly('mutant', x, z, { dur: 18, mult: 2.8 * rm });
+    ringFx(x, z, 3, C_('biohacker'), 0.5, { from: 0.5 });
+    burst(x, 1.2, z, 0xd8ff8a, 30, 6, 0.1, 0.6, { up: 2 });
+    sfx.roar();
+    return true;
+  },
+  pandemic(p, r) {
+    const rm = rankMult(r);
+    const col = C_('biohacker');
+    ringFx(p.x, p.z, 14, col, 0.8, { from: 2 });
+    burst(p.x, 1, p.z, col, 40, 10, 0.1, 0.8, { up: 2 });
+    sfx.nova();
+    p.swing = 1;
+    for (let k = 0; k < 7; k++) {
+      after(k * 1.0, () => {
+        const pl = G.player;
+        if (!pl || !pl.alive) return;
+        const first = k === 0;
+        for (const e of enemiesInRadius(pl.x, pl.z, 14)) {
+          hitEnemy(e, (first ? 3.0 : 1.2) * rm, { burn: 1.2, slow: 2, noProc: !first, quiet: !first });
+          if (!first) burst(e.x, 1, e.z, col, 3, 2, 0.06, 0.3);
+        }
+        if (!first) {
+          bigHeal(pl, 0.02, col);
+          ringFx(pl.x, pl.z, 14, col, 0.4, { from: 8 });
+        }
+      });
+    }
     return true;
   },
 });
