@@ -1,5 +1,5 @@
 // Final verdadeiro: cinemática em canvas 2D depois de vencer o Inferno (último modo)
-// Cenas: o último servidor (LED vermelho destruído) → subida pelos 90 andares → amanhecer com fogos → créditos.
+// Cenas: o último servidor (LED vermelho destruído) → subida pelos 150 andares → amanhecer com fogos → créditos.
 import { G } from './state.js';
 import { CLASSES, CLASS_ORDER, ICONS } from './classes.js';
 import { THEMES, themeFor } from './dungeon.js';
@@ -355,7 +355,7 @@ function sceneServer(t) {
 }
 
 // ------------------------------------------------------------------
-// Cena 2: a subida pelos 90 andares
+// Cena 2: a subida pelos 150 andares
 // ------------------------------------------------------------------
 const TIER_COL = [0x00f0ff, 0xff4466, 0xff7a1a];
 
@@ -363,10 +363,10 @@ function sceneElevator(t) {
   const u = t - T_ELEV;
   const D = T_DAWN - T_ELEV;
   const p = ease(cl((u - 0.3) / (D - 1.1)));
-  const pos = p * 90; // andares já subidos
-  const depth = Math.max(0, 90 - Math.floor(pos)); // 90 = fundo do Inferno
-  const tierI = depth > 60 ? 2 : depth > 30 ? 1 : 0;
-  const local = depth ? ((depth - 1) % 30) + 1 : 0;
+  const pos = p * 150; // andares já subidos
+  const depth = Math.max(0, 150 - Math.floor(pos)); // 150 = fundo do Inferno
+  const tierI = depth > 100 ? 2 : depth > 50 ? 1 : 0;
+  const local = depth ? ((depth - 1) % 50) + 1 : 0;
   const th = depth ? themeFor(local) : null;
   const vel = speedAt(u, D);
   // fundo com a cor do modo atual, clareando perto da superfície
@@ -405,11 +405,11 @@ function sceneElevator(t) {
   const gap = H * 0.42;
   const frac = pos - Math.floor(pos);
   for (let k = -1; k <= 3; k++) {
-    const fl = 90 - Math.floor(pos) - k; // profundidade dessa laje
-    if (fl < 0 || fl > 90) continue;
+    const fl = 150 - Math.floor(pos) - k; // profundidade dessa laje
+    if (fl < 0 || fl > 150) continue;
     const y = H * 0.5 + frac * gap - k * gap;
     if (y < -20 || y > H + 20) continue;
-    const ft = fl ? themeFor(((fl - 1) % 30) + 1) : null;
+    const ft = fl ? themeFor(((fl - 1) % 50) + 1) : null;
     const col = ft ? hex(ft.a) : '#ffd23d';
     cx.strokeStyle = col;
     cx.shadowColor = col;
@@ -493,7 +493,7 @@ function sceneElevator(t) {
     cx.fillStyle = hex(th.a);
     cx.fillText(th.name, px, H * 0.2 + S * 0.06);
     cx.fillStyle = 'rgba(232,236,255,0.7)';
-    cx.fillText(`${L('Andar', 'Floor')} ${local}/30`, px, H * 0.2 + S * 0.11);
+    cx.fillText(`${L('Andar', 'Floor')} ${local}/50`, px, H * 0.2 + S * 0.11);
   }
   letterbox(1);
   caption(typed(L('Noventa andares. Três descidas. Uma lenda.', 'Ninety floors. Three descents. One legend.'), t, T_ELEV + 1.4, 26), H * 0.85, 1 - sm(T_DAWN - 0.8, T_DAWN - 0.3, t));

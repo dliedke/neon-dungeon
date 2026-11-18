@@ -647,7 +647,7 @@ function sanitizeChar(c) {
   c.infWins = Math.max(0, c.infWins | 0);
   // nível da recompensa (sobe aos poucos depois de aumentar a dificuldade; ver tickReward)
   c.rwd = Math.max(0, +c.rwd || 0);
-  // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
+  // o jogo termina no andar 50 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
   charDiff(c);

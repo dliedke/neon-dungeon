@@ -35,14 +35,15 @@ THEMES.forEach((t) => (t.light = t.light || NEON_LIGHT));
 THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
 
 export const BOSS_EVERY = 3;
-export const isBossFloor = (f) => f % BOSS_EVERY === 0;
+// (o andar final, o 50, também é de chefe, embora 50 não seja múltiplo de 3)
+export const isBossFloor = (f) => f % BOSS_EVERY === 0 || f === FINAL_FLOOR;
 // último andar: batalha final contra os 7 chefes (2 de cada vez); vencer termina o jogo
-export const FINAL_FLOOR = 30;
+export const FINAL_FLOOR = 50;
 export const isFinalFloor = (f) => f >= FINAL_FLOOR;
 
-// Bioma de cada andar (1 a 29): os mais fáceis no começo e todos aparecem até o andar 23
-// (medalha de visitar todos). Mercados no 13 e no 25 (o 22 tem loja extra em biomes.js).
-const FLOOR_THEMES = [null, 'neon', 'forest', 'factory', 'meadow', 'bones', 'sewer', 'snow', 'glass', 'mountain', 'armory', 'starswamp', 'space', 'market', 'cryo', 'hive', 'stonesea', 'desert', 'uprain', 'ashwinter', 'volcano', 'titan', 'salt', 'data', 'hive', 'market', 'glass', 'ashwinter', 'starswamp', 'titan'];
+// Bioma de cada andar (1 a 49): os mais fáceis no começo e todos aparecem até o andar 23
+// (medalha de visitar todos). Mercados no 13, 25, 37 e 49 (o 22, o 31 e o 43 têm loja extra em biomes.js).
+const FLOOR_THEMES = [null, 'neon', 'forest', 'factory', 'meadow', 'bones', 'sewer', 'snow', 'glass', 'mountain', 'armory', 'starswamp', 'space', 'market', 'cryo', 'hive', 'stonesea', 'desert', 'uprain', 'ashwinter', 'volcano', 'titan', 'salt', 'data', 'hive', 'market', 'glass', 'ashwinter', 'starswamp', 'titan', 'volcano', 'armory', 'uprain', 'space', 'salt', 'cryo', 'titan', 'market', 'stonesea', 'hive', 'glass', 'mountain', 'starswamp', 'ashwinter', 'bones', 'desert', 'sewer', 'snow', 'data', 'market'];
 export function themeFor(floor) {
   if (isFinalFloor(floor)) return THEMES.find((t) => t.id === 'data'); // o coração da corporação
   const id = FLOOR_THEMES[floor];
@@ -55,6 +56,7 @@ export function themeFor(floor) {
 // Formato do andar, alternando em ciclos de 3: masmorra pequena, campo aberto, masmorra grande
 // (a masmorra grande cai nos andares de chefe, com a arena no fim do caminho). `d.maze` marca as masmorras.
 export function floorShape(floor) {
+  if (isFinalFloor(floor)) return 'dungL'; // a batalha final sempre na masmorra grande
   const k = (floor - 1) % 3;
   return k === 0 ? 'dungS' : k === 1 ? 'open' : 'dungL';
 }

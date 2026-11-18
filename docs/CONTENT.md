@@ -107,7 +107,7 @@ Add an entry to `ELITE` (`enemies.js`): `{ name, color, minF, apply: (e) => { ..
 1. **Type** in `ETYPES` with `boss: true, minFloor: 99, weight: 0, ai: 'newboss'`, high `hp` and `xp`, `heavy: true`.
 2. **Update function** `updateNewboss(e, dt, dist, ux, uz)` in `enemies.js` that returns `{ x, z, speed }` (desired movement). Add it to the boss dispatch (the `case 'scrap': case 'reaper': ...` block that maps `ai` → function). Use phases based on `e.hp / e.maxHp`, telegraphs, `spawnProjectile({ from: 'enemy', ... })`, `enemyExplosion` and summons via `spawnEnemy`. Respect `e.tempoK` (the first boss attacks more slowly).
 3. **Subtitle:** add a gameplay hint to `BOSS_SUB`.
-4. **Order:** add the id to `BOSS_ORDER`. The boss on floor `f` is `BOSS_ORDER[(round(f / 3) - 1) % length]`, and the final battle (floor 30) spawns all of them in waves of 2, with the last pair arriving last (keep `omega` at the end). Changing the order moves which boss appears on which floor for everyone.
+4. **Order:** add the id to `BOSS_ORDER`. The boss on floor `f` is `BOSS_ORDER[(round(f / 3) - 1) % length]`, and the final battle (floor 50) spawns all of them in waves of 2, with the last pair arriving last (keep `omega` at the end). Changing the order moves which boss appears on which floor for everyone.
 5. **Model:** a `case` in `makeEnemyModel` plus `decorate()`. Bosses are big, so check that the camera framing and the health bar look right.
 6. **Medals:** `boss_<id>` is automatic. Add an emoji in `BOSS_ICON` (`ach.js`).
 7. **Hardcoded "7":** the banner in `startFloor` (`main.js`), the help text in `i18n.js` (`DICT`), the README goal text, and Portuguese comments in `dungeon.js` / `enemies.js`.
@@ -271,6 +271,6 @@ Test: open it on desktop (1600×1000 and 1280×720), on phone landscape (740×36
 When content counts change, update:
 
 - `README.md`: the tables (Classes, Biomes, Enemies, Bosses, Floor events, Medals, Loot) and the counts in the text.
-- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 23 biomas, 30 andares").
+- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 23 biomas, 50 andares").
 - `img/og-image.png`: the counts are baked into the image, so regenerate it.
 - `AGENTS.md` (module map, counts) and these docs if a recipe changed.

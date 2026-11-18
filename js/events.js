@@ -1385,7 +1385,7 @@ const gamble = {
     const r = Math.random();
     const top = diffRank() >= 7 || (G.char.tier | 0) >= 1;
     // mesmo piso de raridade dos drops: do Insano para cima (ou no Inferno) não sai modificado
-    const minR = rewardRank() >= 5 || tierOf().off >= 60 ? 2 : 1;
+    const minR = rewardRank() >= 5 || (G.char.tier | 0) >= 2 ? 2 : 1;
     // no Abismo o prêmio máximo pode ser primordial (0,5%)
     const rarity = Math.max(minR, abyssLvl() && r < 0.005 ? PRIMORDIAL : top && r < 0.05 ? DIVINE : r < (top ? 0.075 : 0.04) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
     const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });

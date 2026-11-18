@@ -140,10 +140,10 @@ export function achList() {
   add('abyss50', '♾️', 3, L('Fim do Abismo', 'End of the Abyss'), L('Derrote um chefe no Abismo L', 'Defeat a boss on Abyss L'), () => (abyssBest() >= 50 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
-  // batalha final (andar 30)
+  // batalha final (andar 50)
   const NB = BOSS_ORDER.length;
-  add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 30`, `Win the final battle against all ${NB} bosses on floor 30`), () => total('wins'));
-  add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 30', 'Win the final battle without dying on floor 30'), () => (has('flags', 'winNoDeath') ? 1 : 0));
+  add('win', '🏁', 2, L('Fim de Jogo', 'Game Over… for Them'), L(`Vença a batalha final contra os ${NB} chefes no andar 50`, `Win the final battle against all ${NB} bosses on floor 50`), () => total('wins'));
+  add('winNoDeath', '💯', 3, L('Intocável', 'Untouchable'), L('Vença a batalha final sem morrer no andar 50', 'Win the final battle without dying on floor 50'), () => (has('flags', 'winNoDeath') ? 1 : 0));
   add('winHard', '😈', 3, L('Lenda Implacável', 'Relentless Legend'), L('Vença a batalha final no Difícil ou acima', 'Win the final battle on Hard or above'), () => (has('flags', 'winHard') ? 1 : 0));
   // vitórias nas dificuldades mais altas
   for (const [id, ic, pt, en, dpt, den] of [
@@ -162,7 +162,7 @@ export function achList() {
   add('winAll', '👑', 3, L('Os Dez Heróis', 'The Ten Heroes'), L(`Vença o jogo com as ${CLASS_ORDER.length} classes`, `Beat the game with all ${CLASS_ORDER.length} classes`), () => count('winClasses'), CLASS_ORDER.length);
 
   // profundidade e nível
-  for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [25, 2, '🪐'], [30, 2, '🧭']]) {
+  for (const [n, t, ic] of [[5, 0, '🛗'], [10, 1, '⬇️'], [15, 1, '🕳️'], [20, 2, '🌑'], [25, 2, '🪐'], [30, 2, '🧭'], [40, 3, '🌌'], [50, 3, '🏁']]) {
     add(`floor${n}`, ic, t, L(`Andar ${n}`, `Floor ${n}`), L(`Chegue ao andar ${n} com qualquer classe`, `Reach floor ${n} with any class`), () => maxOf((c) => c.maxFloor || c.floor), n);
   }
   for (const [n, t, ic, pt, en] of [[5, 0, '📈', 'Pegando o Jeito', 'Getting the Hang of It'], [10, 1, '💪', 'Veterano', 'Veteran'], [25, 2, '🦾', 'Cromado até os Ossos', 'Chrome to the Bone'], [50, 3, '🧬', 'Evolução Avançada', 'Advanced Evolution'], [100, 3, '🧠', 'Pós-Humano', 'Posthuman'], [200, 3, '👑', 'Evolução Máxima', 'Maximum Evolution']]) {

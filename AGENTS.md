@@ -146,6 +146,6 @@ Module map (`js/`):
 - **Commit messages are in Portuguese:** a short summary of the player-visible change (see `git log`).
 - **Keep public docs in sync with content changes.** When you add or remove classes, bosses, biomes, enemies or features, update:
   - `README.md` (English) tables and counts.
-  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 23 biomas, 30 andares").
+  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 23 biomas, 50 andares").
   - The counts baked into `img/og-image.png` (needs regenerating).
   - `docs/ARCHITECTURE.md` and `docs/CONTENT.md` if the structure or a recipe changed.

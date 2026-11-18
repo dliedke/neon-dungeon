@@ -20,7 +20,7 @@ The game is shown in **English or Portuguese** based on your browser language.
   </tr>
   <tr>
     <td><img src="docs/screenshots/huntress-orbital-station.jpg" alt="Huntress fighting elites on the Orbital Station"><br><sub><b>Huntress</b> against elites on the Orbital Station</sub></td>
-    <td><img src="docs/screenshots/final-battle.jpg" alt="The final battle on floor 30"><br><sub>The <b>final battle</b> on floor 30: the bosses come in waves</sub></td>
+    <td><img src="docs/screenshots/final-battle.jpg" alt="The final battle on floor 50"><br><sub>The <b>final battle</b> on floor 50: the bosses come in waves</sub></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/event-gladiator-arena.jpg" alt="Gladiator Arena floor event"><br><sub>Floor event: the <b>Gladiator Arena</b></sub></td>
@@ -34,15 +34,15 @@ The game is shown in **English or Portuguese** based on your browser language.
 
 ## Goal
 
-Descend through 30 dungeon floors, defeat enemies, collect gear and level up your character.
-Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit.
-On **floor 30**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
+Descend through 50 dungeon floors, defeat enemies, collect gear and level up your character.
+Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit (16 boss floors per run, the 7 bosses come back stronger).
+On **floor 50**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
 After you win, the same character can descend again from floor 1 in **Nightmare ☠️** and then **Inferno 🔥** mode (New Game+). Every Inferno victory adds +15 to the level of the items that drop in the Inferno (up to +300), so replaying it keeps the gear climbing.
-You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 31, Inferno floor 1 as floor 61) and enemies also get extra health (×1.25 in Nightmare, ×1.5 in Inferno) and damage (×1.5 and ×1.75). Deep enemies also pierce armor: past the 30th effective floor, the same armor blocks less and less (e.g. 658 armor blocks 87% on floor 30, about 67% on Nightmare floor 10 and about 50% in Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
+You keep your level, items and implants. Each mode picks up where the previous one ended (Nightmare floor 1 is as deep as floor 51, Inferno floor 1 as floor 101) and enemies also get extra health (×1.25 in Nightmare, ×1.5 in Inferno) and damage (×1.5 and ×1.75). Deep enemies also pierce armor: past the 50th effective floor, the same armor blocks less and less (e.g. 658 armor blocks 87% on floor 50, about 67% on Nightmare floor 10 and about 35% at the start of Inferno), so a maxed-out character still has a fight on its hands. Elites are more common and have more affixes, and items and credits are better.
 Each mode grants its own set of implants and has its own medal.
-Beating the **Inferno** unlocks the **true ending**: a full cinematic (the last red LED is destroyed, the elevator climbs all 90 floors, dawn and fireworks over the city, then the credits) with its own theme song, the golden "Neon Legend" ending screen and a 👑 Legend tag on the character card.
+Beating the **Inferno** unlocks the **true ending**: a full cinematic (the last red LED is destroyed, the elevator climbs all 150 floors, dawn and fireworks over the city, then the credits) with its own theme song, the golden "Neon Legend" ending screen and a 👑 Legend tag on the character card.
 
 ## Classes
 
@@ -310,7 +310,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Steps of Erebus** (feet: +10% dodge, dodging leaves an exploding shadow) and **Crown of Uranus** (chip: every 12 s, 8 meteors fall on nearby enemies).
     Wearing all 6 unlocks **Genesis**: +50% damage and every skill you use releases a prismatic wave. The merchant never sells them.
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
-  - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 30 you can upgrade before the final battle). For credits he upgrades your equipped items:
+  - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 50 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
   - **Gems** 💎: six kinds drop during floors (elites, bosses, rifts, contracts, chests and, rarely, any enemy; item find helps) and are magnetized like credits.

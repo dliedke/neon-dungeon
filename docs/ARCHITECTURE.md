@@ -101,8 +101,8 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 - Resume: `saveGame` stores `c.here` = `floorSnapshot()` (seed, fingerprint, player position/HP/energy/buffs, HP of each initial enemy, used chests/shrines/rifts, ground loot, explored map as RLE, contract, clear, nest, shop, anomaly, floor events `ev`). `resumeFloor(c)` rebuilds the floor with the same seed, checks the fingerprint and applies the snapshot; if anything doesn't match (old save, generation changed) it returns false and the floor starts fresh. No snapshot on the final floor or while dead.
 - `startFloor(floor)` also stores `c.floor` / `c.maxFloor`, places the player at `d.start`, reveals the minimap around it and announces the floor.
 - `updateExit` watches the elevator. It stays locked while a boss is alive. Using it calls `nextFloor()`: fade out, `runFloorDone()` (contract and clear rewards), `startFloor(floor + 1)`, heal 25 % HP and give +1 stim if the player has fewer than 3.
-- Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (30) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`. When the win was in the last mode (`tier >= MAX_TIER`, Inferno), `endGame()` first awaits `playFinale()` from `finale.js`: a ~58 s 2D-canvas cinematic in the `#finale` overlay (server → elevator through 90 floors → dawn with fireworks → credits). Skip goes through `uiBack` (`'finale'` is first in `PANEL_ORDER`), so Esc, {B} and the button all work. Then `showEnding({ legend: true })` shows the golden "Neon Legend" screen, and `closeFinale()` hides the overlay. `bestTier > MAX_TIER` marks a legend (👑 on the class card).
-- After winning, `startTier(tier)` restarts from floor 1 in Nightmare or Inferno (New Game+), keeping level, items and implants. `replayFinal()` replays floor 30.
+- Every `BOSS_EVERY` (3) floors is a boss floor. `FINAL_FLOOR` (50, not a multiple of 3, so `isBossFloor` and `floorShape` special-case it) is the final battle: all 7 bosses in waves of 2. Winning leads to `endGame()` → `showEnding()`. When the win was in the last mode (`tier >= MAX_TIER`, Inferno), `endGame()` first awaits `playFinale()` from `finale.js`: a ~58 s 2D-canvas cinematic in the `#finale` overlay (server → elevator through 90 floors → dawn with fireworks → credits). Skip goes through `uiBack` (`'finale'` is first in `PANEL_ORDER`), so Esc, {B} and the button all work. Then `showEnding({ legend: true })` shows the golden "Neon Legend" screen, and `closeFinale()` hides the overlay. `bestTier > MAX_TIER` marks a legend (👑 on the class card).
+- After winning, `startTier(tier)` restarts from floor 1 in Nightmare or Inferno (New Game+), keeping level, items and implants. `replayFinal()` replays floor 50.
 
 ### Biomes (`dungeon.js` `THEMES`)
 
@@ -223,7 +223,7 @@ hitEnemy(e, mult, opts)
 - **Kill combo** (`runKill`) and the **floor-clear bonus** (`clearBonus = (150 + floor × 40) × (1 + tier × 0.5)`).
 - **Implants** (`IMPLANTS`): pick one of three after each boss. `bossReward()` keys them by `floor + 100 × tier`, so each tier grants its own. `implantMods(c)` feeds `computeStats`.
 - **Floor events**: see [Floor events](#floor-events-eventsjs) below.
-- **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset (30 / 60, so each mode continues where the previous one ended), enemy HP and damage multipliers, and loot, credits and elite bonuses.
+- **Tiers** (`TIERS`): Normal, Nightmare and Inferno, with floor offset (50 / 100, so each mode continues where the previous one ended), enemy HP and damage multipliers, and loot, credits and elite bonuses.
 
 ## Floor events (`events.js`)
 

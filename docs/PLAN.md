@@ -200,7 +200,7 @@ Uma fase por commit/push. Detalhes completos: este arquivo + o plano aprovado da
 
 - [ ] **Fase 0** — Terminar a Fase 7 antiga: `SUP_PASSIVES`/`APEX_POWERS` de **lancer** e **biohacker** (hoje faltam; ver aviso do `pSwift` acima). Tem de vir ANTES da Fase G (índices são save).
 - [x] **Fase A (concluída; mítico por item de chefe: Morte 33→20%, Abismo X ~49→16%)** — Menos míticos (`mythChance` em `loot.js`: `rewardK('loot')` acima de 3,2 cresce só 15%; fator do tier `loot/60`; caça-níquel 3%) + regra de relógio (`TIMED` inclui upload/purge/escort; contrato com relógio nunca junto de evento com relógio; relógio da bomba só começa quando o jogador chega perto).
-- [ ] **Fase B** — 50 andares: `FINAL_FLOOR = 50` (50 não é múltiplo de 3: `isBossFloor` e `floorShape` tratam o final), `FLOOR_THEMES` até 49, `TIERS.off` 50/100, `armorK`, `loot.js:113`, `events.js` (tier), `ach.js`, `finale.js` (90→150), `i18n.js`, `index.html`, docs.
+- [x] **Fase B** — 50 andares: `FINAL_FLOOR = 50` (50 não é múltiplo de 3: `isBossFloor` e `floorShape` tratam o final), `FLOOR_THEMES` até 49, `TIERS.off` 50/100, `armorK`, `loot.js:113`, `events.js` (tier), `ach.js`, `finale.js` (90→150), `i18n.js`, `index.html`, docs.
 - [ ] **Fase C** — Abismo até C: `ABYSS_MAX = 100`, `ROMAN` por função, 50 regras novas, cor, gemas, medalhas; seletor novo (− / nome / + / slider; sem `#abyss-pips`).
 - [ ] **Fase D** — 10 biomas (aurora, coral, clock, mirrorlake, candy, mushroom, storm, library, lavafall, garden), 2 commits de 5, padrão do `wilds.js`.
 - [ ] **Fase E** — 15 inimigos (5 tech: Drone Espelho, Gravitador, Ceifador de Dados, Construtor, Enxame Mosca; 10 fauna dos biomas novos).
