@@ -419,3 +419,27 @@ wardP('frost', 'fwFrostSkin', 116, L('Pele Gélida', 'Frost Skin'), 'pSnow', (r)
 ward('frost', 'decoy', 'fwSnowDouble', 124, L('Duplo de Neve', 'Snow Double'), 'ice', 45, 22, { t: 7, rad: 5.5, m: 7 });
 wardP('frost', 'fwColdBlood', 132, L('Sangue Frio', 'Cold Blood'), 'pEye', (r) => ({ dodge: r1(0.4 * r), hpRegen: r1(0.8 * r) }));
 ward('frost', 'mendfield', 'fwHibernate', 140, L('Hibernação', 'Hibernation'), 'ice', 60, 36, { heal: 0.55, rate: 0.04, mendT: 6, shield: 0.3 });
+
+// ---------------- Colosso (heavy) ----------------
+myth('heavy', 'beam', 'hIonCannon', 104, L('Canhão de Íons', 'Ion Cannon'), 'bolt', 70, 12, { len: 22, w: 1.4, m: 9, fx: { stun: 1.5 } });
+myth('heavy', 'volley', 'hRocketSalvo', 112, L('Salva de Foguetes', 'Rocket Salvo'), 'flame', 75, 16, { n: 30, t: 2.4, m: 1.6 });
+myth('heavy', 'nova', 'hOverload', 120, L('Sobrecarga do Reator', 'Reactor Overload'), 'ring', 80, 16, { rad: 7.5, m: 8, m2: 5, fx: { stun: 1 } });
+myth('heavy', 'summon', 'hTurretBattery', 128, L('Bateria de Torres', 'Turret Battery'), 'eye', 90, 28, { kind: 'warTurret', n: 4, dur: 18, m: 2.4, pt: 'torres de guerra', en: 'war turrets' });
+myth('heavy', 'mark', 'hOrbitalStrike', 136, L('Ataque Orbital', 'Orbital Strike'), 'star', 110, 26, { rad: 9, delay: 1.4, m: 16, fx: { burn: 1, stun: 2 } });
+ward('heavy', 'bulwark', 'hwFortress', 108, L('Fortaleza Móvel', 'Mobile Fortress'), 'blade', 50, 24, { t: 6, taken: 0.2, mend: 0.02, rad: 5.5, m: 6 });
+wardP('heavy', 'hwChassis', 116, L('Chassi Reforçado', 'Reinforced Chassis'), 'pPlate', (r) => ({ armorPct: 7 * r, hpPct: 4 * r }));
+ward('heavy', 'shield', 'hwKinetic', 124, L('Barreira Cinética', 'Kinetic Barrier'), 'bolt', 45, 24, { t: 7, absorb: 0.7 });
+wardP('heavy', 'hwStableCore', 132, L('Reator Estável', 'Stable Reactor'), 'pGear', (r) => ({ dmgRed: r1(0.5 * r), hpRegen: r1(1.0 * r) }));
+ward('heavy', 'mendfield', 'hwEmergency', 140, L('Reparo de Emergência', 'Emergency Repair'), 'cross', 60, 36, { heal: 0.55, rate: 0.05, mendT: 6, shield: 0.35 });
+
+// ---------------- Caçadora (hunter) ----------------
+myth('hunter', 'beam', 'uStarArrow', 104, L('Flecha Estelar', 'Star Arrow'), 'star', 70, 12, { len: 22, w: 0.8, m: 9, fx: { stun: 1 } });
+myth('hunter', 'volley', 'uArrowTempest', 112, L('Tempestade de Flechas', 'Arrow Tempest'), 'ring', 75, 16, { n: 30, t: 2.4, m: 1.6 });
+myth('hunter', 'summon', 'uHawkFlock', 120, L('Revoada de Falcões', 'Hawk Flock'), 'eye', 80, 22, { kind: 'hawk', n: 5, dur: 16, m: 2.2, pt: 'falcões de caça', en: 'hunting hawks' });
+myth('hunter', 'summon', 'uPrimalBeast', 128, L('Fera Primordial', 'Primal Beast'), 'drop', 90, 28, { kind: 'beast', n: 2, dur: 18, m: 3.4, pt: 'feras primordiais', en: 'primal beasts' });
+myth('hunter', 'mark', 'uPerfectKill', 136, L('Execução Perfeita', 'Perfect Execution'), 'cross', 110, 24, { rad: 6, delay: 1.2, m: 18, fx: { stun: 2.5 } });
+ward('hunter', 'phase', 'uwStealth', 108, L('Passo Furtivo', 'Stealth Step'), 'eye', 45, 22, { inv: 2.5, t: 6, evade: 60, rad: 4.5, m: 5 });
+wardP('hunter', 'uwEagleEyes', 116, L('Olhos de Águia', 'Eagle Eyes'), 'pEye', (r) => ({ dodge: r1(0.4 * r), dmgRed: r1(0.4 * r) }));
+ward('hunter', 'decoy', 'uwLure', 124, L('Isca de Caça', 'Hunting Lure'), 'drop', 45, 22, { t: 7, rad: 5.5, m: 7 });
+wardP('hunter', 'uwBeastHide', 132, L('Pele de Fera', 'Beast Hide'), 'pHeart', (r) => ({ hpPct: 4 * r, armorPct: 5 * r }));
+ward('hunter', 'mendfield', 'uwRemedy', 140, L('Remédio da Mata', 'Forest Remedy'), 'star', 60, 36, { heal: 0.5, rate: 0.05, mendT: 6, en: 60 });

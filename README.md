@@ -125,6 +125,8 @@ Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128
 | Iron Fist | Earthquake, Meteor Fist, Shock Line, Titan Punch, Steel Colossus | Iron Guard, Hard Head, Blood Frenzy, Hot Blood, Last Round |
 | Pyro | Blazing Sun, Dragon Breath, Magma Flood, Ifrit Legion, Infernal Comet | Magma Shell, Ember Skin, Flame Form, Heart of Fire, Rebirth from Ashes |
 | Frost | Absolute Zero, Blizzard Eye, Icicle Rain, Arctic Pack, Ice Age | Ice Wall, Frost Skin, Snow Double, Cold Blood, Hibernation |
+| Juggernaut | Ion Cannon, Rocket Salvo, Reactor Overload, Turret Battery, Orbital Strike | Mobile Fortress, Reinforced Chassis, Kinetic Barrier, Stable Reactor, Emergency Repair |
+| Huntress | Star Arrow, Arrow Tempest, Hawk Flock, Primal Beast, Perfect Execution | Stealth Step, Eagle Eyes, Hunting Lure, Beast Hide, Forest Remedy |
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 
