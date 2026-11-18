@@ -207,3 +207,16 @@ Uma fase por commit/push. Detalhes completos: este arquivo + o plano aprovado da
 - [ ] **Fase F** — 30 eventos novos (3 commits de 10), só acrescentar no fim de `MAIN_EVENTS`; os com relógio entram em `TIMED`.
 - [ ] **Fase G** — +10 poderes por classe (5 ataques `myth` + 5 defesas `guard`), 2 classes por commit, no FIM da lista (depois de pSwift, SUP e APEX).
 - [ ] **Fase H** — Docs finais, contagens, `og-image.png`.
+
+## Notas de passagem entre contas (Plano 2) — atualizado após a Fase D
+
+**Próximo passo: Fase E** (15 inimigos). Depois F1/F2/F3 (30 eventos), G (5 commits de 2 classes), H (docs + og-image).
+
+Onde estão as coisas / lições já aprendidas:
+- Biomas novos: `js/wilds2.js` (mecânicas), `FEAT` 29–43 em `biomes.js`, `THEMES` em `dungeon.js`, `FLOOR_THEMES` (andares 27–47 usam os 10 biomas novos). A **fauna dos biomas novos ainda é temporária** (reaproveita `icewolf`, `yeti`, `wisp`, `ghost`, `eagle`, `goat`, `toad`, `salamander`, `magmagolem`, `antibody`, `drone`, `tesladrone`, `sentry`, `fossilcrab`, `skyray`, `kamikaze`). A Fase E troca o campo `fauna: [...]` de cada tema pelos inimigos novos: aurora→Lobo Aurora, coral→Polvo Neon, clock→Autômato de Corda, mirrorlake→Espectro de Reflexo, arcade→Bola de Pinball, mushroom→Fungóide, storm→Elemental de Raio, library→Livro Mordedor, lavafall→Salamandra de Basalto, garden→Samurai de Bambu. Os 5 tech (Drone Espelho, Gravitador, Ceifador de Dados, Construtor, Enxame Mosca) entram nos biomas tech (`neon`, `factory`, `data`, `space`, `cryo`...).
+- Receita de inimigo: `docs/CONTENT.md` (ETYPES em `enemies.js`, modelo em `models.js` `makeEnemyModel`, IA nova só se preciso, bestiário em `ach.js`). Confira se há contagem "N enemy types" no README e atualize.
+- Armadilhas: import circular (nunca usar `FEAT`/consts importadas no topo do módulo; construir tabelas de forma preguiçosa); etapa de montagem do andar com semente só usa `rr/ri/pick/chance`; `G.camFocus` precisa ser setado em testes ao teletransportar o jogador (senão o gating `nearCam` ignora a lógica).
+- Testes (fora do repo, em `C:\Temp\nd-test\`, podem não existir na outra conta): servidor `npx http-server -p 8000 -c-1`; script `cdp.mjs` abre Edge headless (perfil próprio, porta 9333), faz stub de `navigator.getGamepads`, roda um arquivo JS via `Runtime.evaluate` e mostra erros da página (env `MOBILE=1 W= H= SHOT=arquivo.png`). Um teste por bloco (rodar tudo junto numa só chamada já travou uma vez). Scripts de patch: escreva com a ferramenta Write (heredoc do bash quebra com aspas/crases).
+- Sobreposições antigas que podem ser ignoradas no overlap checker: `#xp-text` × botões de skill, toast × minimapa, ícone 💰 do mercador fora da tela.
+- Balanceamento pendente: Inferno andar 50 = efetivo 150 (antes 90); rever `hp/dmg` dos tiers se ficar duro demais.
+- Commits: um por fase, mensagem em português + `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`; push em `main`; acompanhar `pages-build-deployment` (`gh run watch`) e avisar que está no ar.
