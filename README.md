@@ -115,7 +115,7 @@ Two **supreme rows** sit at the top of the tree: four supreme passives (levels 7
 | Valkyrie | Thunder Tip, Einherjar, Storm Rider, Valkyrie Queen | Thunder Volley, Valkyrie's Charge, Valkyrie Host, Odin's Judgement |
 | Biohacker | Toxic Blood, Symbiote, Pandemic Gene, Patient Zero | Plague Cloud, Nanobot Swarm, Alpha Mutant, Pandemic |
 
-Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128 and 136) and **five mythic defenses** (levels 108, 116, 124, 132 and 140, a mix of active powers and passives). They are built from shared archetypes (beams, cones, rains of projectiles, summons, shields, decoys, big heals...) in .
+Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128 and 136) and **five mythic defenses** (levels 108, 116, 124, 132 and 140, a mix of active powers and passives). They are built from shared archetypes (beams, cones, rains of projectiles, summons, shields, decoys, big heals...) in `js/mythtree.js`.
 
 | Class | Mythic attacks | Mythic defenses |
 | --- | --- | --- |
@@ -456,6 +456,8 @@ js/sync.js             Google sign-in and Google Drive cloud save
 js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
 js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, circuit, escort, secret room...)
+js/events2.js          the newer floor events (energy boxes, plumbing, giant keyboard, scales, light maze... up to King of the Hill)
+js/mythtree.js         the 10 mythic powers per class (5 attacks + 5 defenses), built from shared archetypes
 js/mythic.js           mythic item powers
 js/finale.js           true-ending cinematic after beating the Inferno (2D canvas)
 js/pets.js             decorative pets that wander each biome
