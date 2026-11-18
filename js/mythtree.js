@@ -443,3 +443,27 @@ wardP('hunter', 'uwEagleEyes', 116, L('Olhos de Águia', 'Eagle Eyes'), 'pEye', 
 ward('hunter', 'decoy', 'uwLure', 124, L('Isca de Caça', 'Hunting Lure'), 'drop', 45, 22, { t: 7, rad: 5.5, m: 7 });
 wardP('hunter', 'uwBeastHide', 132, L('Pele de Fera', 'Beast Hide'), 'pHeart', (r) => ({ hpPct: 4 * r, armorPct: 5 * r }));
 ward('hunter', 'mendfield', 'uwRemedy', 140, L('Remédio da Mata', 'Forest Remedy'), 'star', 60, 36, { heal: 0.5, rate: 0.05, mendT: 6, en: 60 });
+
+// ---------------- Valquíria (lancer) ----------------
+myth('lancer', 'charge', 'lValkyrieRush', 104, L('Investida da Valquíria', 'Valkyrie Rush'), 'bolt', 70, 14, { dist: 14, m: 6, m2: 7, rad: 5, fx: { stun: 1 } });
+myth('lancer', 'storm', 'lValhallaStorm', 112, L('Tempestade do Valhalla', 'Valhalla Storm'), 'bolt', 75, 20, { dur: 8, rate: 4, m: 1.8 });
+myth('lancer', 'pillars', 'lThunderPillars', 120, L('Colunas do Trovão', 'Thunder Pillars'), 'bolt', 80, 14, { n: 12, m: 5, fx: { stun: 0.8 } });
+myth('lancer', 'summon', 'lValkyrieHost', 128, L('Hoste das Valquírias', 'Valkyrie Host'), 'eye', 90, 28, { kind: 'valk', n: 3, dur: 16, m: 2.6, pt: 'valquírias', en: 'valkyries' });
+myth('lancer', 'mark', 'lOdinSpear', 136, L('Lança do Valhalla', 'Valhalla Spear'), 'star', 110, 26, { rad: 8.5, delay: 1.4, m: 16, fx: { stun: 2 } });
+ward('lancer', 'bulwark', 'lwWingedShield', 108, L('Escudo Alado', 'Winged Shield'), 'bolt', 50, 24, { t: 5, taken: 0.3, mend: 0.02, rad: 5, m: 5 });
+wardP('lancer', 'lwStormSkin', 116, L('Pele de Tempestade', 'Storm Skin'), 'pWind', (r) => ({ dodge: r1(0.4 * r), dmgRed: r1(0.4 * r) }));
+ward('lancer', 'phase', 'lwValkyrieFlight', 124, L('Voo da Valquíria', 'Valkyrie Flight'), 'bolt', 45, 22, { inv: 2.5, t: 5, evade: 60, rad: 5, m: 5 });
+wardP('lancer', 'lwDivineArmor', 132, L('Armadura Divina', 'Divine Armor'), 'pPlate', (r) => ({ armorPct: 6 * r, hpPct: 4 * r }));
+ward('lancer', 'mendfield', 'lwValhallaBless', 140, L('Bênção do Valhalla', 'Valhalla Blessing'), 'star', 60, 36, { heal: 0.5, rate: 0.05, mendT: 6, shield: 0.3 });
+
+// ---------------- Biohacker ----------------
+myth('biohacker', 'bomb', 'zViralBomb', 104, L('Bomba Viral', 'Viral Bomb'), 'drop', 70, 14, { rad: 7.5, m: 10, m2: 6, fx: { slow: 2 } });
+myth('biohacker', 'vortex', 'zToxicSingularity', 112, L('Singularidade Tóxica', 'Toxic Singularity'), 'drop', 75, 22, { dur: 6, m: 2.2 });
+myth('biohacker', 'rain', 'zAcidRain', 120, L('Chuva Ácida', 'Acid Rain'), 'drop', 80, 18, { n: 20, m: 2.6, fx: { slow: 1.5 } });
+myth('biohacker', 'summon', 'zMutantHorde', 128, L('Horda Mutante', 'Mutant Horde'), 'eye', 90, 28, { kind: 'mutant', n: 2, dur: 18, m: 3.2, pt: 'mutantes de laboratório', en: 'lab mutants' });
+myth('biohacker', 'summon', 'zNanoSwarm', 136, L('Enxame de Nanodrones', 'Nano Swarm'), 'star', 110, 26, { kind: 'drone', n: 6, dur: 18, m: 2.2, pt: 'nanodrones', en: 'nanodrones' });
+ward('biohacker', 'shield', 'zwBiomembrane', 108, L('Biomembrana', 'Biomembrane'), 'drop', 45, 24, { t: 7, absorb: 0.6 });
+wardP('biohacker', 'zwMetabolism', 116, L('Metabolismo Acelerado', 'Fast Metabolism'), 'pDrop', (r) => ({ hpRegen: r1(1.0 * r), dmgRed: r1(0.4 * r) }));
+ward('biohacker', 'decoy', 'zwOrganicClone', 124, L('Clone Orgânico', 'Organic Clone'), 'drop', 45, 22, { t: 7, rad: 5.5, m: 7 });
+wardP('biohacker', 'zwSynthBlood', 132, L('Sangue Sintético', 'Synthetic Blood'), 'pHeart', (r) => ({ hpPct: 4 * r, lifeSteal: r1(0.4 * r) }));
+ward('biohacker', 'mendfield', 'zwMassRegen', 140, L('Regeneração em Massa', 'Mass Regeneration'), 'cross', 60, 36, { heal: 0.55, rate: 0.05, mendT: 6, en: 60 });

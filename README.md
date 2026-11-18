@@ -127,6 +127,8 @@ Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128
 | Frost | Absolute Zero, Blizzard Eye, Icicle Rain, Arctic Pack, Ice Age | Ice Wall, Frost Skin, Snow Double, Cold Blood, Hibernation |
 | Juggernaut | Ion Cannon, Rocket Salvo, Reactor Overload, Turret Battery, Orbital Strike | Mobile Fortress, Reinforced Chassis, Kinetic Barrier, Stable Reactor, Emergency Repair |
 | Huntress | Star Arrow, Arrow Tempest, Hawk Flock, Primal Beast, Perfect Execution | Stealth Step, Eagle Eyes, Hunting Lure, Beast Hide, Forest Remedy |
+| Valkyrie | Valkyrie Rush, Valhalla Storm, Thunder Pillars, Valkyrie Host, Valhalla Spear | Winged Shield, Storm Skin, Valkyrie Flight, Divine Armor, Valhalla Blessing |
+| Biohacker | Viral Bomb, Toxic Singularity, Acid Rain, Mutant Horde, Nano Swarm | Biomembrane, Fast Metabolism, Organic Clone, Synthetic Blood, Mass Regeneration |
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 
