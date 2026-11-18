@@ -168,6 +168,11 @@ Every floor changes biome (23 in total), each with its own lighting and hazards.
 | **Ash Winter** | Open ash fields | It looks like snow but it is ash: hidden embers burn whoever steps on them, and wind gusts reveal and reignite them; **ash wolves** |
 | **Upside-Down Rain Forest** | Organic clearings | Rain falls upwards; step into a rising current to be launched and slam down on the nearest enemy. Enemy shots can't pass through the currents; gliding **sky rays** |
 | **Salt Flats of the Forgotten** | Open salt flats | Salt statues and brine pools; **salt crystals** hold treasure (golden glow) or an ancient elite (red glow), so you choose what to free before the fight; **salt forgotten** |
+| **Aurora Tundra** | Open snowfields | Strips of aurora light on the ground shield you from 25% of the damage and speed you up; ice spires and drifting light motes |
+| **Neon Reef** | Organic caves | Glowing coral; **currents** drag everyone along their lanes and **bubbles** that you pop for a burst of speed |
+| **Clockwork Factory** | Plazas and wide streets | Spinning **gears** that drag whoever stands on them in circles and giant **clock hands** that sweep the room (they hurt and fling you, and fling enemies too); brass cogs |
+| **Mirror Lake** | Open fields | A mirrored, slippery floor; while you fight on it your reflection repeats your strike with a shockwave of glass that damages and shoves nearby enemies; mirror shards |
+| **Abandoned Arcade** | Plazas and wide streets | Arcade cabinets and neon carpet; **pinball bumpers** that launch everyone away (use them to fling enemies) |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 
@@ -374,6 +379,7 @@ js/i18n.js             translations (English / Portuguese)
 js/dungeon.js          procedural map layouts, collision and pathfinding
 js/biomes.js           biome hazards, mechanisms, decoration, merchant and blacksmith
 js/wilds.js            the 10 wild biomes: glass that shatters, tides, updrafts, hive sentinels, breathing mountain...
+js/wilds2.js           the third wave of wild biomes: aurora strips, reef currents, clock gears and hands, mirror floor, pinball bumpers...
 js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)

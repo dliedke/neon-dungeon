@@ -30,6 +30,12 @@ export const THEMES = [
   { id: 'ashwinter', name: L('Inverno de Cinzas', 'Ash Winter'), a: 0xff6a1a, b: 0xd8d8e0, floor: 0x8a8888, wall: 0x5a5656, cap: 0xb8b4b0, fog: 0x5a5454, layout: 'meadow', ground: 'ashsnow', walls: 'natural', wallH: [1.2, 2.6], natural: true, fauna: ['ashwolf', 'salamander'], features: ['deadtrees', 'ashfall', 'hiddenembers', 'gusts'], light: { sky: 0xc8c0b8, ground: 0x3a2a24, hemi: 1.35, dir: 0xffd8c0, dirI: 1.2, fogNear: 16, fogFar: 38 }, hint: L('Parece neve, mas é cinza: brasas escondidas queimam quem pisa. As rajadas de vento revelam as brasas e reacendem o fogo.', 'It looks like snow, but it is ash: hidden embers burn whoever steps on them. Wind gusts reveal the embers and rekindle the fire.') },
   { id: 'uprain', name: L('Floresta da Chuva Invertida', 'Upside-Down Rain Forest'), a: 0x4dd2ff, b: 0x9dff3a, floor: 0x2a4038, wall: 0x1a3028, cap: 0x2a5a3a, fog: 0x0a1a1e, layout: 'cave', ground: 'moss', walls: 'natural', wallH: [1.6, 3.2], natural: true, fauna: ['skyray', 'wisp'], features: ['trees', 'mushrooms', 'uprain', 'updrafts', 'skylakes'], light: { sky: 0x8ac8e8, ground: 0x0a2018, hemi: 1.25, dir: 0xc8e8ff, dirI: 1.1, fogNear: 14, fogFar: 34 }, hint: L('Entre numa corrente de chuva subindo para ser lançado ao alto e cair com um golpe no inimigo mais próximo. Tiros não atravessam as correntes.', 'Step into a rising rain current to be lifted up and slam down on the nearest enemy. Shots can\'t pass through the currents.') },
   { id: 'salt', name: L('Salinas dos Esquecidos', 'Salt Flats of the Forgotten'), a: 0xff4d6a, b: 0x3ad8d0, floor: 0xaaa49c, wall: 0x908880, cap: 0xc4beb4, fog: 0x9a948e, layout: 'meadow', ground: 'salt', walls: 'natural', wallH: [1.0, 2.2], natural: true, fauna: ['saltwraith', 'scorpion'], features: ['statues', 'brine', 'saltcrystals'], light: { sky: 0xf4ece4, ground: 0x4a3e38, hemi: 1.55, dir: 0xfff0e0, dirI: 1.5, fogNear: 24, fogFar: 54 }, hint: L('Cristais de sal guardam tesouros (brilho dourado) ou esquecidos antigos (brilho vermelho). Escolha o que libertar antes de enfrentar a sala.', 'Salt crystals hold treasure (golden glow) or ancient forgotten ones (red glow). Choose what to release before taking on the room.') },
+  // terceira leva de biomas selvagens (mecânicas em wilds2.js)
+  { id: 'aurora', name: L('Tundra da Aurora', 'Aurora Tundra'), a: 0x5affc8, b: 0xb36bff, floor: 0x9ab4c8, wall: 0x6a869c, cap: 0xcfe4f0, fog: 0x0a1226, layout: 'meadow', ground: 'aurora', walls: 'natural', wallH: [1.2, 2.8], natural: true, fauna: ['icewolf', 'yeti'], features: ['auroras', 'icespires', 'snowfall'], light: { sky: 0x7ab0e8, ground: 0x142030, hemi: 1.35, dir: 0xb8e8ff, dirI: 1.2, fogNear: 20, fogFar: 46 }, hint: L('As faixas de aurora no chão protegem você de parte do dano e dão pressa. Fique nelas para lutar!', 'The aurora strips on the ground shield you from part of the damage and speed you up. Stand in them to fight!') },
+  { id: 'coral', name: L('Recife Neon', 'Neon Reef'), a: 0xff6a9a, b: 0x3affd8, floor: 0xf4b4bc, wall: 0x7a3a58, cap: 0xff7aa0, fog: 0x082030, layout: 'cave', ground: 'pinksand', walls: 'natural', wallH: [1.4, 3.0], natural: true, fauna: ['fossilcrab', 'skyray'], features: ['corals', 'currents', 'bubbles', 'fireflies'], light: { sky: 0xffe4f0, ground: 0x2a1030, hemi: 1.6, dir: 0xfff0f6, dirI: 1.25, fogNear: 14, fogFar: 36 }, hint: L('Correntezas arrastram todo mundo; estoure as bolhas para ganhar velocidade.', 'Currents drag everyone along; pop the bubbles to gain speed.') },
+  { id: 'clock', name: L('Fábrica do Relógio', 'Clockwork Factory'), a: 0xffb84a, b: 0xff5a2a, floor: 0x8a7248, wall: 0x4a3a22, fog: 0x120c04, layout: 'rooms', ground: 'brass', fauna: ['tesladrone', 'sentry'], features: ['cogs', 'gears', 'clockhands'], light: { sky: 0xffd890, ground: 0x2a1a06, hemi: 1.15, dir: 0xffd8a0, dirI: 1.3, fogNear: 16, fogFar: 38 }, hint: L('Engrenagens giram quem pisa nelas e os ponteiros gigantes varrem a sala: passe por trás deles!', 'Gears spin whoever stands on them and the giant clock hands sweep the room: slip past behind them!') },
+  { id: 'mirrorlake', name: L('Lago dos Espelhos', 'Mirror Lake'), a: 0x8ad8ff, b: 0xffffff, floor: 0x7a94ac, wall: 0x56708a, cap: 0xcfe0f0, fog: 0x1a2a40, layout: 'meadow', ground: 'mirror', walls: 'natural', wallH: [0.9, 2.0], natural: true, fauna: ['wisp', 'ghost'], features: ['mirrors', 'mirrorshards', 'butterflies'], light: { sky: 0xb8d8ff, ground: 0x2a4058, hemi: 1.5, dir: 0xeaf4ff, dirI: 1.4, fogNear: 22, fogFar: 50 }, hint: L('O chão espelhado escorrega e o reflexo repete seus golpes com uma onda de vidro.', 'The mirrored floor is slippery, and your reflection repeats your strikes with a wave of glass.') },
+  { id: 'arcade', name: L('Arcade Abandonado', 'Abandoned Arcade'), a: 0xff2bd6, b: 0x00f0ff, floor: 0x5a4a78, wall: 0x2a1a48, fog: 0x0a0618, layout: 'rooms', ground: 'carpet', fauna: ['drone', 'kamikaze'], features: ['cabinets', 'bumpers', 'lanterns'], light: { sky: 0xc8a0ff, ground: 0x180a30, hemi: 1.2, dir: 0xffd8ff, dirI: 1.2, fogNear: 14, fogFar: 34 }, hint: L('Os para-choques de fliperama jogam todo mundo longe: use-os para empurrar inimigos!', 'Pinball bumpers launch everyone away: use them to shove enemies around!') },
 ];
 THEMES.forEach((t) => (t.light = t.light || NEON_LIGHT));
 THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
@@ -43,7 +49,7 @@ export const isFinalFloor = (f) => f >= FINAL_FLOOR;
 
 // Bioma de cada andar (1 a 49): os mais fáceis no começo e todos aparecem até o andar 23
 // (medalha de visitar todos). Mercados no 13, 25, 37 e 49 (o 22, o 31 e o 43 têm loja extra em biomes.js).
-const FLOOR_THEMES = [null, 'neon', 'forest', 'factory', 'meadow', 'bones', 'sewer', 'snow', 'glass', 'mountain', 'armory', 'starswamp', 'space', 'market', 'cryo', 'hive', 'stonesea', 'desert', 'uprain', 'ashwinter', 'volcano', 'titan', 'salt', 'data', 'hive', 'market', 'glass', 'ashwinter', 'starswamp', 'titan', 'volcano', 'armory', 'uprain', 'space', 'salt', 'cryo', 'titan', 'market', 'stonesea', 'hive', 'glass', 'mountain', 'starswamp', 'ashwinter', 'bones', 'desert', 'sewer', 'snow', 'data', 'market'];
+const FLOOR_THEMES = [null, 'neon', 'forest', 'factory', 'meadow', 'bones', 'sewer', 'snow', 'glass', 'mountain', 'armory', 'starswamp', 'space', 'market', 'cryo', 'hive', 'stonesea', 'desert', 'uprain', 'ashwinter', 'volcano', 'titan', 'salt', 'data', 'hive', 'market', 'glass', 'ashwinter', 'starswamp', 'titan', 'aurora', 'armory', 'coral', 'clock', 'mirrorlake', 'arcade', 'aurora', 'market', 'coral', 'clock', 'mirrorlake', 'arcade', 'starswamp', 'ashwinter', 'bones', 'desert', 'sewer', 'snow', 'data', 'market'];
 export function themeFor(floor) {
   if (isFinalFloor(floor)) return THEMES.find((t) => t.id === 'data'); // o coração da corporação
   const id = FLOOR_THEMES[floor];
@@ -759,7 +765,7 @@ function naturalTexture(style) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
-  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8', snow: '#d4dce8', rock: '#9a968e', ash: '#6a5e5a', bone: '#c8bca4', glass: '#c8e0e8', mud: '#3a4048', wax: '#c89a48', stone: '#8a9098', flesh: '#b87a74', ashsnow: '#b0acaa', moss: '#7a9a80', salt: '#ece8e0' }[style];
+  const base = { soil: '#8a8a7a', grass: '#b8c8a0', sand: '#d8c8a8', snow: '#d4dce8', rock: '#9a968e', ash: '#6a5e5a', bone: '#c8bca4', glass: '#c8e0e8', mud: '#3a4048', wax: '#c89a48', stone: '#8a9098', flesh: '#b87a74', ashsnow: '#b0acaa', moss: '#7a9a80', salt: '#ece8e0', aurora: '#cfe4ee', pinksand: '#e6cdc4', brass: '#b89c6a', mirror: '#d4e0ea', carpet: '#8a6aa8', loam: '#9a8272', slate: '#8a9098', parquet: '#b08a5c', basalt: '#6a5a58', raked: '#e0d8c4' }[style];
   g.fillStyle = base;
   g.fillRect(0, 0, 128, 128);
   for (let k = 0; k < 900; k++) {
@@ -960,6 +966,157 @@ function wildTexture(g, style) {
       g.fillStyle = 'rgba(255,255,255,0.6)';
       g.fillRect(R() * 128, R() * 128, 1.5, 1.5);
     }
+  } else if (style === 'aurora') {
+    // gelo azulado com veios de luz verde
+    for (let k = 0; k < 6; k++) {
+      const y = R() * 128;
+      g.strokeStyle = R() < 0.5 ? 'rgba(90,255,200,0.22)' : 'rgba(180,120,255,0.18)';
+      g.lineWidth = 2 + R() * 3;
+      g.beginPath();
+      g.moveTo(0, y);
+      for (let x = 0; x <= 128; x += 16) g.lineTo(x, y + Math.sin(x / 18 + k) * 8);
+      g.stroke();
+    }
+    crack(8, 30, 'rgba(255,255,255,0.35)');
+  } else if (style === 'pinksand') {
+    // ondulações da areia e conchinhas
+    g.strokeStyle = 'rgba(160,90,100,0.22)';
+    g.lineWidth = 1.5;
+    for (let y = 8; y < 128; y += 12) {
+      g.beginPath();
+      g.moveTo(0, y);
+      for (let x = 0; x <= 128; x += 8) g.lineTo(x, y + Math.sin(x / 9 + y) * 2.5);
+      g.stroke();
+    }
+    for (let k = 0; k < 14; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(255,255,255,0.7)' : 'rgba(255,120,150,0.6)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 1 + R() * 1.6, 0, 7);
+      g.fill();
+    }
+  } else if (style === 'brass') {
+    // placas de latão rebitadas
+    g.strokeStyle = 'rgba(40,24,6,0.55)';
+    g.lineWidth = 2;
+    g.strokeRect(2, 2, 124, 124);
+    g.beginPath();
+    g.moveTo(64, 2);
+    g.lineTo(64, 126);
+    g.moveTo(2, 64);
+    g.lineTo(126, 64);
+    g.stroke();
+    g.fillStyle = 'rgba(255,230,160,0.6)';
+    for (const [x, y] of [[8, 8], [56, 8], [8, 56], [56, 56], [72, 8], [120, 8], [72, 56], [120, 56], [8, 72], [56, 72], [8, 120], [56, 120], [72, 72], [120, 72], [72, 120], [120, 120]]) g.fillRect(x - 1, y - 1, 3, 3);
+    crack(5, 20, 'rgba(60,40,10,0.35)');
+  } else if (style === 'mirror') {
+    // lajotas espelhadas com reflexos diagonais
+    g.strokeStyle = 'rgba(60,90,120,0.4)';
+    g.lineWidth = 1.5;
+    g.strokeRect(1, 1, 126, 126);
+    for (let k = 0; k < 4; k++) {
+      g.fillStyle = 'rgba(255,255,255,0.16)';
+      g.beginPath();
+      const x = R() * 128;
+      g.moveTo(x, 0);
+      g.lineTo(x + 14, 0);
+      g.lineTo(x - 30, 128);
+      g.lineTo(x - 44, 128);
+      g.fill();
+    }
+  } else if (style === 'carpet') {
+    // carpete de fliperama com formas neon
+    g.fillStyle = 'rgba(0,0,0,0.25)';
+    g.fillRect(0, 0, 128, 128);
+    const cols = ['rgba(255,43,214,0.7)', 'rgba(0,240,255,0.7)', 'rgba(255,210,61,0.7)', 'rgba(122,255,200,0.7)'];
+    for (let k = 0; k < 18; k++) {
+      g.fillStyle = cols[k % 4];
+      const x = R() * 128;
+      const y = R() * 128;
+      if (k % 3 === 0) g.fillRect(x, y, 6, 6);
+      else if (k % 3 === 1) {
+        g.beginPath();
+        g.arc(x, y, 3.2, 0, 7);
+        g.fill();
+      } else {
+        g.beginPath();
+        g.moveTo(x, y - 4);
+        g.lineTo(x + 4, y + 3);
+        g.lineTo(x - 4, y + 3);
+        g.fill();
+      }
+    }
+  } else if (style === 'loam') {
+    // húmus com esporos luminosos
+    for (let k = 0; k < 70; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(60,30,50,0.3)' : 'rgba(255,200,230,0.18)';
+      g.beginPath();
+      g.arc(R() * 128, R() * 128, 1 + R() * 2.5, 0, 7);
+      g.fill();
+    }
+    for (let k = 0; k < 18; k++) {
+      g.fillStyle = R() < 0.5 ? 'rgba(122,255,200,0.7)' : 'rgba(255,120,255,0.65)';
+      g.fillRect(R() * 128, R() * 128, 1.6, 1.6);
+    }
+  } else if (style === 'slate') {
+    // lajes de pedra molhadas
+    crack(7, 36, 'rgba(20,30,50,0.45)', 1.4);
+    g.strokeStyle = 'rgba(180,210,255,0.25)';
+    g.lineWidth = 1;
+    for (let k = 0; k < 10; k++) {
+      const x = R() * 128;
+      const y = R() * 128;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + 3, y + 10 + R() * 8);
+      g.stroke();
+    }
+  } else if (style === 'parquet') {
+    // tábuas de madeira
+    for (let y = 0; y < 128; y += 16) {
+      g.fillStyle = R() < 0.5 ? 'rgba(60,30,10,0.18)' : 'rgba(255,200,120,0.12)';
+      g.fillRect(0, y, 128, 16);
+      g.strokeStyle = 'rgba(30,14,4,0.5)';
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.moveTo(0, y);
+      g.lineTo(128, y);
+      g.stroke();
+      const jx = (y / 16) % 2 ? 40 : 90;
+      g.beginPath();
+      g.moveTo(jx, y);
+      g.lineTo(jx, y + 16);
+      g.stroke();
+    }
+  } else if (style === 'basalt') {
+    // basalto escuro com frestas de brasa
+    crack(10, 34, 'rgba(10,6,6,0.5)', 1.6);
+    g.strokeStyle = 'rgba(255,106,26,0.55)';
+    g.lineWidth = 1.4;
+    for (let k = 0; k < 5; k++) {
+      let x = R() * 128;
+      let y = R() * 128;
+      g.beginPath();
+      g.moveTo(x, y);
+      for (let s2 = 0; s2 < 3; s2++) g.lineTo((x += (R() - 0.5) * 24), (y += (R() - 0.5) * 24));
+      g.stroke();
+    }
+  } else if (style === 'raked') {
+    // areia rastelada em linhas e círculos
+    g.strokeStyle = 'rgba(120,100,70,0.32)';
+    g.lineWidth = 1.4;
+    for (let y = 6; y < 128; y += 7) {
+      g.beginPath();
+      g.moveTo(0, y);
+      g.lineTo(128, y);
+      g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.4)';
+    for (let y = 9; y < 128; y += 7) {
+      g.beginPath();
+      g.moveTo(0, y);
+      g.lineTo(128, y);
+      g.stroke();
+    }
   }
 }
 
@@ -987,7 +1144,7 @@ function deckTexture() {
 }
 
 function floorTexture(theme) {
-  if (['soil', 'grass', 'sand', 'snow', 'rock', 'ash', 'bone', 'glass', 'mud', 'wax', 'stone', 'flesh', 'ashsnow', 'moss', 'salt'].includes(theme.ground)) return naturalTexture(theme.ground);
+  if (['soil', 'grass', 'sand', 'snow', 'rock', 'ash', 'bone', 'glass', 'mud', 'wax', 'stone', 'flesh', 'ashsnow', 'moss', 'salt', 'aurora', 'pinksand', 'brass', 'mirror', 'carpet', 'loam', 'slate', 'parquet', 'basalt', 'raked'].includes(theme.ground)) return naturalTexture(theme.ground);
   if (theme.ground === 'deck') return deckTexture();
   const c = document.createElement('canvas');
   c.width = c.height = 128;

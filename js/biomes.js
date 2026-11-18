@@ -20,7 +20,9 @@ import { placeWild, buildWilds, updateWilds, wildGround, wildObstStyle, WILD_IDS
 // Pisos especiais (d.feat). Esteiras: 3..6 conforme a direção. 9+ = obstáculos decorativos.
 export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STALL: 9, TREE: 10, BOULDER: 11, CACTUS: 12, LAVA: 13, SNOW: 14,
   // biomas selvagens (wilds.js): 15..20, 26 e 27 são pisos; 21..25 e 28 são obstáculos
-  MARROW: 15, GLASS: 16, SHARD: 17, RESIN: 18, VEIN: 19, EMBER: 20, BONE: 21, CRYSTAL: 22, WAVE: 23, BLADETREE: 24, STATUE: 25, GRAV: 26, TIDE: 27, WRECK: 28 };
+  MARROW: 15, GLASS: 16, SHARD: 17, RESIN: 18, VEIN: 19, EMBER: 20, BONE: 21, CRYSTAL: 22, WAVE: 23, BLADETREE: 24, STATUE: 25, GRAV: 26, TIDE: 27, WRECK: 28,
+  // terceira leva (wilds2.js): pisos 29, 30, 41, 42, 43; obstáculos 31..40
+  AURORA: 29, MIRROR: 30, SPIRE: 31, CORAL: 32, COG: 33, MIRSHARD: 34, CABINET: 35, SHROOM: 36, ROD: 37, SHELF: 38, BASALT: 39, BAMBOO: 40, PAGE: 41, RAKED: 42, CURRENT: 43 };
 const isConv = (f) => f >= 3 && f <= 6;
 const CONV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 

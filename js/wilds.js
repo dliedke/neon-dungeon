@@ -16,12 +16,13 @@ import { FEAT, featAt } from './biomes.js';
 import { spawnEnemy, killQuiet } from './enemies.js';
 import { spawnPickup, dropLoot } from './loot.js';
 import { toast } from './ui.js';
+import { placeWild2, wildGround2, buildWilds2, updateWilds2, obstStyle2, OBST_STYLES2 } from './wilds2.js';
 
-export const WILD_IDS = ['bones', 'glass', 'starswamp', 'hive', 'stonesea', 'armory', 'titan', 'ashwinter', 'uprain', 'salt'];
+export const WILD_IDS = ['bones', 'glass', 'starswamp', 'hive', 'stonesea', 'armory', 'titan', 'ashwinter', 'uprain', 'salt', 'aurora', 'coral', 'clock', 'mirrorlake', 'arcade', 'mushroom', 'storm', 'library', 'lavafall', 'garden'];
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const planeGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-const discGeo = new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2);
-const ringGeo = new THREE.RingGeometry(0.9, 1, 32).rotateX(-Math.PI / 2);
+export const planeGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+export const discGeo = new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2);
+export const ringGeo = new THREE.RingGeometry(0.9, 1, 32).rotateX(-Math.PI / 2);
 const hiddenM = new THREE.Matrix4().makeScale(0, 0, 0);
 const m4 = new THREE.Matrix4();
 const q4 = new THREE.Quaternion();
@@ -30,11 +31,11 @@ const s4 = new THREE.Vector3();
 const UP = new THREE.Vector3(0, 1, 0);
 
 const matCache = {};
-const lam = (color, emissive = 0, o = null) => {
+export const lam = (color, emissive = 0, o = null) => {
   const key = color + '_' + emissive + (o ? JSON.stringify(o) : '');
   return matCache[key] || (matCache[key] = new THREE.MeshLambertMaterial({ color, emissive: new THREE.Color(emissive), ...(o || {}) }));
 };
-const basic = (color, k, opacity, add = false) =>
+export const basic = (color, k, opacity, add = false) =>
   new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), transparent: true, opacity, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
 
 // ------------------------------------------------------------------
@@ -67,17 +68,17 @@ export function wildGround(d, f, x, z) {
     case FEAT.TIDE:
       return (d.tideGe && d.tideGe.get(Math.floor(z) * d.W + Math.floor(x))) || GE.tide;
   }
-  return null;
+  return wildGround2(d, f, x, z);
 }
 
 // ------------------------------------------------------------------
 // Posicionamento (estágio com semente: só usar rr/ri/pick/chance)
 // ------------------------------------------------------------------
-function forDisc(cx, cz, rad, fn) {
+export function forDisc(cx, cz, rad, fn) {
   for (let j = Math.floor(cz - rad); j <= cz + rad; j++) for (let i = Math.floor(cx - rad); i <= cx + rad; i++) if (Math.hypot(i + 0.5 - cx, j + 0.5 - cz) < rad) fn(i, j);
 }
 // manchas de piso especial nas salas
-function blobs(d, h, feat, p, nMin, nMax, rMin, rMax) {
+export function blobs(d, h, feat, p, nMin, nMax, rMin, rMax) {
   for (const r of h.rooms) {
     if (!chance(p)) continue;
     for (let k = ri(nMin, nMax); k > 0; k--) {
@@ -89,7 +90,7 @@ function blobs(d, h, feat, p, nMin, nMax, rMin, rMax) {
   }
 }
 // pontos soltos nas salas (longe da entrada e da saída)
-function spots(d, h, rooms, p, nMin, nMax, fn) {
+export function spots(d, h, rooms, p, nMin, nMax, fn) {
   for (const r of rooms) {
     if (!chance(p)) continue;
     for (let k = ri(nMin, nMax); k > 0; k--) {
@@ -180,6 +181,8 @@ export function placeWild(d, theme, f, h) {
     case 'skylakes':
       d.skylakes = true;
       break;
+    default:
+      placeWild2(d, theme, f, h);
   }
 }
 
@@ -220,7 +223,7 @@ export function wildPopulate(d, floor) {
 // Construção (visual)
 // ------------------------------------------------------------------
 // camada de pisos instanciada que pode ganhar e perder ladrilhos (vidro que racha, resina que queima)
-function layer(d, feat, mat, y, extra = 0) {
+export function layer(d, feat, mat, y, extra = 0) {
   const tiles = [];
   if (feat !== null) for (let k = 0; k < d.W * d.H; k++) if (d.feat[k] === feat) tiles.push(k);
   const cap = tiles.length + extra;
@@ -232,14 +235,14 @@ function layer(d, feat, mat, y, extra = 0) {
   im.count = Lr.n;
   return Lr;
 }
-function layerAdd(Lr, d, k) {
+export function layerAdd(Lr, d, k) {
   if (!Lr || Lr.idx.has(k) || Lr.n >= Lr.cap) return;
   Lr.im.setMatrixAt(Lr.n, m4.makeTranslation((k % d.W) + 0.5, Lr.y, Math.floor(k / d.W) + 0.5));
   Lr.idx.set(k, Lr.n++);
   Lr.im.count = Lr.n;
   Lr.im.instanceMatrix.needsUpdate = true;
 }
-function layerHide(Lr, k) {
+export function layerHide(Lr, k) {
   const n = Lr ? Lr.idx.get(k) : undefined;
   if (n === undefined) return;
   Lr.im.setMatrixAt(n, hiddenM);
@@ -339,7 +342,7 @@ const OBST_STYLES = {
 // estilo do obstáculo (ou null se o biomes.js desenha do jeito antigo)
 export function wildObstStyle(p, theme) {
   if (p.kind === FEAT.TREE) return theme.id === 'bones' ? 'bonetree' : theme.id === 'ashwinter' ? 'charred' : null;
-  return { [FEAT.BONE]: 'rib', [FEAT.CRYSTAL]: 'crystal', [FEAT.WAVE]: 'wave', [FEAT.WRECK]: 'wreck', [FEAT.BLADETREE]: 'bladetree', [FEAT.STATUE]: 'statue' }[p.kind] || null;
+  return { [FEAT.BONE]: 'rib', [FEAT.CRYSTAL]: 'crystal', [FEAT.WAVE]: 'wave', [FEAT.WRECK]: 'wreck', [FEAT.BLADETREE]: 'bladetree', [FEAT.STATUE]: 'statue' }[p.kind] || obstStyle2(p.kind);
 }
 function buildObstacles(d, theme, group) {
   const by = {};
@@ -350,7 +353,7 @@ function buildObstacles(d, theme, group) {
   }
   for (const st in by) {
     const list = by[st];
-    for (const [geo, mat0] of OBST_STYLES[st]()) {
+    for (const [geo, mat0] of (OBST_STYLES[st] || OBST_STYLES2[st])()) {
       const mat = typeof mat0 === 'string' ? glowMat(Number(mat0.slice(5)), 2.4) : mat0;
       const im = new THREE.InstancedMesh(geo, mat, list.length);
       list.forEach((p, n) => {
@@ -380,6 +383,7 @@ export function buildWilds(d, theme, group, B) {
   if (W.ember) W.emberTiles = [...W.ember.idx.keys()];
   if (theme.id === 'starswamp') d.fireflies = 0xc88aff;
   buildObstacles(d, theme, group);
+  buildWilds2(d, theme, group, B, W);
 
   for (const p of d.props) {
     const g = p.group;
@@ -673,6 +677,7 @@ export function updateWilds(dt, p) {
   tick -= dt;
   const slow = tick <= 0;
   if (slow) tick = 0.25;
+  updateWilds2(d, dt, p, W);
 
   // partículas do ambiente (só perto da câmera)
   if (acc > 0.05) {
