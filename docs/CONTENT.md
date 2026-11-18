@@ -132,7 +132,7 @@ Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `
 3. **Order:** the array position sets where it appears in the floor rotation (`themeFor`). Appending is safe. The final floor always uses `data`.
 4. **Pets:** optionally add the biome to `BY_THEME` in `pets.js`.
 5. **Medals:** `biomesAll` counts `THEMES.length` automatically.
-6. **Docs:** README "Biomes" table, `index.html` meta ("28 biomas"), `og-image.png` and AGENTS.md.
+6. **Docs:** README "Biomes" table, `index.html` meta ("33 biomas"), `og-image.png` and AGENTS.md.
 
 Test: find a floor that maps to the new biome with `themeFor(n)`, or temporarily return it from `themeFor`, then `__dbg.startFloor(n)`. Check it on phone quality settings too (fog and lights matter more there): screenshot it at 740×360 in touch mode and confirm the floor, walls and hazards stay readable behind the touch buttons, and the frame rate holds.
 
@@ -271,6 +271,6 @@ Test: open it on desktop (1600×1000 and 1280×720), on phone landscape (740×36
 When content counts change, update:
 
 - `README.md`: the tables (Classes, Biomes, Enemies, Bosses, Floor events, Medals, Loot) and the counts in the text.
-- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 28 biomas, 50 andares").
+- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 33 biomas, 50 andares").
 - `img/og-image.png`: the counts are baked into the image, so regenerate it.
 - `AGENTS.md` (module map, counts) and these docs if a recipe changed.

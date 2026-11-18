@@ -1,19 +1,19 @@
 // Biomas selvagens, terceira leva: Tundra da Aurora, Recife Neon, Fábrica do Relógio, Lago dos Espelhos e Arcade Abandonado
-// (mais os 5 da segunda metade, ver o fim do arquivo). wilds.js chama placeWild2 / buildWilds2 / updateWilds2 / wildGround2.
+// e Bosque de Cogumelos, Planalto da Tempestade, Biblioteca Flutuante, Cascatas de Lava Invertidas e Jardim Zen Cibernético. wilds.js chama placeWild2 / buildWilds2 / updateWilds2 / wildGround2.
 // Segue as mesmas regras do wilds.js: o posicionamento usa só rr/ri/pick/chance (semente), o resto pode usar Math.random.
 import * as THREE from 'three';
 import { G, TILE } from './state.js';
 import { rr, ri, pick, chance } from './utils.js';
 import { isWalkable, randomFloorInRoom } from './dungeon.js';
-import { damagePlayer } from './combat.js';
-import { burst, ringFx, particle, floatText } from './fx.js';
+import { damagePlayer, damageEnemy, healPlayer, spawnHazard } from './combat.js';
+import { burst, ringFx, particle, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, merged } from './models.js';
 import { FEAT, featAt } from './biomes.js';
 import { forDisc, blobs, spots, layer, planeGeo, discGeo, ringGeo, lam, basic } from './wilds.js';
 
-export const WILD2_IDS = ['aurora', 'coral', 'clock', 'mirrorlake', 'arcade'];
+export const WILD2_IDS = ['aurora', 'coral', 'clock', 'mirrorlake', 'arcade', 'mushroom', 'storm', 'library', 'lavafall', 'garden'];
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const hsl = new THREE.Color();
 
@@ -23,6 +23,7 @@ const hsl = new THREE.Color();
 const GE = {
   aurora: { speed: 1.12 },
   mirror: { speed: 1.2, ice: true },
+  raked: { speed: 1.06 },
 };
 export function wildGround2(d, f, x, z) {
   switch (f) {
@@ -30,6 +31,8 @@ export function wildGround2(d, f, x, z) {
       return GE.aurora;
     case FEAT.MIRROR:
       return GE.mirror;
+    case FEAT.RAKED:
+      return GE.raked;
     case FEAT.CURRENT:
       return (d.curGe && d.curGe.get(Math.floor(z) * d.W + Math.floor(x))) || null;
   }
@@ -59,7 +62,8 @@ function strip(d, h, r, feat, width, onTile) {
   return horiz;
 }
 // obstáculos isolados que nunca fecham a passagem (mesma regra das árvores do biomes.js)
-function obstacles(d, h, kind, dens) {
+function obstacles(d, h, kind, dens, max = 9999) {
+  const placed = [];
   const { W, H, grid } = d;
   const plazas = d.rooms.filter((r) => r.plaza);
   const ring = d.maze ? 2 : 1;
@@ -72,8 +76,17 @@ function obstacles(d, h, kind, dens) {
       if (!free) continue;
       grid[j * W + i] = TILE.OBST;
       d.feat[j * W + i] = kind;
-      d.props.push({ type: 'obst', kind, x: i + 0.5, z: j + 0.5, s: rr(0.8, 1.25), rot: rr(0, Math.PI * 2) });
+      const pr = { type: 'obst', kind, x: i + 0.5, z: j + 0.5, s: rr(0.8, 1.25), rot: rr(0, Math.PI * 2) };
+      d.props.push(pr);
+      placed.push([pr, j * W + i]);
     }
+  // passou do teto: tira ao acaso os que sobram
+  while (placed.length > max) {
+    const [pr, idx] = placed.splice(ri(0, placed.length - 1), 1)[0];
+    grid[idx] = TILE.FLOOR;
+    d.feat[idx] = 0;
+    d.props.splice(d.props.indexOf(pr), 1);
+  }
 }
 
 export function placeWild2(d, theme, f, h) {
@@ -134,6 +147,51 @@ export function placeWild2(d, theme, f, h) {
     case 'mirrorshards':
       obstacles(d, h, FEAT.MIRSHARD, 0.03);
       break;
+    // ---- Bosque de Cogumelos ----
+    case 'shrooms':
+      obstacles(d, h, FEAT.SHROOM, 0.12, 60);
+      break;
+    case 'caps':
+      spots(d, h, rooms, 0.75, 1, 3, (pt) => d.props.push({ type: 'cap', x: pt.x, z: pt.z, cd: 0, hit: 0, s: rr(0.9, 1.3) }));
+      break;
+    case 'spores':
+      spots(d, h, rooms, 0.7, 1, 2, (pt) => d.props.push({ type: 'spore', x: pt.x, z: pt.z, r: rr(2.2, 3.2), tick: 0 }));
+      break;
+    // ---- Planalto da Tempestade ----
+    case 'rods':
+      obstacles(d, h, FEAT.ROD, 0.01, 26);
+      break;
+    case 'thunder':
+      d.thunder = { t: rr(3, 5), strikes: [] };
+      break;
+    // ---- Biblioteca Flutuante ----
+    case 'shelves':
+      obstacles(d, h, FEAT.SHELF, 0.06, 50);
+      break;
+    case 'pages':
+      blobs(d, h, FEAT.PAGE, 0.6, 1, 1, 1.3, 2.2);
+      d.pageTraps = [];
+      break;
+    case 'books':
+      spots(d, h, d.rooms, 0.8, 1, 3, (pt) => d.props.push({ type: 'book', x: pt.x, z: pt.z, ph: rr(0, 6) }));
+      break;
+    // ---- Cascatas de Lava Invertidas ----
+    case 'basalt':
+      obstacles(d, h, FEAT.BASALT, 0.03, 70);
+      break;
+    case 'lavafalls':
+      spots(d, h, rooms, 0.8, 1, 2, (pt) => d.props.push({ type: 'lavacol', x: pt.x, z: pt.z, st: 'idle', t: rr(1, 5) }));
+      break;
+    // ---- Jardim Zen Cibernético ----
+    case 'bamboo':
+      obstacles(d, h, FEAT.BAMBOO, 0.06, 80);
+      break;
+    case 'raked':
+      blobs(d, h, FEAT.RAKED, 0.85, 1, 3, 2, 4.2);
+      break;
+    case 'zenlanterns':
+      spots(d, h, d.rooms, 0.8, 1, 2, (pt) => d.props.push({ type: 'zlantern', x: pt.x, z: pt.z, lit: 0, tick: 0 }));
+      break;
     // ---- Arcade Abandonado ----
     case 'cabinets':
       obstacles(d, h, FEAT.CABINET, 0.03);
@@ -148,8 +206,64 @@ export function placeWild2(d, theme, f, h) {
 // Obstáculos (instanciados): kind -> estilo
 // ------------------------------------------------------------------
 // (montado na hora: FEAT ainda não existe quando o módulo carrega)
-export const obstStyle2 = (kind) => ({ [FEAT.SPIRE]: 'spire', [FEAT.CORAL]: 'coral', [FEAT.COG]: 'cog', [FEAT.MIRSHARD]: 'mirshard', [FEAT.CABINET]: 'cabinet' })[kind] || null;
+export const obstStyle2 = (kind) => ({ [FEAT.SPIRE]: 'spire', [FEAT.CORAL]: 'coral', [FEAT.COG]: 'cog', [FEAT.MIRSHARD]: 'mirshard', [FEAT.CABINET]: 'cabinet', [FEAT.SHROOM]: 'shroom', [FEAT.ROD]: 'rod', [FEAT.SHELF]: 'shelf', [FEAT.BASALT]: 'basalt', [FEAT.BAMBOO]: 'bamboo' })[kind] || null;
 export const OBST_STYLES2 = {
+  shroom: () => [
+    [merged('w2_sh0', (b, a) => {
+      a(new THREE.CylinderGeometry(0.16, 0.24, 1.5, 7), 0, 0.75, 0);
+    }), lam(0xe8d8e0, 0x20121c)],
+    [merged('w2_sh1', (b, a) => {
+      a(new THREE.SphereGeometry(0.95, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2), 0, 1.4, 0);
+    }), lam(0xb03a9a, 0x2a0a22)],
+    [merged('w2_sh2', (b, a) => {
+      for (let k = 0; k < 6; k++) {
+        const an = (k / 6) * Math.PI * 2 + 0.4;
+        a(new THREE.SphereGeometry(0.1, 5, 4), Math.cos(an) * 0.62, 1.82 - (k % 2) * 0.22, Math.sin(an) * 0.62);
+      }
+    }), 'glow:0x7affc8'],
+  ],
+  rod: () => [
+    [merged('w2_rd0', (b, a) => {
+      a(new THREE.CylinderGeometry(0.06, 0.12, 3.0, 6), 0, 1.5, 0);
+      a(new THREE.CylinderGeometry(0.3, 0.36, 0.18, 8), 0, 0.09, 0);
+      b(0.9, 0.05, 0.05, 0, 2.5, 0);
+      b(0.05, 0.05, 0.9, 0, 2.2, 0);
+    }), lam(0x8a96a8, 0x10141c)],
+    [merged('w2_rd1', (b, a) => a(new THREE.OctahedronGeometry(0.12, 0), 0, 3.1, 0)), 'glow:0x8ad8ff'],
+  ],
+  shelf: () => [
+    [merged('w2_sf0', (b) => {
+      b(1.1, 2.0, 0.4, 0, 1.0, 0);
+    }), lam(0x5a3a22, 0x120a04)],
+    [merged('w2_sf1', (b) => {
+      for (let k = 0; k < 4; k++) for (let j = 0; j < 5; j++) b(0.14, 0.34, 0.3, -0.42 + j * 0.2, 0.34 + k * 0.48, 0.14, 0, 0, (j % 3) * 0.04);
+    }), lam(0xb05a4a, 0x241008)],
+    [merged('w2_sf2', (b) => b(1.14, 0.06, 0.44, 0, 2.02, 0)), 'glow:0xffd23d'],
+  ],
+  basalt: () => [
+    [merged('w2_ba0', (b, a) => {
+      for (let k = 0; k < 6; k++) {
+        const an = (k / 6) * Math.PI * 2;
+        a(new THREE.CylinderGeometry(0.2, 0.22, 0.9 + (k % 3) * 0.45, 6), k ? Math.cos(an) * 0.42 : 0, (0.9 + (k % 3) * 0.45) / 2, k ? Math.sin(an) * 0.42 : 0);
+      }
+    }), lam(0x2a2426, 0x100606)],
+    [merged('w2_ba1', (b, a) => a(new THREE.CylinderGeometry(0.5, 0.5, 0.04, 6), 0, 0.06, 0)), 'glow:0xff5a1a'],
+  ],
+  bamboo: () => [
+    [merged('w2_bm0', (b, a) => {
+      for (let k = 0; k < 4; k++) {
+        const an = (k / 4) * Math.PI * 2;
+        const hh = 2.4 + (k % 2) * 0.9;
+        a(new THREE.CylinderGeometry(0.06, 0.08, hh, 6), Math.cos(an) * 0.22, hh / 2, Math.sin(an) * 0.22, Math.sin(an) * 0.05, 0, -Math.cos(an) * 0.05);
+      }
+    }), lam(0x7ac060, 0x0c2010)],
+    [merged('w2_bm1', (b, a) => {
+      for (let k = 0; k < 4; k++) {
+        const an = (k / 4) * Math.PI * 2;
+        for (const y of [0.7, 1.5]) a(new THREE.TorusGeometry(0.085, 0.015, 4, 8), Math.cos(an) * 0.22, y, Math.sin(an) * 0.22, Math.PI / 2, 0, 0);
+      }
+    }), 'glow:0x7affc8'],
+  ],
   spire: () => [
     [merged('w2_sp0', (b, a) => {
       a(new THREE.ConeGeometry(0.34, 2.6, 5), 0, 1.3, 0);
@@ -230,6 +344,8 @@ export function buildWilds2(d, theme, group, B, W) {
   };
   W.aurora = add(layer(d, FEAT.AURORA, basic(0x5affc8, 1.3, 0.34, true), 0.024));
   W.mirror = add(layer(d, FEAT.MIRROR, basic(0xcfeaff, 1.1, 0.3, true), 0.024));
+  W.page = add(layer(d, FEAT.PAGE, basic(0xf4e8c8, 1.0, 0.5, false), 0.024));
+  W.raked = add(layer(d, FEAT.RAKED, basic(0xffffff, 1.0, 0.1, true), 0.022));
   W.current = add(layer(d, FEAT.CURRENT, basic(0x3ad8ff, 1.3, 0.34, true), 0.022));
 
   for (const p of d.props) {
@@ -278,6 +394,70 @@ export function buildWilds2(d, theme, group, B, W) {
         hub.position.y = 0.03;
         g.add(hub);
         p.spin = spin;
+        break;
+      }
+      case 'cap': {
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.9, 8), lam(0xe8d8e0, 0x20121c));
+        stem.position.y = 0.45;
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.95, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), lam(0x3a9ae0, 0x0a2040));
+        cap.position.y = 0.85;
+        const rim = new THREE.Mesh(ringGeo, basic(0x7affc8, 1.8, 0.7, true));
+        rim.scale.setScalar(1.0);
+        rim.position.y = 0.04;
+        g.add(stem, cap, rim);
+        g.scale.setScalar(p.s);
+        p.capMesh = cap;
+        p.rim = rim;
+        break;
+      }
+      case 'spore': {
+        const disc = new THREE.Mesh(discGeo, basic(0xb36bff, 1.2, 0.2, true));
+        disc.scale.setScalar(p.r);
+        disc.position.y = 0.03;
+        g.add(disc);
+        p.disc = disc;
+        break;
+      }
+      case 'book': {
+        const bm = lam(0xc0503a, 0x260c08);
+        const bg = merged('w2_book', (b) => {
+          b(0.5, 0.1, 0.36, 0, 0, 0);
+          b(0.46, 0.08, 0.32, 0.02, 0.1, 0);
+        });
+        p.books = [];
+        for (let k = 0; k < 3; k++) {
+          const bk = new THREE.Mesh(bg, k === 1 ? lam(0x3a6ac0, 0x08102a) : bm);
+          bk.position.y = 1.2;
+          g.add(bk);
+          p.books.push(bk);
+        }
+        const glow = new THREE.Mesh(ringGeo, basic(0xffd23d, 1.4, 0.4, true));
+        glow.scale.setScalar(0.9);
+        glow.position.y = 0.04;
+        g.add(glow);
+        break;
+      }
+      case 'lavacol': {
+        const base = new THREE.Mesh(ringGeo, basic(0xff5a1a, 1.4, 0.6, true));
+        base.scale.setScalar(1.5);
+        base.position.y = 0.04;
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, 1, 10, 1, true), basic(0xff7a2a, 1.6, 0.5, true));
+        col.visible = false;
+        g.add(base, col);
+        p.col = col;
+        p.baseRing = base;
+        break;
+      }
+      case 'zlantern': {
+        const post = new THREE.Mesh(merged('w2_zl', (b, a) => {
+          a(new THREE.CylinderGeometry(0.1, 0.16, 1.0, 6), 0, 0.5, 0);
+          b(0.5, 0.08, 0.5, 0, 1.0, 0);
+        }), lam(0x4a4a52, 0x0a0a0e));
+        p.orbMat = glowMat(0x7affc8, 0.3);
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), p.orbMat);
+        orb.position.y = 1.3;
+        g.add(post, orb);
+        p.orb = orb;
         break;
       }
       case 'bumper': {
@@ -333,6 +513,16 @@ export function updateWilds2(d, dt, p, W) {
           if (nearCam(x, z, 12)) particle(x, 0.06, z, 0, rr(0.3, 0.8), 0, 0xffffff, 0.05, 0.7, 0, 0);
         }
       }
+    } else if (id === 'mushroom') {
+      for (let k = 0; k < 2; k++) particle(cx + rr(-13, 13), rr(0.2, 1.5), cz + rr(-12, 12), rr(-0.15, 0.15), rr(0.3, 0.8), rr(-0.15, 0.15), pick([0x7affc8, 0xff8aff, 0xb8ff7a]), 0.045, 2.4, 0, 0);
+    } else if (id === 'storm') {
+      for (let k = 0; k < 3; k++) particle(cx + rr(-13, 13), rr(3, 6), cz + rr(-12, 12), rr(1.5, 3), rr(-7, -5), 0, 0xaecbff, 0.03, 0.5, 0, 0);
+    } else if (id === 'library') {
+      if (Math.random() < 0.6) particle(cx + rr(-13, 13), rr(0.3, 2.5), cz + rr(-12, 12), rr(-0.3, 0.3), rr(0.2, 0.6), rr(-0.3, 0.3), 0xf4e8c8, 0.06, 2.4, 0, 0);
+    } else if (id === 'lavafall') {
+      for (let k = 0; k < 2; k++) particle(cx + rr(-13, 13), rr(0.1, 0.8), cz + rr(-12, 12), 0, rr(1.5, 3), 0, pick([0xff6a1a, 0xffb84a]), rr(0.04, 0.08), 2.2, 0, 0);
+    } else if (id === 'garden') {
+      if (Math.random() < 0.5) particle(cx + rr(-13, 13), rr(2, 4), cz + rr(-12, 12), rr(0.3, 0.8), rr(-0.5, -0.25), rr(-0.3, 0.3), 0xffb8d8, 0.06, 4, 0, 0);
     } else if (id === 'arcade') {
       for (let k = 0; k < 2; k++) particle(cx + rr(-13, 13), rr(2, 4), cz + rr(-12, 12), 0, rr(-1.2, -0.6), 0, pick([0xff2bd6, 0x00f0ff, 0xffd23d, 0x7affc8]), 0.07, 2, 0, 0);
     }
@@ -342,6 +532,7 @@ export function updateWilds2(d, dt, p, W) {
     W.aurora.mat.color.setHSL(0.38 + Math.sin(G.t * 0.5) * 0.14, 1, 0.5).multiplyScalar(1.3);
     W.aurora.mat.opacity = 0.3 + Math.sin(G.t * 1.7) * 0.08;
   }
+  if (W.raked) W.raked.mat.opacity = 0.08 + Math.sin(G.t * 0.8) * 0.03;
   if (W.mirror) W.mirror.mat.opacity = 0.26 + Math.sin(G.t * 1.1) * 0.08;
   if (W.current) W.current.mat.opacity = 0.3 + Math.sin(G.t * 3) * 0.08;
 
@@ -371,14 +562,126 @@ export function updateWilds2(d, dt, p, W) {
       const l = Math.hypot(e.x - p.x, e.z - p.z) || 1;
       e.kx += ((e.x - p.x) / l) * 7;
       e.kz += ((e.z - p.z) / l) * 7;
-      e.hp -= p.stats.wMax * 0.8;
-      if (e.hp <= 0) e.hp = 1;
+      damageEnemy(e, p.stats.wMax * 1.2, false, { noProc: true });
     }
   }
   if (p && p.mirrorCd > 0) p.mirrorCd -= dt;
 
+  if (d.thunder) stormUpdate(d, dt, p, alive);
+  if (d.pageTraps) pageUpdate(d, dt, p, alive, fp);
+
   for (const pr of d.props) {
     switch (pr.type) {
+      case 'cap': {
+        if (!pr.group) break;
+        pr.cd = Math.max(0, pr.cd - dt);
+        pr.hit = Math.max(0, pr.hit - dt * 3);
+        pr.capMesh.scale.set(1 + pr.hit * 0.15, 1 - pr.hit * 0.3, 1 + pr.hit * 0.15);
+        if (pr.cd > 0 || !nearCam(pr.x, pr.z, 16)) break;
+        const rad = 1.0 * pr.s;
+        const hop = (o, k) => {
+          const dx = o.x - pr.x;
+          const dz = o.z - pr.z;
+          const l = Math.hypot(dx, dz);
+          if (l > rad + o.r) return false;
+          const n = l || 1;
+          o.kx += (dx / n) * k;
+          o.kz += (dz / n) * k;
+          return true;
+        };
+        let any = false;
+        if (alive) any = hop(p, 17) || any;
+        for (const e of G.enemies) if (e.alive && !e.inert && !e.static && !e.T.fly && !e.boss) any = hop(e, 16) || any;
+        if (any) {
+          pr.cd = 0.45;
+          pr.hit = 1;
+          burst(pr.x, 1.0, pr.z, 0x7affc8, 12, 4, 0.06, 0.5, { up: 2 });
+          sfx.slash();
+        }
+        break;
+      }
+      case 'spore': {
+        if (!pr.group || !nearCam(pr.x, pr.z, 16)) break;
+        pr.disc.material.opacity = 0.16 + Math.sin(G.t * 2 + pr.x) * 0.05;
+        if (Math.random() < dt * 5) particle(pr.x + rr(-pr.r, pr.r) * 0.8, 0.2, pr.z + rr(-pr.r, pr.r) * 0.8, 0, rr(0.5, 1.2), 0, pick([0xb36bff, 0xff8aff]), 0.06, 1.6, 0, 0);
+        pr.tick -= dt;
+        if (pr.tick > 0) break;
+        pr.tick = 0.4;
+        // esporos: quem está dentro cambaleia, anda devagar e perde o rumo
+        for (const e of G.enemies) {
+          if (!e.alive || e.inert || e.static || e.boss || Math.hypot(e.x - pr.x, e.z - pr.z) > pr.r) continue;
+          e.slowT = Math.max(e.slowT || 0, 0.6);
+          e.kx += rr(-4, 4);
+          e.kz += rr(-4, 4);
+        }
+        break;
+      }
+      case 'book': {
+        if (!pr.books || !nearCam(pr.x, pr.z, 16)) break;
+        for (let k = 0; k < 3; k++) {
+          const a = G.t * 0.9 + pr.ph + (k * Math.PI * 2) / 3;
+          pr.books[k].position.set(Math.cos(a) * 0.7, 1.1 + Math.sin(G.t * 1.6 + k * 2 + pr.ph) * 0.25, Math.sin(a) * 0.7);
+          pr.books[k].rotation.set(0.3 * Math.sin(G.t + k), -a, 0.25 * Math.cos(G.t * 1.3 + k));
+        }
+        break;
+      }
+      case 'lavacol': {
+        if (!pr.group) break;
+        pr.t -= dt;
+        if (pr.st === 'idle') {
+          if (pr.t <= 0 && nearCam(pr.x, pr.z, 14)) {
+            pr.st = 'warn';
+            pr.t = 1.2;
+            telegraphFx(pr.x, pr.z, 1.7, 1.2, 0xff6a1a);
+            sfx.alarm && sfx.alarm();
+          } else if (pr.t <= 0) pr.t = 2;
+        } else if (pr.st === 'warn') {
+          if (pr.t <= 0) {
+            pr.st = 'erupt';
+            pr.t = 1.8;
+            pr.col.visible = true;
+            spawnHazard(pr.x, pr.z, 1.5, 1.8, 6 + G.floor * 2, { color: 0xff5a1a });
+            burst(pr.x, 0.5, pr.z, 0xffb84a, 24, 6, 0.08, 0.7, { up: 4 });
+            ringFx(pr.x, pr.z, 2.4, 0xff6a1a, 0.5);
+          }
+        } else {
+          const k = Math.min(1, pr.t / 0.4, (1.8 - pr.t) / 0.25);
+          pr.col.scale.set(1, 0.1 + 6 * Math.max(0, k), 1);
+          pr.col.position.y = pr.col.scale.y / 2;
+          for (let q = 0; q < 2; q++) particle(pr.x + rr(-0.6, 0.6), rr(0.5, 4), pr.z + rr(-0.6, 0.6), 0, rr(2, 5), 0, pick([0xff6a1a, 0xffb84a]), 0.08, 0.8, 0, 0);
+          if (pr.t <= 0) {
+            pr.st = 'idle';
+            pr.t = rr(3.5, 6);
+            pr.col.visible = false;
+          }
+        }
+        break;
+      }
+      case 'zlantern': {
+        if (!pr.orb) break;
+        pr.lit = Math.max(0, pr.lit - dt);
+        if (alive && Math.hypot(p.x - pr.x, p.z - pr.z) < 1.8 && pr.lit < 22) {
+          if (pr.lit <= 0) {
+            ringFx(pr.x, pr.z, 2, 0x7affc8, 0.4);
+            floatText(pr.x, 2, pr.z, L('LANTERNA ACESA', 'LANTERN LIT'), 'info');
+            sfx.upgrade();
+          }
+          pr.lit = 30;
+        }
+        const on = pr.lit > 0;
+        pr.orb.scale.setScalar(on ? 1.5 + Math.sin(G.t * 3 + pr.x) * 0.15 : 0.8);
+        if (on && nearCam(pr.x, pr.z, 14)) {
+          if (Math.random() < dt * 4) particle(pr.x + rr(-0.5, 0.5), 1.4, pr.z + rr(-0.5, 0.5), 0, rr(0.3, 0.8), 0, 0x7affc8, 0.05, 1.2, 0, 0);
+          pr.tick -= dt;
+          // lanterna acesa cura quem fica por perto
+          if (pr.tick <= 0 && alive && Math.hypot(p.x - pr.x, p.z - pr.z) < 5) {
+            pr.tick = 1;
+            healPlayer(p.stats.maxHp * 0.015, false);
+            burst(p.x, 0.4, p.z, 0x7affc8, 3, 1.5, 0.05, 0.6, { grav: -1 });
+          }
+        }
+        break;
+      }
       case 'bubble': {
         if (!pr.group) break;
         if (pr.t > 0) {
@@ -481,4 +784,91 @@ export function updateWilds2(d, dt, p, W) {
     }
   }
   if (acc2 > 0.08) acc2 = 0;
+}
+
+// ------------------------------------------------------------------
+// Tempestade: raios com aviso; o para-raios atingido fica carregado e dá Fúria a quem está perto
+// ------------------------------------------------------------------
+function stormUpdate(d, dt, p, alive) {
+  const T = d.thunder;
+  if (!d.rodList) d.rodList = d.props.filter((q) => q.type === 'obst' && q.kind === FEAT.ROD).map((q) => ({ x: q.x, z: q.z, charge: 0, tick: 0 }));
+  for (const r of d.rodList) {
+    if (r.charge <= 0) continue;
+    r.charge -= dt;
+    r.tick -= dt;
+    if (r.tick <= 0 && nearCam(r.x, r.z, 14)) {
+      r.tick = 0.3;
+      burst(r.x, 3.1, r.z, 0x8ad8ff, 3, 2.5, 0.06, 0.4);
+      ringFx(r.x, r.z, 3.2, 0x8ad8ff, 0.5, { from: 2.9 });
+    }
+    if (alive && Math.hypot(p.x - r.x, p.z - r.z) < 3.2) {
+      if (!(p.buffs.fury > 0)) floatText(p.x, 2.1, p.z, L('FÚRIA DO RAIO!', 'LIGHTNING FURY!'), 'info');
+      p.buffs.fury = Math.max(p.buffs.fury || 0, 1.5);
+    }
+  }
+  if (!alive) return;
+  T.t -= dt;
+  if (T.t <= 0) {
+    T.t = rr(3.2, 5.5);
+    // o para-raios atrai: 60% das vezes o raio cai no mais próximo
+    let tx = p.x + rr(-7, 7);
+    let tz = p.z + rr(-7, 7);
+    let rod = null;
+    let bd = 14;
+    for (const r of d.rodList) {
+      const dd = Math.hypot(r.x - p.x, r.z - p.z);
+      if (dd < bd) { bd = dd; rod = r; }
+    }
+    if (rod && Math.random() < 0.6) {
+      tx = rod.x;
+      tz = rod.z;
+    } else rod = null;
+    if (isWalkable(d, tx, tz) || rod) {
+      T.strikes.push({ x: tx, z: tz, t: 1.1, rod });
+      telegraphFx(tx, tz, 2.1, 1.1, 0x8ad8ff);
+    }
+  }
+  for (let i = T.strikes.length - 1; i >= 0; i--) {
+    const k = T.strikes[i];
+    k.t -= dt;
+    if (k.t > 0) continue;
+    T.strikes.splice(i, 1);
+    sfx.explode && sfx.explode();
+    ringFx(k.x, k.z, 2.6, 0xdff0ff, 0.4);
+    burst(k.x, 0.5, k.z, 0xdff0ff, 22, 7, 0.08, 0.5, { up: 3 });
+    for (let y = 0; y < 8; y++) particle(k.x + rr(-0.15, 0.15), y * 0.9, k.z + rr(-0.15, 0.15), 0, 0, 0, 0xdff0ff, 0.22, 0.25, 0, 0);
+    if (Math.hypot(p.x - k.x, p.z - k.z) < 2.1) {
+      damagePlayer(dmgBase(p) * 1.3);
+      floatText(p.x, 2, p.z, L('RAIO!', 'LIGHTNING!'), 'hurt');
+    }
+    for (const e of G.enemies) if (e.alive && !e.inert && Math.hypot(e.x - k.x, e.z - k.z) < 2.1) damageEnemy(e, p.stats.wMax * 3, false, { noProc: true });
+    if (k.rod) {
+      k.rod.charge = 14;
+      floatText(k.x, 3.4, k.z, L('PARA-RAIOS CARREGADO', 'ROD CHARGED'), 'info');
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// Biblioteca: páginas-armadilha fecham como um livro depois de um aviso
+// ------------------------------------------------------------------
+function pageUpdate(d, dt, p, alive, fp) {
+  p.pageCd = Math.max(0, (p.pageCd || 0) - dt);
+  if (alive && fp === FEAT.PAGE && p.pageCd <= 0) {
+    p.pageCd = 3.2;
+    d.pageTraps.push({ x: p.x, z: p.z, t: 0.9 });
+    telegraphFx(p.x, p.z, 1.5, 0.9, 0xffd23d);
+    floatText(p.x, 2.1, p.z, L('PÁGINA-ARMADILHA!', 'PAGE TRAP!'), 'info');
+  }
+  for (let i = d.pageTraps.length - 1; i >= 0; i--) {
+    const k = d.pageTraps[i];
+    k.t -= dt;
+    if (k.t > 0) continue;
+    d.pageTraps.splice(i, 1);
+    ringFx(k.x, k.z, 2, 0xf4e8c8, 0.35);
+    burst(k.x, 0.6, k.z, 0xf4e8c8, 18, 5, 0.07, 0.5, { up: 3 });
+    sfx.slash();
+    if (alive && Math.hypot(p.x - k.x, p.z - k.z) < 1.5) damagePlayer(dmgBase(p));
+    for (const e of G.enemies) if (e.alive && !e.inert && !e.static && !e.boss && Math.hypot(e.x - k.x, e.z - k.z) < 1.5) damageEnemy(e, p.stats.wMax * 2, false, { noProc: true });
+  }
 }

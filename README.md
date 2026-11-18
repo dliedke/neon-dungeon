@@ -173,6 +173,11 @@ Every floor changes biome (23 in total), each with its own lighting and hazards.
 | **Clockwork Factory** | Plazas and wide streets | Spinning **gears** that drag whoever stands on them in circles and giant **clock hands** that sweep the room (they hurt and fling you, and fling enemies too); brass cogs |
 | **Mirror Lake** | Open fields | A mirrored, slippery floor; while you fight on it your reflection repeats your strike with a shockwave of glass that damages and shoves nearby enemies; mirror shards |
 | **Abandoned Arcade** | Plazas and wide streets | Arcade cabinets and neon carpet; **pinball bumpers** that launch everyone away (use them to fling enemies) |
+| **Mushroom Grove** | Organic caves | Giant mushrooms; blue **caps** bounce you (and enemies) far away; purple **spores** leave enemies dizzy and slow |
+| **Storm Plateau** | Open fields | **Lightning** strikes with a red warning; a strike on a **lightning rod** charges it, and standing near a charged rod gives Fury |
+| **Floating Library** | Plazas and wide streets | Bookshelves and floating books; stepping on a loose **page** springs a trap that snaps shut like a book after a short warning |
+| **Lavafalls** | Organic caves | Basalt columns; **lava columns** erupt from the ground after a red warning and burn whoever stays on top |
+| **Cyber Zen Garden** | Open fields | Raked sand, bamboo and **lanterns**: walk up to light one, and lit lanterns heal whoever stays nearby |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 
@@ -379,7 +384,7 @@ js/i18n.js             translations (English / Portuguese)
 js/dungeon.js          procedural map layouts, collision and pathfinding
 js/biomes.js           biome hazards, mechanisms, decoration, merchant and blacksmith
 js/wilds.js            the 10 wild biomes: glass that shatters, tides, updrafts, hive sentinels, breathing mountain...
-js/wilds2.js           the third wave of wild biomes: aurora strips, reef currents, clock gears and hands, mirror floor, pinball bumpers...
+js/wilds2.js           the third wave of wild biomes: aurora strips, reef currents, clock gears and hands, mirror floor, pinball bumpers, bouncy mushrooms, lightning, trap pages, lava columns, lanterns...
 js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)

@@ -106,7 +106,7 @@ Delayed actions use `after(seconds, fn)` from `combat.js`. It runs on game time 
 
 ### Biomes (`dungeon.js` `THEMES`)
 
-`THEMES` is an array of 28 biomes: neon, forest, factory, snow, meadow, sewer, mountain, space, cryo, desert, volcano, data, market, plus 10 "wild" biomes (bones, glass, starswamp, hive, stonesea, armory, titan, ashwinter, uprain, salt) whose rules live in `wilds.js`, and a third wave (aurora, coral, clock, mirrorlake, arcade, ...) in `wilds2.js`. `wilds.js` hands any unknown feature to `placeWild2`, ground effects to `wildGround2`, and calls `buildWilds2` / `updateWilds2`. Each entry has:
+`THEMES` is an array of 33 biomes: neon, forest, factory, snow, meadow, sewer, mountain, space, cryo, desert, volcano, data, market, plus 10 "wild" biomes (bones, glass, starswamp, hive, stonesea, armory, titan, ashwinter, uprain, salt) whose rules live in `wilds.js`, and a third wave (aurora, coral, clock, mirrorlake, arcade, mushroom, storm, library, lavafall, garden) in `wilds2.js`. `wilds.js` hands any unknown feature to `placeWild2`, ground effects to `wildGround2`, and calls `buildWilds2` / `updateWilds2`. Each entry has:
 
 - `id`, `name`, and the colors `a` (main accent), `b` (second accent), `floor`, `wall`, `fog` and optional `cap` (wall tops).
 - `layout`: which generator to use.
