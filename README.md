@@ -123,6 +123,8 @@ Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128
 | Gunslinger | Tracer Round, Bullet Hell, Infinite Ricochet, Drone Squad, Singularity Round | Tactical Shield, Heavy Vest, Decoy Hologram, Gunslinger Reflexes, Second Chance |
 | Netrunner | Mind Lance, Viral Chain, Data Storm, Ghost Net, Zero Day | Aegis Protocol, Neural Mesh, Decoy Avatar, Redundancy, Full Restore |
 | Iron Fist | Earthquake, Meteor Fist, Shock Line, Titan Punch, Steel Colossus | Iron Guard, Hard Head, Blood Frenzy, Hot Blood, Last Round |
+| Pyro | Blazing Sun, Dragon Breath, Magma Flood, Ifrit Legion, Infernal Comet | Magma Shell, Ember Skin, Flame Form, Heart of Fire, Rebirth from Ashes |
+| Frost | Absolute Zero, Blizzard Eye, Icicle Rain, Arctic Pack, Ice Age | Ice Wall, Frost Skin, Snow Double, Cold Blood, Hibernation |
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 

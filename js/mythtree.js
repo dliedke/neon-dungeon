@@ -395,3 +395,27 @@ wardP('brawler', 'rwHardHead', 116, L('Cabeça Dura', 'Hard Head'), 'pPlate', (r
 ward('brawler', 'vamp', 'rwBloodFrenzy', 124, L('Frenesi de Sangue', 'Blood Frenzy'), 'drop', 45, 24, { t: 8, evade: 25, taken: 0.5 });
 wardP('brawler', 'rwHotBlood', 132, L('Sangue Quente', 'Hot Blood'), 'pDrop', (r) => ({ lifeSteal: r1(0.5 * r), killHeal: r1(0.3 * r) }));
 ward('brawler', 'mendfield', 'rwLastRound', 140, L('Último Round', 'Last Round'), 'star', 60, 36, { heal: 0.55, rate: 0.05, mendT: 6, shield: 0.35 });
+
+// ---------------- Incendiária (pyro) ----------------
+myth('pyro', 'nova', 'pSunburst', 104, L('Sol Ardente', 'Blazing Sun'), 'flame', 70, 14, { rad: 7.5, m: 8, m2: 5, fx: { burn: 1 } });
+myth('pyro', 'cone', 'pDragonBreath', 112, L('Hálito de Dragão', 'Dragon Breath'), 'flame', 75, 14, { range: 10, arc: 80, m: 10, fx: { burn: 1, stun: 1 } });
+myth('pyro', 'rain', 'pMagmaFlood', 120, L('Dilúvio de Magma', 'Magma Flood'), 'drop', 80, 18, { n: 20, m: 2.6, fx: { burn: 1 } });
+myth('pyro', 'summon', 'pIfritLegion', 128, L('Legião de Ifrits', 'Ifrit Legion'), 'eye', 90, 28, { kind: 'ifrit', n: 3, dur: 16, m: 2.4, pt: 'ifrits flamejantes', en: 'blazing ifrits' });
+myth('pyro', 'mark', 'pComet', 136, L('Cometa Infernal', 'Infernal Comet'), 'star', 110, 26, { rad: 8.5, delay: 1.4, m: 16, fx: { burn: 1, stun: 2 } });
+ward('pyro', 'bulwark', 'pwMagmaShell', 108, L('Casca de Magma', 'Magma Shell'), 'flame', 50, 24, { t: 5, taken: 0.3, mend: 0.02, rad: 5, m: 5 });
+wardP('pyro', 'pwEmberSkin', 116, L('Pele de Brasa', 'Ember Skin'), 'pFlame', (r) => ({ dmgRed: r1(0.4 * r), hpRegen: r1(1.0 * r) }));
+ward('pyro', 'phase', 'pwFlameForm', 124, L('Forma de Chama', 'Flame Form'), 'flame', 45, 22, { inv: 2.5, t: 5, evade: 60, rad: 5, m: 5 });
+wardP('pyro', 'pwHeartFire', 132, L('Coração de Fogo', 'Heart of Fire'), 'pHeart', (r) => ({ hpPct: 4 * r, lifeSteal: r1(0.4 * r) }));
+ward('pyro', 'mendfield', 'pwAshRebirth', 140, L('Renascer das Cinzas', 'Rebirth from Ashes'), 'star', 60, 36, { heal: 0.5, rate: 0.05, mendT: 6, shield: 0.3 });
+
+// ---------------- Geada (frost) ----------------
+myth('frost', 'beam', 'fAbsoluteZero', 104, L('Zero Absoluto', 'Absolute Zero'), 'ice', 70, 12, { len: 22, w: 1.0, m: 9, fx: { freeze: 2.5 } });
+myth('frost', 'vortex', 'fBlizzardEye', 112, L('Olho da Nevasca', 'Blizzard Eye'), 'ice', 75, 22, { dur: 6, m: 2.2 });
+myth('frost', 'rain', 'fIcicleRain', 120, L('Chuva de Estalactites', 'Icicle Rain'), 'ice', 80, 18, { n: 20, m: 2.6, fx: { freeze: 1.5 } });
+myth('frost', 'summon', 'fArcticPack', 128, L('Alcateia Ártica', 'Arctic Pack'), 'eye', 90, 28, { kind: 'wolf', n: 5, dur: 16, m: 2.2, pt: 'lobos árticos', en: 'arctic wolves' });
+myth('frost', 'mark', 'fIceAge', 136, L('Era Glacial', 'Ice Age'), 'cross', 110, 26, { rad: 9, delay: 1.4, m: 15, fx: { freeze: 3 } });
+ward('frost', 'shield', 'fwIceWall', 108, L('Muralha de Gelo', 'Ice Wall'), 'ice', 45, 24, { t: 7, absorb: 0.6, freeze: true });
+wardP('frost', 'fwFrostSkin', 116, L('Pele Gélida', 'Frost Skin'), 'pSnow', (r) => ({ armorPct: 6 * r, dmgRed: r1(0.4 * r) }));
+ward('frost', 'decoy', 'fwSnowDouble', 124, L('Duplo de Neve', 'Snow Double'), 'ice', 45, 22, { t: 7, rad: 5.5, m: 7 });
+wardP('frost', 'fwColdBlood', 132, L('Sangue Frio', 'Cold Blood'), 'pEye', (r) => ({ dodge: r1(0.4 * r), hpRegen: r1(0.8 * r) }));
+ward('frost', 'mendfield', 'fwHibernate', 140, L('Hibernação', 'Hibernation'), 'ice', 60, 36, { heal: 0.55, rate: 0.04, mendT: 6, shield: 0.3 });
