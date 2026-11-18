@@ -85,7 +85,7 @@ function mergeChar(a, b) {
 // stashOut[uid] = quando saiu. Um item só fica se entrou depois da última retirada dele:
 // o que foi guardado em qualquer aparelho aparece, e o que já foi pego não volta (nem duplica).
 // Nunca corta itens, mesmo passando de 100 (aí só não dá para guardar mais até tirar alguns).
-const STASH_OUT_MAX = 500;
+const STASH_OUT_MAX = 2000;
 function mergeStash(a, b) {
   const out = { ...(b.stashOut || {}) };
   for (const [u, t] of Object.entries(a.stashOut || {})) if (!(out[u] >= t)) out[u] = t;

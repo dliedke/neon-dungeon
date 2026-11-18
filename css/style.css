@@ -877,8 +877,6 @@ body.pad .pad-hints { display: block; }
   .bank-steps .btn[data-bank="dec"], .bank-steps .btn[data-bank="inc"] { font-size: 14px; }
   #panel-stash .shop-sub, .sact-hint { display: none; }
   .stash-tabs { margin: 0 0 4px; gap: 4px; }
-  #stash-tabs { gap: 3px; }
-  .stash-tab { padding: 2px 6px; min-width: 0; font-size: 12px; }
   .stash-tab small { display: none; }
   .stash-sort { font-size: 10px; }
   #stash-detail .item-card { padding: 8px; }
@@ -1045,9 +1043,17 @@ body.pad .btn .kg, body.padc .btn .kg { display: inline-block; }
 .btn .kg .pg { font-size: 13px; letter-spacing: 0; }
 .inv-head { align-items: center; gap: 8px; }
 .stash-tabs { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 6px; flex-wrap: wrap; }
-#stash-tabs { display: flex; gap: 4px; }
-.stash-tab { padding: 3px 10px; font-size: 13px; min-width: 40px; background: transparent; color: var(--muted); border-color: rgba(0, 240, 255, 0.3); }
-.stash-tab small { margin-left: 5px; font-size: 10px; opacity: 0.7; }
+/* 10 abas: grade do tamanho da coluna do baú, com a contagem embaixo do número */
+#stash-tabs { flex: 1 1 100%; min-width: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.stash-tab { display: flex; flex-direction: column; align-items: center; padding: 2px 0; font-size: 13px; line-height: 1.15; min-width: 0; background: transparent; color: var(--muted); border-color: rgba(0, 240, 255, 0.3); }
+.stash-tab small { font-size: 10px; opacity: 0.7; }
+@media (max-height: 520px), (max-width: 640px) {
+  /* celular: 2 fileiras de 5 abas, para cada uma ter tamanho de toque */
+  #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
+  .stash-tab { padding: 4px 0; font-size: 12px; }
+}
+/* tablet com toque: 10 abas numa fileira ficam estreitas demais para o dedo */
+body.touch #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .stash-tab.on { color: #00f0ff; border-color: #00f0ff; box-shadow: 0 0 8px rgba(0, 240, 255, 0.45); }
 .stash-sort { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
 #stash-put-myth { padding: 3px 10px; font-size: 12px; background: transparent; color: #c56bff; border-color: rgba(197, 107, 255, 0.7); }

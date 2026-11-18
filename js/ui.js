@@ -2610,13 +2610,13 @@ function doForge(slot) {
 }
 
 // ------------------------------------------------------------------
-// Baú compartilhado: até 500 itens para todos os personagens (fica no save, fora do personagem).
-// É uma lista só, sempre ordenada do nível maior para o menor (sem olhar o tipo) e mostrada em 5 abas de 100.
+// Baú compartilhado: até 1000 itens para todos os personagens (fica no save, fora do personagem).
+// É uma lista só, sempre ordenada do nível maior para o menor (sem olhar o tipo) e mostrada em 10 abas de 100.
 // Cada item guardado leva `st` (quando entrou) e cada retirada fica em save.stashOut[uid],
 // para a sincronização na nuvem não duplicar nem perder itens (ver mergeStash em sync.js).
 // ------------------------------------------------------------------
 export const STASH_TAB = 100;
-export const STASH_TABS = 5;
+export const STASH_TABS = 10;
 export const STASH_SIZE = STASH_TAB * STASH_TABS;
 let stashSel = null; // { where: 'stash'|'sinv', uid }
 let stashTab = 0;
@@ -2706,7 +2706,7 @@ function renderStash() {
   const st = stashList();
   sortInventory(c.inv, c.equip);
   sortStash();
-  // itens além das 5 abas (save antigo/sincronização) aparecem na última
+  // itens além das 10 abas (save antigo/sincronização) aparecem na última
   const from = stashTab * STASH_TAB;
   const to = stashTab === STASH_TABS - 1 ? Math.max(from + STASH_TAB, st.length) : from + STASH_TAB;
   let a = '';
