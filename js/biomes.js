@@ -8,7 +8,7 @@ import { burst, ringFx, beamFx, particle, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { L } from './i18n.js';
 import { glowMat, box, humanoid } from './models.js';
-import { makeItem, itemScore, isUpgrade, unforged, SLOTS, recycleValue } from './items.js';
+import { makeItem, itemScore, isUpgrade, unforged, SLOTS, recycleValue, PRIMORDIAL } from './items.js';
 import { openShop, openForge, openStash } from './ui.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
@@ -576,8 +576,8 @@ function upgradeFor(slot, floor, minRarity) {
     // a cada tentativa sem sucesso, o nível do item sobe um pouco
     const ilvl = Math.max(floor + 1, (cur ? cur.ilvl : 1)) + Math.floor(t / 8);
     // nunca abaixo da raridade equipada: com mítico oferece mítico melhor, com divino, divino melhor
-    // (o primordial não se compra: com ele equipado a loja oferece divinos)
-    const cr = cur ? Math.min(5, cur.rarity) : 0;
+    // e com primordial, primordial melhor (sem primordial equipado a loja não vende primordial)
+    const cr = cur ? Math.min(PRIMORDIAL, cur.rarity) : 0;
     const rarity = Math.max(minRarity, cr, Math.min(3, cr + (t > 30 ? 1 : 0)), t > 50 ? 3 : 0);
     const it = makeItem({ ilvl, rarity, slot, cls: c.cls });
     if (!best || itemScore(it) > itemScore(best)) best = it;
@@ -587,18 +587,21 @@ function upgradeFor(slot, floor, minRarity) {
     }
   }
   const gain = curScore > 0 ? Math.max(0, itemScore(best) / curScore - 1) : 1;
-  best.price = Math.round((40 + floor * 25) * [1, 1.6, 3, 6, 7, 8, 8][best.rarity] * (1 + Math.min(gain, 0.6)));
+  best.price = Math.round((40 + floor * 25) * [1, 1.6, 3, 6, 7, 8, 12][best.rarity] * (1 + Math.min(gain, 0.6)));
   // nunca mais barato que reciclar (senão comprar e reciclar dava lucro)
   best.price = Math.max(best.price, Math.round(recycleValue(best) * 1.3));
   return best;
 }
 
 // Antes de abrir a loja: troca o que deixou de ser melhoria (ex.: você equipou algo melhor)
+// ou que ficou abaixo da raridade equipada (ex.: divino na loja com primordial equipado)
 export function refreshShopStock(stock, floor) {
   if (!stock) return;
   for (let k = 0; k < stock.length; k++) {
     const it = stock[k];
-    if (!it.sold && !isUpgrade(it, G.char.equip)) stock[k] = upgradeFor(it.slot, floor, Math.max(1, it.rarity));
+    if (it.sold) continue;
+    const cur = G.char.equip[it.slot];
+    if (!isUpgrade(it, G.char.equip) || (cur && it.rarity < cur.rarity)) stock[k] = upgradeFor(it.slot, floor, Math.max(1, it.rarity));
   }
 }
 
