@@ -19,6 +19,7 @@ import { amod, applyAnomalyToEnemy, setupFloorEvents, bossReward, contractFail, 
 import { lob, spawnHazard, nearestEnemy } from './combat.js';
 import { makeItem, PRIMORDIAL } from './items.js';
 import { wildPopulate, mirrorDecoy, sentinelCall } from './wilds.js';
+import { aiNew, tickExtras, tickVisual, stealBuff } from './enemies2.js';
 
 export const ETYPES = {
   punk: { name: L('Punk de Rua', 'Street Punk'), hp: 30, dmg: 6, speed: 3.4, r: 0.34, h: 1.4, xp: 8, minFloor: 1, weight: 10, ai: 'melee', range: 0.9, atkCd: 1.1, blood: 0xff6a00 },
@@ -81,6 +82,22 @@ export const ETYPES = {
   skyray: { name: L('Arraia Celeste', 'Sky Ray'), fly: true, hp: 30, dmg: 11, speed: 5.0, r: 0.45, h: 1.7, xp: 13, minFloor: 99, weight: 0, ai: 'eagle', atkCd: 2.8, blood: 0x4dd2ff },
   saltwraith: { name: L('Esquecido de Sal', 'Salt Forgotten'), hp: 60, dmg: 12, speed: 3.0, r: 0.4, h: 1.6, xp: 18, minFloor: 99, weight: 0, ai: 'melee', range: 1.0, atkCd: 1.3, dr: 0.15, blood: 0xf0ece4 },
   saltcrystal: { name: L('Cristal de Sal', 'Salt Crystal'), hp: 1, dmg: 0, speed: 0, r: 0.45, h: 1.4, xp: 0, minFloor: 99, weight: 0, ai: 'inert', inert: true, static: true, breakable: true, mapColor: '#ffd23d', blood: 0xf0ece4 },
+  // Fase E: inimigos novos (IA em enemies2.js, modelos em newEnemyModel)
+  mirrordrone: { name: L('Drone Espelho', 'Mirror Drone'), fly: true, x2: true, hp: 34, dmg: 7, speed: 3.8, r: 0.36, h: 1.5, xp: 16, minFloor: 9, weight: 3, ai: 'mirrord', range: 8, keep: [4.5, 7], atkCd: 2.2, proj: { speed: 9, color: 0x9be8ff, size: 0.15 }, blood: 0x9be8ff },
+  gravitator: { name: L('Gravitador', 'Gravitator'), fly: true, x2: true, hp: 40, dmg: 14, speed: 3.2, r: 0.38, h: 1.5, xp: 20, minFloor: 13, weight: 3, ai: 'grav', range: 9, keep: [5, 8], atkCd: 5.0, blood: 0xb36bff },
+  datareaper: { name: L('Ceifador de Dados', 'Data Reaper'), steal: true, hp: 52, dmg: 10, speed: 3.6, r: 0.36, h: 1.5, xp: 22, minFloor: 11, weight: 3, ai: 'melee', range: 1.1, atkCd: 1.3, blood: 0xff2bd6 },
+  builder: { name: L('Construtor', 'Builder'), hp: 60, dmg: 8, speed: 2.8, r: 0.42, h: 1.6, xp: 24, minFloor: 15, weight: 2, ai: 'build', range: 8.5, keep: [5, 8], atkCd: 2.6, proj: { speed: 9, color: 0x39ffd8, size: 0.13 }, blood: 0x39ffd8 },
+  flyswarm: { name: L('Enxame Mosca', 'Fly Swarm'), fly: true, x2: true, split: true, hp: 14, dmg: 4, speed: 5.2, r: 0.22, h: 1.5, xp: 5, minFloor: 6, weight: 4, ai: 'swarm', atkCd: 0.9, blood: 0x9dff3a },
+  aurorawolf: { name: L('Lobo da Aurora', 'Aurora Wolf'), hp: 38, dmg: 10, speed: 5.4, r: 0.36, h: 0.9, xp: 13, minFloor: 99, weight: 0, ai: 'alien', chill: true, range: 0.9, atkCd: 2.0, blood: 0x5affc8 },
+  neonoctopus: { name: L('Polvo Neon', 'Neon Octopus'), x2: true, hp: 48, dmg: 9, speed: 2.8, r: 0.4, h: 1.3, xp: 16, minFloor: 99, weight: 0, ai: 'ink', range: 9, keep: [4, 7], atkCd: 2.0, proj: { speed: 8.5, color: 0xb36bff, size: 0.14 }, blood: 0x8a3aff },
+  clockautomaton: { name: L('Autômato de Corda', 'Clockwork Automaton'), x2: true, hp: 58, dmg: 11, speed: 2.8, r: 0.38, h: 1.5, xp: 18, minFloor: 99, weight: 0, ai: 'clock', range: 1.0, atkCd: 1.2, blood: 0xffb84a },
+  echo: { name: L('Espectro de Reflexo', 'Reflection Specter'), fly: true, x2: true, hp: 32, dmg: 9, speed: 3.0, r: 0.38, h: 1.7, xp: 16, minFloor: 99, weight: 0, ai: 'echo', range: 9.5, keep: [4, 7], atkCd: 3.0, proj: { speed: 9.5, color: 0xb36bff, size: 0.14 }, blood: 0xdfe8ff },
+  pinball: { name: L('Bola de Pinball', 'Pinball'), x2: true, hp: 44, dmg: 9, speed: 6.5, r: 0.36, h: 0.9, xp: 14, minFloor: 99, weight: 0, ai: 'pinball', atkCd: 1.0, blood: 0xff2bd6 },
+  fungoid: { name: L('Fungóide', 'Fungoid'), hp: 42, dmg: 8, speed: 3.0, r: 0.38, h: 1.1, xp: 13, minFloor: 99, weight: 0, ai: 'toad', spit: 0xc77dff, keep: [4, 8], range: 9, atkCd: 2.4, blood: 0xc77dff },
+  stormelemental: { name: L('Elemental de Raio', 'Storm Elemental'), fly: true, x2: true, hp: 46, dmg: 14, speed: 3.2, r: 0.42, h: 1.6, xp: 20, minFloor: 99, weight: 0, ai: 'storm', range: 10, keep: [5, 9], atkCd: 3.4, wispColor: 0xffe84a, blood: 0xffe84a },
+  bookbiter: { name: L('Livro Mordedor', 'Biting Book'), fly: true, hp: 26, dmg: 10, speed: 5.2, r: 0.36, h: 1.5, xp: 12, minFloor: 99, weight: 0, ai: 'eagle', atkCd: 2.6, blood: 0xf0e6c8 },
+  basaltsalamander: { name: L('Salamandra de Basalto', 'Basalt Salamander'), hp: 70, dmg: 10, speed: 2.8, r: 0.42, h: 0.7, xp: 17, minFloor: 99, weight: 0, ai: 'toad', spit: 0xff4a10, fireproof: true, dr: 0.25, keep: [4, 8], range: 9, atkCd: 2.6, blood: 0xff4a10 },
+  bamboosamurai: { name: L('Samurai de Bambu', 'Bamboo Samurai'), x2: true, hp: 62, dmg: 12, speed: 4.0, r: 0.36, h: 1.5, xp: 20, minFloor: 99, weight: 0, ai: 'samurai', range: 1.2, atkCd: 1.1, blood: 0x7affc8 },
 };
 
 // Afixos de elite. minF: andar (efetivo) a partir do qual aparece.
@@ -640,16 +657,17 @@ export function onEnemyKilled(e) {
   requestAnimationFrame(tick);
 }
 
-function enemyShoot(e, dx, dz, spread = 0) {
+export function enemyShoot(e, dx, dz, spread = 0) {
   const T = e.T;
   const a = Math.atan2(dz, dx) + spread;
   spawnProjectile({ from: 'enemy', x: e.x + Math.cos(a) * (e.r + 0.15), z: e.z + Math.sin(a) * (e.r + 0.15), y: e.type === 'drone' ? 1.15 : 0.95, dx: Math.cos(a), dz: Math.sin(a), speed: T.proj.speed, life: 2.2, dmg: e.dmg, color: T.proj.color, size: T.proj.size, r: 0.16 });
   sfx.enemyShot();
 }
 
-function meleeHit(e, dmg) {
+export function meleeHit(e, dmg) {
   if (e.decoy) return; // reflexo do golem de vidro não machuca
   damagePlayer(dmg);
+  if (e.T.steal) stealBuff(e);
   if (e.T.poison && G.player.invuln <= 0) G.player.poisonT = 4;
   if (e.T.chill && G.player.invuln <= 0) G.player.chillT = Math.max(G.player.chillT || 0, 1.4);
   if (e.vamp) {
@@ -660,7 +678,9 @@ function meleeHit(e, dmg) {
 
 // ---------------- atualização ----------------
 let flowTimer = 0;
+const AIX = {}; // contexto reutilizado pela IA dos inimigos novos (enemies2.js)
 export function updateEnemies(dt, cam) {
+  tickExtras(dt);
   const p = G.player;
   const d = G.dungeon;
   let anyAggro = false;
@@ -1557,6 +1577,19 @@ export function updateEnemies(dt, cam) {
           speed = r.speed;
           break;
         }
+        default: {
+          // inimigos novos (Fase E)
+          const c = AIX;
+          c.p = p; c.tgt = tgt; c.dx = dx; c.dz = dz; c.dist = dist; c.ux = ux; c.uz = uz; c.edt = edt; c.chase = chase; c.speed = speed; c.mvx = 0; c.mvz = 0;
+          if (aiNew(e, c)) {
+            mvx = c.mvx;
+            mvz = c.mvz;
+            speed = c.speed;
+            e.faceX = c.fx;
+            e.faceZ = c.fz;
+          }
+          break;
+        }
       }
     }
 
@@ -1726,6 +1759,7 @@ export function updateEnemies(dt, cam) {
       m.rageMat.color.setHex(0xff3a1a).multiplyScalar(gk(gl));
       if (e.enraged && Math.random() < dt * 14) burst(e.x + rr(-0.5, 0.5), e.height * 0.85, e.z + rr(-0.5, 0.5), 0xff3a1a, 1, 1, 0.08, 0.5, { grav: -3 });
     }
+    if (e.T.x2) tickVisual(e, m, dt);
     // flash ao tomar dano
     const fl = e.flash > 0 ? 1 : 0;
     for (const mt of m.mats) {

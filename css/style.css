@@ -439,6 +439,9 @@ body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(-
 #hurt.low.crit { animation-duration: 0.6s; }
 @keyframes lowhp { 0%, 100% { opacity: 0.85; } 50% { opacity: 0.15; } }
 
+/* Polvo Neon: tinta que escurece a tela (a opacidade vem do enemies2.js; o centro fica meio aberto para dar para se mover) */
+#ink { position: fixed; inset: 0; pointer-events: none; z-index: 3; opacity: 0; background: radial-gradient(ellipse at center, rgba(20, 4, 40, 0.55) 0%, rgba(26, 6, 52, 0.9) 45%, rgba(10, 0, 24, 0.97) 100%); }
+
 #fade { position: fixed; inset: 0; background: #000; pointer-events: none; opacity: 0; transition: opacity 0.4s; z-index: 30; }
 #fade.on { opacity: 1; }
 #loading { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; z-index: 40; background: var(--bg); color: var(--muted); letter-spacing: 3px; }

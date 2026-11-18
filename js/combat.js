@@ -16,6 +16,7 @@ import { achKill } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
 import { propBroken } from './events.js';
+import { preDamage, postDamage, reflectShot } from './enemies2.js';
 import { wildBlast, wildKill, projZone } from './wilds.js';
 
 // ---------------- temporizadores ----------------
@@ -165,6 +166,11 @@ export function damageEnemy(e, amount, crit, o = {}) {
     return 1;
   }
   if (e.vulnerable) amount *= 1.5;
+  // inimigos novos: guarda do Samurai de Bambu
+  if (e.T.x2 && e.parry > 0) {
+    amount = preDamage(e, amount, o);
+    if (amount <= 0) return 0;
+  }
   // reduções de dano (Blindado, Behemoth, anel do Guardião) se multiplicam, mas juntas nunca passam de 60%:
   // sem esse teto um elite grande blindado dentro de um anel parecia imortal
   let red = e.dr ? 1 - e.dr : 1;
@@ -192,6 +198,7 @@ export function damageEnemy(e, amount, crit, o = {}) {
   amount *= Math.max(0.4, red);
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
+  if (e.T.split) postDamage(e);
   if (!o.dot) e.flash = 0.09;
   e.hpShow = 4;
   if (!e.aggro) {
@@ -513,6 +520,7 @@ export function updateProjectiles(dt) {
         const r = pr.r + e.r;
         if ((e.x - pos.x) ** 2 + (e.z - pos.z) ** 2 < r * r) {
           pr.hit.add(e);
+          if (e.mirrorT > 0 && reflectShot(e, pr)) break; // Drone Espelho devolve o tiro
           hitEnemy(e, pr.mult, { forceCrit: pr.forceCrit, knock: pr.knock ?? 0.8, kx: pos.x - pr.dx, kz: pos.z - pr.dz, slow: pr.slow, burn: pr.burn, freeze: pr.freeze, quiet: pr.quiet });
           if (pr.onHit) pr.onHit(e, pr);
           if (pr.blast) {

@@ -97,6 +97,7 @@ Module map (`js/`):
 | `powers.js` | Advanced tree powers: summons, orbitals, black holes, storms, transformations. |
 | `player.js` | The player entity, `newCharacter`, `computeStats`, XP/levels, skill use. |
 | `enemies.js` | `ETYPES` (enemy types), AI, elites and affixes, `DIFFICULTY`, `populateFloor`, bosses (`BOSS_ORDER`, one update function per boss) and the final battle. |
+| `enemies2.js` | The 15 newer enemies (Mirror Drone, Gravitator, Data Reaper, Builder, Fly Swarm and the fauna of the newer biomes): `aiNew` (extra AI, called from the `default:` of the AI switch), `preDamage` / `postDamage` / `reflectShot` hooks used by `combat.js`, `tickExtras` (ink overlay `#ink`), `tickVisual`. Types with `x2: true` in `ETYPES` get the visual and damage hooks; models are `newEnemyModel` in `models.js`. |
 | `combat.js` | Damage (`hitEnemy`, `damageEnemy`, `damagePlayer`), statuses, projectiles, hazards, turrets. |
 | `items.js` | Slots, rarities, affixes, legendary and mythic powers, `makeItem`, forging, `itemScore`, item cards. |
 | `loot.js` | Ground loot, pickups, chests, shrines, `INV_SIZE`. |

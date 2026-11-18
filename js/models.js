@@ -1235,17 +1235,19 @@ export function makeEnemyModel(type, eliteColor) {
     case 'icewolf':
     case 'ashwolf':
     case 'bonestalker':
+    case 'aurorawolf':
     case 'hound': {
       const root = new THREE.Group();
       const body = new THREE.Group();
       root.add(body);
       // paletas: lobo de gelo, lobo de cinzas, espreitador de ossos e cão cibernético
-      const PAL = { icewolf: [0xc8d8e8, 0x7a8aa0, 0x8ad8ff], ashwolf: [0x5a5654, 0x2a2624, 0xff6a1a], bonestalker: [0xe0d6c0, 0x6a5e4a, 0xff4d6a], hound: [0x3a3e4a, 0x1a1c24, 0xff2244] }[type];
+      const PAL = { icewolf: [0xc8d8e8, 0x7a8aa0, 0x8ad8ff], ashwolf: [0x5a5654, 0x2a2624, 0xff6a1a], bonestalker: [0xe0d6c0, 0x6a5e4a, 0xff4d6a], hound: [0x3a3e4a, 0x1a1c24, 0xff2244], aurorawolf: [0xcfeee8, 0x3a5a7a, 0x5affc8] }[type];
       const ice = type !== 'hound';
       const mFur = lambert(PAL[0]);
       const mDark = lambert(PAL[1]);
       const eye = glowMat(PAL[2], 2.8);
       body.add(mesh(box(0.36, 0.38, 0.9), mFur, 0, 0.6, 0));
+      if (type === 'aurorawolf') for (const [z, c] of [[0.25, 0x5affc8], [0, 0xb36bff], [-0.25, 0x5affc8]]) body.add(mesh(box(0.4, 0.04, 0.1), glowMat(c, 2.2), 0, 0.8, z)); // faixas de aurora
       if (type === 'ashwolf') body.add(mesh(box(0.05, 0.05, 0.75), eye, 0, 0.8, 0)); // brasas nas costas
       if (type === 'bonestalker') for (let k = 0; k < 4; k++) body.add(mesh(box(0.42, 0.06, 0.06), mFur, 0, 0.62, -0.3 + k * 0.18)); // costelas
       if (!ice) body.add(mesh(box(0.06, 0.06, 0.8), eye, 0, 0.8, 0)); // espinha de led
@@ -1670,6 +1672,7 @@ export function makeEnemyModel(type, eliteColor) {
       break;
     }
   }
+  if (!m) m = newEnemyModel(type);
   decorate(type, m);
   if (eliteColor) {
     const er = mesh(cached('elring', () => new THREE.RingGeometry(0.55, 0.68, 28).rotateX(-Math.PI / 2)), new THREE.MeshBasicMaterial({ color: new THREE.Color(eliteColor).multiplyScalar(gk(2)), transparent: true, opacity: 0.85, depthWrite: false }));
@@ -1678,6 +1681,247 @@ export function makeEnemyModel(type, eliteColor) {
     m.eliteRing = er;
   }
   return m;
+}
+
+
+// --------------------------------------------------------------
+// Fase E: modelos dos 15 inimigos novos (peças simples, geometrias em cache)
+// --------------------------------------------------------------
+function newEnemyModel(type) {
+  const PI = Math.PI;
+  const sph = (r, w = 10, h = 8) => cached('n_sph' + r + w + h, () => new THREE.SphereGeometry(r, w, h));
+  const cyl = (r1, r2, h, n = 8) => cached('n_cyl' + r1 + r2 + h + n, () => new THREE.CylinderGeometry(r1, r2, h, n));
+  const cone = (r, h, n = 6) => cached('n_cone' + r + h + n, () => new THREE.ConeGeometry(r, h, n));
+  const tor = (r, t, a = 6, b = 20) => cached('n_tor' + r + t + a + b, () => new THREE.TorusGeometry(r, t, a, b));
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+  switch (type) {
+    case 'mirrordrone': {
+      const mBody = lambert(0xb8d0e8);
+      body.add(mesh(cached('ico', () => new THREE.IcosahedronGeometry(0.3, 0)), mBody));
+      const ring = mesh(tor(0.42, 0.04, 6, 20), glowMat(0x9be8ff));
+      ring.rotation.x = PI / 2;
+      body.add(ring);
+      for (const sx of [-1, 1]) body.add(mesh(box(0.05, 0.4, 0.28), mBody, sx * 0.32, 0, 0)); // placas-espelho laterais
+      body.add(mesh(sph(0.1, 8, 6), glowMat(0x9be8ff, 3), 0, 0, 0.26));
+      // escudo-espelho: só aparece quando está refletindo
+      const mirror = mesh(sph(0.66, 14, 10), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbdf2ff).multiplyScalar(gk(1.4)), transparent: true, opacity: 0.3, depthWrite: false }));
+      mirror.visible = false;
+      body.add(mirror);
+      body.position.y = 1.15;
+      return { root, body, ring, mirror, mats: [mBody], kind: 'drone' };
+    }
+    case 'gravitator': {
+      const mBody = lambert(0x2a1a4a);
+      body.add(mesh(sph(0.3, 10, 8), mBody));
+      body.add(mesh(sph(0.18, 10, 8), glowMat(0xb36bff, 3)));
+      const ring = mesh(tor(0.46, 0.05, 6, 22), glowMat(0xb36bff, 1.8));
+      ring.rotation.x = PI / 2;
+      body.add(ring);
+      const ring2 = mesh(tor(0.58, 0.025, 5, 22), glowMat(0x6a3aff, 1.4));
+      ring2.rotation.set(PI / 2 + 0.5, 0, 0.4);
+      body.add(ring2);
+      body.position.y = 1.2;
+      return { root, body, ring, ring2, mats: [mBody], kind: 'drone' };
+    }
+    case 'datareaper': {
+      const m = humanoid({ body: 0x2a3a4a, dark: 0x0a0e16, accent: 0xff2bd6 });
+      m.head.add(mesh(cone(0.22, 0.34, 5), m.mats[1], 0, 0.22, -0.02)); // capuz
+      const pole = mesh(box(0.04, 0.04, 1.2), m.mats[1], 0, 0, 0.3);
+      pole.rotation.x = PI / 2 - 0.3;
+      m.handR.add(pole);
+      const blade = mesh(box(0.03, 0.1, 0.5), glowMat(0x00f0ff, 2.2), 0, 0.16, 0.95);
+      pole.add(blade);
+      blade.position.set(0, 0.12, 0.55);
+      const orbs = new THREE.Group();
+      orbs.position.y = 1.0;
+      for (let k = 0; k < 3; k++) {
+        const an = (k / 3) * PI * 2;
+        orbs.add(mesh(box(0.1, 0.1, 0.1), glowMat(0xff2bd6, 2.2), Math.cos(an) * 0.55, 0.1 * k, Math.sin(an) * 0.55));
+      }
+      m.body.add(orbs);
+      m.orbs = orbs;
+      m.kind = 'humanoid';
+      return m;
+    }
+    case 'builder': {
+      const m = humanoid({ body: 0xc8a02a, dark: 0x2a2410, accent: 0x39ffd8, wide: 1.2 });
+      m.head.add(mesh(cyl(0.2, 0.22, 0.12, 8), lambert(0xffd23d), 0, 0.2, 0)); // capacete de obra
+      m.head.add(mesh(box(0.34, 0.03, 0.14), lambert(0xffd23d), 0, 0.15, 0.17));
+      m.torso.add(mesh(box(0.34, 0.32, 0.16), m.mats[1], 0, 0.36, -0.24)); // projetor nas costas
+      m.torso.add(mesh(box(0.2, 0.04, 0.04), glowMat(0x39ffd8, 2.4), 0, 0.5, -0.33));
+      m.handR.add(mesh(box(0.06, 0.06, 0.5), glowMat(0x39ffd8, 1.6), 0, 0, 0.3));
+      m.kind = 'humanoid';
+      return m;
+    }
+    case 'flyswarm': {
+      const mB = lambert(0x2a4a2a);
+      body.add(mesh(sph(0.11, 8, 6), mB, 0, 0, 0.05));
+      const ab = mesh(sph(0.12, 8, 6), mB, 0, -0.02, -0.14);
+      ab.scale.set(0.9, 0.9, 1.3);
+      body.add(ab);
+      body.add(mesh(box(0.14, 0.05, 0.05), glowMat(0x9dff3a, 3), 0, 0.03, 0.14));
+      const wm = new THREE.MeshLambertMaterial({ color: 0xe8ffe0, transparent: true, opacity: 0.45, depthWrite: false });
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const w = new THREE.Group();
+        w.position.set(sx * 0.08, 0.09, 0);
+        w.add(mesh(box(0.3, 0.015, 0.14), wm, sx * 0.15, 0, 0));
+        body.add(w);
+        wings.push(w);
+      }
+      body.position.y = 1.5;
+      return { root, body, wings, mats: [mB], kind: 'bird' };
+    }
+    case 'neonoctopus': {
+      const mSkin = lambert(0x6a2a9a);
+      const head = mesh(sph(0.36, 12, 9), mSkin, 0, 0.78, 0);
+      head.scale.set(1, 1.15, 1);
+      body.add(head);
+      for (const sx of [-1, 1]) body.add(mesh(box(0.1, 0.1, 0.05), glowMat(0x3affd8, 3), sx * 0.15, 0.78, 0.33));
+      for (let k = 0; k < 3; k++) body.add(mesh(box(0.08, 0.08, 0.04), glowMat(0xff6ad5, 2.2), (k - 1) * 0.16, 1.08 + (k === 1 ? 0.04 : 0), 0.12)); // pintas neon
+      const legs = [];
+      for (let k = 0; k < 8; k++) {
+        const an = (k / 8) * PI * 2;
+        const lg = new THREE.Group();
+        lg.position.set(Math.cos(an) * 0.2, 0.55, Math.sin(an) * 0.2);
+        const arm = mesh(box(0.08, 0.55, 0.08), mSkin, Math.cos(an) * 0.12, -0.26, Math.sin(an) * 0.12);
+        arm.rotation.set(Math.sin(an) * 0.3, 0, -Math.cos(an) * 0.3);
+        lg.add(arm);
+        lg.add(mesh(box(0.06, 0.06, 0.06), glowMat(0x3affd8, 2), Math.cos(an) * 0.22, -0.52, Math.sin(an) * 0.22));
+        body.add(lg);
+        legs.push(lg);
+      }
+      return { root, body, legs, mats: [mSkin], kind: 'quad' };
+    }
+    case 'clockautomaton': {
+      const m = humanoid({ body: 0xb08a4a, dark: 0x3a2a14, accent: 0xffb84a });
+      m.torso.add(mesh(tor(0.1, 0.025, 5, 10), glowMat(0xffb84a, 2), 0, 0.36, 0.17)); // engrenagem no peito
+      const key = new THREE.Group();
+      key.position.set(0, 0.38, -0.22);
+      key.add(mesh(box(0.05, 0.05, 0.22), lambert(0xd8b050), 0, 0, -0.1));
+      for (const sy of [-1, 1]) key.add(mesh(box(0.05, 0.16, 0.05), glowMat(0xffb84a, 1.6), 0, sy * 0.08, -0.22));
+      m.torso.add(key);
+      m.key = key;
+      m.kind = 'humanoid';
+      return m;
+    }
+    case 'echo': {
+      const mSheet = new THREE.MeshLambertMaterial({ color: 0xe8f0ff, emissive: new THREE.Color(0x5a4a9a), transparent: true, opacity: 0.5, depthWrite: false });
+      const sheet = new THREE.Group();
+      const cloth = mesh(cached('gcloth', () => new THREE.ConeGeometry(0.5, 1.3, 9, 1, true)), mSheet, 0, 0.75, 0);
+      cloth.material.side = THREE.DoubleSide;
+      sheet.add(cloth);
+      sheet.add(mesh(cached('ghead', () => new THREE.SphereGeometry(0.34, 12, 10)), mSheet, 0, 1.45, 0));
+      body.add(sheet);
+      for (const sx of [-1, 1]) body.add(mesh(box(0.09, 0.12, 0.04), glowMat(0xb36bff, 3), sx * 0.11, 1.48, 0.3));
+      const shards = new THREE.Group();
+      shards.position.y = 0.95;
+      for (let k = 0; k < 3; k++) {
+        const an = (k / 3) * PI * 2;
+        const sh = mesh(box(0.22, 0.34, 0.02), glowMat(0xdfe8ff, 1.5), Math.cos(an) * 0.62, 0, Math.sin(an) * 0.62);
+        sh.rotation.y = -an;
+        shards.add(sh);
+      }
+      body.add(shards);
+      return { root, body, sheet, shards, mats: [mSheet], kind: 'ghost' };
+    }
+    case 'pinball': {
+      const mChrome = lambert(0xc8d0e0);
+      body.add(mesh(sph(0.34, 14, 10), mChrome, 0, 0.45, 0));
+      const band = mesh(tor(0.34, 0.035, 5, 20), glowMat(0xff2bd6, 2.4), 0, 0.45, 0);
+      body.add(band);
+      const band2 = mesh(tor(0.34, 0.03, 5, 20), glowMat(0x00f0ff, 2.2), 0, 0.45, 0);
+      band2.rotation.y = PI / 2;
+      body.add(band2);
+      return { root, body, mats: [mChrome], kind: 'ball' };
+    }
+    case 'fungoid': {
+      const mStem = lambert(0xe8dcc8);
+      const mCap = lambert(0xb03a9a);
+      body.add(mesh(cyl(0.16, 0.2, 0.55, 8), mStem, 0, 0.42, 0));
+      const cap = mesh(cached('n_cap', () => new THREE.SphereGeometry(0.42, 12, 7, 0, PI * 2, 0, PI / 2)), mCap, 0, 0.64, 0);
+      cap.scale.set(1, 0.8, 1);
+      body.add(cap);
+      for (const [x, z] of [[0.18, 0.12], [-0.2, 0.05], [0.04, -0.22], [-0.08, 0.26]]) body.add(mesh(box(0.1, 0.05, 0.1), glowMat(0x7affc8, 2.2), x, 0.64 + 0.3 * (1 - (x * x + z * z) * 3), z)); // pintas brilhantes
+      for (const sx of [-1, 1]) body.add(mesh(box(0.06, 0.07, 0.04), glowMat(0xffe14d, 3), sx * 0.09, 0.48, 0.19));
+      const legs = [];
+      for (const [x, z] of [[0.1, 0.06], [-0.1, 0.06], [0.1, -0.06], [-0.1, -0.06]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.2, z);
+        lg.add(mesh(box(0.07, 0.2, 0.07), mStem, 0, -0.1, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      return { root, body, legs, hop: true, mats: [mStem, mCap], kind: 'quad' };
+    }
+    case 'stormelemental': {
+      const mCloud = lambert(0x4a5468);
+      for (const [x, y, z, r] of [[0, 0, 0, 0.34], [0.26, -0.06, 0.04, 0.24], [-0.26, -0.04, -0.04, 0.26], [0.04, 0.2, -0.1, 0.22]]) body.add(mesh(sph(r, 9, 7), mCloud, x, y, z));
+      body.add(mesh(sph(0.15, 8, 6), glowMat(0xffe84a, 3.2), 0, 0, 0.08));
+      for (const [x, z] of [[0.15, 0.2], [-0.2, 0.15]]) {
+        body.add(mesh(box(0.05, 0.3, 0.05), glowMat(0xffe84a, 2.6), x, -0.35, z, 0).rotateZ(0.3)); // raios pendurados
+      }
+      body.position.y = 1.4;
+      return { root, body, mats: [mCloud], kind: 'wisp' };
+    }
+    case 'bookbiter': {
+      const mCover = lambert(0x6a3a1a);
+      const mPage = lambert(0xf0e6c8);
+      body.add(mesh(box(0.08, 0.06, 0.5), mCover, 0, -0.02, 0)); // lombada
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const w = new THREE.Group();
+        w.position.set(sx * 0.04, 0, 0);
+        w.add(mesh(box(0.42, 0.04, 0.5), mCover, sx * 0.22, 0, 0));
+        w.add(mesh(box(0.36, 0.03, 0.44), mPage, sx * 0.22, 0.035, 0));
+        w.add(mesh(box(0.34, 0.03, 0.03), glowMat(0xffd23d, 1.6), sx * 0.22, 0.06, -0.2));
+        for (let k = 0; k < 3; k++) w.add(mesh(box(0.05, 0.05, 0.08), glowMat(0xff2244, 2.6), sx * (0.1 + k * 0.1), 0.06, 0.25)); // dentes
+        body.add(w);
+        wings.push(w);
+      }
+      body.position.y = 1.5;
+      return { root, body, wings, mats: [mCover, mPage], kind: 'bird' };
+    }
+    case 'basaltsalamander': {
+      const mSkin = lambert(0x3a3a44);
+      const mDark = lambert(0x1c1c24);
+      body.add(mesh(box(0.5, 0.3, 1.0), mSkin, 0, 0.34, 0));
+      for (const [x, z, h] of [[-0.13, 0.25, 0.3], [0.12, 0.05, 0.38], [-0.1, -0.2, 0.3], [0.13, -0.32, 0.24]]) body.add(mesh(cyl(0.09, 0.11, h, 6), mDark, x, 0.5 + h / 2, z)); // colunas de basalto
+      for (const z of [0.3, 0, -0.3]) body.add(mesh(box(0.52, 0.03, 0.06), glowMat(0xff4a10, 2.2), 0, 0.5, z));
+      const head = mesh(box(0.36, 0.22, 0.36), mSkin, 0, 0.36, 0.66);
+      body.add(head);
+      for (const sx of [-1, 1]) head.add(mesh(box(0.06, 0.06, 0.04), glowMat(0xffd23d, 3), sx * 0.12, 0.08, 0.17));
+      const tail = new THREE.Group();
+      tail.position.set(0, 0.34, -0.5);
+      tail.add(mesh(cached('stail', () => new THREE.ConeGeometry(0.12, 0.7, 5).rotateX(-PI / 2)), mSkin, 0, 0, -0.3));
+      body.add(tail);
+      const legs = [];
+      for (const [x, z] of [[0.28, 0.3], [-0.28, 0.3], [0.28, -0.3], [-0.28, -0.3]]) {
+        const lg = new THREE.Group();
+        lg.position.set(x, 0.22, z);
+        lg.add(mesh(box(0.12, 0.22, 0.12), mDark, 0, -0.11, 0));
+        body.add(lg);
+        legs.push(lg);
+      }
+      return { root, body, legs, tail, headM: head, mats: [mSkin, mDark], kind: 'quad' };
+    }
+    case 'bamboosamurai': {
+      const m = humanoid({ body: 0x5a7a3a, dark: 0x1a2a14, accent: 0x7affc8 });
+      m.head.add(mesh(cone(0.36, 0.2, 10), lambert(0xd8c47a), 0, 0.26, 0)); // chapéu de palha
+      for (const y of [0.3, 0.42]) m.torso.add(mesh(box(0.46, 0.04, 0.28), lambert(0x8ac04a), 0, y, 0)); // gomos de bambu na armadura
+      const blade = mesh(box(0.025, 0.04, 0.95), glowMat(0xe8fff4, 1.3), 0, 0, 0.45);
+      blade.rotation.x = PI / 2 - 0.3;
+      m.handR.add(blade);
+      m.kind = 'humanoid';
+      return m;
+    }
+  }
+  // tipo desconhecido: cubo neutro, só para não quebrar
+  const mDef = lambert(0xff00ff);
+  body.add(mesh(box(0.5, 0.5, 0.5), mDef, 0, 0.5, 0));
+  return { root, body, mats: [mDef], kind: 'ball' };
 }
 
 // --------------------------------------------------------------

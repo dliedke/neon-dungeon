@@ -183,7 +183,7 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 
 ## Enemies
 
-**40 enemy types** (17 roaming the tech biomes plus 23 biome creatures):
+**55 enemy types** (22 roaming the tech biomes plus 33 biome creatures):
 
 - Street Punk, Watcher Drone, Corporate Agent, Bomb Spider and Brute Mech.
 - **Sentry Turret.**
@@ -198,6 +198,12 @@ Tech biomes also have explosive barrels; every biome has golden loot caches.
 - **Tesla Drone**, which charges up and zaps everything around it.
 - **Flame Trooper**, which warns with a red line and then sweeps a cone of fire.
 - **Mortar Walker**, which shells you from far away with three marked grenades.
+- **Mirror Drone**, which lights a mirror shield after a warning and throws your shots back at you.
+- **Gravitator**, which warns, drags you toward it and slams the ground: run out of the circle or dash.
+- **Data Reaper**, whose hits steal one of your active buffs and heal it.
+- **Builder**, which shoots and raises walls of burning light after a short warning.
+- **Fly Swarm**, a fast zigzagging bug that splits into two smaller flies the first time it is hurt.
+- Biome creatures of the newer biomes: **Aurora Wolf**, **Neon Octopus** (its ink blinds the screen for a few seconds), **Clockwork Automaton** (winds itself up and gets much faster), **Reflection Specter** (every shot also comes from your opposite side), **Pinball** (a bouncing ball), **Fungoid** (acid spores), **Storm Elemental** (marks three lightning strikes), **Biting Book**, **Basalt Salamander** and **Bamboo Samurai** (raises a guard that counters whoever hits it, so wait for the guard to drop).
 
 **Elites** have affixes: Swift, Armored, Vampiric or Unstable.
 Deeper floors add support elites that change the fight: the **Mender** heals nearby enemies (green aura), the **Warden** shields nearby regular enemies so they take 50% less damage (blue aura), and the **Bombardier** marks your position and strikes it a moment later, so you have to keep moving.
@@ -389,6 +395,7 @@ js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)
 js/enemies.js          enemies, AI and bosses
+js/enemies2.js         the 15 newer enemies: extra AI, mirror/parry/split hooks, ink overlay
 js/combat.js           damage, statuses, projectiles and hazards
 js/items.js            item generation
 js/loot.js             ground loot and loot caches
