@@ -190,3 +190,20 @@ Sugestões de tema (ajuste livre; nomes em pt/en):
 - Edge headless com `--remote-debugging-port=9333` e um perfil próprio (`--user-data-dir` temporário); guarde o PID e mate **só esse PID** no fim (nunca `taskkill` por nome: o usuário usa o Edge).
 - Via CDP (Node 22 `WebSocket`): `import('/js/main.js')`, `startGame('blade', true)`, inspecionar `window.__G`, usar `__dbg.*` e `__dbg.sim(seg)`. Capturar `Runtime.exceptionThrown`/console de erro.
 - Screenshots fora do repo ou na raiz (`*.png` na raiz é ignorado pelo git).
+
+---
+
+# Plano 2 (2026-11-18): 50 andares, Abismo C, menos míticos, 30 eventos, 10 biomas, 15 inimigos, +10 poderes por classe
+
+Pedido: menos míticos no alto nível; 30 eventos novos; 50 andares por tier (era 30, chefe a cada 3, final no 50); 10 biomas novos; 15 inimigos novos; +10 poderes por classe (5 ataques + 5 defesa); no máximo 1 coisa com relógio por andar (eventos, contratos...); Abismo até C (100 níveis) com seletor simples (sem os 50 quadradinhos).
+Uma fase por commit/push. Detalhes completos: este arquivo + o plano aprovado da sessão.
+
+- [ ] **Fase 0** — Terminar a Fase 7 antiga: `SUP_PASSIVES`/`APEX_POWERS` de **lancer** e **biohacker** (hoje faltam; ver aviso do `pSwift` acima). Tem de vir ANTES da Fase G (índices são save).
+- [ ] **Fase A** — Menos míticos (`mythChance` em `loot.js`: `rewardK('loot')` acima de 3,2 cresce só 15%; fator do tier `loot/60`; caça-níquel 3%) + regra de relógio (`TIMED` inclui upload/purge/escort; contrato com relógio nunca junto de evento com relógio; relógio da bomba só começa quando o jogador chega perto).
+- [ ] **Fase B** — 50 andares: `FINAL_FLOOR = 50` (50 não é múltiplo de 3: `isBossFloor` e `floorShape` tratam o final), `FLOOR_THEMES` até 49, `TIERS.off` 50/100, `armorK`, `loot.js:113`, `events.js` (tier), `ach.js`, `finale.js` (90→150), `i18n.js`, `index.html`, docs.
+- [ ] **Fase C** — Abismo até C: `ABYSS_MAX = 100`, `ROMAN` por função, 50 regras novas, cor, gemas, medalhas; seletor novo (− / nome / + / slider; sem `#abyss-pips`).
+- [ ] **Fase D** — 10 biomas (aurora, coral, clock, mirrorlake, candy, mushroom, storm, library, lavafall, garden), 2 commits de 5, padrão do `wilds.js`.
+- [ ] **Fase E** — 15 inimigos (5 tech: Drone Espelho, Gravitador, Ceifador de Dados, Construtor, Enxame Mosca; 10 fauna dos biomas novos).
+- [ ] **Fase F** — 30 eventos novos (3 commits de 10), só acrescentar no fim de `MAIN_EVENTS`; os com relógio entram em `TIMED`.
+- [ ] **Fase G** — +10 poderes por classe (5 ataques `myth` + 5 defesas `guard`), 2 classes por commit, no FIM da lista (depois de pSwift, SUP e APEX).
+- [ ] **Fase H** — Docs finais, contagens, `og-image.png`.
