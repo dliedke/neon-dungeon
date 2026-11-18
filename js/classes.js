@@ -14,7 +14,10 @@ import { shrineBlink } from './loot.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 // nível máximo de cada poder
-export const MAX_RANK = 30;
+export const MAX_RANK = 50;
+// nível "suave" para durações e curas: depois do 30 cada nível conta a metade
+// (o dano segue o rankMult inteiro; sem isso as defesas virariam permanentes)
+export const softRank = (r) => (r <= 30 ? r : 30 + (r - 30) / 2);
 const pct = (v) => `${Math.round(v * 100)}%`;
 
 export const ICONS = {
@@ -209,7 +212,7 @@ export const CLASSES = {
       { id: 'slash', name: L('Corte de Plasma', 'Plasma Slash'), icon: 'slash', cost: 0, cd: 0, desc: (r) => L(`Golpe em arco que causa ${pct(1.0 * rankMult(r))} do dano da arma. Todo 3º golpe é ampliado. Gera 4 de energia por acerto.`, `Arc strike dealing ${pct(1.0 * rankMult(r))} weapon damage. Every 3rd hit is empowered. Generates 4 energy per hit.`) },
       { id: 'lunge', name: L('Investida', 'Lunge'), icon: 'dash', cost: 15, cd: 3.5, desc: (r) => L(`Avança até o inimigo causando ${pct(1.8 * rankMult(r))} a todos no caminho. Invulnerável durante o avanço.`, `Dash to the enemy dealing ${pct(1.8 * rankMult(r))} to everything in the way. Invulnerable while dashing.`) },
       { id: 'whirl', req: 2, name: L('Turbilhão', 'Whirlwind'), icon: 'spin', cost: 35, cd: 7, desc: (r) => L(`Gira por 1,4s causando ${pct(0.6 * rankMult(r))} a cada 0,2s ao redor. Você pode se mover enquanto gira.`, `Spin for 1.4s dealing ${pct(0.6 * rankMult(r))} every 0.2s around you. You can move while spinning.`) },
-      { id: 'overclock', req: 4, name: 'Overclock', icon: 'overclock', cost: 40, cd: 18, desc: (r) => L(`Por ${(5 + 0.5 * r).toFixed(1)}s: +50% de velocidade de ataque, +30% de movimento e 8% de roubo de vida.`, `For ${(5 + 0.5 * r).toFixed(1)}s: +50% attack speed, +30% movement and 8% life steal.`) },
+      { id: 'overclock', req: 4, name: 'Overclock', icon: 'overclock', cost: 40, cd: 18, desc: (r) => L(`Por ${(5 + 0.5 * softRank(r)).toFixed(1)}s: +50% de velocidade de ataque, +30% de movimento e 8% de roubo de vida.`, `For ${(5 + 0.5 * softRank(r)).toFixed(1)}s: +50% attack speed, +30% movement and 8% life steal.`) },
       { id: 'bladeOrbit', req: 5, name: L('Lâminas Orbitais', 'Orbiting Blades'), icon: 'orbitB', cost: 30, cd: 12, desc: (r) => L(`4 lâminas giram ao seu redor por 8s, cada uma causando ${pct(0.7 * rankMult(r))} a quem tocar.`, `4 blades orbit you for 8s, each dealing ${pct(0.7 * rankMult(r))} to anything they touch.`) },
       { id: 'oni', req: 7, name: L('Invocar Oni', 'Summon Oni'), icon: 'demon', cost: 45, cd: 25, desc: (r) => L(`Invoca um demônio samurai que luta ao seu lado por 15s causando ${pct(1.6 * rankMult(r))} por golpe.`, `Summons a demon samurai that fights for you for 15s, dealing ${pct(1.6 * rankMult(r))} per strike.`) },
       { id: 'thunderCut', req: 9, name: L('Corte Trovão', 'Thunder Cut'), icon: 'thunder', cost: 25, cd: 6, desc: (r) => L(`Um raio salta por até 6 inimigos causando ${pct(1.4 * rankMult(r))} e atordoando.`, `Lightning jumps across up to 6 enemies dealing ${pct(1.4 * rankMult(r))} and stunning.`) },
@@ -277,7 +280,7 @@ export const CLASSES = {
     skills: [
       { id: 'punch', name: L('Combo Cibernético', 'Cyber Combo'), icon: 'fist', cost: 0, cd: 0, desc: (r) => L(`Socos rápidos que causam ${pct(0.9 * rankMult(r))}. Todo 4º soco é um gancho de ${pct(2.2 * rankMult(r))} que atordoa.`, `Fast punches dealing ${pct(0.9 * rankMult(r))}. Every 4th punch is a ${pct(2.2 * rankMult(r))} hook that stuns.`) },
       { id: 'rocketFist', name: L('Punho-Foguete', 'Rocket Fist'), icon: 'rocketFist', cost: 20, cd: 4, desc: (r) => L(`Dispara o punho, que atravessa todos no caminho causando ${pct(1.6 * rankMult(r))} e empurrando.`, `Launches your fist through everything in its path, dealing ${pct(1.6 * rankMult(r))} and knocking back.`) },
-      { id: 'titan', req: 2, name: L('Pele de Titânio', 'Titanium Skin'), icon: 'titan', cost: 30, cd: 14, desc: (r) => L(`Por ${(4 + 0.4 * r).toFixed(1)}s você recebe 60% menos dano.`, `For ${(4 + 0.4 * r).toFixed(1)}s you take 60% less damage.`) },
+      { id: 'titan', req: 2, name: L('Pele de Titânio', 'Titanium Skin'), icon: 'titan', cost: 30, cd: 14, desc: (r) => L(`Por ${(4 + 0.4 * softRank(r)).toFixed(1)}s você recebe 60% menos dano.`, `For ${(4 + 0.4 * softRank(r)).toFixed(1)}s you take 60% less damage.`) },
       { id: 'quake', req: 4, name: L('Terremoto', 'Earthquake'), icon: 'quake', cost: 45, cd: 10, desc: (r) => L(`Golpeia o chão: ${pct(2.6 * rankMult(r))} e atordoamento ao redor, seguido de uma onda maior de ${pct(1.0 * rankMult(r))}.`, `Slam the ground: ${pct(2.6 * rankMult(r))} and a stun around you, followed by a wider ${pct(1.0 * rankMult(r))} wave.`) },
       { id: 'thunderClap', req: 5, name: L('Palmas Trovejantes', 'Thunder Clap'), icon: 'clap', cost: 30, cd: 8, desc: (r) => L(`Bate palmas: onda de choque de ${pct(1.6 * rankMult(r))} que atordoa, mais um raio que salta por 4 inimigos.`, `Clap: a ${pct(1.6 * rankMult(r))} shockwave that stuns, plus lightning that jumps across 4 enemies.`) },
       { id: 'pshieldB', req: 7, name: L('Escudo de Plasma', 'Plasma Shield'), icon: 'shield', cost: 30, cd: 15, desc: () => L('Por 6s, um escudo absorve 40% da vida em dano e devolve os tiros inimigos.', 'For 6s, a shield absorbs 40% of your health in damage and reflects enemy shots.') },
@@ -347,7 +350,7 @@ export const CLASSES = {
     skills: [
       { id: 'minigun', name: L('Metralhadora', 'Minigun'), icon: 'minigun', cost: 0, cd: 0, desc: (r) => L(`Rajada contínua de ${pct(0.42 * rankMult(r))} por bala. Acelera até 3x enquanto você segura o ataque.`, `A continuous stream of ${pct(0.42 * rankMult(r))} per bullet. Spins up to 3x while you hold attack.`) },
       { id: 'rocket', name: L('Foguete', 'Rocket'), icon: 'rocket', cost: 20, cd: 3, desc: (r) => L(`Foguete que explode em área causando ${pct(2.4 * rankMult(r))}.`, `A rocket that explodes in an area for ${pct(2.4 * rankMult(r))}.`) },
-      { id: 'barrier', req: 2, name: L('Barreira de Energia', 'Energy Barrier'), icon: 'barrier', cost: 30, cd: 12, desc: (r) => L(`Ergue uma parede de energia à sua frente que bloqueia tiros inimigos por ${(7 + 0.3 * r).toFixed(1)}s.`, `Raises an energy wall in front of you that blocks enemy shots for ${(7 + 0.3 * r).toFixed(1)}s.`) },
+      { id: 'barrier', req: 2, name: L('Barreira de Energia', 'Energy Barrier'), icon: 'barrier', cost: 30, cd: 12, desc: (r) => L(`Ergue uma parede de energia à sua frente que bloqueia tiros inimigos por ${(7 + 0.3 * softRank(r)).toFixed(1)}s.`, `Raises an energy wall in front of you that blocks enemy shots for ${(7 + 0.3 * softRank(r)).toFixed(1)}s.`) },
       { id: 'missileRain', req: 4, name: L('Chuva de Mísseis', 'Missile Rain'), icon: 'missileRain', cost: 50, cd: 15, desc: (r) => L(`10 mísseis caem na área do alvo, cada um causando ${pct(1.2 * rankMult(r))}.`, `10 missiles rain down on the target area, each dealing ${pct(1.2 * rankMult(r))}.`) },
       { id: 'tesla', req: 5, name: L('Torre Tesla', 'Tesla Coil'), icon: 'tesla', cost: 35, cd: 14, desc: (r) => L(`Instala uma bobina por 14s que lança raios em cadeia em até 4 inimigos (${pct(0.7 * rankMult(r))}).`, `Deploys a coil for 14s that chains lightning through up to 4 enemies (${pct(0.7 * rankMult(r))}).`) },
       { id: 'swarmH', req: 7, name: L('Enxame de Drones', 'Drone Swarm'), icon: 'swarm', cost: 30, cd: 9, desc: (r) => L(`Solta 12 drones teleguiados, cada um causando ${pct(0.7 * rankMult(r))}.`, `Releases 12 homing drones, each dealing ${pct(0.7 * rankMult(r))}.`) },
@@ -416,7 +419,7 @@ export const CLASSES = {
     skills: [
       { id: 'dart', name: L('Dardo Tóxico', 'Toxic Dart'), icon: 'dart', cost: 0, cd: 0, desc: (r) => L(`Dardo teleguiado que causa ${pct(0.75 * rankMult(r))} e envenena (dano contínuo por 3s).`, `A homing dart that deals ${pct(0.75 * rankMult(r))} and poisons (damage over 3s).`) },
       { id: 'toxCloud', name: L('Nuvem Tóxica', 'Toxic Cloud'), icon: 'cloud', cost: 25, cd: 6, desc: (r) => L(`Arremessa um frasco que solta uma nuvem venenosa por 5s (${pct(0.3 * rankMult(r))} a cada 0,5s) e deixa lento.`, `Throws a vial that releases a poison cloud for 5s (${pct(0.3 * rankMult(r))} every 0.5s) that slows.`) },
-      { id: 'nanoHeal', req: 2, name: L('Nanocura', 'Nano Heal'), icon: 'nanoHeal', cost: 30, cd: 14, desc: (r) => L(`Cura ${8 + r}% da vida na hora e mais 3% por segundo durante 6s.`, `Heals ${8 + r}% health instantly and 3% per second for 6s.`) },
+      { id: 'nanoHeal', req: 2, name: L('Nanocura', 'Nano Heal'), icon: 'nanoHeal', cost: 30, cd: 14, desc: (r) => L(`Cura ${Math.round(8 + softRank(r))}% da vida na hora e mais 3% por segundo durante 6s.`, `Heals ${Math.round(8 + softRank(r))}% health instantly and 3% per second for 6s.`) },
       { id: 'plague', req: 4, name: L('Praga', 'Plague'), icon: 'plague', cost: 40, cd: 10, desc: (r) => L(`Uma bomba biológica explode no alvo (${pct(1.6 * rankMult(r))}), envenena forte e deixa lento.`, `A bio-bomb bursts on the target (${pct(1.6 * rankMult(r))}), badly poisoning and slowing.`) },
       { id: 'nanoSwarm', req: 5, name: L('Nanoenxame', 'Nanoswarm'), icon: 'swarm', cost: 30, cd: 9, desc: (r) => L(`Solta 10 nuvens de nanorrobôs teleguiados, cada uma causando ${pct(0.75 * rankMult(r))} e envenenando.`, `Releases 10 homing nanobot clouds, each dealing ${pct(0.75 * rankMult(r))} and poisoning.`) },
       { id: 'adrenal', req: 7, name: L('Injeção de Adrenalina', 'Adrenaline Shot'), icon: 'stim', cost: 25, cd: 18, desc: () => L('Por 8s: +30% de velocidade de ataque e +35% de velocidade de movimento.', 'For 8s: +30% attack speed and +35% movement speed.') },
@@ -587,8 +590,8 @@ for (const [id, list] of Object.entries(LATE_PASSIVES)) CLASSES[id].skills.push(
 
 // Poderes avançados (níveis 40, 50, 60 e 70): 2 de ataque e 2 de defesa por classe. Vão no fim da lista,
 // depois dos passivos avançados, para não mudar a posição dos poderes nos saves antigos (adv: andar próprio na árvore).
-const dur = (b, r) => b + 0.3 * r; // duração das defesas
-const healF = (b, r) => b + 0.01 * r; // fração da vida curada
+const dur = (b, r) => b + 0.3 * softRank(r); // duração das defesas
+const healF = (b, r) => b + 0.01 * softRank(r); // fração da vida curada
 const s1 = (v) => v.toFixed(1);
 const hp = (f) => `${Math.round(f * 100)}%`;
 const adv = (id, req, name, icon, cost, cd, desc) => ({ id, req, name, icon, cost, cd, desc, adv: true });
@@ -625,7 +628,7 @@ const ADV_POWERS = {
   ],
   frost: [
     adv('iceLance', 40, L('Lança de Gelo', 'Ice Lance'), 'lance', 35, 7, (r) => L(`Um raio de gelo em linha reta de 16m que causa ${pct(4.0 * rankMult(r))} e congela.`, `A 16m straight ice beam that deals ${pct(4.0 * rankMult(r))} and freezes.`)),
-    adv('iceBlock', 50, L('Bloco de Gelo', 'Ice Block'), 'iceBlock', 35, 25, (r) => L(`Fica envolto em gelo e invulnerável por ${s1(2 + 0.1 * r)}s, recuperando 8% da vida por segundo, e congela os inimigos próximos.`, `Encases you in ice, invulnerable for ${s1(2 + 0.1 * r)}s while recovering 8% health per second, and freezes nearby enemies.`)),
+    adv('iceBlock', 50, L('Bloco de Gelo', 'Ice Block'), 'iceBlock', 35, 25, (r) => L(`Fica envolto em gelo e invulnerável por ${s1(2 + 0.1 * softRank(r))}s, recuperando 8% da vida por segundo, e congela os inimigos próximos.`, `Encases you in ice, invulnerable for ${s1(2 + 0.1 * softRank(r))}s while recovering 8% health per second, and freezes nearby enemies.`)),
     adv('glacialNova', 60, L('Nova Glacial', 'Glacial Nova'), 'snow', 55, 14, (r) => L(`Explosão de gelo que causa ${pct(3.5 * rankMult(r))} em 6m e congela, seguida de uma onda de ${pct(1.5 * rankMult(r))} em 8m.`, `An ice explosion dealing ${pct(3.5 * rankMult(r))} within 6m that freezes, followed by a ${pct(1.5 * rankMult(r))} wave within 8m.`)),
     adv('winterAura', 70, L('Aura do Inverno', 'Winter Aura'), 'aura', 40, 25, (r) => L(`Por ${s1(dur(8, r))}s você recebe metade do dano, recupera 2% da vida por segundo e o frio ao redor causa ${pct(0.35 * rankMult(r))} a cada 0,5s e deixa os inimigos lentos.`, `For ${s1(dur(8, r))}s you take half damage, recover 2% health per second, and the cold around you deals ${pct(0.35 * rankMult(r))} every 0.5s and slows enemies.`)),
   ],
@@ -832,7 +835,7 @@ export const SKILL_FN = {
     return true;
   },
   overclock(p, r) {
-    p.buffs.overclock = 5 + 0.5 * r;
+    p.buffs.overclock = 5 + 0.5 * softRank(r);
     ringFx(p.x, p.z, 2.5, CLASSES.blade.accent, 0.5);
     burst(p.x, 1, p.z, CLASSES.blade.accent, 25, 5, 0.08, 0.6);
     sfx.levelup();
@@ -1007,7 +1010,7 @@ Object.assign(SKILL_FN, {
     return true;
   },
   titan(p, r) {
-    p.buffs.titan = 4 + 0.4 * r;
+    p.buffs.titan = 4 + 0.4 * softRank(r);
     ringFx(p.x, p.z, 1.6, 0xc8d0e0, 0.4);
     burst(p.x, 1, p.z, 0xc8d0e0, 20, 4, 0.07, 0.5);
     sfx.shieldBlock();
@@ -1146,7 +1149,7 @@ Object.assign(SKILL_FN, {
   barrier(p, r) {
     const cx = p.x + p.aim.dx * 1.6;
     const cz = p.z + p.aim.dz * 1.6;
-    spawnBarrier(cx, cz, -p.aim.dz, p.aim.dx, 1.7 + 0.08 * r, 7 + 0.3 * r);
+    spawnBarrier(cx, cz, -p.aim.dz, p.aim.dx, 1.7 + 0.08 * softRank(r), 7 + 0.3 * softRank(r));
     sfx.deploy();
     return true;
   },
@@ -1438,7 +1441,7 @@ Object.assign(SKILL_FN, {
     return true;
   },
   nanoHeal(p, r) {
-    healPlayer(p.stats.maxHp * (0.08 + 0.01 * r));
+    healPlayer(p.stats.maxHp * (0.08 + 0.01 * softRank(r)));
     p.buffs.regen = 6;
     ringFx(p.x, p.z, 1.8, 0x39ff88, 0.5);
     burst(p.x, 1, p.z, 0x39ff88, 24, 3, 0.06, 0.7, { up: 1.5, grav: -1 });
@@ -1771,7 +1774,7 @@ Object.assign(SKILL_FN, {
     return true;
   },
   iceBlock(p, r) {
-    const t = 2 + 0.1 * r;
+    const t = 2 + 0.1 * softRank(r);
     p.invuln = Math.max(p.invuln, t);
     mend(p, t, 0.08);
     for (const e of enemiesInRadius(p.x, p.z, 3.5)) hitEnemy(e, 0.5 * rankMult(r), { freeze: 2, noProc: true });

@@ -74,6 +74,7 @@ function mergeChar(a, b) {
   }
   win.skillPoints = Math.max(win.skillPoints || 0, 0);
   win.wins = Math.max(a.wins || 0, b.wins || 0); // vitórias na batalha final nunca se perdem
+  win.infWins = Math.max(a.infWins || 0, b.infWins || 0);
   win.playTime = Math.max(a.playTime || 0, b.playTime || 0);
   win.deaths = Math.max(a.deaths || 0, b.deaths || 0);
   win.bestTier = Math.max(a.bestTier || 0, b.bestTier || 0, win.tier || 0);

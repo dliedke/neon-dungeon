@@ -284,10 +284,19 @@ for (let n = 1; n <= ABYSS_MAX; n++) {
   REWARD.loot.push(5.6 + 0.25 * n);
 }
 let rewardLvl = -1;
+let rewardChar = null;
 export function tickReward(dt) {
   const r = diffRank();
+  const c = G.char;
+  // o nível da recompensa fica salvo no personagem (c.rwd): recarregar a página ou trocar
+  // de personagem não zera mais a subida (antes voltava ao 1 e os itens caíam fracos por minutos)
+  if (c !== rewardChar) {
+    rewardChar = c;
+    rewardLvl = Math.min(r, Math.max(1, (c && +c.rwd) || 0));
+  }
   if (rewardLvl < 0) rewardLvl = Math.min(r, 1);
   rewardLvl = r < rewardLvl ? r : Math.min(r, rewardLvl + dt / 15);
+  if (c) c.rwd = rewardLvl;
 }
 export function rewardK(kind) {
   const t = REWARD[kind];
@@ -298,12 +307,18 @@ export function rewardK(kind) {
 export const rewardRamping = () => rewardLvl >= 0 && rewardLvl < diffRank();
 // nível de recompensa atual (sobe aos poucos, como o rewardK)
 export const rewardRank = () => Math.max(0, Math.min(diffRank(), rewardLvl < 0 ? 1 : rewardLvl));
-// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30 e o Abismo a mesma profundidade dos inimigos (abyssDepth)
-// (os itens acompanham a profundidade dos inimigos, mas sobem aos poucos como o resto da recompensa)
+// bônus no nível dos itens: Caos +10, Apocalipse +20, Morte +30 e o Abismo 1,5x a profundidade dos inimigos
+// (abyssDepth: os itens descem mais rápido que os inimigos para compensar as regras do Abismo que só
+// fortalecem os inimigos; Abismo X +171, XXX +531), subindo aos poucos como o resto da recompensa.
+// Cada vitória no Inferno soma mais (infernoIlvl).
 export const diffIlvl = () => {
   const r = rewardRank();
-  return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + abyssDepth(Math.max(0, r - 8)));
+  return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + ABYSS_ILVL * abyssDepth(Math.max(0, r - 8))) + infernoIlvl();
 };
+export const ABYSS_ILVL = 1.5;
+// Inferno de novo: cada vitória no Inferno (c.infWins) dá +15 no nível dos itens enquanto joga no Inferno (até +300)
+export const INF_ILVL = 15;
+export const infernoIlvl = (c = G.char) => (c && (c.tier | 0) >= MAX_TIER ? Math.min(300, INF_ILVL * (c.infWins | 0)) : 0);
 
 // Troca de dificuldade (ou de Abismo) no meio do andar: os inimigos vivos mudam na hora
 // (vida proporcional, dano, velocidade e ritmo de ataque das regras do Abismo)
@@ -2383,6 +2398,7 @@ function finalVictory() {
   // medalhas e registro da vitória
   const ch = G.char;
   ch.wins = (ch.wins || 0) + 1;
+  if ((ch.tier | 0) >= MAX_TIER) ch.infWins = (ch.infWins | 0) + 1; // itens melhores no próximo Inferno (infernoIlvl)
   achAdd('wins');
   achMark('winClasses', ch.cls);
   if (!F.deaths) achMark('flags', 'winNoDeath');

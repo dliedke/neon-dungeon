@@ -10,7 +10,7 @@ import { initAudio, applyVolumes, sfx } from './audio.js';
 import { spawnPets, updatePets, clearPets, spawnPet } from './pets.js';
 import { generateDungeon, buildDungeonMeshes, themeFor, isBossFloor, isFinalFloor, FINAL_FLOOR, computeFlow, updateWalls, revealAround, findPath, lineOfSight, isWalkable } from './dungeon.js';
 import { initFx, updateFx, clearEffects, updateFloaters, clearFloaters, burst } from './fx.js';
-import { populateFloor, updateEnemies, spawnEnemy, tickReward, abyssUnlocked, DIFFICULTY, ABYSS_MAX } from './enemies.js';
+import { populateFloor, updateEnemies, spawnEnemy, tickReward, abyssUnlocked, DIFFICULTY, ABYSS_MAX, infernoIlvl } from './enemies.js';
 import { updateProjectiles, updateTimers, updateTurrets, updateHazards, updateBarriers, updateDecoy } from './combat.js';
 import { createPlayer, updatePlayer, placePlayer, newCharacter, refreshStats, SP_PER_LEVEL, SLOT_N } from './player.js';
 import { updatePickups, clearPickups, spawnPickup, spawnChest } from './loot.js';
@@ -641,6 +641,12 @@ function sanitizeChar(c) {
   // modo depois de vencer (0 Normal, 1 Pesadelo, 2 Inferno) e o maior modo liberado
   c.tier = Math.min(MAX_TIER, c.tier | 0);
   c.bestTier = Math.max(c.bestTier | 0, c.tier);
+  // vitórias no Inferno (itens de nível maior no Inferno). Saves antigos: quem já venceu o Inferno
+  // conta as vitórias além do Normal e do Pesadelo (pelo menos 1)
+  if (c.infWins == null) c.infWins = (c.bestTier | 0) > MAX_TIER ? Math.max(1, (c.wins | 0) - 2) : 0;
+  c.infWins = Math.max(0, c.infWins | 0);
+  // nível da recompensa (sobe aos poucos depois de aumentar a dificuldade; ver tickReward)
+  c.rwd = Math.max(0, +c.rwd || 0);
   // o jogo agora termina no andar 30 (saves antigos podiam estar mais fundo)
   if (c.floor > FINAL_FLOOR) c.floor = FINAL_FLOOR;
   if (!c.equip.weapon) c.equip.weapon = newCharacter(c.cls).equip.weapon;
@@ -722,7 +728,8 @@ export function startTier(tier) {
   startFloor(1);
   G.player.invuln = 1;
   const T = tierOf(c);
-  setTimeout(() => G.floor === 1 && toast(L(`${T.icon} Modo ${T.name}: inimigos muito mais fortes, elites com mais afixos, itens e créditos melhores.`, `${T.icon} ${T.name} mode: much stronger enemies, elites with more affixes, better items and credits.`), 'warn'), 2600);
+  const inf = infernoIlvl(c);
+  setTimeout(() => G.floor === 1 && toast(L(`${T.icon} Modo ${T.name}: inimigos muito mais fortes, elites com mais afixos, itens e créditos melhores.`, `${T.icon} ${T.name} mode: much stronger enemies, elites with more affixes, better items and credits.`) + (inf ? L(`<br>🏆 Vitórias no Inferno: itens com <b>+${inf}</b> de nível.`, `<br>🏆 Inferno victories: items <b>+${inf}</b> levels.`) : ''), 'warn'), 2600);
 }
 
 // Revanche: joga a batalha final de novo com o mesmo personagem
