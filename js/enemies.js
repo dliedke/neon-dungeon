@@ -181,18 +181,18 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane'
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
-// Abismo: 30 níveis abaixo da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Abismo: 50 níveis abaixo da Morte (só valem com a Morte escolhida, num seletor próprio).
 // Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
-export const ABYSS_MAX = 30;
+export const ABYSS_MAX = 50;
 export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
-// (I +6, II +18, III +30 ... X +114 ... XXX +354). Aceita nível fracionário (recompensa subindo aos poucos)
+// (I +6, II +18, III +30 ... X +114 ... XXX +354 ... L +594). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX'];
+export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX', 'XXXI', 'XXXII', 'XXXIII', 'XXXIV', 'XXXV', 'XXXVI', 'XXXVII', 'XXXVIII', 'XXXIX', 'XL', 'XLI', 'XLII', 'XLIII', 'XLIV', 'XLV', 'XLVI', 'XLVII', 'XLVIII', 'XLIX', 'L'];
 // regra que cada nível liga (índice 0 = Abismo I)
 export const ABYSS_RULES = [
   { icon: '⭐', name: L('Horda de Elites', 'Elite Horde'), desc: L('muito mais elites, até no andar 1', 'far more elites, even on floor 1') },
@@ -230,6 +230,27 @@ export const ABYSS_RULES = [
   { icon: '🦴', name: L('Couraça do Vazio', 'Void Carapace'), desc: L('inimigos com mais 30% de vida', 'enemies have another 30% health'), fx: { ehp: 1.3 } },
   { icon: '🐜', name: L('Infinitos', 'Endless Swarm'), desc: L('mais 20% de inimigos', 'another 20% enemies'), fx: { count: 1.2 } },
   { icon: '🌌', name: L('Coração do Abismo', 'Heart of the Abyss'), desc: L('chefes e elites com +50% de vida e +20% de dano', 'bosses and elites have +50% health and +20% damage'), fx: { bel: 1.5, beldmg: 1.2 } },
+  // XXXI a L: além do XXX (sem regra de quantidade: o orçamento de inimigos já está no teto desde o XXIX)
+  { icon: '🛡️', name: L('Couraça Ancestral', 'Ancient Carapace'), desc: L('inimigos com mais 20% de vida', 'enemies have another 20% health'), fx: { ehp: 1.2 } },
+  { icon: '🔪', name: L('Presas do Vazio', 'Void Fangs'), desc: L('inimigos causam mais 15% de dano', 'enemies deal another 15% damage'), fx: { edmg: 1.15 } },
+  { icon: '👹', name: L('Generais do Caos', 'Chaos Generals'), desc: L('chefes e elites com mais 30% de vida', 'bosses and elites have another 30% health'), fx: { bel: 1.3 } },
+  { icon: '🌪️', name: L('Vendaval', 'Gale'), desc: L('inimigos mais 8% mais rápidos', 'enemies move another 8% faster'), fx: { espd: 1.08 } },
+  { icon: '🗿', name: L('Colossos', 'Colossi'), desc: L('chefes com mais 40% de vida', 'bosses have another 40% health'), fx: { bhp: 1.4 } },
+  { icon: '⚡', name: L('Fúria Cega', 'Blind Fury'), desc: L('inimigos atacam mais 12% mais rápido', 'enemies attack another 12% faster'), fx: { eatk: 0.88 } },
+  { icon: '☄️', name: L('Tempestade de Tiros', 'Shot Storm'), desc: L('tiros inimigos mais 15% mais rápidos', 'enemy shots fly another 15% faster'), fx: { shot: 1.15 } },
+  { icon: '✳️', name: L('Afixo Triplo', 'Triple Affix'), desc: L('elites ganham mais um afixo', 'elites gain one more affix'), fx: { affix: 1 } },
+  { icon: '🌟', name: L('Corte de Elites', 'Elite Court'), desc: L('+10% de chance de elite', '+10% elite chance'), fx: { elite: 0.1 } },
+  { icon: '🌑', name: L('Eclipse', 'Eclipse'), desc: L('inimigos com mais 20% de vida e 10% de dano', 'enemies have another 20% health and 10% damage'), fx: { ehp: 1.2, edmg: 1.1 } },
+  { icon: '🩸', name: L('Sangue Ralo', 'Thin Blood'), desc: L('toda cura mais 20% mais fraca', 'all healing another 20% weaker'), fx: { heal: 0.8 } },
+  { icon: '🦴', name: L('Ossos de Ferro', 'Iron Bones'), desc: L('inimigos com mais 20% de vida', 'enemies have another 20% health'), fx: { ehp: 1.2 } },
+  { icon: '🗡️', name: L('Lâminas Abissais', 'Abyssal Blades'), desc: L('inimigos causam mais 15% de dano', 'enemies deal another 15% damage'), fx: { edmg: 1.15 } },
+  { icon: '👑', name: L('Reis do Vazio', 'Void Kings'), desc: L('chefes e elites com mais 40% de vida e 15% de dano', 'bosses and elites have another 40% health and 15% damage'), fx: { bel: 1.4, beldmg: 1.15 } },
+  { icon: '⏳', name: L('Tempo Pesado', 'Heavy Time'), desc: L('suas habilidades recarregam mais 10% mais devagar', 'your skills recharge another 10% slower'), fx: { cd: 1.1 } },
+  { icon: '🧱', name: L('Pele de Papel', 'Paper Skin'), desc: L('sua blindagem mais 15% menor', 'your armor another 15% lower'), fx: { parm: 0.85 } },
+  { icon: '💀', name: L('Carrascos', 'Executioners'), desc: L('inimigos causam mais 15% de dano', 'enemies deal another 15% damage'), fx: { edmg: 1.15 } },
+  { icon: '🌋', name: L('Ira Primordial', 'Primordial Wrath'), desc: L('chefes com mais 50% de vida e chefes e elites com mais 20% de dano', 'bosses have another 50% health, bosses and elites another 20% damage'), fx: { bhp: 1.5, beldmg: 1.2 } },
+  { icon: '💔', name: L('Coração Partido', 'Broken Heart'), desc: L('sua vida máxima mais 10% menor', 'your max health another 10% lower'), fx: { php: 0.9 } },
+  { icon: '🕳️', name: L('Fim do Abismo', 'End of the Abyss'), desc: L('inimigos com mais 25% de vida e 15% de dano, chefes e elites com mais 30% de vida', 'enemies have another 25% health and 15% damage, bosses and elites another 30% health'), fx: { ehp: 1.25, edmg: 1.15, bel: 1.3 } },
 ];
 // efeitos somados das regras XI+ ligadas (guardado por nível: é lido em todo golpe, tiro e cura)
 const FX_MUL = ['ehp', 'edmg', 'bhp', 'bel', 'beldmg', 'espd', 'eatk', 'count', 'heal', 'shot', 'php', 'parm', 'cd', 'regen'];
@@ -267,10 +288,10 @@ export function abyssBest() {
 }
 export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ROMAN[n] || ''}`;
 // cor de cada nível: do violeta (I) ao vermelho-sangue (X)
-// XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio
-export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)`);
+// XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico
+export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)`);
 
-// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo XXX = 38
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.

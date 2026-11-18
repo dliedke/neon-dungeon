@@ -223,7 +223,7 @@ export function initUI() {
     applyQuality();
     saveSettings();
   };
-  // Abismo: 30 marcadores (3 linhas de 10) entre o − e o + (clique direto num nível; clicar no atual desce um)
+  // Abismo: 50 marcadores (5 linhas de 10) entre o − e o + (clique direto num nível; clicar no atual desce um)
   const pips = $('abyss-pips');
   for (let n = 1; n <= ABYSS_MAX; n++) {
     const pip = document.createElement('i');
