@@ -51,6 +51,7 @@ const DICT = {
   sfx: ['Efeitos', 'Sound effects'],
   difficulty: ['Dificuldade', 'Difficulty'],
   abyss: ['Abismo', 'Abyss'],
+  abyssPadHint: ['No Abismo: {LB} −10 · {RB} +10', 'On Abyss: {LB} −10 · {RB} +10'],
   diffTitle: ['Dificuldade: quanto mais difícil, mais créditos e itens melhores (¢ créditos, ★ itens). Muda na hora.', 'Difficulty: the harder, the more credits and better items (¢ credits, ★ items). Changes instantly.'],
   graphics: ['Gráficos', 'Graphics'],
   glow: ['Brilho neon', 'Neon glow'],

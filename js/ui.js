@@ -223,26 +223,31 @@ export function initUI() {
     applyQuality();
     saveSettings();
   };
-  // Abismo: 50 marcadores (5 linhas de 10) entre o − e o + (clique direto num nível; clicar no atual desce um)
-  const pips = $('abyss-pips');
-  for (let n = 1; n <= ABYSS_MAX; n++) {
-    const pip = document.createElement('i');
-    pip.dataset.n = String(n);
-    pips.appendChild(pip);
-  }
-  pips.addEventListener('click', (e) => {
-    const n = +(e.target.dataset && e.target.dataset.n);
-    if (!n) return;
-    if (n > abyssUnlocked()) {
-      sfx.deny();
-      return toast(L('🔒 Derrote um chefe no <b>Morte</b> para abrir o Abismo.', '🔒 Defeat a boss on <b>Death</b> to open the Abyss.'), 'warn', 'abyssLock');
-    }
-    applyAbyss(n === abyssLvl() ? n - 1 : n);
-  });
-  const abBtn = (id, d) => ($(id).onclick = (e) => {
-    applyAbyss(abyssLvl() + d);
-    e.currentTarget.blur();
-  });
+  // Abismo: − / barra / + (segurar o − ou o + repete; a barra vai direto ao nível)
+  const range = $('abyss-range');
+  range.max = String(ABYSS_MAX);
+  range.oninput = () => applyAbyss(+range.value);
+  const abBtn = (id, d) => {
+    const b = $(id);
+    let t1 = 0;
+    let t2 = 0;
+    const stop = () => {
+      clearTimeout(t1);
+      clearInterval(t2);
+    };
+    b.addEventListener('pointerdown', (ev) => {
+      if (ev.button) return;
+      stop();
+      applyAbyss(abyssLvl() + d);
+      t1 = setTimeout(() => (t2 = setInterval(() => applyAbyss(abyssLvl() + d), 70)), 420);
+    });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+    // teclado (Enter/Espaço): o clique vem sem ponteiro (detail 0)
+    b.onclick = (ev) => {
+      if (ev.detail === 0) applyAbyss(abyssLvl() + d);
+      ev.currentTarget.blur();
+    };
+  };
   abBtn('abyss-dn', -1);
   abBtn('abyss-up', 1);
   $('opt-abyss').onclick = () => applyAbyss((abyssLvl() + 1) % (abyssUnlocked() + 1));
@@ -899,7 +904,12 @@ const toastKeys = {};
 // Dificuldade: opções (botão) e HUD (controle deslizante) usam a mesma função
 const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff9a3d', '#ff6a1a', '#ff3a64', '#ff2bd6', '#b04dff', '#e8e6ff'];
 // regras ativas do Abismo, uma por linha (tooltip)
-const abyssRulesText = (n) => ABYSS_RULES.slice(0, n).map((r, i) => `${ROMAN[i + 1]} ${r.icon} ${r.name}: ${r.desc}`).join('\n');
+// (só as 10 últimas: com 100 níveis a lista inteira não cabe)
+const abyssRulesText = (n) => {
+  const from = Math.max(0, n - 10);
+  const head = from ? L(`(as regras do I ao ${ROMAN[from]} também valem)\n`, `(rules I to ${ROMAN[from]} also apply)\n`) : '';
+  return head + ABYSS_RULES.slice(from, n).map((r, i) => `${ROMAN[from + i + 1]} ${r.icon} ${r.name}: ${r.desc}`).join('\n');
+};
 export function updDiffUi() {
   const k = G.settings.difficulty;
   const i = Math.max(0, DIFF_ORDER.indexOf(k));
@@ -924,11 +934,8 @@ export function updDiffUi() {
     : ab
       ? `${abyssName(ab)}\n${abyssRulesText(ab)}`
       : L(`Abismo: escolha um dos ${un} níveis. Cada nível soma uma regra e dá mais créditos e itens melhores.`, `Abyss: pick any of the ${un} levels. Each level adds a rule and gives more credits and better items.`);
-  $('abyss-pips').querySelectorAll('i').forEach((pip, j) => {
-    pip.classList.toggle('on', j < ab);
-    pip.classList.toggle('open', j < un);
-    pip.style.setProperty('--pc', abyssColor(j + 1));
-  });
+  $('abyss-range').value = String(ab);
+  $('abyss-n').textContent = `${ab}/${ABYSS_MAX}`;
   $('abyss-dn').disabled = ab <= 0;
   $('abyss-up').disabled = ab >= un;
   // opções (para o controle): aparece depois de liberar
@@ -948,20 +955,17 @@ function applyAbyss(n) {
   if (G.player && G.char) refreshStats();
   if (G.mode === 'menu') return;
   const ab = abyssLvl();
-  if (ab > prev) {
-    const r = ABYSS_RULES[ab - 1];
-    sfx.roar();
-    banner(`🕳️ ${abyssName(ab).toUpperCase()}`, `${r.icon} ${r.name}`);
-  }
   // o aviso espera parar de clicar, para mostrar o nível final e não o primeiro
   clearTimeout(abToastT);
-  abToastT = setTimeout(() => abyssToast(ab > prev), 450);
+  abToastT = setTimeout(() => abyssToast(ab > prev), 600);
 }
 let abToastT = null;
 function abyssToast(up) {
   const ab = abyssLvl();
   if (up && ab) {
     const r = ABYSS_RULES[ab - 1];
+    sfx.roar();
+    banner(`🕳️ ${abyssName(ab).toUpperCase()}`, `${r.icon} ${r.name}`);
     toast(`<b style="color:${abyssColor(ab)}">${abyssName(ab)}</b>: ${r.icon} <b>${r.name}</b>. ${r.desc}<br><small>${L('As regras dos níveis abaixo continuam valendo. A recompensa sobe aos poucos.', 'Rules from the levels below still apply. Rewards ramp up gradually.')}</small>`, '');
   } else {
     toast(ab ? L(`De volta ao <b>${abyssName(ab)}</b>.`, `Back to <b>${abyssName(ab)}</b>.`) : L('Saiu do Abismo: de volta ao <b>Morte</b>.', 'Left the Abyss: back to <b>Death</b>.'), '');
@@ -2388,6 +2392,11 @@ export function uiPadUpdate() {
   const CHAR_TABS = ['equip', 'skills', 'gems'];
   const ti = CHAR_TABS.indexOf(currentTab);
   if (Input.nav('rs') && root.id === 'panel-char' && currentTab === 'equip' && !$('btn-recycle-myth').disabled) openMythRecycle(); // {RS}: reciclar míticos
+  if (root.id === 'panel-opts' && focused && focused.id === 'opt-abyss') {
+    // {LB}/{RB}: −10/+10 no nível do Abismo
+    if (Input.nav('lb')) applyAbyss(Math.max(0, abyssLvl() - 10));
+    if (Input.nav('rb')) applyAbyss(abyssLvl() + 10);
+  }
   if (root.id === 'panel-mrec') {
     // {LB}/{RB}: −10/+10 no nível sem tirar o seletor do Reciclar
     if (Input.nav('lb')) mythCutStep(-10);

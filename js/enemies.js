@@ -181,18 +181,41 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane'
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
-// Abismo: 50 níveis abaixo da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Abismo: 100 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
 // Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
-export const ABYSS_MAX = 50;
+export const ABYSS_MAX = 100;
 export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
-// (I +6, II +18, III +30 ... X +114 ... XXX +354 ... L +594). Aceita nível fracionário (recompensa subindo aos poucos)
+// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-export const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX', 'XXXI', 'XXXII', 'XXXIII', 'XXXIV', 'XXXV', 'XXXVI', 'XXXVII', 'XXXVIII', 'XXXIX', 'XL', 'XLI', 'XLII', 'XLIII', 'XLIV', 'XLV', 'XLVI', 'XLVII', 'XLVIII', 'XLIX', 'L'];
+const toRoman = (n) => [[100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']].reduce((s, [v, r]) => { while (n >= v) { s += r; n -= v; } return s; }, '');
+export const ROMAN = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? toRoman(n) : ''));
+// regra do Abismo só com multiplicadores (fx): a descrição bilíngue sai do próprio fx
+const P_ = (v) => Math.round(Math.abs(v - 1) * 100);
+const FX_TXT = {
+  ehp: (v) => [`inimigos com mais ${P_(v)}% de vida`, `enemies have another ${P_(v)}% health`],
+  edmg: (v) => [`inimigos causam mais ${P_(v)}% de dano`, `enemies deal another ${P_(v)}% damage`],
+  bel: (v) => [`chefes e elites com mais ${P_(v)}% de vida`, `bosses and elites have another ${P_(v)}% health`],
+  bhp: (v) => [`chefes com mais ${P_(v)}% de vida`, `bosses have another ${P_(v)}% health`],
+  beldmg: (v) => [`chefes e elites causam mais ${P_(v)}% de dano`, `bosses and elites deal another ${P_(v)}% damage`],
+  espd: (v) => [`inimigos mais ${P_(v)}% mais rápidos`, `enemies move another ${P_(v)}% faster`],
+  eatk: (v) => [`inimigos atacam mais ${P_(v)}% mais rápido`, `enemies attack another ${P_(v)}% faster`],
+  shot: (v) => [`tiros inimigos mais ${P_(v)}% mais rápidos`, `enemy shots fly another ${P_(v)}% faster`],
+  heal: (v) => [`toda cura mais ${P_(v)}% mais fraca`, `all healing another ${P_(v)}% weaker`],
+  cd: (v) => [`suas habilidades recarregam mais ${P_(v)}% mais devagar`, `your skills recharge another ${P_(v)}% slower`],
+  parm: (v) => [`sua blindagem mais ${P_(v)}% menor`, `your armor another ${P_(v)}% lower`],
+  php: (v) => [`sua vida máxima mais ${P_(v)}% menor`, `your max health another ${P_(v)}% lower`],
+  regen: (v) => [`sua regeneração de vida mais ${P_(v)}% menor`, `your health regeneration another ${P_(v)}% lower`],
+  elite: (v) => [`+${Math.round(v * 100)}% de chance de elite`, `+${Math.round(v * 100)}% elite chance`],
+};
+function fxRule(icon, pt, en, fx) {
+  const parts = Object.keys(fx).map((k) => FX_TXT[k](fx[k]));
+  return { icon, name: L(pt, en), desc: L(parts.map((p) => p[0]).join(' e '), parts.map((p) => p[1]).join(' and ')), fx };
+}
 // regra que cada nível liga (índice 0 = Abismo I)
 export const ABYSS_RULES = [
   { icon: '⭐', name: L('Horda de Elites', 'Elite Horde'), desc: L('muito mais elites, até no andar 1', 'far more elites, even on floor 1') },
@@ -251,6 +274,57 @@ export const ABYSS_RULES = [
   { icon: '🌋', name: L('Ira Primordial', 'Primordial Wrath'), desc: L('chefes com mais 50% de vida e chefes e elites com mais 20% de dano', 'bosses have another 50% health, bosses and elites another 20% damage'), fx: { bhp: 1.5, beldmg: 1.2 } },
   { icon: '💔', name: L('Coração Partido', 'Broken Heart'), desc: L('sua vida máxima mais 10% menor', 'your max health another 10% lower'), fx: { php: 0.9 } },
   { icon: '🕳️', name: L('Fim do Abismo', 'End of the Abyss'), desc: L('inimigos com mais 25% de vida e 15% de dano, chefes e elites com mais 30% de vida', 'enemies have another 25% health and 15% damage, bosses and elites another 30% health'), fx: { ehp: 1.25, edmg: 1.15, bel: 1.3 } },
+  // LI a C: só multiplicadores pequenos (fx); a descrição sai do próprio fx (fxRule). Marcos em LX, LXX, LXXX, XC e C
+  fxRule('⛓️', 'Correntes Rubras', 'Crimson Chains', { ehp: 1.08 }),
+  fxRule('🔥', 'Ferro em Brasa', 'Glowing Iron', { edmg: 1.06 }),
+  fxRule('🦂', 'Ferrão Sombrio', 'Dusk Stinger', { espd: 1.05 }),
+  fxRule('💫', 'Estrela Cadente', 'Falling Star', { shot: 1.08 }),
+  fxRule('🛡️', 'Casco Estelar', 'Star Shell', { ehp: 1.08 }),
+  fxRule('🧿', 'Mau-Olhado', 'Evil Eye', { cd: 1.05 }),
+  fxRule('👿', 'Capatazes', 'Overseers', { bel: 1.12 }),
+  fxRule('🥶', 'Frio Mortal', 'Deathly Cold', { heal: 0.92 }),
+  fxRule('🪓', 'Machados do Vazio', 'Void Axes', { edmg: 1.06 }),
+  fxRule('🌌', 'Horizonte Negro', 'Black Horizon', { ehp: 1.12, edmg: 1.08, bel: 1.1 }),
+  fxRule('🐍', 'Escamas Eternas', 'Eternal Scales', { ehp: 1.08 }),
+  fxRule('🌬️', 'Ventos Cortantes', 'Cutting Winds', { espd: 1.04 }),
+  fxRule('⚔️', 'Duelistas', 'Duelists', { eatk: 0.95 }),
+  fxRule('🏺', 'Elites Malditas', 'Cursed Elites', { elite: 0.05 }),
+  fxRule('🩻', 'Ossos Expostos', 'Bare Bones', { parm: 0.93 }),
+  fxRule('🗿', 'Titãs', 'Titans', { bhp: 1.2 }),
+  fxRule('🔱', 'Tridente Negro', 'Black Trident', { edmg: 1.06 }),
+  fxRule('🧪', 'Veneno Lento', 'Slow Venom', { regen: 0.8 }),
+  fxRule('🌠', 'Meteoros Vivos', 'Living Meteors', { shot: 1.06 }),
+  fxRule('👁️', 'Olho do Abismo', 'Eye of the Abyss', { ehp: 1.12, bel: 1.12, beldmg: 1.08 }),
+  fxRule('🪨', 'Pele de Pedra', 'Stone Skin', { ehp: 1.08 }),
+  fxRule('💢', 'Raiva Cega', 'Blind Rage', { edmg: 1.06 }),
+  fxRule('⏱️', 'Relógio Rachado', 'Cracked Clock', { cd: 1.05 }),
+  fxRule('🦅', 'Predadores Alados', 'Winged Predators', { espd: 1.04 }),
+  fxRule('🔔', 'Dobre Final', 'Final Knell', { bel: 1.12, heal: 0.95 }),
+  fxRule('🩸', 'Sede de Sangue', 'Bloodlust', { eatk: 0.95 }),
+  fxRule('🧱', 'Muralhas Vivas', 'Living Walls', { ehp: 1.08 }),
+  fxRule('💔', 'Alma Ferida', 'Wounded Soul', { php: 0.95 }),
+  fxRule('🗡️', 'Adagas Fantasma', 'Phantom Daggers', { edmg: 1.06 }),
+  fxRule('🌑', 'Noite Eterna', 'Eternal Night', { ehp: 1.12, edmg: 1.08, bhp: 1.15 }),
+  fxRule('🧬', 'Mutação', 'Mutation', { bel: 1.1 }),
+  fxRule('☠️', 'Toxina', 'Toxin', { heal: 0.92 }),
+  fxRule('🦾', 'Músculos de Aço', 'Steel Muscles', { edmg: 1.06 }),
+  fxRule('🪐', 'Gravidade Cruel', 'Cruel Gravity', { espd: 1.04 }),
+  fxRule('🏔️', 'Montanha Viva', 'Living Mountain', { ehp: 1.08 }),
+  fxRule('⚡', 'Relâmpago Negro', 'Black Lightning', { shot: 1.06, eatk: 0.96 }),
+  fxRule('👺', 'Carniceiros', 'Butchers', { edmg: 1.06 }),
+  fxRule('🕸️', 'Teia do Vazio', 'Void Web', { cd: 1.05 }),
+  fxRule('🧊', 'Pele de Gelo Negro', 'Black Ice Skin', { parm: 0.93 }),
+  fxRule('🌀', 'Redemoinho Final', 'Final Whirl', { ehp: 1.1, bel: 1.12, beldmg: 1.1 }),
+  fxRule('🐲', 'Linhagem Dracônica', 'Draconic Bloodline', { bhp: 1.2 }),
+  fxRule('🔰', 'Escudos Quebrados', 'Broken Shields', { ehp: 1.08 }),
+  fxRule('💀', 'Algozes', 'Tormentors', { edmg: 1.07 }),
+  fxRule('🥀', 'Esperança Murcha', 'Withered Hope', { php: 0.95 }),
+  fxRule('🌩️', 'Tormenta Cega', 'Blind Tempest', { espd: 1.04, eatk: 0.96 }),
+  fxRule('🏴', 'Estandarte Negro', 'Black Banner', { elite: 0.05 }),
+  fxRule('🕯️', 'Última Vela', 'Last Candle', { regen: 0.8, heal: 0.95 }),
+  fxRule('🌋', 'Ira do Fundo', 'Wrath of the Deep', { ehp: 1.1, edmg: 1.08 }),
+  fxRule('⚰️', 'Cortejo Fúnebre', 'Funeral Procession', { bel: 1.12, beldmg: 1.1 }),
+  fxRule('♾️', 'Centésimo Degrau', 'The Hundredth Step', { ehp: 1.15, edmg: 1.1, bel: 1.15, bhp: 1.15 }),
 ];
 // efeitos somados das regras XI+ ligadas (guardado por nível: é lido em todo golpe, tiro e cura)
 const FX_MUL = ['ehp', 'edmg', 'bhp', 'bel', 'beldmg', 'espd', 'eatk', 'count', 'heal', 'shot', 'php', 'parm', 'cd', 'regen'];
@@ -288,10 +362,11 @@ export function abyssBest() {
 }
 export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ROMAN[n] || ''}`;
 // cor de cada nível: do violeta (I) ao vermelho-sangue (X)
-// XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico
-export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)`);
+// XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico;
+// LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco
+export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)`);
 
-// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
@@ -299,7 +374,7 @@ export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficul
 // subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
-// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1)
+// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6)
 for (let n = 1; n <= ABYSS_MAX; n++) {
   REWARD.cr.push(7.2 + n);
   REWARD.loot.push(5.6 + 0.25 * n);
