@@ -371,3 +371,27 @@ wardP('gunner', 'gwKevlar', 116, L('Colete Pesado', 'Heavy Vest'), 'pPlate', (r)
 ward('gunner', 'decoy', 'gwHologram', 124, L('Holograma-Isca', 'Decoy Hologram'), 'eye', 45, 22, { t: 6, rad: 5, m: 6 });
 wardP('gunner', 'gwReflexes', 132, L('Reflexos de Atirador', 'Gunslinger Reflexes'), 'pWind', (r) => ({ dodge: r1(0.4 * r), hpRegen: r1(0.8 * r) }));
 ward('gunner', 'mendfield', 'gwSecondChance', 140, L('Segunda Chance', 'Second Chance'), 'star', 60, 36, { heal: 0.45, shield: 0.3 });
+
+// ---------------- Netrunner ----------------
+myth('netrunner', 'beam', 'nMindLance', 104, L('Lança Mental', 'Mind Lance'), 'eye', 70, 12, { len: 20, w: 1.0, m: 9, fx: { stun: 1.5 } });
+myth('netrunner', 'chain', 'nViralChain', 112, L('Cadeia Viral', 'Viral Chain'), 'drop', 75, 14, { jumps: 14, m: 3.4, range: 10 });
+myth('netrunner', 'storm', 'nDataStorm', 120, L('Tempestade de Dados', 'Data Storm'), 'bolt', 80, 20, { dur: 8, rate: 4, m: 1.8 });
+myth('netrunner', 'summon', 'nGhostNet', 128, L('Rede Fantasma', 'Ghost Net'), 'ring', 90, 28, { kind: 'clone', n: 4, dur: 16, m: 2.6, pt: 'clones digitais', en: 'digital clones' });
+myth('netrunner', 'bomb', 'nZeroDay', 136, L('Dia Zero', 'Zero Day'), 'cross', 110, 24, { rad: 7, m: 12, m2: 6, fx: { stun: 2 } });
+ward('netrunner', 'shield', 'nwAegis', 108, L('Protocolo Égide', 'Aegis Protocol'), 'ring', 45, 24, { t: 7, absorb: 0.6 });
+wardP('netrunner', 'nwNeuralMesh', 116, L('Malha Neural', 'Neural Mesh'), 'pChip', (r) => ({ dmgRed: r1(0.4 * r), killEn: r1(0.6 * r) }));
+ward('netrunner', 'decoy', 'nwFakeAvatar', 124, L('Avatar Isca', 'Decoy Avatar'), 'eye', 45, 22, { t: 7, rad: 5.5, m: 7 });
+wardP('netrunner', 'nwRedundancy', 132, L('Redundância', 'Redundancy'), 'pBattery', (r) => ({ hpPct: 4 * r, hpRegen: r1(0.8 * r) }));
+ward('netrunner', 'mendfield', 'nwFullRestore', 140, L('Restauração Total', 'Full Restore'), 'cross', 60, 36, { heal: 0.5, rate: 0.04, mendT: 5, en: 100 });
+
+// ---------------- Punho de Aço (brawler) ----------------
+myth('brawler', 'nova', 'rQuake', 104, L('Terremoto', 'Earthquake'), 'cross', 70, 14, { rad: 7, m: 8, m2: 5, fx: { stun: 1.5 } });
+myth('brawler', 'charge', 'rMeteorFist', 112, L('Punho Meteoro', 'Meteor Fist'), 'flame', 75, 14, { dist: 12, m: 6, m2: 7, rad: 4.5, fx: { stun: 0.8 } });
+myth('brawler', 'pillars', 'rShockline', 120, L('Linha de Choque', 'Shock Line'), 'ring', 80, 14, { n: 12, m: 5, fx: { slow: 1.5 } });
+myth('brawler', 'cone', 'rTitanPunch', 128, L('Soco Titânico', 'Titan Punch'), 'star', 90, 18, { range: 8, arc: 90, m: 11, fx: { stun: 1.5 } });
+myth('brawler', 'summon', 'rSteelColossus', 136, L('Colosso de Aço', 'Steel Colossus'), 'blade', 110, 28, { kind: 'mech', n: 1, dur: 18, m: 5, pt: 'mecha de combate', en: 'combat mech' });
+ward('brawler', 'bulwark', 'rwIronGuard', 108, L('Guarda de Ferro', 'Iron Guard'), 'ring', 50, 24, { t: 6, taken: 0.25, mend: 0.03, rad: 5, m: 6 });
+wardP('brawler', 'rwHardHead', 116, L('Cabeça Dura', 'Hard Head'), 'pPlate', (r) => ({ dmgRed: r1(0.5 * r), armorPct: 6 * r }));
+ward('brawler', 'vamp', 'rwBloodFrenzy', 124, L('Frenesi de Sangue', 'Blood Frenzy'), 'drop', 45, 24, { t: 8, evade: 25, taken: 0.5 });
+wardP('brawler', 'rwHotBlood', 132, L('Sangue Quente', 'Hot Blood'), 'pDrop', (r) => ({ lifeSteal: r1(0.5 * r), killHeal: r1(0.3 * r) }));
+ward('brawler', 'mendfield', 'rwLastRound', 140, L('Último Round', 'Last Round'), 'star', 60, 36, { heal: 0.55, rate: 0.05, mendT: 6, shield: 0.35 });
