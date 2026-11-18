@@ -20,7 +20,7 @@ import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { Input } from './input.js';
 import { padText } from './padglyphs.js';
-import { setupEvents, updateEvents, eventsHud, eventMissions, eventKill, eventsBusy, announceEvents } from './events.js';
+import { setupEvents, updateEvents, eventsHud, eventMissions, eventKill, eventsBusy, announceEvents, eventsTimed } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -122,6 +122,25 @@ const CONTRACTS = {
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
+// contratos que correm contra o relógio (não convivem com um evento com relógio no mesmo andar)
+const CLOCK_CONTRACTS = ['speed', 'blitz'];
+let contractKinds = [];
+let contractN = null;
+// depois de sortear os eventos: se o andar já tem um evento com relógio, troca o contrato com relógio pelo
+// próximo da mesma lista (sem sortear nada de novo, para o andar salvo refazer igual)
+function fixContractClock(floor) {
+  const C = G.contract;
+  if (!C || !CLOCK_CONTRACTS.includes(C.kind) || !eventsTimed()) return;
+  G.contract = null;
+  for (const k of contractKinds) {
+    if (CLOCK_CONTRACTS.includes(k)) continue;
+    const c = CONTRACTS[k](floor, contractN);
+    if (!c) continue;
+    G.contract = { kind: k, goal: c.goal, cur: 0, text: c.text(c.goal), window: c.window, limit: c.limit, t: 0, times: [], done: false, failed: false };
+    return;
+  }
+}
+
 function rollContract(floor) {
   G.contract = null;
   if (floor < 2 || isFinalFloor(floor)) return;
@@ -138,6 +157,8 @@ function rollContract(floor) {
   let kinds = shuffle(Object.keys(CONTRACTS));
   if (n.rift && chance(0.5)) kinds = ['rift', ...kinds];
   if (n.thief && chance(0.25)) kinds = ['thief', ...kinds];
+  contractKinds = kinds;
+  contractN = n;
   for (const k of kinds) {
     const c = CONTRACTS[k](floor, n);
     if (!c) continue;
@@ -352,6 +373,7 @@ export function setupFloorEvents(d, floor, boss, rooms) {
   rollContract(floor);
   // eventos e quebra-cabeças do andar (podem trazer guardas e um Procurado: entram na conta do andar limpo)
   setupEvents(d, floor, boss, rooms);
+  fixContractClock(floor);
   if (G.clear) G.clear.start = G.clear.left = enemiesLeft();
 }
 

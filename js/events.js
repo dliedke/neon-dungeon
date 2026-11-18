@@ -30,7 +30,9 @@ import { CLASSES, CLASS_ORDER } from './classes.js';
 export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'];
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 // eventos com contagem de tempo: só um deles por andar
-const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance'];
+const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'];
+// algum evento do andar corre contra o relógio? (os contratos com relógio não podem coexistir com ele)
+export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.kind));
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
   lights: { icon: '💡', css: '#7affc8', name: L('Piso de Luzes', 'Light Floor') },
@@ -845,6 +847,15 @@ const bomb = {
       E.delay -= dt;
       return;
     }
+    // o relógio só começa quando o jogador chega perto de um console (ou depois de 45s), para não
+    // competir com o resto do andar
+    if (!E.go) {
+      E.wait = (E.wait || 0) + dt;
+      if (E.wait > 45 || E.cons.some((c) => Math.hypot(p.x - c.x, p.z - c.z) < 14)) {
+        E.go = true;
+        toast(L('💣 <b>O relógio da bomba começou!</b>', '💣 <b>The bomb clock started!</b>'), 'warn', 'bombgo');
+      } else return;
+    }
     E.t -= dt;
     if (E.t < 10 && Math.floor(E.t) !== E.beep) {
       E.beep = Math.floor(E.t);
@@ -867,10 +878,11 @@ const bomb = {
     E.st = 'failed';
     sfx.deny();
   },
-  hud: (E) => `${L('consoles', 'consoles')} ${E.cons.filter((c) => c.off).length}/3 · <span style="color:${E.t < 15 ? '#ff4466' : 'inherit'}">${mmss(E.t)}</span>`,
-  save: (E) => ({ t: Math.round(E.t), off: E.cons.map((c) => (c.off ? 1 : 0)).join('') }),
+  hud: (E) => `${L('consoles', 'consoles')} ${E.cons.filter((c) => c.off).length}/3 · <span style="color:${E.t < 15 ? '#ff4466' : 'inherit'}">${mmss(E.t)}</span>${E.go || E.st !== 'armed' ? '' : ' ' + L('(parado)', '(paused)')}`,
+  save: (E) => ({ t: Math.round(E.t), off: E.cons.map((c) => (c.off ? 1 : 0)).join(''), go: E.go ? 1 : 0 }),
   load(E, s) {
     E.t = Math.max(1, +s.t || E.limit);
+    E.go = s.go === undefined ? true : !!s.go;
     if (typeof s.off === 'string') E.cons.forEach((c, i) => (c.off = s.off[i] === '1'));
     for (const c of E.cons) {
       if (!c.off) continue;
@@ -882,7 +894,7 @@ const bomb = {
       if (s.st === 'failed') for (const c of E.cons) if (!c.off) setLight(c.scr, 0x333344, 0.3);
     }
   },
-  intro: (E) => L(`uma bomba foi armada! Ache os 3 consoles vermelhos (◆ laranja no mapa e setas na borda da tela) e desarme cada um ficando dentro do círculo dele por 2,5s, até encher de verde. Você tem <b>${mmss(E.limit)}</b>; se o tempo acabar, ela explode.`, `a bomb has been armed! Find the 3 red consoles (orange ◆ on the map and arrows at the screen edge) and disarm each one by staying inside its circle for ${HOLD}s, until it fills up green. You have <b>${mmss(E.limit)}</b>; if time runs out, it blows up.`),
+  intro: (E) => L(`uma bomba foi armada! Ache os 3 consoles vermelhos (◆ laranja no mapa e setas na borda da tela) e desarme cada um ficando dentro do círculo dele por 2,5s, até encher de verde. Você tem <b>${mmss(E.limit)}</b>; se o tempo acabar, ela explode. O relógio só começa quando você chegar perto de um console.`, `a bomb has been armed! Find the 3 red consoles (orange ◆ on the map and arrows at the screen edge) and disarm each one by staying inside its circle for ${HOLD}s, until it fills up green. You have <b>${mmss(E.limit)}</b>; if time runs out, it blows up. The clock only starts when you get near a console.`),
 };
 
 // ==================================================================
@@ -1375,7 +1387,7 @@ const gamble = {
     // mesmo piso de raridade dos drops: do Insano para cima (ou no Inferno) não sai modificado
     const minR = rewardRank() >= 5 || tierOf().off >= 60 ? 2 : 1;
     // no Abismo o prêmio máximo pode ser primordial (0,5%)
-    const rarity = Math.max(minR, abyssLvl() && r < 0.005 ? PRIMORDIAL : top && r < 0.05 ? DIVINE : r < (top ? 0.08 : 0.05) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
+    const rarity = Math.max(minR, abyssLvl() && r < 0.005 ? PRIMORDIAL : top && r < 0.05 ? DIVINE : r < (top ? 0.075 : 0.04) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
     const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
     const d = G.dungeon;
     const fx = E.x + 0.8;

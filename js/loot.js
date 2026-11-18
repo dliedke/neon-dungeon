@@ -28,7 +28,11 @@ const PRISM_FX = [0x7dfff0, 0xff6bd6, 0xffe680, 0x8a7dff, 0x6bff9a, 0xff7a5a];
 function mythChance(o, find) {
   if (effFloor() < 3) return 0;
   const base = o.rift ? 0.08 : o.boss ? 0.06 : o.thief || o.beast ? 0.05 : o.contract ? 0.03 : o.chest ? 0.015 : o.elite ? 0.012 : 0.004;
-  return base * find * (1 + tierOf().loot / 30) * (G.player.buffs.fortune > 0 ? 1.5 : 1) * rewardK('loot');
+  // acima do Insano (recompensa 3,2) a chance de mítico cresce só 15% do que a recompensa cresce: no Morte e no Abismo
+  // os itens caem mais (e melhores), mas o mítico não vira rotina (Morte -36%, Abismo X -51%, Abismo L -70%)
+  const lk = rewardK('loot');
+  const mk = lk <= 3.2 ? lk : 3.2 + (lk - 3.2) * 0.15;
+  return base * find * (1 + tierOf().loot / 60) * (G.player.buffs.fortune > 0 ? 1.5 : 1) * mk;
 }
 // Chance de um item virar divino (acima do mítico): do Caos para cima (no Caos, metade do Apocalipse),
 // ou no Pesadelo/Inferno a partir do Brutal. Bem mais raro que o mítico; chefes, fendas e feras são a melhor fonte.
