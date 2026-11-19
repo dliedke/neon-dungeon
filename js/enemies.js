@@ -209,8 +209,8 @@ export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
 // (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-const toRoman = (n) => [[100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']].reduce((s, [v, r]) => { while (n >= v) { s += r; n -= v; } return s; }, '');
-export const ROMAN = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? toRoman(n) : ''));
+// número do Abismo como texto normal (1, 2, 3 ... 100); índice 0 fica vazio
+export const ABYSS_NUM = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? String(n) : ''));
 // regra do Abismo só com multiplicadores (fx): a descrição bilíngue sai do próprio fx
 const P_ = (v) => Math.round(Math.abs(v - 1) * 100);
 const FX_TXT = {
@@ -377,7 +377,7 @@ export function abyssBest() {
   for (const k in (G.save && G.save.stats && G.save.stats.sets.abyss) || {}) n = Math.max(n, +k | 0);
   return n;
 }
-export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ROMAN[n] || ''}`;
+export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ABYSS_NUM[n] || ''}`;
 // cor de cada nível: do violeta (I) ao vermelho-sangue (X)
 // XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico;
 // LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco

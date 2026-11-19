@@ -6,7 +6,7 @@ import { CLASSES, CLASS_ORDER, iconSvg, rankMult, MAX_RANK } from './classes.js'
 import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, PRIMORDIALS, PRIM_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill } from './player.js';
 import { INV_SIZE, SHRINES } from './loot.js';
-import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ROMAN } from './enemies.js';
+import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ABYSS_NUM } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
 import { skipFinale } from './finale.js';
 import { backupsOf, restoreBackup, backupId } from './backup.js';
@@ -907,8 +907,8 @@ const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff9a3d', '#ff6a1a', '#ff
 // (só as 10 últimas: com 100 níveis a lista inteira não cabe)
 const abyssRulesText = (n) => {
   const from = Math.max(0, n - 10);
-  const head = from ? L(`(as regras do I ao ${ROMAN[from]} também valem)\n`, `(rules I to ${ROMAN[from]} also apply)\n`) : '';
-  return head + ABYSS_RULES.slice(from, n).map((r, i) => `${ROMAN[from + i + 1]} ${r.icon} ${r.name}: ${r.desc}`).join('\n');
+  const head = from ? L(`(as regras do 1 ao ${ABYSS_NUM[from]} também valem)\n`, `(rules 1 to ${ABYSS_NUM[from]} also apply)\n`) : '';
+  return head + ABYSS_RULES.slice(from, n).map((r, i) => `${ABYSS_NUM[from + i + 1]} ${r.icon} ${r.name}: ${r.desc}`).join('\n');
 };
 export function updDiffUi() {
   const k = G.settings.difficulty;

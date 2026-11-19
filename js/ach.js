@@ -131,15 +131,15 @@ export function achList() {
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
   add('chaosBoss', '🌀', 2, L('Senhor do Caos', 'Lord of Chaos'), L('Derrote um chefe no Caos ou acima', 'Defeat a boss on Chaos or above'), () => (has('flags', 'chaosBoss') ? 1 : 0));
   add('deathBoss', '⚰️', 3, L('Dança com a Morte', 'Dance with Death'), L('Derrote um chefe no Morte', 'Defeat a boss on Death'), () => (has('flags', 'deathBoss') ? 1 : 0));
-  add('abyss1', '🕳️', 3, L('Olhando o Abismo', 'Gazing into the Abyss'), L('Derrote um chefe no Abismo I ou acima', 'Defeat a boss on Abyss I or above'), () => (abyssBest() >= 1 ? 1 : 0));
-  add('abyss5', '🌑', 3, L('O Abismo Olha de Volta', 'The Abyss Gazes Back'), L('Derrote um chefe no Abismo V ou acima', 'Defeat a boss on Abyss V or above'), () => (abyssBest() >= 5 ? 1 : 0));
-  add('abyss10', '👁️', 3, L('Senhor do Abismo', 'Lord of the Abyss'), L('Derrote um chefe no Abismo X', 'Defeat a boss on Abyss X'), () => (abyssBest() >= 10 ? 1 : 0));
-  add('abyss20', '🌋', 3, L('Fogo do Abismo', 'Abyssal Fire'), L('Derrote um chefe no Abismo XX ou acima', 'Defeat a boss on Abyss XX or above'), () => (abyssBest() >= 20 ? 1 : 0));
-  add('abyss30', '🌌', 3, L('Fundo do Vazio', 'Bottom of the Void'), L('Derrote um chefe no Abismo XXX', 'Defeat a boss on Abyss XXX'), () => (abyssBest() >= 30 ? 1 : 0));
-  add('abyss40', '🌠', 3, L('Além do Vazio', 'Beyond the Void'), L('Derrote um chefe no Abismo XL ou acima', 'Defeat a boss on Abyss XL or above'), () => (abyssBest() >= 40 ? 1 : 0));
-  add('abyss75', '🔱', 3, L('Sem Fundo', 'Bottomless'), L('Derrote um chefe no Abismo LXXV ou acima', 'Defeat a boss on Abyss LXXV or above'), () => (abyssBest() >= 75 ? 1 : 0));
-  add('abyss100', '💯', 3, L('Centésimo Degrau', 'The Hundredth Step'), L('Derrote um chefe no Abismo C', 'Defeat a boss on Abyss C'), () => (abyssBest() >= 100 ? 1 : 0));
-  add('abyss50', '♾️', 3, L('Fim do Abismo', 'End of the Abyss'), L('Derrote um chefe no Abismo L', 'Defeat a boss on Abyss L'), () => (abyssBest() >= 50 ? 1 : 0));
+  add('abyss1', '🕳️', 3, L('Olhando o Abismo', 'Gazing into the Abyss'), L('Derrote um chefe no Abismo 1 ou acima', 'Defeat a boss on Abyss 1 or above'), () => (abyssBest() >= 1 ? 1 : 0));
+  add('abyss5', '🌑', 3, L('O Abismo Olha de Volta', 'The Abyss Gazes Back'), L('Derrote um chefe no Abismo 5 ou acima', 'Defeat a boss on Abyss 5 or above'), () => (abyssBest() >= 5 ? 1 : 0));
+  add('abyss10', '👁️', 3, L('Senhor do Abismo', 'Lord of the Abyss'), L('Derrote um chefe no Abismo 10', 'Defeat a boss on Abyss 10'), () => (abyssBest() >= 10 ? 1 : 0));
+  add('abyss20', '🌋', 3, L('Fogo do Abismo', 'Abyssal Fire'), L('Derrote um chefe no Abismo 20 ou acima', 'Defeat a boss on Abyss 20 or above'), () => (abyssBest() >= 20 ? 1 : 0));
+  add('abyss30', '🌌', 3, L('Fundo do Vazio', 'Bottom of the Void'), L('Derrote um chefe no Abismo 30', 'Defeat a boss on Abyss 30'), () => (abyssBest() >= 30 ? 1 : 0));
+  add('abyss40', '🌠', 3, L('Além do Vazio', 'Beyond the Void'), L('Derrote um chefe no Abismo 40 ou acima', 'Defeat a boss on Abyss 40 or above'), () => (abyssBest() >= 40 ? 1 : 0));
+  add('abyss75', '🔱', 3, L('Sem Fundo', 'Bottomless'), L('Derrote um chefe no Abismo 75 ou acima', 'Defeat a boss on Abyss 75 or above'), () => (abyssBest() >= 75 ? 1 : 0));
+  add('abyss100', '💯', 3, L('Centésimo Degrau', 'The Hundredth Step'), L('Derrote um chefe no Abismo 100', 'Defeat a boss on Abyss 100'), () => (abyssBest() >= 100 ? 1 : 0));
+  add('abyss50', '♾️', 3, L('Fim do Abismo', 'End of the Abyss'), L('Derrote um chefe no Abismo 50', 'Defeat a boss on Abyss 50'), () => (abyssBest() >= 50 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 50)
@@ -153,7 +153,7 @@ export function achList() {
     ['winChaos', '🌀', 'Mestre do Caos', 'Master of Chaos', 'no Caos ou acima', 'on Chaos or above'],
     ['winApocalypse', '☄️', 'Sobrevivente do Apocalipse', 'Apocalypse Survivor', 'no Apocalipse ou acima', 'on Apocalypse or above'],
     ['winDeath', '💀', 'A Morte Perdeu', 'Death Lost', 'no Morte', 'on Death'],
-    ['winAbyss', '🕳️', 'Do Fundo do Abismo', 'From the Depths of the Abyss', 'no Abismo X', 'on Abyss X'],
+    ['winAbyss', '🕳️', 'Do Fundo do Abismo', 'From the Depths of the Abyss', 'no Abismo 10', 'on Abyss 10'],
   ]) add(id, ic, 3, L(pt, en), L(`Vença a batalha final ${dpt}`, `Win the final battle ${den}`), () => (has('flags', id) ? 1 : 0));
   add('winFast', '⚡', 3, L('Blitz Final', 'Final Blitz'), L('Vença a batalha final em menos de 10 minutos', 'Win the final battle in under 10 minutes'), () => (has('flags', 'winFast') ? 1 : 0));
   add('finalDuo', '✌️', 2, L('Dois Coelhos', 'Two Birds, One Stone'), L('Na batalha final, derrote dois chefes com menos de 5 segundos de diferença', 'In the final battle, defeat two bosses less than 5 seconds apart'), () => (has('flags', 'finalDuo') ? 1 : 0));
