@@ -2194,19 +2194,17 @@ function openMythRecycle() {
   const c = G.char;
   const lv = c.inv.filter((it) => it.rarity === MYTHIC && !it.fav).map((it) => it.ilvl | 0);
   if (!lv.length) return;
-  // padrão: o nível do item equipado mais fraco (o que está abaixo dele já ficou para trás)
-  if (!mythCut) {
-    const eq = Object.values(c.equip).filter(Boolean).map((it) => it.ilvl | 0);
-    mythCut = Math.max(10, Math.floor((eq.length ? Math.min(...eq) : Math.max(...lv)) / 10) * 10);
-  }
+  // sempre abre no nível máximo (acima do mítico mais forte do inventário); o −10 desce dali
+  mythCut = mythTop();
   renderMythRecycle();
   openOverlay('panel-mrec');
   // o seletor já começa no Reciclar (o {A} confirma); sem nada para reciclar, fica no Cancelar
   setFocus($('mrec-yes').disabled ? $('mrec-no') : $('mrec-yes'));
 }
+// teto do seletor: a dezena logo acima do mítico mais forte do inventário
+const mythTop = () => Math.max(10, ...G.char.inv.filter((it) => it.rarity === MYTHIC).map((it) => Math.ceil(((it.ilvl | 0) + 1) / 10) * 10));
 function mythCutStep(d) {
-  const top = Math.max(10, ...G.char.inv.filter((it) => it.rarity === MYTHIC).map((it) => Math.ceil(((it.ilvl | 0) + 1) / 10) * 10));
-  mythCut = Math.max(10, Math.min(top, mythCut + d));
+  mythCut = Math.max(10, Math.min(mythTop(), mythCut + d));
   sfx.click();
   renderMythRecycle();
 }
