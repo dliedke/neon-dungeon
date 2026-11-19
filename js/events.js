@@ -21,7 +21,7 @@ import { toast, banner } from './ui.js';
 import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion, damagePlayer, hitEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
-import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime, resolveCircle } from './dungeon.js';
+import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime, resolveCircle, randomFloorInRoom } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
 import { tierOf, tierFloor, applyAnomalyToEnemy, runHurt } from './run.js';
@@ -159,7 +159,10 @@ function spotOk(d, x, z, hx, hz, avoid = []) {
   if (d.props.some((p) => Math.hypot(p.x - x, p.z - z) < (NPCS.includes(p.type) ? r + 4 : r + 1))) return false;
   if (G.enemies.some((e) => e.static && Math.hypot(e.x - x, e.z - z) < r + 1)) return false;
   if (G.nest && Math.hypot(G.nest.x - x, G.nest.z - z) < r + 8) return false;
-  if (G.events.some((E) => (E.x != null && Math.hypot(E.x - x, E.z - z) < r + 8) || (E.pts && E.pts.some((q) => Math.hypot(q.x - x, q.z - z) < r + 5)))) return false;
+  // eventos que pedem atenção ficam mais longe dos outros (senão os inimigos de um invadem o outro)
+  if (G.events.some((E) => (E.x != null && Math.hypot(E.x - x, E.z - z) < r + (placingCalm || CALM.has(E.kind) ? CALM_GAP : 8)) || (E.pts && E.pts.some((q) => Math.hypot(q.x - x, q.z - z) < r + 5)))) return false;
+  // e longe dos inimigos que os eventos já puseram (Procurado, servidores, guardas...)
+  if (placingCalm && floorFoes && G.enemies.some((e) => e.alive && !floorFoes.has(e) && Math.hypot(e.x - x, e.z - z) < r + CALM_GAP)) return false;
   if (avoid.some((a) => Math.hypot(a.x - x, a.z - z) < a.r)) return false;
   return true;
 }
@@ -4394,9 +4397,16 @@ export function setupEvents(d, floor, boss, rooms) {
   dbgEvent = null;
   if (floor < 2 || isFinalFloor(floor)) return;
   const free = rooms.filter((r) => !r.safe);
+  // inimigos do andar (os que os eventos chamam nascem depois e não contam)
+  const foes = new Set(G.enemies);
+  floorFoes = foes;
+  calmZones = [];
   if (dbg) {
     const E = dbg === 'secret' ? (d.secret ? secret.setup(d) : null) : dbg === 'gamble' ? gamble.setup(d, floor, free.length ? free : rooms) : KIND[dbg].setup(d, floor, free);
     if (E) G.events.push(E);
+    // debug: qualquer evento fica sem inimigos em volta (dá para testar com calma)
+    if (E) calmAround(E);
+    calmFinish(d, rooms, foes);
     return;
   }
   // sempre gasta os mesmos sorteios (continuar o andar refaz igual)
@@ -4416,10 +4426,13 @@ export function setupEvents(d, floor, boss, rooms) {
     if (forced === undefined && got.length >= want) break;
     // no máximo um evento com relógio por andar (dois ao mesmo tempo obrigam a escolher um e perder o outro)
     if (forced === undefined && TIMED.includes(k) && got.some((g) => TIMED.includes(g))) continue;
+    placingCalm = CALM.has(k);
     const E = isolateRandom(() => KIND[k].setup(d, floor, free));
+    placingCalm = false;
     if (!E) continue;
     G.events.push(E);
     got.push(k);
+    if (CALM.has(k)) calmAround(E);
   }
   if (forced === undefined) lastMain = got;
   // pequeno: Sala Secreta (já escavada) ou Máquina de Apostas
@@ -4427,9 +4440,99 @@ export function setupEvents(d, floor, boss, rooms) {
     const E = secret.setup(d);
     if (E) G.events.push(E);
   } else if (chance(0.3)) {
+    placingCalm = true;
     const E = gamble.setup(d, floor, free.length ? free : rooms);
+    placingCalm = false;
     if (E) G.events.push(E);
+    if (E) calmAround(E);
   }
+  calmFinish(d, rooms, foes);
+}
+
+// eventos que pedem atenção (sequências, padrões, quebra-cabeças, desvios): na criação do andar os inimigos
+// em volta deles mudam de sala, senão não dá para ver o padrão no meio da briga.
+// Os de luta (arena, ondas, guardas, caçadas) e os que atravessam o andar inteiro ficam como estão.
+const CALM = new Set(['terminals', 'lights', 'prisms', 'signal', 'pairs', 'meteor', 'vault', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'dance',
+  'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'lock', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal']);
+const CALM_GAP = 14; // distância mínima entre um evento de atenção e outro evento (ou os inimigos dele)
+const CALM_SEE = 12; // além da borda do evento: o inimigo vê o jogador a 10m (folga para quem pisa um pouco fora)
+let placingCalm = false;
+let floorFoes = null;
+let calmZones = [];
+const calmBox = new THREE.Box3();
+// área livre de inimigos em volta do evento (o tamanho vem das peças dele, limitado: corridas e rebanhos andam longe)
+function calmAround(E) {
+  if (E.x == null) return;
+  let half = 3;
+  if (E.g) {
+    calmBox.setFromObject(E.g);
+    if (!calmBox.isEmpty()) half = Math.max(Math.abs(calmBox.min.x - E.x), Math.abs(calmBox.max.x - E.x), Math.abs(calmBox.min.z - E.z), Math.abs(calmBox.max.z - E.z));
+  }
+  half = Math.min(8, Math.max(3, half));
+  calmZones.push({ x: E.x, z: E.z, half, r: half + CALM_SEE });
+}
+const inCalm = (x, z, pad = 0) => calmZones.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + pad);
+// depois de criar os eventos: os inimigos do andar (só os de antes dos eventos) que caíram numa área calma
+// vão, com o grupo junto, para outra sala longe dos eventos de atenção e do início. Barris dentro do evento somem
+// (um golpe em área no quebra-cabeça explodiria tudo). Sorteio isolado: o resto do andar sai igual.
+function calmFinish(d, rooms, foes) {
+  floorFoes = null;
+  if (!calmZones.length) return;
+  isolateRandom(() => {
+    const N = G.nest;
+    const packs = [];
+    for (let i = G.enemies.length - 1; i >= 0; i--) {
+      const e = G.enemies[i];
+      if (!foes.has(e) || !e.alive || e.boss || (e.inert && e.type !== 'barrel') || e.T.prop || e.T.breakable) continue;
+      if (e.type === 'barrel') {
+        if (calmZones.some((c) => Math.hypot(e.x - c.x, e.z - c.z) < c.half + 3)) dropFoe(e, i);
+        continue;
+      }
+      if (!inCalm(e.x, e.z)) continue;
+      // sai do ninho (o ninho acorda inteiro e chamaria ele de volta)
+      if (e.nest && N) {
+        e.nest = false;
+        N.n--;
+        N.left--;
+      }
+      // grupo: inimigos que nasceram juntos (a até 3,5m do primeiro) mudam juntos
+      const pk = packs.find((p) => Math.hypot(p.x - e.x, p.z - e.z) < 3.5);
+      if (pk) pk.list.push(e);
+      else packs.push({ x: e.x, z: e.z, list: [e] });
+    }
+    if (N && N.n <= 0) G.nest = null;
+    if (!packs.length) return;
+    // salas boas: longe do início, fora das áreas calmas e sem ser a sala segura
+    const ok = rooms.filter((r) => r !== d.rooms[0] && !r.safe && Math.hypot(r.x + r.w / 2 - d.start.x, r.y + r.h / 2 - d.start.z) > 12);
+    for (const pk of packs) {
+      let to = null;
+      for (let t = 0; t < 30 && !to && ok.length; t++) {
+        const pt = randomFloorInRoom(d, pick(ok), 1);
+        if (isWalkable(d, pt.x, pt.z) && !inCalm(pt.x, pt.z, 2) && Math.hypot(pt.x - d.start.x, pt.z - d.start.z) > 12 && Math.hypot(pt.x - d.exit.x, pt.z - d.exit.z) > 3) to = pt;
+      }
+      for (const e of pk.list) {
+        if (!to) {
+          dropFoe(e, G.enemies.indexOf(e));
+          continue;
+        }
+        let x = to.x + (e.x - pk.x);
+        let z = to.z + (e.z - pk.z);
+        if (!isWalkable(d, x, z)) {
+          x = to.x;
+          z = to.z;
+        }
+        e.x = e.spawnX = x;
+        e.z = e.spawnZ = z;
+        e.model.root.position.set(x, 0, z);
+      }
+    }
+  });
+}
+function dropFoe(e, i) {
+  e.alive = false;
+  G.world.remove(e.model.root);
+  if (e.laser) G.world.remove(e.laser);
+  if (i >= 0) G.enemies.splice(i, 1);
 }
 
 export function updateEvents(dt) {
