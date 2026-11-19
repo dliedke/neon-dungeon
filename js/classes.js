@@ -14,10 +14,13 @@ import { shrineBlink } from './loot.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 // nível máximo de cada poder
-export const MAX_RANK = 50;
-// nível "suave" para durações e curas: depois do 30 cada nível conta a metade
-// (o dano segue o rankMult inteiro; sem isso as defesas virariam permanentes)
-export const softRank = (r) => (r <= 30 ? r : 30 + (r - 30) / 2);
+export const MAX_RANK = 100;
+// nível "suave" para durações e curas: do 31 ao 50 cada nível conta a metade e do 51 ao 100, um quarto
+// (o dano segue o rankMult inteiro; sem isso as defesas virariam permanentes). Nível 50 = 40, nível 100 = 52,5
+export const softRank = (r) => (r <= 30 ? r : r <= 50 ? 30 + (r - 30) / 2 : 40 + (r - 50) / 4);
+// nível dos passivos: até o 50 conta inteiro, do 51 ao 100 cada nível conta a metade (nível 100 = 75)
+// (os passivos somam atributos fixos; dobrar tudo do 50 ao 100 estouraria velocidade de ataque e vida)
+export const passiveRank = (r) => (r <= 50 ? r : 50 + (r - 50) / 2);
 const pct = (v) => `${Math.round(v * 100)}%`;
 
 export const ICONS = {
@@ -474,10 +477,10 @@ export const PFMT = {
   xpPct: (v) => L(`+${nfmt(v)}% de experiência`, `+${nfmt(v)}% experience`),
 };
 const r1 = (v) => Math.round(v * 10) / 10;
-const passive = (id, req, name, icon, mods) => ({
-  id, req, name, icon, passive: true, cost: 0, cd: 0, mods,
-  desc: (r) => Object.entries(mods(r)).map(([k, v]) => PFMT[k](v)).join(' · ') + '.',
-});
+const passive = (id, req, name, icon, mods0) => {
+  const mods = (r) => mods0(passiveRank(r));
+  return { id, req, name, icon, passive: true, cost: 0, cd: 0, mods, desc: (r) => Object.entries(mods(r)).map(([k, v]) => PFMT[k](v)).join(' · ') + '.' };
+};
 const PASSIVES = {
   blade: [
     passive('pEdge', 3, L('Fio Perfeito', 'Perfect Edge'), 'pTarget', (r) => ({ crit: r1(1.2 * r), critDmg: 5 * r })),
@@ -779,9 +782,10 @@ for (const [id, list] of Object.entries(APEX_POWERS)) CLASSES[id].skills.push(..
 // Os supremos da Lanceira e do Biohacker (SUP_LATE/APEX_LATE, logo abaixo) são empurrados DEPOIS deste, nunca antes.
 // 4x mais forte: a velocidade (swiftSpd) soma por fora do teto de 50% dos itens, e o Teleporte recarrega 4x mais rápido
 // que a fórmula antiga (3 + 1,5·r)% de redução — convertida em velocidade de recarga, multiplicada por 4 e de volta em redução.
-const swiftWarp = (r) => { const o = (3 + 1.5 * r) / 100; return r1(100 * (1 - 1 / (1 + 4 * (1 / (1 - o) - 1)))); };
+// A velocidade para no nível 50 (níveis acima não deixam o personagem mais rápido).
+const swiftWarp = (r) => { const o = Math.min(0.95, (3 + 1.5 * r) / 100); return r1(100 * (1 - 1 / (1 + 4 * (1 / (1 - o) - 1)))); };
 for (const id of Object.keys(CLASSES)) {
-  CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ swiftSpd: 4 * (3 + r), warpCd: swiftWarp(r) })), swift: true });
+  CLASSES[id].skills.push({ ...passive('pSwift', 10, L('Passos Velozes', 'Swift Steps'), 'pSwift', (r) => ({ swiftSpd: 4 * (3 + Math.min(r, 50)), warpCd: swiftWarp(r) })), swift: true });
 }
 
 // Supremos da Lanceira e do Biohacker (níveis 72–100). Ficam DEPOIS do Passos Velozes para não mexer nos índices dos saves.

@@ -140,6 +140,8 @@ export function achList() {
   add('abyss75', '🔱', 3, L('Sem Fundo', 'Bottomless'), L('Derrote um chefe no Abismo 75 ou acima', 'Defeat a boss on Abyss 75 or above'), () => (abyssBest() >= 75 ? 1 : 0));
   add('abyss100', '💯', 3, L('Centésimo Degrau', 'The Hundredth Step'), L('Derrote um chefe no Abismo 100', 'Defeat a boss on Abyss 100'), () => (abyssBest() >= 100 ? 1 : 0));
   add('abyss50', '♾️', 3, L('Fim do Abismo', 'End of the Abyss'), L('Derrote um chefe no Abismo 50', 'Defeat a boss on Abyss 50'), () => (abyssBest() >= 50 ? 1 : 0));
+  add('abyss150', '🌗', 3, L('Meio Caminho do Vazio', 'Halfway to the Void'), L('Derrote um chefe no Abismo 150 ou acima', 'Defeat a boss on Abyss 150 or above'), () => (abyssBest() >= 150 ? 1 : 0));
+  add('abyss200', '👑', 3, L('Fundo do Abismo', 'Bottom of the Abyss'), L('Derrote um chefe no Abismo 200', 'Defeat a boss on Abyss 200'), () => (abyssBest() >= 200 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 50)
@@ -188,6 +190,7 @@ export function achList() {
   add('wardTree', '🛡️', 3, L('Muralha Mítica', 'Mythic Bulwark'), L('Libere as 5 defesas míticas (níveis 108 a 140) de uma classe', 'Unlock the 5 mythic defenses (levels 108 to 140) of a class'), () => maxOf((c) => (CLASSES[c.cls]?.skills || []).filter((sk, i) => sk.ward && (c.skills || [])[i] > 0).length), 5);
   add('ranks100', '💎', 3, L('Mestre dos Poderes', 'Master of Powers'), L('Some 100 níveis de poderes num mesmo personagem', 'Reach 100 total power ranks on one character'), () => maxOf((c) => (c.skills || []).reduce((a, r) => a + (r || 0), 0)), 100);
   add('rank10', '🔟', 1, L('Especialista', 'Specialist'), L('Leve um poder ao nível 10', 'Take a power to rank 10'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 10);
+  add('rank100', '💯', 3, L('Ápice do Poder', 'Peak of Power'), L('Leve um poder ao nível 100', 'Take a power to rank 100'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 100);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));
   add('legend10', '🧡', 2, L('Colecionador de Protótipos', 'Prototype Collector'), L('Encontre 10 itens lendários', 'Find 10 legendary items'), () => total('legendaries'), 10);
@@ -208,7 +211,8 @@ export function achList() {
   add('gemFuse25', '⚗️', 1, L('Lapidador', 'Gemcutter'), L('Funda gemas 25 vezes', 'Fuse gems 25 times'), () => total('gemFuse'), 25);
   add('gemPerfect', '🔷', 2, L('Joia Perfeita', 'Perfect Jewel'), L('Crie uma gema Perfeita', 'Create a Perfect gem'), () => (has('flags', 'gemPerfect') ? 1 : 0));
   add('gemNeon', '🌈', 3, L('Coração de Neon', 'Neon Heart'), L('Crie uma gema Neon (nível VII, libera o poder da gema)', 'Create a Neon gem (tier VII, unlocks the gem’s power)'), () => (has('flags', 'gemNeon') ? 1 : 0));
-  add('gemSingular', '✴️', 3, L('Joia Singular', 'Singular Jewel'), L('Crie uma gema Singular, o nível máximo (X)', 'Create a Singular gem, the highest tier (X)'), () => (has('flags', 'gemSingular') ? 1 : 0));
+  add('gemSingular', '✴️', 3, L('Joia Singular', 'Singular Jewel'), L('Crie uma gema Singular (nível X)', 'Create a Singular gem (tier X)'), () => (has('flags', 'gemSingular') ? 1 : 0));
+  add('gemApex', '💠', 3, L('Joia Absoluta', 'Absolute Jewel'), L('Crie uma gema Absoluta, o nível máximo (XX)', 'Create an Absolute gem, the highest tier (XX)'), () => (has('flags', 'gemApex') ? 1 : 0));
   add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));
 
   // mundo

@@ -46,8 +46,9 @@ function divChance(o, find) {
   return base * k * DIV_K * (1 + t * 0.5) * Math.sqrt(find) * (G.player.buffs.fortune > 0 ? 1.5 : 1);
 }
 const DIV_K = 1.6;
-// do Abismo L (posição 58) em diante a chance de divino/primordial cresce só 30% do ritmo (senão o Abismo C só dá primordial)
-const slowRank = (dr) => (dr <= 58 ? dr : 58 + (dr - 58) * 0.3);
+// do Abismo L (posição 58) em diante a chance de divino/primordial cresce só 30% do ritmo (senão o Abismo C só dá primordial);
+// do Abismo C (posição 108) em diante, só 15% (Abismo CC conta como 88)
+const slowRank = (dr) => (dr <= 58 ? dr : dr <= 108 ? 58 + (dr - 58) * 0.3 : 73 + (dr - 108) * 0.15);
 // Chance de um item virar primordial (acima do divino): só na Morte/Abismo (ou Apocalipse+ no Pesadelo/Inferno),
 // do andar efetivo 15 em diante e só de chefes, fendas, feras, ladrões e baús. 15% da chance do divino,
 // mais 15% por nível de Abismo (por cima dos 10% que o divino já ganha).
@@ -189,8 +190,10 @@ export function spawnPickup(type, x, z, data) {
   } else if (type === 'gem') {
     // gema: losango brilhante; maior e com coluna de luz nos níveis altos
     color = GEMS[data.g].hex;
-    mesh = new THREE.Mesh(gemGeo, glowMat(color, 2 + data.gt * 0.35));
-    mesh.scale.setScalar(1 + data.gt * 0.12);
+    // do nível X em diante o tamanho e o brilho param de crescer (senão a gema XX vira um farol)
+    const vg = Math.min(9, data.gt);
+    mesh = new THREE.Mesh(gemGeo, glowMat(color, 2 + vg * 0.35));
+    mesh.scale.setScalar(1 + vg * 0.12);
     if (data.gt >= 2) g.add(new THREE.Mesh(beamGeo, beamMat(color, data.gt >= 4 ? 0.6 : 0.3)));
   } else {
     const R = RARITY[data.item.rarity];

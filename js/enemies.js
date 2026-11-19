@@ -198,18 +198,18 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane'
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
-// Abismo: 100 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Abismo: 200 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
 // Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
-export const ABYSS_MAX = 100;
+export const ABYSS_MAX = 200;
 export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
-// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194). Aceita nível fracionário (recompensa subindo aos poucos)
+// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194 ... CC +2394). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-// número do Abismo como texto normal (1, 2, 3 ... 100); índice 0 fica vazio
+// número do Abismo como texto normal (1, 2, 3 ... 200); índice 0 fica vazio
 export const ABYSS_NUM = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? String(n) : ''));
 // regra do Abismo só com multiplicadores (fx): a descrição bilíngue sai do próprio fx
 const P_ = (v) => Math.round(Math.abs(v - 1) * 100);
@@ -342,6 +342,107 @@ export const ABYSS_RULES = [
   fxRule('🌋', 'Ira do Fundo', 'Wrath of the Deep', { ehp: 1.1, edmg: 1.08 }),
   fxRule('⚰️', 'Cortejo Fúnebre', 'Funeral Procession', { bel: 1.12, beldmg: 1.1 }),
   fxRule('♾️', 'Centésimo Degrau', 'The Hundredth Step', { ehp: 1.15, edmg: 1.1, bel: 1.15, bhp: 1.15 }),
+  // CI a CC: só vida e dano dos inimigos (e uma pitada de penalidade no jogador). Marcos a cada 10; CL e CC mais fortes
+  fxRule('🕳️', 'Fenda Primeva', 'Primeval Rift', { ehp: 1.04 }),
+  fxRule('🦴', 'Ossário Infinito', 'Endless Ossuary', { edmg: 1.03 }),
+  fxRule('🌘', 'Lua Minguante', 'Waning Moon', { bel: 1.05 }),
+  fxRule('🧲', 'Atração Fatal', 'Fatal Pull', { ehp: 1.04 }),
+  fxRule('🐺', 'Matilha Faminta', 'Hungry Pack', { heal: 0.98 }),
+  fxRule('🪞', 'Reflexo Cruel', 'Cruel Reflection', { edmg: 1.03 }),
+  fxRule('🌪️', 'Ciclone Rubro', 'Crimson Cyclone', { bhp: 1.06 }),
+  fxRule('🧨', 'Pavio Curto', 'Short Fuse', { beldmg: 1.03 }),
+  fxRule('🦇', 'Asas da Noite', 'Night Wings', { php: 0.99 }),
+  fxRule('🔮', 'Profecia Sombria', 'Dark Prophecy', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🧟', 'Mortos Inquietos', 'Restless Dead', { ehp: 1.04 }),
+  fxRule('🪤', 'Armadilha Viva', 'Living Trap', { edmg: 1.03 }),
+  fxRule('🌫️', 'Névoa Rubra', 'Red Mist', { bel: 1.05 }),
+  fxRule('🦈', 'Predadores do Vazio', 'Void Predators', { ehp: 1.04 }),
+  fxRule('🗝️', 'Portões Selados', 'Sealed Gates', { parm: 0.98 }),
+  fxRule('🕷️', 'Rainha Aranha', 'Spider Queen', { edmg: 1.03 }),
+  fxRule('🌡️', 'Febre Negra', 'Black Fever', { bhp: 1.06 }),
+  fxRule('🪬', 'Amuleto Partido', 'Broken Amulet', { beldmg: 1.03 }),
+  fxRule('🐗', 'Investida Bruta', 'Brute Charge', { regen: 0.95 }),
+  fxRule('☄️', 'Chuva de Cometas', 'Comet Rain', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🦑', 'Tentáculos', 'Tentacles', { ehp: 1.04 }),
+  fxRule('🧯', 'Brasas Eternas', 'Eternal Embers', { edmg: 1.03 }),
+  fxRule('🪦', 'Lápides', 'Tombstones', { bel: 1.05 }),
+  fxRule('🦠', 'Praga Antiga', 'Ancient Plague', { ehp: 1.04 }),
+  fxRule('🏹', 'Arqueiros Sombrios', 'Shadow Archers', { heal: 0.98 }),
+  fxRule('🪙', 'Preço de Sangue', 'Blood Price', { edmg: 1.03 }),
+  fxRule('🌊', 'Maré Negra', 'Black Tide', { bhp: 1.06 }),
+  fxRule('🛸', 'Visitantes', 'Visitors', { beldmg: 1.03 }),
+  fxRule('🔗', 'Elos de Ferro', 'Iron Links', { php: 0.99 }),
+  fxRule('🌋', 'Coração Vulcânico', 'Volcanic Heart', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🦂', 'Escorpião Rei', 'Scorpion King', { ehp: 1.04 }),
+  fxRule('🧛', 'Sanguessugas', 'Leeches', { edmg: 1.03 }),
+  fxRule('🎭', 'Máscaras', 'Masks', { bel: 1.05 }),
+  fxRule('🌵', 'Espinhos', 'Thorns', { ehp: 1.04 }),
+  fxRule('🐉', 'Dragões Menores', 'Lesser Dragons', { parm: 0.98 }),
+  fxRule('🧶', 'Fios do Destino', 'Threads of Fate', { edmg: 1.03 }),
+  fxRule('🏚️', 'Ruínas Vivas', 'Living Ruins', { bhp: 1.06 }),
+  fxRule('🪓', 'Carrascos', 'Executioners', { beldmg: 1.03 }),
+  fxRule('🦉', 'Vigília', 'Night Watch', { regen: 0.95 }),
+  fxRule('🌀', 'Vórtice Primordial', 'Primordial Vortex', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🐙', 'Abraço Profundo', 'Deep Embrace', { ehp: 1.04 }),
+  fxRule('🧱', 'Fortaleza', 'Fortress', { edmg: 1.03 }),
+  fxRule('🦍', 'Brutamontes', 'Brutes', { bel: 1.05 }),
+  fxRule('🌒', 'Eclipse Parcial', 'Partial Eclipse', { ehp: 1.04 }),
+  fxRule('🧊', 'Inverno Sem Fim', 'Endless Winter', { heal: 0.98 }),
+  fxRule('🔥', 'Chama Azul', 'Blue Flame', { edmg: 1.03 }),
+  fxRule('🪶', 'Penas de Aço', 'Steel Feathers', { bhp: 1.06 }),
+  fxRule('🧿', 'Olhar Petrificante', 'Petrifying Gaze', { beldmg: 1.03 }),
+  fxRule('🐍', 'Serpente Dupla', 'Twin Serpent', { php: 0.99 }),
+  fxRule('🌗', 'Meio Caminho do Vazio', 'Halfway to the Void', { ehp: 1.12, edmg: 1.08, bel: 1.12, bhp: 1.12 }),
+  fxRule('💀', 'Gigantes de Osso', 'Bone Giants', { ehp: 1.04 }),
+  fxRule('⚙️', 'Engrenagens Cruéis', 'Cruel Gears', { edmg: 1.03 }),
+  fxRule('🌬️', 'Sopro Gélido', 'Icy Breath', { bel: 1.05 }),
+  fxRule('🐝', 'Colmeia Negra', 'Black Hive', { ehp: 1.04 }),
+  fxRule('🪐', 'Anéis Partidos', 'Shattered Rings', { parm: 0.98 }),
+  fxRule('🧪', 'Elixir Proibido', 'Forbidden Elixir', { edmg: 1.03 }),
+  fxRule('🎯', 'Mira Perfeita', 'Perfect Aim', { bhp: 1.06 }),
+  fxRule('🦖', 'Feras Antigas', 'Ancient Beasts', { beldmg: 1.03 }),
+  fxRule('🌧️', 'Chuva Ácida', 'Acid Rain', { regen: 0.95 }),
+  fxRule('💠', 'Cristal do Vazio', 'Void Crystal', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🐊', 'Mandíbulas', 'Jaws', { ehp: 1.04 }),
+  fxRule('🕰️', 'Hora Final', 'Final Hour', { edmg: 1.03 }),
+  fxRule('🪨', 'Avalanche', 'Avalanche', { bel: 1.05 }),
+  fxRule('🧜', 'Canto das Sereias', 'Siren Song', { ehp: 1.04 }),
+  fxRule('🦬', 'Manada', 'Stampede', { heal: 0.98 }),
+  fxRule('🛡️', 'Guarda Real', 'Royal Guard', { edmg: 1.03 }),
+  fxRule('🌺', 'Flor Carnívora', 'Carnivorous Bloom', { bhp: 1.06 }),
+  fxRule('🗡️', 'Lâminas Gêmeas', 'Twin Blades', { beldmg: 1.03 }),
+  fxRule('🌙', 'Lua de Sangue', 'Blood Moon', { php: 0.99 }),
+  fxRule('🔱', 'Trono Submerso', 'Sunken Throne', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🦚', 'Penas Ilusórias', 'Illusory Plumes', { ehp: 1.04 }),
+  fxRule('💣', 'Barris de Pólvora', 'Powder Kegs', { edmg: 1.03 }),
+  fxRule('🌑', 'Sombra Faminta', 'Hungry Shadow', { bel: 1.05 }),
+  fxRule('🐘', 'Colossos', 'Colossi', { ehp: 1.04 }),
+  fxRule('🕯️', 'Velas Negras', 'Black Candles', { parm: 0.98 }),
+  fxRule('🪝', 'Ganchos', 'Hooks', { edmg: 1.03 }),
+  fxRule('🦟', 'Nuvem de Mosquitos', 'Mosquito Cloud', { bhp: 1.06 }),
+  fxRule('🏰', 'Cidadela', 'Citadel', { beldmg: 1.03 }),
+  fxRule('🌟', 'Estrela Morta', 'Dead Star', { regen: 0.95 }),
+  fxRule('⚱️', 'Urna dos Reis', 'Urn of Kings', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🦁', 'Leões de Bronze', 'Bronze Lions', { ehp: 1.04 }),
+  fxRule('🌩️', 'Trovão Eterno', 'Eternal Thunder', { edmg: 1.03 }),
+  fxRule('🧷', 'Agulhas', 'Needles', { bel: 1.05 }),
+  fxRule('🐋', 'Leviatã', 'Leviathan', { ehp: 1.04 }),
+  fxRule('⚰️', 'Cemitério Sem Fim', 'Endless Graveyard', { heal: 0.98 }),
+  fxRule('🔦', 'Luz Cegante', 'Blinding Light', { edmg: 1.03 }),
+  fxRule('🪵', 'Raízes Antigas', 'Ancient Roots', { bhp: 1.06 }),
+  fxRule('⚗️', 'Alquimia Negra', 'Black Alchemy', { beldmg: 1.03 }),
+  fxRule('🌌', 'Nebulosa', 'Nebula', { php: 0.99 }),
+  fxRule('🛕', 'Templo Esquecido', 'Forgotten Temple', { ehp: 1.08, edmg: 1.05, bel: 1.08 }),
+  fxRule('🦾', 'Exércitos de Aço', 'Steel Armies', { ehp: 1.04 }),
+  fxRule('🩸', 'Rio de Sangue', 'River of Blood', { edmg: 1.03 }),
+  fxRule('🧠', 'Mente Coletiva', 'Hive Mind', { bel: 1.05 }),
+  fxRule('🐲', 'Dragão Ancião', 'Elder Dragon', { ehp: 1.04 }),
+  fxRule('🕳️', 'Buraco Negro', 'Black Hole', { parm: 0.98 }),
+  fxRule('👹', 'Coroa de Ossos', 'Bone Crown', { edmg: 1.03 }),
+  fxRule('🔥', 'Núcleo Derretido', 'Molten Core', { bhp: 1.06 }),
+  fxRule('⏳', 'Areia Final', 'Last Sand', { beldmg: 1.03 }),
+  fxRule('🌠', 'Penúltimo Céu', 'Penultimate Sky', { regen: 0.95 }),
+  fxRule('👑', 'Fundo do Abismo', 'Bottom of the Abyss', { ehp: 1.15, edmg: 1.1, bel: 1.15, bhp: 1.15 }),
 ];
 // efeitos somados das regras XI+ ligadas (guardado por nível: é lido em todo golpe, tiro e cura)
 const FX_MUL = ['ehp', 'edmg', 'bhp', 'bel', 'beldmg', 'espd', 'eatk', 'count', 'heal', 'shot', 'php', 'parm', 'cd', 'regen'];
@@ -380,10 +481,11 @@ export function abyssBest() {
 export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ABYSS_NUM[n] || ''}`;
 // cor de cada nível: do violeta (I) ao vermelho-sangue (X)
 // XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico;
-// LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco
-export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)`);
+// LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco;
+// CI a CL: do verde-água ao anil; CLI a CC: do rosa-choque ao ouro
+export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : n <= 100 ? `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)` : n <= 150 ? `hsl(${160 + (n - 100) * 2}, 100%, ${62 + (n - 100) * 0.1}%)` : `hsl(${(330 + (n - 150) * 1.6) % 360}, 100%, ${62 + (n - 150) * 0.3}%)`);
 
-// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108 ... Abismo CC = 208
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
@@ -391,7 +493,7 @@ export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficul
 // subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
-// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6)
+// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6)
 for (let n = 1; n <= ABYSS_MAX; n++) {
   REWARD.cr.push(7.2 + n);
   REWARD.loot.push(5.6 + 0.25 * n);

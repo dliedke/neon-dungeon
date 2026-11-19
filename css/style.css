@@ -1358,6 +1358,7 @@ body.touch #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 #gem-bag { display: flex; flex-direction: column; gap: 4px; }
 .gb-head, .gb-row { display: grid; grid-template-columns: 24px repeat(10, minmax(0, 46px)); gap: 4px; align-items: center; }
 .gb-head span { text-align: center; font-size: 11px; color: var(--muted); font-weight: 700; }
+.gb-head.gb-next { margin-top: 6px; }
 .gb-type { width: 22px; height: 22px; }
 .gb-type svg { width: 100%; height: 100%; }
 .gcell {
