@@ -39,7 +39,8 @@ const TIER_NAMES = [
 ];
 export const TIER_ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
 // custo para fundir 3 gemas do nível t em 1 do nível t+1
-const FUSE_COST = [60, 250, 1000, 4000, 15000, 60000, 240000, 900000, 3500000, 9e6, 2e7, 4.5e7, 1e8, 2.2e8, 5e8, 1.1e9, 2.4e9, 5.4e9, 1.2e10];
+// (baratinho: no andar 50 um abate rende ~100¢, então até a fusão XIX → XX custa menos de um andar)
+const FUSE_COST = [5, 10, 20, 40, 75, 125, 200, 300, 450, 650, 900, 1250, 1700, 2300, 3000, 4000, 5500, 7500, 10000];
 
 // Poderes das gemas: um por tipo, ativo com pelo menos uma gema Neon (VII) ou melhor num encaixe ativo.
 // Força pelo melhor nível engastado do tipo: VII = 1, VIII = 2, IX = 3, X = 4 ... XX = 14 (índice k - 1 nas tabelas).
