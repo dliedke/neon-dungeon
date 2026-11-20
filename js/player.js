@@ -941,11 +941,14 @@ export function assignSlot(slot, i) {
   const atk = c.atk || 0;
   // ataque básico bloqueado: o ⚔ com 0 está vazio e não leva nada para outro botão
   const out = atk === 0 && !(c.skills[0] > 0) ? null : atk;
-  const prev = atk === i ? -1 : c.slots.indexOf(i);
+  // onde o poder está agora: -1 no ⚔, 0–6 num botão, null fora da barra
+  // (antes o indexOf devolvia -1 também para "fora da barra" e o poder nunca ia para o ⚔)
+  const k = c.slots.indexOf(i);
+  const prev = atk === i ? -1 : k >= 0 ? k : null;
   if (prev === slot) return;
   if (slot < 0) {
     // para o ⚔: o que estava nele vai para o botão de onde o poder saiu (ou para um espaço livre)
-    if (prev >= 0) c.slots[prev] = out;
+    if (prev != null && prev >= 0) c.slots[prev] = out;
     else if (out != null && c.slots.includes(null)) c.slots[c.slots.indexOf(null)] = out;
     c.atk = i;
     return;
@@ -953,7 +956,7 @@ export function assignSlot(slot, i) {
   const old = c.slots[slot];
   if (i === 0 && atk === 0 && old == null) return; // o ⚔ nunca fica vazio
   c.slots[slot] = i;
-  if (prev >= 0) c.slots[prev] = old;
+  if (prev != null && prev >= 0) c.slots[prev] = old;
   else if (prev === -1 && atk === i) {
     // saiu do ⚔: o que estava no destino vai para ele (se o destino estava vazio, volta o ataque básico)
     c.atk = old ?? 0;
