@@ -804,6 +804,10 @@ body.pad .pad-hints { display: block; }
   .inv-col .inv-actions .btn { flex: 1 1 auto; padding: 6px 8px; font-size: 12px; letter-spacing: 0.5px; min-height: 32px; }
   .inv-col #btn-buy-stim { flex-basis: 100%; }
   .inv-col #inv-grid { max-height: calc(100vh - 200px); }
+  /* botões do item (equipar, favoritar, reciclar) em cima do cartão, sem rolar */
+  #item-detail, #item-detail .cmp-new { display: flex; flex-direction: column; }
+  #item-detail .detail-actions { order: -1; margin: 0 0 6px; gap: 6px; }
+  #item-detail .detail-actions .btn { padding: 6px 8px; font-size: 12px; letter-spacing: 0.5px; min-height: 32px; }
   /* coluna estreita: equipado embaixo; o resumo ▲▼ já fica no topo */
   .cmp-wrap { display: block; }
   .cmp-new + .cmp-cur { margin-top: 8px; }
