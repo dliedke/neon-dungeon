@@ -20,6 +20,7 @@ import { screenToWorld, clamp, fmt } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { primSkillWave } from './mythic.js';
+import { eventStepZone, STEP_SPEED } from './events.js';
 
 // sem nível máximo: o personagem sobe para sempre (depois do 50 cada nível conta metade nos atributos)
 export const MAX_LEVEL = Infinity;
@@ -743,6 +744,8 @@ export function updatePlayer(dt) {
     // efeitos do piso do bioma
     const ge = groundEffect(G.dungeon, p.x, p.z);
     if (ge) speed *= ge.speed;
+    // perto de evento de pisar em placas (Dança Neon, Piso de Luzes, Teclado...) anda devagar para dar para acertar
+    if (speed > STEP_SPEED && eventStepZone(p.x, p.z)) speed = STEP_SPEED;
     if (p.chillT > 0) {
       p.chillT -= dt;
       speed *= 0.55;

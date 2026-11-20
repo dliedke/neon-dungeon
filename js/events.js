@@ -36,6 +36,22 @@ export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'].concat(NEW_TIMED);
 // algum evento do andar corre contra o relógio? (os contratos com relógio não podem coexistir com ele)
 export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.kind));
+// eventos de pisar em placas com precisão: dentro da área deles (meia largura x, meia largura z, a mesma do findSpot)
+// o jogador anda no máximo a STEP_SPEED, senão com muita velocidade fica impossível parar na placa certa.
+// Ficam de fora os que pedem pressa (ponte, corrida, pintura, expurgo...).
+const STEP_AREA = { dance: [2.6, 2.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4] };
+export const STEP_SPEED = 3.8;
+export function eventStepZone(x, z) {
+  const list = G.events;
+  if (!list) return false;
+  for (let i = 0; i < list.length; i++) {
+    const E = list[i];
+    const a = STEP_AREA[E.kind];
+    if (!a || E.x == null || E.st === 'done' || E.st === 'failed') continue;
+    if (Math.abs(x - E.x) < a[0] + 0.8 && Math.abs(z - E.z) < a[1] + 0.8) return true;
+  }
+  return false;
+}
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
   lights: { icon: '💡', css: '#7affc8', name: L('Piso de Luzes', 'Light Floor') },
@@ -464,7 +480,7 @@ const terminals = {
 // 2. Piso de Luzes: 3x3 placas; pisar inverte a placa e as vizinhas. Acenda todas.
 // ==================================================================
 const LS = 1.75;
-const LIGHT_HINT = 12; // segundos sem resolver até cada dica
+const LIGHT_HINT = 3; // segundos sem resolver até cada dica
 const lights = {
   setup(d, floor, rooms) {
     // a placa de recomeçar fica a 3,9 do centro (no lado +z): a área livre precisa cobrir ela
@@ -528,7 +544,7 @@ const lights = {
       }
     }
     E.hint.visible = best !== 0;
-    E.hintLeft = best ? 5 : 0;
+    E.hintLeft = best ? 10 : 0;
     if (best) {
       // Prefere a placa mais próxima para reduzir travessias sobre as outras.
       let next = -1;
@@ -550,7 +566,7 @@ const lights = {
   },
   update(E, dt) {
     if (E.st !== 'play') return;
-    // Conta só o tempo perto do quebra-cabeça (a cada 12s sem resolver); uma dica não revela a sequência toda.
+    // Conta só o tempo perto do quebra-cabeça (a cada LIGHT_HINT s sem resolver); uma dica não revela a sequência toda.
     if (!G.player.alive || !near(E, 8)) {
       E.hintWait = E.hintLeft = 0;
       E.hint.visible = false;
@@ -566,7 +582,7 @@ const lights = {
     }
     if (!E.hinted && near(E, 5.5)) {
       E.hinted = true;
-      toast(L('💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. Ande pelos espaços entre as placas; o círculo vermelho recomeça. <b>A cada 12s sem resolver, um anel dourado mostra uma placa certa.</b>', '💡 Light all 9 plates! Each step flips that plate and its side neighbors. Walk through the gaps between plates; the red circle resets. <b>Every 12s without solving it, a gold ring shows a right plate.</b>'), 'leg', 'ev');
+      toast(L(`💡 Acenda as 9 placas! Cada passo inverte a placa e as vizinhas dos lados. Ande pelos espaços entre as placas; o círculo vermelho recomeça. <b>A cada ${LIGHT_HINT}s sem resolver, um anel dourado mostra uma placa certa.</b>`, `💡 Light all 9 plates! Each step flips that plate and its side neighbors. Walk through the gaps between plates; the red circle resets. <b>Every ${LIGHT_HINT}s without solving it, a gold ring shows a right plate.</b>`), 'leg', 'ev');
     }
     const k = lights.under(E);
     if (k === E.last) return;
@@ -599,7 +615,7 @@ const lights = {
     E.hintWait = 0;
     lights.paint(E);
   },
-  intro: () => L('acenda as 9 placas por um cofre especial. Ande pelos espaços entre elas; a cada 12s sem resolver aparece uma dica em dourado.', 'light all 9 plates for a special cache. Walk through the gaps between them; every 12s without solving it a gold hint appears.'),
+  intro: () => L(`acenda as 9 placas por um cofre especial. Ande pelos espaços entre elas; a cada ${LIGHT_HINT}s sem resolver aparece uma dica em dourado.`, `light all 9 plates for a special cache. Walk through the gaps between them; every ${LIGHT_HINT}s without solving it a gold hint appears.`),
 };
 
 // ==================================================================
