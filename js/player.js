@@ -542,7 +542,10 @@ export function updatePlayer(dt) {
 
   // ---------- mouse: clique para mover / atacar ----------
   const mouse = Input.mouse;
-  let wantAttack = Input.held.primary;
+  // perto do mercador/ferreiro/baú (sem inimigo perto) o {A} do controle abre ele em vez de atacar ou usar o poder do ⚔
+  if (G.npcPad && G.npcNear && Input.held.primary) p.npcHold = true;
+  if (!Input.held.primary) p.npcHold = false;
+  let wantAttack = Input.held.primary && !p.npcHold;
   if (G.lastInput === 'kb' && G.mouseWorld.ok) {
     if (mouse.lmbPressed) {
       p.npcGo = null;

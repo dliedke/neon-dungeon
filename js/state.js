@@ -42,6 +42,7 @@ export const G = {
   hoverEnemy: null,
   hoverNpc: null, // mercador/ferreiro/baú sob o cursor
   npcNear: null, // mercador/ferreiro/baú perto o bastante para abrir
+  npcPad: false, // o {A} do controle abre o npcNear (sem inimigo perto) em vez de atacar
   camFocus: { x: 0, z: 0 },
 };
 

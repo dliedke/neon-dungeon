@@ -1294,6 +1294,7 @@ function updateNpcInteract(d, p, camera) {
     }
   }
   G.npcNear = near;
+  G.npcPad = false;
   if (!near) {
     promptEl.classList.add('hidden');
     return;
@@ -1301,6 +1302,8 @@ function updateNpcInteract(d, p, camera) {
   // no controle o {A} também ataca: com inimigo perto, não abre nada sem querer
   const e = p.aimEnemy;
   const busy = G.lastInput === 'pad' && e && e.alive && Math.hypot(e.x - p.x, e.z - p.z) < 7;
+  // sem inimigo perto, o {A} só abre (não ataca nem solta o poder que estiver no ⚔): ver updatePlayer
+  G.npcPad = G.lastInput === 'pad' && !busy;
   if (Input.pressed('interact') && !busy) {
     openNpc(near);
     promptEl.classList.add('hidden');
