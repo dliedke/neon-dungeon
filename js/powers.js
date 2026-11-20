@@ -63,7 +63,7 @@ const ALLY = {
   tesla: { speed: 0, r: 0.4, range: 6.5, atk: 0.6, mult: 0.7, melee: false, color: 0xffd23d, static: true, chain: 4 },
   hawk: { speed: 8.5, r: 0.35, range: 1.3, atk: 0.5, mult: 1.0, melee: true, color: 0xff6a9a, fly: true },
   valk: { speed: 5.6, r: 0.42, range: 2.0, atk: 0.65, mult: 1.4, melee: true, color: 0xb36bff },
-  mutant: { speed: 4.0, r: 0.65, range: 1.9, atk: 1.1, mult: 2.0, melee: true, color: 0xc8ff3d, slam: true },
+  mutant: { speed: 4.0, r: 0.65, range: 1.9, atk: 1.1, mult: 2.0, melee: true, color: 0xc8ff3d, slam: true, quiet: true }, // sem o tum-tum-tum a cada pancada
   hacked: { speed: 3.8, r: 0.4, range: 1.5, atk: 0.8, mult: 1.2, melee: true, color: 0x39ff14 },
   shade: { speed: 6.2, r: 0.35, range: 1.5, atk: 0.5, mult: 1.4, melee: true, color: 0x9b4dff },
   drone: { speed: 7, r: 0.3, range: 7.5, atk: 0.45, mult: 0.8, melee: false, color: 0x39ff14, fly: true },
@@ -446,7 +446,7 @@ function allyAttack(a, tgt) {
     if (a.slam) {
       for (const e of enemiesInRadius(a.x, a.z, 2.3)) hitEnemy(e, a.mult, { knock: 4, stun: 0.6, noProc: true, kx: a.x, kz: a.z });
       ringFx(a.x, a.z, 2.3, a.color, 0.3);
-      sfx.punchHeavy();
+      if (!a.quiet) sfx.punchHeavy();
     } else {
       hitEnemy(tgt, a.mult, { knock: 2, noProc: true, kx: a.x, kz: a.z, burn: a.burn, slow: a.slow });
       slashFx(a.x, a.z, Math.atan2(tgt.z - a.z, tgt.x - a.x), 1.6, Math.PI * 0.8, a.color, 0.8);
