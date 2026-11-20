@@ -576,9 +576,14 @@ const bridge = mk({
     put(g, box((BR_COLS - 2) * BR_T + 0.2, 0.04, 2 * BR_T + 0.2), new THREE.MeshBasicMaterial({ color: 0x05060c }), 0, 0.015, 0);
     put(g, box((BR_COLS - 2) * BR_T + 0.2, 0.05, 0.08), edge, 0, 0.04, -BR_T - 0.1);
     put(g, box((BR_COLS - 2) * BR_T + 0.2, 0.05, 0.08), edge, 0, 0.04, BR_T + 0.1);
+    let prevGap = -1;
     for (let c = 0; c < BR_COLS; c++) {
       const solid = c === 0 || c === BR_COLS - 1;
-      const gap = !solid && ri(0, 2) === 0 ? ri(0, 1) : -1;
+      let gap = !solid && ri(0, 2) === 0 ? ri(0, 1) : -1;
+      // buracos em fileiras opostas em colunas seguidas só deixam passar pela quina: o buraco repete a fileira
+      // (ajusta depois do sorteio para não mudar a sequência da semente do andar)
+      if (gap >= 0 && prevGap >= 0 && gap !== prevGap) gap = prevGap;
+      prevGap = gap;
       for (let r = 0; r < 2; r++) {
         if (r === gap) continue;
         const x = x0 + c * BR_T;
@@ -588,7 +593,7 @@ const bridge = mk({
         tiles.push({ x, z, m, solid, t: -1, gone: false });
       }
     }
-    return { kind: 'bridge', x: s.x, z: s.z, g, tiles, x0, st: 'idle', ok: false, back: 0 };
+    return { kind: 'bridge', x: s.x, z: s.z, g, tiles, x0, st: 'idle', from: -1, back: 0 };
   },
   reset(E) {
     for (const t of E.tiles) {
@@ -617,25 +622,27 @@ const bridge = mk({
     }
     if (!near(E, 9)) return;
     const onBridge = Math.abs(lx) < (BR_COLS * BR_T) / 2 && Math.abs(lz) < BR_T + 0.1;
-    if (!onBridge || E.back > 0) {
-      E.back -= dt;
+    E.back -= dt;
+    if (!onBridge) {
+      E.from = -1; // saiu da ponte (pelos lados ou pela ponta): contornar por fora não vale
       return;
     }
     if (E.st === 'idle') E.st = 'run';
-    const solidSpot = (c) => c === 0 || c === BR_COLS - 1;
+    // cabeceiras firmes: vale atravessar nos dois sentidos. A cabeceira conta mesmo logo depois de cair
+    // (antes, voltando direto, o jogador passava pelo começo durante esse 1s e a travessia não valia)
     const col = Math.floor((lx - E.x0) / BR_T + 0.5);
-    if (solidSpot(col) && (col === 0 || col === BR_COLS - 1)) {
-      if (col === 0) E.ok = true;
-      else if (E.ok) {
-        return complete(E, 1.4, L('TRAVESSIA FEITA!', 'CROSSED!'), L('A ponte não te pegou', 'The bridge did not get you'), E.x + lx, E.z + lz);
-      }
+    const end = col <= 0 ? 0 : col >= BR_COLS - 1 ? BR_COLS - 1 : -1;
+    if (end >= 0) {
+      if (E.from >= 0 && E.from !== end) return complete(E, 1.4, L('TRAVESSIA FEITA!', 'CROSSED!'), L('A ponte não te pegou', 'The bridge did not get you'), E.x + lx, E.z + lz);
+      E.from = end;
       return;
     }
+    if (E.back > 0) return;
     // em cima de uma placa que ainda está de pé?
     let stand = null;
     for (const t of E.tiles) {
       if (t.gone || t.solid) continue;
-      if (Math.abs(lx - t.x) < BR_T / 2 + 0.05 && Math.abs(lz - t.z) < BR_T / 2 + 0.05) {
+      if (Math.abs(lx - t.x) < BR_T / 2 + 0.15 && Math.abs(lz - t.z) < BR_T / 2 + 0.15) {
         stand = t;
         break;
       }
@@ -652,7 +659,7 @@ const bridge = mk({
     p.z = E.z;
     p.kx = 0;
     p.kz = 0;
-    E.ok = false;
+    E.from = -1;
     E.back = 1;
     bridge.reset(E);
   },

@@ -38,8 +38,12 @@ const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'ga
 export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.kind));
 // eventos de pisar em placas com precisão: dentro da área deles (meia largura x, meia largura z, a mesma do findSpot)
 // o jogador anda no máximo a STEP_SPEED, senão com muita velocidade fica impossível parar na placa certa.
-// Ficam de fora os que pedem pressa (ponte, corrida, pintura, expurgo...).
-const STEP_AREA = { dance: [2.6, 2.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4] };
+// Vale para todo evento em que o objetivo é pisar em placas, ladrilhos, anéis ou portais no chão.
+// Ficam de fora os de corrida contra algo que anda (Corrida Fantasma, Circuito, Laser Giratório, Travessia de Lasers, Rebanho...).
+const STEP_AREA = {
+  dance: [2.6, 2.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
+  piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
+};
 export const STEP_SPEED = 3.8;
 export function eventStepZone(x, z) {
   const list = G.events;
