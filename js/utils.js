@@ -48,7 +48,8 @@ export function shuffle(arr) {
 export const fmt = (n) => Math.round(n).toLocaleString(LANG === 'pt' ? 'pt-BR' : 'en-US');
 
 // número curto para os números de dano/cura: 950, 1,2K, 15K, 30M, 66B, 4T
-const SHORT = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+// Abismo alto: vida e dano passam de 1e15 (Qa = quatrilhão, Qi = quintilhão, Sx, Sp, Oc, No, Dc)
+const SHORT = [[1e33, 'Dc'], [1e30, 'No'], [1e27, 'Oc'], [1e24, 'Sp'], [1e21, 'Sx'], [1e18, 'Qi'], [1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
 export function short(n) {
   const a = Math.abs(n);
   if (a < 1000) return String(Math.round(n));

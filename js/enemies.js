@@ -200,18 +200,18 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane'
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
-// Abismo: 200 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Abismo: 500 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
 // Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
-export const ABYSS_MAX = 200;
+export const ABYSS_MAX = 500;
 export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
-// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194 ... CC +2394). Aceita nível fracionário (recompensa subindo aos poucos)
+// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194 ... CC +2394 ... D +5994). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-// número do Abismo como texto normal (1, 2, 3 ... 200); índice 0 fica vazio
+// número do Abismo como texto normal (1, 2, 3 ... 500); índice 0 fica vazio
 export const ABYSS_NUM = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? String(n) : ''));
 // regra do Abismo só com multiplicadores (fx): a descrição bilíngue sai do próprio fx
 const P_ = (v) => Math.round(Math.abs(v - 1) * 100);
@@ -445,7 +445,71 @@ export const ABYSS_RULES = [
   fxRule('⏳', 'Areia Final', 'Last Sand', { beldmg: 1.03 }),
   fxRule('🌠', 'Penúltimo Céu', 'Penultimate Sky', { regen: 0.95 }),
   fxRule('👑', 'Fundo do Abismo', 'Bottom of the Abyss', { ehp: 1.15, edmg: 1.1, bel: 1.15, bhp: 1.15 }),
+  ...deepRules(),
 ];
+// CCI a D: 30 reinos de 10 níveis. Cada reino liga 9 regras pequenas (Reino I a IX) e fecha com a sua coroa.
+// As regras ficam mais fortes a cada 100 níveis (CCI–CCC, CCCI–CD, CDI–D) e as coroas de 50 em 50 pesam mais.
+// O nível dos itens (abyssGear) acompanha a vida; o dano dos inimigos e as penalidades no jogador não: fica mais difícil.
+function deepRules() {
+  const REALMS = [
+    ['🌫️', 'Bruma Cinzenta', 'Grey Mist', 'Rei da Bruma', 'King of the Mist'],
+    ['🦴', 'Vale dos Ossos', 'Valley of Bones', 'Trono de Ossos', 'Throne of Bones'],
+    ['🌊', 'Mar Sem Luz', 'Lightless Sea', 'Coração do Mar', 'Heart of the Sea'],
+    ['🔥', 'Forja Negra', 'Black Forge', 'Bigorna Final', 'Last Anvil'],
+    ['🌒', 'Eclipse Eterno', 'Eternal Eclipse', 'Duzentos e Cinquenta', 'Two Hundred Fifty'],
+    ['🧊', 'Geleira Morta', 'Dead Glacier', 'Coroa de Gelo', 'Ice Crown'],
+    ['🕸️', 'Ninho da Viúva', 'Widow Nest', 'Rainha da Teia', 'Web Queen'],
+    ['⚙️', 'Máquina do Fim', 'Doom Engine', 'Motor Primordial', 'Primordial Engine'],
+    ['🌵', 'Deserto de Vidro', 'Glass Desert', 'Sol Partido', 'Shattered Sun'],
+    ['🩸', 'Rio Carmesim', 'Crimson River', 'Trezentos', 'Three Hundred'],
+    ['🌌', 'Véu Estelar', 'Starry Veil', 'Olho da Galáxia', 'Eye of the Galaxy'],
+    ['🐲', 'Ninho dos Dragões', 'Dragon Roost', 'Dragão Primevo', 'Primeval Dragon'],
+    ['🏚️', 'Cidade Afundada', 'Sunken City', 'Prefeito Afogado', 'Drowned Mayor'],
+    ['⚡', 'Tempestade Viva', 'Living Storm', 'Olho do Furacão', 'Eye of the Hurricane'],
+    ['🕳️', 'Poço Sem Eco', 'Echoless Well', 'Trezentos e Cinquenta', 'Three Hundred Fifty'],
+    ['🦠', 'Jardim da Praga', 'Plague Garden', 'Flor Pestilenta', 'Pestilent Bloom'],
+    ['🪞', 'Salão dos Espelhos', 'Hall of Mirrors', 'Reflexo Rei', 'King Reflection'],
+    ['⛓️', 'Prisão do Vazio', 'Void Prison', 'Carcereiro', 'The Jailer'],
+    ['🌋', 'Fornalha do Mundo', 'World Furnace', 'Magma Primevo', 'Primeval Magma'],
+    ['💀', 'Necrópole', 'Necropolis', 'Quatrocentos', 'Four Hundred'],
+    ['🌀', 'Espiral do Caos', 'Chaos Spiral', 'Centro da Espiral', 'Spiral Core'],
+    ['🦑', 'Fossa Abissal', 'Abyssal Trench', 'Kraken Ancestral', 'Ancestral Kraken'],
+    ['🔮', 'Torre do Oráculo', 'Oracle Tower', 'Profecia Final', 'Final Prophecy'],
+    ['🧬', 'Laboratório Proibido', 'Forbidden Lab', 'Experimento Zero', 'Experiment Zero'],
+    ['☄️', 'Chuva de Estrelas', 'Starfall', 'Quatrocentos e Cinquenta', 'Four Hundred Fifty'],
+    ['🌑', 'Lua Negra', 'Black Moon', 'Maré Lunar', 'Lunar Tide'],
+    ['🗿', 'Ruínas Titânicas', 'Titanic Ruins', 'Titã Desperto', 'Awakened Titan'],
+    ['🕯️', 'Catedral Apagada', 'Darkened Cathedral', 'Último Sino', 'Last Bell'],
+    ['⏳', 'Areias do Tempo', 'Sands of Time', 'Fim dos Tempos', 'End of Time'],
+    ['👁️', 'Olho do Vazio', 'Eye of the Void', 'O Fundo Verdadeiro', 'The True Bottom'],
+  ];
+  const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  // penalidade no jogador que roda nas casas 5 e 9 de cada reino
+  const PEN = [{ heal: 0.98 }, { parm: 0.98 }, { regen: 0.95 }, { php: 0.99 }];
+  const out = [];
+  REALMS.forEach(([icon, pt, en, cpt, cen], b) => {
+    const k = Math.floor(b / 10); // 0 = CCI–CCC, 1 = CCCI–CD, 2 = CDI–D
+    const r2 = (v) => Math.round(v * 1000) / 1000;
+    const steps = [
+      { ehp: r2(1.04 + 0.01 * k) },
+      { edmg: r2(1.03 + 0.005 * k) },
+      { bel: r2(1.05 + 0.01 * k) },
+      { ehp: r2(1.04 + 0.01 * k) },
+      PEN[(b * 2) % 4],
+      { edmg: r2(1.03 + 0.005 * k) },
+      { bhp: r2(1.06 + 0.01 * k) },
+      { beldmg: r2(1.03 + 0.005 * k) },
+      PEN[(b * 2 + 1) % 4],
+    ];
+    steps.forEach((fx, j) => out.push(fxRule(icon, `${pt} ${ROM[j]}`, `${en} ${ROM[j]}`, fx)));
+    const lvl = 210 + b * 10;
+    const crown = lvl === 500 ? { ehp: 1.2, edmg: 1.12, bel: 1.2, bhp: 1.2 }
+      : lvl % 50 === 0 ? { ehp: r2(1.12 + 0.02 * k), edmg: r2(1.08 + 0.01 * k), bel: r2(1.12 + 0.02 * k), bhp: r2(1.12 + 0.02 * k) }
+      : { ehp: r2(1.08 + 0.02 * k), edmg: r2(1.05 + 0.01 * k), bel: r2(1.08 + 0.02 * k) };
+    out.push(fxRule(lvl === 500 ? '👑' : '🏆', cpt, cen, crown));
+  });
+  return out;
+}
 // efeitos somados das regras XI+ ligadas (guardado por nível: é lido em todo golpe, tiro e cura)
 const FX_MUL = ['ehp', 'edmg', 'bhp', 'bel', 'beldmg', 'espd', 'eatk', 'count', 'heal', 'shot', 'php', 'parm', 'cd', 'regen'];
 const fxCache = {};
@@ -483,10 +547,11 @@ export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ABYSS_NUM[n] || ''}`;
 // cor de cada nível: do violeta (I) ao vermelho-sangue (X)
 // XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico;
 // LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco;
-// CI a CL: do verde-água ao anil; CLI a CC: do rosa-choque ao ouro
-export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : n <= 100 ? `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)` : n <= 150 ? `hsl(${160 + (n - 100) * 2}, 100%, ${62 + (n - 100) * 0.1}%)` : `hsl(${(330 + (n - 150) * 1.6) % 360}, 100%, ${62 + (n - 150) * 0.3}%)`);
+// CI a CL: do verde-água ao anil; CLI a CC: do rosa-choque ao ouro;
+// CCI a CCC: do ouro ao vermelho-brasa; CCCI a CD: do roxo ao azul-gelo; CDI a D: um arco-íris que vai desbotando até o prata
+export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : n <= 100 ? `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)` : n <= 150 ? `hsl(${160 + (n - 100) * 2}, 100%, ${62 + (n - 100) * 0.1}%)` : n <= 200 ? `hsl(${(330 + (n - 150) * 1.6) % 360}, 100%, ${62 + (n - 150) * 0.3}%)` : n <= 300 ? `hsl(${50 - (n - 200) * 0.5}, 100%, ${64 - (n - 200) * 0.06}%)` : n <= 400 ? `hsl(${280 - (n - 300) * 0.8}, 100%, ${66 + (n - 300) * 0.1}%)` : `hsl(${(n - 400) * 3.6}, ${100 - (n - 400) * 0.6}%, ${80 - (n - 400) * 0.1}%)`);
 
-// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108 ... Abismo CC = 208
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108 ... Abismo CC = 208 ... Abismo D = 508
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
@@ -494,7 +559,7 @@ export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficul
 // subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
-// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6)
+// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6; Abismo D: ¢×507 e ★×130,6)
 for (let n = 1; n <= ABYSS_MAX; n++) {
   REWARD.cr.push(7.2 + n);
   REWARD.loot.push(5.6 + 0.25 * n);

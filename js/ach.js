@@ -142,6 +142,9 @@ export function achList() {
   add('abyss50', '♾️', 3, L('Fim do Abismo', 'End of the Abyss'), L('Derrote um chefe no Abismo 50', 'Defeat a boss on Abyss 50'), () => (abyssBest() >= 50 ? 1 : 0));
   add('abyss150', '🌗', 3, L('Meio Caminho do Vazio', 'Halfway to the Void'), L('Derrote um chefe no Abismo 150 ou acima', 'Defeat a boss on Abyss 150 or above'), () => (abyssBest() >= 150 ? 1 : 0));
   add('abyss200', '👑', 3, L('Fundo do Abismo', 'Bottom of the Abyss'), L('Derrote um chefe no Abismo 200', 'Defeat a boss on Abyss 200'), () => (abyssBest() >= 200 ? 1 : 0));
+  add('abyss300', '🩸', 3, L('Rio Carmesim', 'Crimson River'), L('Derrote um chefe no Abismo 300 ou acima', 'Defeat a boss on Abyss 300 or above'), () => (abyssBest() >= 300 ? 1 : 0));
+  add('abyss400', '💀', 3, L('Necrópole', 'Necropolis'), L('Derrote um chefe no Abismo 400 ou acima', 'Defeat a boss on Abyss 400 or above'), () => (abyssBest() >= 400 ? 1 : 0));
+  add('abyss500', '👁️', 3, L('O Fundo Verdadeiro', 'The True Bottom'), L('Derrote um chefe no Abismo 500', 'Defeat a boss on Abyss 500'), () => (abyssBest() >= 500 ? 1 : 0));
   add('hardBoss', '🔥', 2, L('Sem Piedade', 'No Mercy'), L('Derrote um chefe no Difícil ou acima', 'Defeat a boss on Hard or above'), () => (has('flags', 'hardBoss') ? 1 : 0));
 
   // batalha final (andar 50)

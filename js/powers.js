@@ -283,7 +283,7 @@ export function spawnAlly(kind, x, z, o = {}) {
 }
 
 function removeAlly(a, explode) {
-  if (explode) explosion(a.x, a.z, 2.2, a.mult * 0.8, { color: a.color, small: true, noProc: true });
+  if (explode) explosion(a.x, a.z, 2.2, a.mult * 0.8, { color: a.color, small: true, noProc: true, auto: true });
   else burst(a.x, 0.8, a.z, a.color, 20, 3, 0.07, 0.4);
   a.model.root.parent && a.model.root.parent.remove(a.model.root);
 }
@@ -433,7 +433,7 @@ function allyAttack(a, tgt) {
     let cur = tgt;
     for (let k = 0; k < a.chain && cur; k++) {
       beamFx(from.x, from.y, from.z, cur.x, cur.height * 0.6, cur.z, 0xffd23d, 0.2);
-      hitEnemy(cur, a.mult, { noProc: true, stun: 0.2, kx: a.x, kz: a.z });
+      hitEnemy(cur, a.mult, { noProc: true, auto: true, stun: 0.2, kx: a.x, kz: a.z });
       hit.add(cur);
       from = { x: cur.x, z: cur.z, y: cur.height * 0.6 };
       cur = nearestEnemy(cur.x, cur.z, 4.5, true, hit);
@@ -444,11 +444,11 @@ function allyAttack(a, tgt) {
   if (a.melee) {
     a.swing = 1;
     if (a.slam) {
-      for (const e of enemiesInRadius(a.x, a.z, 2.3)) hitEnemy(e, a.mult, { knock: 4, stun: 0.6, noProc: true, kx: a.x, kz: a.z });
+      for (const e of enemiesInRadius(a.x, a.z, 2.3)) hitEnemy(e, a.mult, { knock: 4, stun: 0.6, noProc: true, auto: true, kx: a.x, kz: a.z });
       ringFx(a.x, a.z, 2.3, a.color, 0.3);
       if (!a.quiet) sfx.punchHeavy();
     } else {
-      hitEnemy(tgt, a.mult, { knock: 2, noProc: true, kx: a.x, kz: a.z, burn: a.burn, slow: a.slow });
+      hitEnemy(tgt, a.mult, { knock: 2, noProc: true, auto: true, kx: a.x, kz: a.z, burn: a.burn, slow: a.slow });
       slashFx(a.x, a.z, Math.atan2(tgt.z - a.z, tgt.x - a.x), 1.6, Math.PI * 0.8, a.color, 0.8);
       sfx.slash();
     }
@@ -461,11 +461,11 @@ function allyAttack(a, tgt) {
   if (a.kind === 'warTurret') {
     a.shots = (a.shots || 0) + 1;
     if (a.shots % 14 === 0 && a.rocket) {
-      spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.6, z: a.z + (dz / l) * 0.6, y: 0.9, dx: dx / l, dz: dz / l, speed: 16, life: 1, mult: a.rocket, color: 0xff8a00, size: 0.18, r: 0.3, homing: 4, onHit: (e) => explosion(e.x, e.z, 2.5, a.rocket, { color: 0xff8a00, small: true, noProc: true, knock: 4 }) });
+      spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.6, z: a.z + (dz / l) * 0.6, y: 0.9, dx: dx / l, dz: dz / l, speed: 16, life: 1, mult: a.rocket, color: 0xff8a00, size: 0.18, r: 0.3, homing: 4, auto: true, onHit: (e) => explosion(e.x, e.z, 2.5, a.rocket, { color: 0xff8a00, small: true, noProc: true, auto: true, knock: 4 }) });
       sfx.shoot();
     }
   }
-  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.kind === 'warTurret' ? 0.75 : a.model.floaty ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, quiet: a.kind === 'clone' || a.kind === 'drone' || a.kind === 'warTurret' });
+  spawnProjectile({ from: 'player', x: a.x + (dx / l) * 0.5, z: a.z + (dz / l) * 0.5, y: a.kind === 'warTurret' ? 0.75 : a.model.floaty ? 1.3 : 1, dx: dx / l, dz: dz / l, speed: 18, life: 0.8, mult: a.mult, color: a.color, size: a.kind === 'daemon' ? 0.18 : 0.09, r: 0.22, homing: 3, auto: true, quiet: a.kind === 'clone' || a.kind === 'drone' || a.kind === 'warTurret' });
   if (a.kind === 'daemon') sfx.orb();
 }
 
@@ -500,7 +500,7 @@ function updateOrbiters(dt) {
       const last = ob.cd.get(e) || 0;
       if (G.t - last < 0.35) continue;
       ob.cd.set(e, G.t);
-      hitEnemy(e, ob.mult, { noProc: true, knock: 1.5, kx: p.x, kz: p.z, burn: ob.burn, quiet: true });
+      hitEnemy(e, ob.mult, { noProc: true, auto: true, knock: 1.5, kx: p.x, kz: p.z, burn: ob.burn, quiet: true });
     }
     if (ob.t <= 0) {
       ob.mesh.parent && ob.mesh.parent.remove(ob.mesh);
@@ -520,7 +520,7 @@ export function chainLightningFrom(p, jumps, mult, color, range = 7) {
   let cur = first;
   for (let k = 0; k < jumps && cur; k++) {
     beamFx(from.x, from.y, from.z, cur.x, cur.height * 0.6, cur.z, color, 0.25, 6);
-    hitEnemy(cur, mult, { stun: 0.3, noProc: true });
+    hitEnemy(cur, mult, { stun: 0.3, noProc: true, auto: true });
     hit.add(cur);
     from = { x: cur.x, y: cur.height * 0.6, z: cur.z };
     cur = nearestEnemy(cur.x, cur.z, 5, true, hit);
@@ -552,7 +552,7 @@ function updateStorms(dt) {
       if (!cands.length) continue;
       const e = pick(cands);
       skyBolt(e.x, e.z, s.color);
-      for (const o of enemiesInRadius(e.x, e.z, 1.3)) hitEnemy(o, s.mult, { stun: 0.4, noProc: true, kx: e.x, kz: e.z, quiet: o !== e });
+      for (const o of enemiesInRadius(e.x, e.z, 1.3)) hitEnemy(o, s.mult, { stun: 0.4, noProc: true, auto: true, kx: e.x, kz: e.z, quiet: o !== e });
       sfx.zap();
     }
     if (s.t <= 0) G.storms.splice(i, 1);
@@ -635,7 +635,7 @@ function updateLasers(dt) {
     if (Math.random() < 0.8) burst(L2.x, 0.2, L2.z, L2.color, 2, 4, 0.07, 0.3);
     if (L2.tick <= 0) {
       L2.tick = 0.15;
-      for (const e of enemiesInRadius(L2.x, L2.z, 1.4)) hitEnemy(e, L2.mult, { noProc: true, quiet: true, burn: 0.2, kx: L2.x, kz: L2.z });
+      for (const e of enemiesInRadius(L2.x, L2.z, 1.4)) hitEnemy(e, L2.mult, { noProc: true, auto: true, quiet: true, burn: 0.2, kx: L2.x, kz: L2.z });
     }
     if (L2.t <= 0) {
       L2.g.parent && L2.g.parent.remove(L2.g);
@@ -685,7 +685,7 @@ function updateHoles(dt) {
     }
     if (h.tick <= 0) {
       h.tick = 0.3;
-      for (const e of enemiesInRadius(h.x, h.z, 2.2)) hitEnemy(e, h.mult * 0.3, { noProc: true, quiet: true, kx: h.x, kz: h.z });
+      for (const e of enemiesInRadius(h.x, h.z, 2.2)) hitEnemy(e, h.mult * 0.3, { noProc: true, auto: true, quiet: true, kx: h.x, kz: h.z });
     }
     if (h.t <= 0) {
       explosion(h.x, h.z, 4, h.mult, { color: h.color, knock: 8 });
@@ -712,7 +712,7 @@ export function meteorShower(cx, cz, n, mult, color, o = {}) {
         rock.rotation.x += 0.3;
         particle(rock.position.x, rock.position.y, rock.position.z, 0, 0, 0, color, 0.18, 0.4);
       }).disposeMat = false;
-      after(0.7, () => explosion(x, z, 1.8, mult, { color, burn: o.burn, freeze: o.freeze, small: true, noProc: true }));
+      after(0.7, () => explosion(x, z, 1.8, mult, { color, burn: o.burn, freeze: o.freeze, small: true, noProc: true, auto: true }));
     });
   }
 }
@@ -727,7 +727,7 @@ export function pillars(p, count, mult, color, o = {}) {
       const x = sx + dx * k * 1.15;
       const z = sz + dz * k * 1.15;
       if (!isWalkable(G.dungeon, x, z)) return;
-      for (const e of enemiesInRadius(x, z, 1.3)) hitEnemy(e, mult, { noProc: true, burn: o.burn, freeze: o.freeze, slow: o.slow, knock: 1, kx: sx, kz: sz });
+      for (const e of enemiesInRadius(x, z, 1.3)) hitEnemy(e, mult, { noProc: true, auto: true, burn: o.burn, freeze: o.freeze, slow: o.slow, knock: 1, kx: sx, kz: sz });
       for (let j = 0; j < 8; j++) particle(x + rr(-0.3, 0.3), 0.2, z + rr(-0.3, 0.3), rr(-0.5, 0.5), rr(5, 9), rr(-0.5, 0.5), color, rr(0.1, 0.2), 0.5, 6, 1);
       ringFx(x, z, 1.2, color, 0.25);
       if (k % 2) sfx.punch();
@@ -761,7 +761,7 @@ export function swarm(p, n, mult, color) {
   for (let k = 0; k < n; k++) {
     const a = (k / n) * Math.PI * 2;
     after(k * 0.04, () => {
-      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.8, z: p.z + Math.sin(a) * 0.8, y: 1.3, dx: Math.cos(a), dz: Math.sin(a), speed: 10, life: 2.4, mult, color, size: 0.11, r: 0.25, homing: 6 });
+      spawnProjectile({ from: 'player', x: p.x + Math.cos(a) * 0.8, z: p.z + Math.sin(a) * 0.8, y: 1.3, dx: Math.cos(a), dz: Math.sin(a), speed: 10, life: 2.4, mult, color, size: 0.11, r: 0.25, homing: 6, auto: true });
     });
   }
   sfx.deploy();
@@ -773,7 +773,7 @@ export function bulletRing(p, waves, n, mult, color) {
       const pl = G.player;
       for (let k = 0; k < n; k++) {
         const a = (k / n) * Math.PI * 2 + w * 0.2;
-        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, dx: Math.cos(a), dz: Math.sin(a), speed: 20, life: 0.6, mult, color, size: 0.09, r: 0.2, quiet: true });
+        spawnProjectile({ from: 'player', x: pl.x + Math.cos(a) * 0.5, z: pl.z + Math.sin(a) * 0.5, dx: Math.cos(a), dz: Math.sin(a), speed: 20, life: 0.6, mult, color, size: 0.09, r: 0.2, quiet: true, auto: true });
       }
       sfx.shoot();
     });
@@ -851,7 +851,7 @@ export function shieldCatch(pr) {
   if (Math.hypot(pos.x - p.x, pos.z - p.z) > 1.35) return false;
   burst(pos.x, pos.y, pos.z, p.pshieldColor, 6, 3, 0.05, 0.25);
   if (p.pshieldReflect && !pr.fake) {
-    spawnProjectile({ from: 'player', x: pos.x, z: pos.z, y: pos.y, dx: -pr.dx, dz: -pr.dz, speed: Math.max(14, pr.speed), life: 1, mult: 0.9, color: p.pshieldColor, size: 0.12, r: 0.22, homing: 4, slow: p.pshieldFreeze ? 1.5 : 0 });
+    spawnProjectile({ from: 'player', x: pos.x, z: pos.z, y: pos.y, dx: -pr.dx, dz: -pr.dz, speed: Math.max(14, pr.speed), life: 1, mult: 0.9, color: p.pshieldColor, size: 0.12, r: 0.22, homing: 4, auto: true, slow: p.pshieldFreeze ? 1.5 : 0 });
   }
   sfx.shieldBlock();
   return true;
@@ -875,7 +875,7 @@ export function transform(p, kind, dur) {
     p.model.head.add(p.horns);
   }
   if (p.horns) p.horns.visible = kind === 'demon';
-  explosion(p.x, p.z, 3, 1.5, { color: kind === 'demon' ? 0xff2244 : 0xffd23d, knock: 6, noProc: true });
+  explosion(p.x, p.z, 3, 1.5, { color: kind === 'demon' ? 0xff2244 : 0xffd23d, knock: 6, noProc: true, auto: true });
   sfx.boss();
   G.shake = Math.max(G.shake, 0.4);
 }
@@ -906,7 +906,7 @@ function updateForm(dt) {
     p.auraT = (p.auraT || 0) - dt;
     if (p.auraT <= 0) {
       p.auraT = 0.5;
-      for (const e of enemiesInRadius(p.x, p.z, 2.5)) hitEnemy(e, 0.3, { burn: 0.4, noProc: true, quiet: true });
+      for (const e of enemiesInRadius(p.x, p.z, 2.5)) hitEnemy(e, 0.3, { burn: 0.4, noProc: true, auto: true, quiet: true });
     }
     for (const mt of p.model.mats) mt.emissive.setRGB(0.45, 0.05, 0.05);
   } else {

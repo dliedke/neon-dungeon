@@ -1529,9 +1529,13 @@ const bells = mk({
     }
     if (E.st === 'idle' && near(E, 8)) E.st = 'run';
     if (E.st !== 'run') return;
-    for (const b of E.list) {
-      if (!hitsOf(b)) continue;
-      b.sw = 1.2;
+    // golpe em área que pega o sino certo e um vizinho no mesmo quadro: vale o certo (antes desafinava).
+    // Sino já aceso só balança: bater de novo nele não desafina
+    const rung = E.list.filter((b) => hitsOf(b) > 0);
+    for (const q of rung) q.sw = 1.2;
+    const want = rung.find((b) => b.rank === E.next);
+    const wrong = rung.find((b) => !b.lit);
+    for (const b of want ? [want] : wrong ? [wrong] : []) {
       if (b.rank === E.next) {
         setLight(b.mat, 0x39ff88, 2.2);
         b.lit = true;

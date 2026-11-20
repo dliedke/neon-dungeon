@@ -94,7 +94,7 @@ function updateBlades(p, dt) {
   if ((bladeT -= dt) > 0) return;
   bladeT = 0.2;
   for (const e of enemiesInRadius(p.x, p.z, BLADE_R + 1.2)) {
-    if (pts.some(([x, z]) => Math.hypot(e.x - x, e.z - z) < 0.75 + (e.r || 0.4))) hitEnemy(e, 0.4, { noProc: true, quiet: true, kx: p.x, kz: p.z });
+    if (pts.some(([x, z]) => Math.hypot(e.x - x, e.z - z) < 0.75 + (e.r || 0.4))) hitEnemy(e, 0.4, { noProc: true, auto: true, quiet: true, kx: p.x, kz: p.z });
   }
 }
 
@@ -118,7 +118,7 @@ function updateOrbital(p, dt) {
     const tz = e.alive ? e.z : z;
     beamFx(tx, 14, tz, tx, 0, tz, MC, 0.3, 4);
     beamFx(tx + 0.15, 14, tz, tx, 0, tz, 0xffffff, 0.2, 4);
-    explosion(tx, tz, 2, 3, { color: MC, noProc: true, knock: 2 });
+    explosion(tx, tz, 2, 3, { color: MC, noProc: true, auto: true, knock: 2 });
     sfx.laser();
   });
 }
@@ -152,7 +152,7 @@ function openSingularity(x, z) {
       burst(x + Math.cos(a) * 3, 0.8, z + Math.sin(a) * 3, MC, 1, 0.3, 0.06, 0.4);
     }
   });
-  after(1.2, () => explosion(x, z, 3.2, 2.5, { color: MC, noProc: true, knock: 5 }));
+  after(1.2, () => explosion(x, z, 3.2, 2.5, { color: MC, noProc: true, auto: true, knock: 5 }));
 }
 
 // ---------- ganchos chamados pelo combate ----------
@@ -199,7 +199,7 @@ export function mythSave() {
   p.invuln = 2;
   banner(L('PROTOCOLO FÊNIX', 'PHOENIX PROTOCOL'), L('Você renasceu!', 'You were reborn!'));
   sfx.levelup();
-  explosion(p.x, p.z, 4.5, 2, { color: 0xff7a1a, noProc: true, burn: 0.6, knock: 7 });
+  explosion(p.x, p.z, 4.5, 2, { color: 0xff7a1a, noProc: true, auto: true, burn: 0.6, knock: 7 });
   ringFx(p.x, p.z, 5, 0xffd23d, 0.7);
   burst(p.x, 1, p.z, 0xff7a1a, 60, 7, 0.09, 0.9, { up: 3 });
   return true;
@@ -238,7 +238,7 @@ export function mythHud() {
 function thunderbolt(x, z, r, mult) {
   beamFx(x + rr(-0.3, 0.3), 13, z + rr(-0.3, 0.3), x, 0, z, DC, 0.25, 3);
   beamFx(x, 13, z, x, 0, z, 0xffffff, 0.15, 2);
-  explosion(x, z, r, mult, { color: DC, noProc: true, knock: 2 });
+  explosion(x, z, r, mult, { color: DC, noProc: true, auto: true, knock: 2 });
 }
 
 // depois de um golpe do jogador
@@ -264,7 +264,7 @@ export function divBlock() {
   aegisCd = 8;
   floatText(p.x, 1.9, p.z, L('ÉGIDE', 'AEGIS'), 'shield');
   ringFx(p.x, p.z, 3.5, DC, 0.45);
-  explosion(p.x, p.z, 3.5, 2, { color: DC, noProc: true, knock: 5 });
+  explosion(p.x, p.z, 3.5, 2, { color: DC, noProc: true, auto: true, knock: 5 });
   sfx.zap();
   return true;
 }
@@ -344,7 +344,7 @@ export function primOnHit(e, crit, o) {
       for (const t of enemiesInRadius(x, z, 6)) {
         if (t.inert || t.decoy) continue;
         beamFx(x, 1, z, t.x, 1, t.z, col, 0.15, 2);
-        hitEnemy(t, 1.2, { noProc: true, kx: x, kz: z });
+        hitEnemy(t, 1.2, { noProc: true, auto: true, kx: x, kz: z });
       }
       sfx.zap();
     });
@@ -366,7 +366,7 @@ export function primDodge() {
   const z = p.z;
   burst(x, 0.8, z, 0x8a7dff, 16, 2, 0.08, 0.5, { up: 1 });
   telegraphFx(x, z, 2.6, 0.4, 0x8a7dff);
-  after(0.4, () => explosion(x, z, 2.6, 3, { color: 0x8a7dff, noProc: true, knock: 4 }));
+  after(0.4, () => explosion(x, z, 2.6, 3, { color: 0x8a7dff, noProc: true, auto: true, knock: 4 }));
 }
 
 // Gênese: cada habilidade usada solta uma onda prismática (no máximo uma a cada 0,6s)
@@ -375,7 +375,7 @@ export function primSkillWave() {
   genesisCd = 0.6;
   const p = G.player;
   const col = prismC();
-  explosion(p.x, p.z, 4.5, 3, { color: col, noProc: true, knock: 4 });
+  explosion(p.x, p.z, 4.5, 3, { color: col, noProc: true, auto: true, knock: 4 });
   ringFx(p.x, p.z, 5.5, prismC(2), 0.5, { from: 0.4 });
 }
 
@@ -384,7 +384,7 @@ function meteor(x, z) {
   const col = prismC();
   beamFx(x + 4, 15, z - 4, x, 0, z, col, 0.3, 4);
   beamFx(x + 4, 15, z - 4, x, 0, z, 0xffffff, 0.18, 2);
-  explosion(x, z, 1.8, 2.2, { color: col, noProc: true, knock: 2, small: true });
+  explosion(x, z, 1.8, 2.2, { color: col, noProc: true, auto: true, knock: 2, small: true });
 }
 function updatePrimordial(p, dt) {
   chaosCd = Math.max(0, chaosCd - dt);
@@ -443,7 +443,7 @@ export function gemOnHit(e, crit, o) {
     const z = e.z;
     const m = GEM_POW.amethyst.mult[P.amethyst - 1];
     telegraphFx(x, z, 2.6, 0.35, 0xb04dff);
-    after(0.35, () => explosion(x, z, 2.6, m, { color: 0xb04dff, noProc: true, small: true, knock: 1 }));
+    after(0.35, () => explosion(x, z, 2.6, m, { color: 0xb04dff, noProc: true, auto: true, small: true, knock: 1 }));
   }
 }
 
@@ -456,7 +456,7 @@ export function gemOnKill(e) {
     const x = e.x;
     const z = e.z;
     const k = P.ruby - 1;
-    after(0.08, () => explosion(x, z, GEM_POW.ruby.r[k], GEM_POW.ruby.mult[k], { color: 0xff3a5a, noProc: true, small: true, burn: 0.35 }));
+    after(0.08, () => explosion(x, z, GEM_POW.ruby.r[k], GEM_POW.ruby.mult[k], { color: 0xff3a5a, noProc: true, auto: true, small: true, burn: 0.35 }));
   }
   if (P.sapphire && p) {
     const d = GEM_POW.sapphire.cd[P.sapphire - 1];

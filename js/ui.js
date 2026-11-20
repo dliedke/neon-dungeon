@@ -224,7 +224,7 @@ export function initUI() {
     applyQuality();
     saveSettings();
   };
-  // Abismo: − / barra / + (segurar o − ou o + repete; a barra vai direto ao nível)
+  // Abismo: − / barra / + (segurar o − ou o + repete, de 5 em 5 depois de ~2s; a barra vai direto ao nível)
   const range = $('abyss-range');
   range.max = String(ABYSS_MAX);
   range.oninput = () => applyAbyss(+range.value);
@@ -240,7 +240,8 @@ export function initUI() {
       if (ev.button) return;
       stop();
       applyAbyss(abyssLvl() + d);
-      t1 = setTimeout(() => (t2 = setInterval(() => applyAbyss(abyssLvl() + d), 70)), 420);
+      let reps = 0;
+      t1 = setTimeout(() => (t2 = setInterval(() => applyAbyss(abyssLvl() + d * (++reps > 25 ? 5 : 1)), 70)), 420);
     });
     for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
     // teclado (Enter/Espaço): o clique vem sem ponteiro (detail 0)
@@ -905,7 +906,7 @@ const toastKeys = {};
 // Dificuldade: opções (botão) e HUD (controle deslizante) usam a mesma função
 const DIFF_COLORS = ['#39ff88', '#00f0ff', '#ffd23d', '#ff9a3d', '#ff6a1a', '#ff3a64', '#ff2bd6', '#b04dff', '#e8e6ff'];
 // regras ativas do Abismo, uma por linha (tooltip)
-// (só as 10 últimas: com 200 níveis a lista inteira não cabe)
+// (só as 10 últimas: com 500 níveis a lista inteira não cabe)
 const abyssRulesText = (n) => {
   const from = Math.max(0, n - 10);
   const head = from ? L(`(as regras do 1 ao ${ABYSS_NUM[from]} também valem)\n`, `(rules 1 to ${ABYSS_NUM[from]} also apply)\n`) : '';

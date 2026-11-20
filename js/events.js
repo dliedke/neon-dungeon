@@ -2025,6 +2025,7 @@ function hitTarget(x, z, r, h, name) {
   e.r = r;
   e.height = h;
   e.name = name;
+  e.aimed = true; // só golpes de verdade contam (ver damageEnemy)
   e.model.root.visible = false;
   return e;
 }

@@ -155,7 +155,9 @@ export function damageEnemy(e, amount, crit, o = {}) {
   }
   // objeto quebrável (parede rachada): cada golpe tira 1, no máximo 4 por segundo; veneno/queimadura não
   if (e.T.prop) {
-    if (o.dot || G.t - (e.propT ?? -9) < 0.25) return 0;
+    // alvo de evento (e.aimed): só conta golpe de verdade (ataque e poderes). Poderes automáticos (míticos,
+    // gemas, raios em cadeia, aliados, poças) e perigos do bioma tocavam sinos e alvos sozinhos fora da ordem
+    if (o.dot || (e.aimed && (o.auto || o.kx === undefined)) || G.t - (e.propT ?? -9) < 0.25) return 0;
     e.propT = G.t;
     e.hp -= 1;
     e.flash = 0.09;
@@ -246,7 +248,7 @@ export function killEnemy(e) {
     const x = e.x;
     const z = e.z;
     after(0.06, () => {
-      explosion(x, z, 2.8, 2.5, { color: 0xff7a1a, noProc: true, knock: 6 });
+      explosion(x, z, 2.8, 2.5, { color: 0xff7a1a, noProc: true, auto: true, knock: 6 });
       const p = G.player;
       if (Math.hypot(p.x - x, p.z - z) < 2.8 + p.r) damagePlayer(e.dmg);
     });
@@ -274,7 +276,7 @@ export function killEnemy(e) {
     if (p.stats.legs.has('core')) {
       const x = e.x;
       const z = e.z;
-      after(0.08, () => explosion(x, z, 2.5, 0.6, { color: 0xff7a1a, noProc: true, small: true }));
+      after(0.08, () => explosion(x, z, 2.5, 0.6, { color: 0xff7a1a, noProc: true, auto: true, small: true }));
     }
   }
   if (e.explodeOnDeath) {
@@ -295,7 +297,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
     const n = nearestEnemy(cur.x, cur.z, range, true, hit);
     if (!n) break;
     beamFx(cur.x, cur.height * 0.6, cur.z, n.x, n.height * 0.6, n.z, color);
-    hitEnemy(n, mult, { noProc: true });
+    hitEnemy(n, mult, { noProc: true, auto: true });
     hit.add(n);
     cur = n;
   }
@@ -303,7 +305,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
 }
 
 export function explosion(x, z, radius, mult, o = {}) {
-  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun });
+  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, auto: o.auto, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun });
   ringFx(x, z, radius, o.color ?? 0xff7a1a, 0.4, { from: 0.3 });
   burst(x, 0.5, z, o.color ?? 0xff7a1a, o.small ? 18 : 40, o.small ? 5 : 9, 0.09, 0.6, { up: 0.8 });
   burst(x, 0.5, z, 0xffffff, o.small ? 4 : 10, 4, 0.06, 0.3);
@@ -521,11 +523,11 @@ export function updateProjectiles(dt) {
         if ((e.x - pos.x) ** 2 + (e.z - pos.z) ** 2 < r * r) {
           pr.hit.add(e);
           if (e.mirrorT > 0 && reflectShot(e, pr)) break; // Drone Espelho devolve o tiro
-          hitEnemy(e, pr.mult, { forceCrit: pr.forceCrit, knock: pr.knock ?? 0.8, kx: pos.x - pr.dx, kz: pos.z - pr.dz, slow: pr.slow, burn: pr.burn, freeze: pr.freeze, quiet: pr.quiet });
+          hitEnemy(e, pr.mult, { forceCrit: pr.forceCrit, knock: pr.knock ?? 0.8, kx: pos.x - pr.dx, kz: pos.z - pr.dz, slow: pr.slow, burn: pr.burn, freeze: pr.freeze, quiet: pr.quiet, auto: pr.auto });
           if (pr.onHit) pr.onHit(e, pr);
           if (pr.blast) {
             pr.alive = false;
-            explosion(pos.x, pos.z, pr.blast.r, pr.blast.mult, { color: pr.color, burn: pr.blast.burn });
+            explosion(pos.x, pos.z, pr.blast.r, pr.blast.mult, { color: pr.color, burn: pr.blast.burn, auto: pr.auto });
             break;
           }
           if (pr.pierce-- <= 0) {
@@ -601,7 +603,7 @@ export function updateTurrets(dt) {
         const dx = e.x - t.x;
         const dz = e.z - t.z;
         const l = Math.hypot(dx, dz) || 1;
-        spawnProjectile({ from: 'player', x: t.x + (dx / l) * 0.4, z: t.z + (dz / l) * 0.4, y: 0.62, dx: dx / l, dz: dz / l, speed: 20, life: 0.6, mult: t.mult, color: 0x39ff14, size: 0.08, r: 0.2 });
+        spawnProjectile({ from: 'player', x: t.x + (dx / l) * 0.4, z: t.z + (dz / l) * 0.4, y: 0.62, dx: dx / l, dz: dz / l, speed: 20, life: 0.6, mult: t.mult, color: 0x39ff14, size: 0.08, r: 0.2, auto: true });
         sfx.shoot();
       }
     } else {
@@ -635,7 +637,7 @@ export function updateHazards(dt) {
     if (h.tick <= 0) {
       if (h.faction === 'player') {
         h.tick = 0.5;
-        for (const e of enemiesInRadius(h.x, h.z, h.r)) hitEnemy(e, h.mult, { noProc: true, burn: h.burn, slow: h.slow, kx: h.x, kz: h.z });
+        for (const e of enemiesInRadius(h.x, h.z, h.r)) hitEnemy(e, h.mult, { noProc: true, auto: true, burn: h.burn, slow: h.slow, kx: h.x, kz: h.z });
       } else if (p.alive && Math.hypot(p.x - h.x, p.z - h.z) < h.r + p.r * 0.5) {
         h.tick = 0.5;
         damagePlayer(h.dps * 0.5);
