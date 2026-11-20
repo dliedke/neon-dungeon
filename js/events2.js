@@ -39,20 +39,21 @@ function mk(def) {
 }
 const hex = (c) => '#' + c.toString(16).padStart(6, '0');
 // número em cima de um objeto (peso, dica)
-function label(parent, text, color, x, y, z, s = 0.9) {
+function label(parent, text, color, x, y, z, s = 0.9, wide = 1) {
   const c = document.createElement('canvas');
-  c.width = c.height = 64;
+  c.width = 64 * wide;
+  c.height = 64;
   const g = c.getContext('2d');
   g.font = 'bold 44px sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.lineWidth = 7;
   g.strokeStyle = '#000';
-  g.strokeText(text, 32, 35);
+  g.strokeText(text, c.width / 2, 35);
   g.fillStyle = hex(color);
-  g.fillText(text, 32, 35);
+  g.fillText(text, c.width / 2, 35);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false }));
-  sp.scale.set(s, s, 1);
+  sp.scale.set(s * wide, s, 1);
   sp.position.set(x, y, z);
   sp.renderOrder = 6;
   parent.add(sp);
@@ -735,6 +736,13 @@ const paintFloor = mk({
 // 38. Esconde-esconde: o ladrão está num de 6 barris. Cada barril vazio esquenta ou esfria a pista
 // ==================================================================
 const HD_COL = 0xffb36b;
+const HD_IDLE = 0xd8dcff; // anel de barril ainda fechado (neutro: as cores ficam só para as pistas)
+// pista do barril vazio aberto: o quão perto ele está do barril do ladrão (vizinho, diagonal ou longe)
+const HD_CLUE = [
+  { d: 2.8, col: 0xff3322, pt: 'QUENTE', en: 'HOT' },
+  { d: 4.6, col: 0xffb347, pt: 'MORNO', en: 'WARM' },
+  { d: 99, col: 0x3dc7ff, pt: 'FRIO', en: 'COLD' },
+];
 const hide = mk({
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 3.6, 2.3);
@@ -749,19 +757,11 @@ const hide = mk({
       put(g, mats().cyl, mats().metal, x, 0.25, z, 0.58, 0.07, 0.58);
       put(g, mats().cyl, mats().metal, x, 0.75, z, 0.58, 0.07, 0.58);
       const lid = put(g, mats().cyl, mats().dark, x, 1.02, z, 0.5, 0.06, 0.5);
-      const ring = lightMat(HD_COL, 0.7);
+      const ring = lightMat(HD_IDLE, 0.7);
       put(g, mats().ring, ring, x, 0.03, z, 0.85, 1, 0.85);
       bar.push({ x, z, lid, ring, p: 0, open: false });
     }
     return { kind: 'hide', x: s.x, z: s.z, g, bar, thief: ri(0, 5), miss: 0, st: 'idle' };
-  },
-  heat(E) {
-    const t = E.bar[E.thief];
-    for (const b of E.bar) {
-      if (b.open) continue;
-      const dd = Math.hypot(b.x - t.x, b.z - t.z);
-      setLight(b.ring, dd < 2.8 ? 0xff3322 : dd < 4.6 ? 0xffb347 : 0x3dc7ff, 1.6);
-    }
   },
   update(E, dt) {
     const p = G.player;
@@ -778,7 +778,6 @@ const hide = mk({
       if (b.p < 0.6) continue;
       b.open = true;
       b.lid.visible = false;
-      setLight(b.ring, 0x555566, 0.4);
       burst(E.x + b.x, 1, E.z + b.z, HD_COL, 14, 3, 0.07, 0.5, { up: 2 });
       if (i === E.thief) {
         complete(E, 1.2, L('LADRÃO PEGO!', 'THIEF CAUGHT!'), L(`${E.miss} barris errados`, `${E.miss} wrong barrels`), E.x + b.x, E.z + b.z);
@@ -786,13 +785,19 @@ const hide = mk({
       }
       E.miss++;
       sfx.deny();
-      floatText(E.x + b.x, 1.8, E.z + b.z, L('vazio', 'empty'), 'hurt');
       if (E.miss >= 3) {
+        setLight(b.ring, 0x555566, 0.4);
         failed(E, L('O ladrão fugiu: 3 barris errados.', 'The thief got away: 3 wrong barrels.'));
         return;
       }
-      hide.heat(E);
-      toast(L('🛢️ Vazio! Os anéis ficaram <b style="color:#ff3322">vermelhos</b> (perto), <b style="color:#ffb347">laranjas</b> ou <b style="color:#3dc7ff">azuis</b> (longe) do ladrão.', '🛢️ Empty! The rings turned <b style="color:#ff3322">red</b> (close), <b style="color:#ffb347">orange</b> or <b style="color:#3dc7ff">blue</b> (far) from the thief.'), 'leg');
+      // o barril vazio diz só o quão perto ELE está do ladrão (os fechados continuam neutros)
+      const t = E.bar[E.thief];
+      const dd = Math.hypot(b.x - t.x, b.z - t.z);
+      const cl = HD_CLUE.find((q) => dd < q.d);
+      setLight(b.ring, cl.col, 1.6);
+      b.tag = label(E.g, L(cl.pt, cl.en), cl.col, b.x, 1.75, b.z, 0.55, 4);
+      floatText(E.x + b.x, 2.2, E.z + b.z, L('vazio', 'empty'), 'hurt');
+      if (E.miss === 1) toast(L('🛢️ Vazio! O barril aberto mostra a distância até o ladrão: <b style="color:#ff3322">QUENTE</b> = ele está num barril do lado, <b style="color:#ffb347">MORNO</b> = na diagonal, <b style="color:#3dc7ff">FRIO</b> = longe.', '🛢️ Empty! The opened barrel tells how far the thief is: <b style="color:#ff3322">HOT</b> = he is in a barrel right next to it, <b style="color:#ffb347">WARM</b> = diagonal, <b style="color:#3dc7ff">COLD</b> = far.'), 'leg');
     }
   },
   hud: (E) => (E.st === 'idle' ? L('ache o ladrão', 'find the thief') : `${E.bar.filter((b) => !b.open).length} ${L('barris', 'barrels')} · ${E.miss}/3 ${L('erros', 'miss')}`),
@@ -801,13 +806,14 @@ const hide = mk({
       b.open = true;
       b.lid.visible = false;
       setLight(b.ring, 0x555566, 0.4);
+      if (b.tag) b.tag.visible = false;
     }
   },
   reload(E, s) {
     if (typeof s.thief === 'number') E.thief = s.thief;
   },
   save: (E) => ({ thief: E.thief }),
-  intro: () => L('um ladrão está num destes 6 barris. Chegue perto de um para abri-lo: anel vermelho = perto do ladrão, azul = longe. Errou 3 e ele foge.', 'a thief hides in one of these 6 barrels. Get close to one to open it: red ring = near the thief, blue = far. Miss 3 and he escapes.'),
+  intro: () => L('um ladrão está num destes 6 barris. Fique parado num barril para abri-lo. Se estiver vazio, ele mostra a distância até o ladrão: QUENTE = barril do lado, MORNO = na diagonal, FRIO = longe. No 3º erro ele foge.', 'a thief hides in one of these 6 barrels. Stand at a barrel to open it. If it is empty it shows how far the thief is: HOT = the barrel next to it, WARM = diagonal, COLD = far. On the 3rd miss he escapes.'),
 });
 
 // ==================================================================
@@ -1160,7 +1166,7 @@ const fishing = mk({
       E.st = 'run';
       banner(L('PESCARIA!', 'FISHING!'), L('Golpeie a boia quando ela afundar', 'Hit the float when it sinks'));
     }
-    E.bob.position.y = E.bite > 0 ? -0.18 : Math.sin(G.t * 2) * 0.04;
+    E.bob.position.y = E.bite > 0 ? -0.3 + Math.sin(G.t * 30) * 0.03 : Math.sin(G.t * 2) * 0.04;
     E.wave.scale.setScalar(E.bite > 0 ? 0.5 + ((G.t * 3) % 1) * 1.1 : 0.5);
     if (hit) {
       if (E.bite > 0) {
@@ -1174,13 +1180,15 @@ const fishing = mk({
           dropTarget(E);
           complete(E, 1.2, L('PESCARIA FARTA!', 'GREAT CATCH!'), L(`${E.fish} peixes de dados`, `${E.fish} data fish`), E.x, E.z);
         }
-      } else {
-        E.wait += 1.2;
-        floatText(E.x + 2.2, 1.5, E.z, L('cedo demais', 'too early'), 'hurt');
+      } else if (G.t - (E.earlyT || -9) > 1.5) {
+        // golpe antes da hora só avisa: atrasar a mordida a cada golpe (drones, auras, pets batem sozinhos) fazia a boia nunca afundar
+        E.earlyT = G.t;
+        floatText(E.x + 2.2, 1.5, E.z, L('espere afundar', 'wait for the sink'), 'hurt');
       }
       return;
     }
-    if (!pier) return;
+    // o relógio da mordida corre com o jogador perto (no píer ou na beira d'água batendo na boia), não só em cima do píer
+    if (!near(E, 6)) return;
     if (E.bite > 0) {
       E.bite -= dt;
       if (E.bite <= 0) {
@@ -1197,9 +1205,10 @@ const fishing = mk({
     }
     E.wait -= dt;
     if (E.wait <= 0) {
-      E.bite = 1.0;
+      E.bite = 1.2;
       sfx.click();
       floatText(E.x + 2.2, 1.7, E.z, '!', 'crit');
+      burst(E.x + 2.2, 0.2, E.z, FI_COL, 16, 3, 0.07, 0.5, { up: 2.5 });
     }
   },
   hud: (E) => (E.st === 'idle' ? L('suba no píer', 'step on the pier') : `${E.fish}/${FI_NEED} ${L('peixes', 'fish')} · ${E.miss}/3 ${L('erros', 'miss')}`),
@@ -1210,7 +1219,7 @@ const fishing = mk({
     E.e.hp = E.e.maxHp;
     E.hits = 0;
   },
-  intro: () => L('suba no píer e golpeie a boia só quando ela afundar com um "!". Golpe cedo demais atrasa a mordida. Pegue 5 peixes; 3 escapadas e acabou.', 'stand on the pier and hit the float only when it sinks with a "!". Hitting too early delays the bite. Catch 5 fish; 3 escapes and it ends.'),
+  intro: () => L('suba no píer e espere: quando a boia afundar com um "!" e espirrar água, golpeie ela rápido. Pegue 5 peixes; 3 escapadas e acabou.', 'step on the pier and wait: when the float sinks with a "!" and a splash, hit it fast. Catch 5 fish; 3 escapes and it ends.'),
 });
 
 // ==================================================================

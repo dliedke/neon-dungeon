@@ -299,11 +299,11 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Light Maze** | An invisible maze whose walls only light up near you. Reach the golden orb in the far corner. |
 | **Collapsing Bridge** | Cross a bridge of plates that collapse right after you step and have gaps. Falling costs some health and sends you back. |
 | **Paint the Floor** | Walk over the board to paint it your color and cover 85%. Enemies that show up paint it red. |
-| **Hide and Seek** | A thief hides in one of 6 barrels. Stand next to one to open it; the other rings turn red when close and blue when far. |
+| **Hide and Seek** | A thief hides in one of 6 barrels. Stand next to one to open it; an empty barrel shows HOT (the thief is next to it), WARM (diagonal) or COLD (far). Two misses are allowed, enough to always deduce the right one. |
 | **Living Statues** | Statues only move while you move. Grab 3 golden orbs in short bursts. |
 | **Neon Cannon** | Each hit on the cannon fires a shell along a sweeping aim line. Hit the 3 targets in 9 shots. |
 | **Parts Golem** | Find 4 glowing parts (each one calls a guard) and the golem assembles and fights by your side for a few seconds. |
-| **Data Fishing** | Stand on the pier and hit the float only when it sinks. Catch 5 fish; 3 escapes and it ends. |
+| **Data Fishing** | Stand on the pier and hit the float when it sinks and splashes (early hits do nothing). Catch 5 fish; 3 escapes and it ends. |
 | **Dominoes** | Step on the rings to fill the gaps in a row of dominoes, then hit the first one so the whole row falls. |
 | **Double Hunt** *(timed)* | Two linked elite targets: after one falls the other must fall within 6 seconds, or the dead one returns and the survivor heals. |
 | **Tower Defense** | Protect a core from 4 waves. Enemies near it damage it, standing in the circle heals you. No clock: it ends with the last wave. |
