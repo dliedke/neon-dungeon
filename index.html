@@ -156,8 +156,8 @@
           <div id="inv-grid"></div>
           <div class="inv-actions">
             <button class="btn small" id="btn-buy-stim" data-nav data-i18n="buyStim">Comprar Stim</button>
-            <button class="btn small danger" id="btn-recycle-all" data-nav data-i18n="recycleAll">Reciclar tudo</button>
-            <button class="btn small danger" id="btn-recycle-myth" data-nav data-i18n="recycleMyth">♻ Míticos</button>
+            <button class="btn small danger" id="btn-recycle-all" data-nav data-i18n="recycle">Reciclar</button>
+            <button class="btn small ghost" id="btn-recycle-filter" data-nav data-i18n="recycleFilter">Filtro</button>
           </div>
         </div>
         <div class="col detail-col"><div id="item-detail"><div class="empty-detail" data-i18n="selectItem">Selecione um item para ver os detalhes.</div></div></div>
@@ -366,20 +366,16 @@
   </div>
 
   <!-- CONFIRMAÇÃO -->
-  <!-- RECICLAR MÍTICOS ABAIXO DE UM NÍVEL -->
-  <div id="panel-mrec" class="screen hidden">
+  <!-- FILTRO DA RECICLAGEM: raridades que o botão Reciclar desmonta -->
+  <div id="panel-rfilter" class="screen hidden">
     <div class="panel narrow">
-      <h2 data-i18n="mrecTitle">♻ RECICLAR MÍTICOS</h2>
-      <p class="mrec-text" data-i18n="mrecText">Recicla os itens míticos do inventário abaixo do nível escolhido. Favoritos (★) e melhorias (▲) ficam.</p>
-      <div class="mrec-row">
-        <button class="btn small" data-nav id="mrec-dn">−10</button>
-        <div class="mrec-lvl"><small data-i18n="mrecBelow">abaixo do nível</small><b id="mrec-lvl">0</b></div>
-        <button class="btn small" data-nav id="mrec-up">+10</button>
-      </div>
-      <p id="mrec-sum"></p>
+      <h2 data-i18n="rfTitle">♻ FILTRO</h2>
+      <p class="rf-text" data-i18n="rfText">Marque as raridades que o botão Reciclar desmonta. Favoritos (★) e itens melhores que o equipado (▲) nunca são reciclados.</p>
+      <div id="rf-opts"></div>
+      <p id="rf-sum"></p>
       <div class="stack row">
-        <button class="btn danger" data-nav id="mrec-yes" data-i18n="recycle">Reciclar</button>
-        <button class="btn ghost" data-nav id="mrec-no" data-i18n="cancel">Cancelar</button>
+        <button class="btn danger" data-nav id="rf-yes" data-i18n="recycle">Reciclar</button>
+        <button class="btn ghost" data-nav id="rf-no" data-i18n="close">Fechar</button>
       </div>
     </div>
   </div>

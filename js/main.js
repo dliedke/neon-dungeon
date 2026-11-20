@@ -92,6 +92,9 @@ function loadSave() {
       Object.assign(G.settings, s);
     }
   } catch (_) {}
+  // filtro da reciclagem: raridades (0 a 6) que o botão Reciclar desmonta; opções antigas ficam com Comum a Protótipo
+  const rc = G.settings.recycle;
+  G.settings.recycle = Array.isArray(rc) ? [...new Set(rc.map((r) => r | 0).filter((r) => r >= 0 && r <= 6))] : [0, 1, 2, 3];
   // Abismo: só existe no Morte e até o nível já desbloqueado
   const ab = G.settings.difficulty === 'death' ? Math.min(G.settings.abyss | 0, abyssUnlocked()) : 0;
   G.settings.abyss = Math.max(0, ab);

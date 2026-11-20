@@ -280,7 +280,7 @@ function update(dt) {
     padNav.lb = b(4);
     padNav.rb = b(5);
     padNav.rt = b(7);
-    padNav.rs = b(11); // analógico direito: no inventário abre o ♻ Míticos
+    padNav.rs = b(11); // analógico direito: no inventário abre o filtro da reciclagem
     const any = gp.buttons.some((x) => x.pressed) || Math.hypot(padMove.x, padMove.y) > 0 || Math.hypot(aim.x, aim.y) > 0;
     if (any) setPadMode();
   }

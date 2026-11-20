@@ -45,11 +45,12 @@ export function initUI() {
   document.querySelectorAll('.tab-btn').forEach((b) => (b.onclick = () => setTab(b.dataset.tab)));
   $('btn-buy-stim').onclick = buyStim;
   $('btn-recycle-all').onclick = recycleAll;
-  $('btn-recycle-myth').onclick = openMythRecycle;
-  $('mrec-dn').onclick = () => mythCutStep(-10);
-  $('mrec-up').onclick = () => mythCutStep(10);
-  $('mrec-yes').onclick = mythRecycle;
-  $('mrec-no').onclick = () => closeOverlay('panel-mrec');
+  $('btn-recycle-filter').onclick = openRecycleFilter;
+  $('rf-yes').onclick = () => {
+    recycleAll();
+    renderRecycleFilter();
+  };
+  $('rf-no').onclick = closeRecycleFilter;
   $('btn-fuse-all').onclick = gemFuseAll;
 
   $('pause-resume').onclick = () => closePause();
@@ -1540,11 +1541,12 @@ export function renderChar() {
     $('btn-buy-stim').textContent = `${G.isTouch ? 'Stim' : L('Comprar Stim', 'Buy Stim')} · ${L('cura 60%', 'heals 60%')} · ${price}¢ · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').title = L(`Stim: cura 60% da vida na hora e mais um pouco nos 4s seguintes. Use com F, apertando o analógico esquerdo no controle ou no botão verde no toque. Leve até ${MAX_STIMS}.`, `Stim: instantly heals 60% of your health, plus a bit more over the next 4s. Use it with F, by clicking the left stick on a gamepad or with the green touch button. Carry up to ${MAX_STIMS}.`);
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
-    // no controle cada botão mostra o atalho ({Y}: reciclar tudo)
-    $('btn-recycle-all').innerHTML = L('Reciclar tudo', 'Recycle all') + padKey('y');
-    $('btn-recycle-all').disabled = !c.inv.some(canBulkRecycle);
-    $('btn-recycle-myth').innerHTML = L('♻ Míticos', '♻ Mythics') + padKey('rs');
-    $('btn-recycle-myth').disabled = !c.inv.some((it) => it.rarity === MYTHIC && !it.fav);
+    // no controle cada botão mostra o atalho ({Y}: reciclar pelo filtro, {RS}: filtro)
+    const nRec = recyclable(c).length;
+    $('btn-recycle-all').innerHTML = `♻ ${L('Reciclar', 'Recycle')}${nRec ? ` (${nRec})` : ''}` + padKey('y');
+    $('btn-recycle-all').disabled = !nRec;
+    $('btn-recycle-all').title = L('Recicla os itens das raridades marcadas no Filtro. Favoritos (★) e itens melhores que o equipado (▲) ficam.', 'Recycles the items of the rarities picked in the Filter. Favorites (★) and items better than what you have equipped (▲) are kept.');
+    $('btn-recycle-filter').innerHTML = `${L('Filtro', 'Filter')} ${rarityDots()}` + padKey('rs');
     // atributos
     const s = p.stats;
     const rows = [
@@ -2163,22 +2165,39 @@ function favMark(it) {
   return (it.fav ? '<span class="fav">★</span>' : '') + (it.plus > 0 ? `<span class="plus">+${it.plus}</span>` : '');
 }
 
-// itens míticos, divinos (também têm poder mítico) e favoritos nunca são reciclados em lote
-const canBulkRecycle = (it) => !it.myth && !it.fav;
+// Reciclar em lote: só as raridades marcadas no filtro (G.settings.recycle).
+// Favoritos nunca, e nunca um item melhor que o equipado no mesmo espaço (nem com espaço vazio).
+const betterThanEquipped = (it, equip) => {
+  const cur = equip[it.slot];
+  return !cur || itemScore(unforged(it)) > itemScore(unforged(cur));
+};
+const recFilter = () => G.settings.recycle || [];
+const recyclable = (c) => {
+  const f = recFilter();
+  return c.inv.filter((it) => f.includes(it.rarity) && !it.fav && !betterThanEquipped(it, c.equip));
+};
+// bolinhas com a cor de cada raridade marcada (cabe no botão do filtro)
+function rarityDots() {
+  const f = recFilter();
+  if (!f.length) return `<span class="rf-none">${L('nenhuma', 'none')}</span>`;
+  return `<span class="rf-dots">${RARITY.map((R, i) => (f.includes(i) ? `<i style="background:${R.color}"></i>` : '')).join('')}</span>`;
+}
 
-// Recicla todo o inventário (o que está equipado não é tocado)
 function recycleAll() {
   const c = G.char;
-  const list = c.inv.filter(canBulkRecycle);
+  const list = recyclable(c);
   if (!list.length) return;
   const n = list.length;
-  const kept = c.inv.length - n;
+  const set = new Set(list);
+  const f = recFilter();
+  // o que ficou das raridades marcadas: favoritos e itens melhores que o equipado
+  const kept = c.inv.filter((it) => f.includes(it.rarity) && !set.has(it)).length;
   const total = list.reduce((s, it) => s + recycleValue(it), 0);
   // sem confirmação: recicla na hora e avisa quantos foram (e o que ficou)
-  c.inv = c.inv.filter((it) => !canBulkRecycle(it));
+  c.inv = c.inv.filter((it) => !set.has(it));
   c.credits += total;
   sfx.coin();
-  const keep = kept ? `<br><small>${L(`${kept} ${kept === 1 ? 'mítico, divino ou favorito (★) ficou' : 'míticos, divinos ou favoritos (★) ficaram'}.`, `${kept} mythic, divine or favorite (★) ${kept === 1 ? 'item was' : 'items were'} kept.`)}</small>` : '';
+  const keep = kept ? `<br><small>${L(`${kept} ${kept === 1 ? 'favorito (★) ou melhor que o equipado ficou' : 'favoritos (★) ou melhores que o equipado ficaram'}.`, `${kept} favorite (★) or better-than-equipped ${kept === 1 ? 'item was' : 'items were'} kept.`)}</small>` : '';
   toast(L(`♻ ${n} ${n === 1 ? 'item reciclado' : 'itens reciclados'}: +${fmt(total)}¢`, `♻ ${n} ${n === 1 ? 'item' : 'items'} recycled: +${fmt(total)}¢`) + keep);
   selected = null;
   renderChar();
@@ -2186,54 +2205,42 @@ function recycleAll() {
 }
 
 // ------------------------------------------------------------------
-// Reciclar míticos abaixo de um nível (escolhido com −10/+10; favoritos e melhorias ficam)
+// Filtro da reciclagem: liga/desliga cada raridade (fica salvo nas opções do aparelho)
 // ------------------------------------------------------------------
-let mythCut = 0;
-const mythRecyclable = (c) => c.inv.filter((it) => it.rarity === MYTHIC && !it.fav && (it.ilvl | 0) < mythCut && !isUpgrade(it, c.equip));
-function openMythRecycle() {
-  const c = G.char;
-  const lv = c.inv.filter((it) => it.rarity === MYTHIC && !it.fav).map((it) => it.ilvl | 0);
-  if (!lv.length) return;
-  // sempre abre no nível máximo (acima do mítico mais forte do inventário); o −10 desce dali
-  mythCut = mythTop();
-  renderMythRecycle();
-  openOverlay('panel-mrec');
-  // o seletor já começa no Reciclar (o {A} confirma); sem nada para reciclar, fica no Cancelar
-  setFocus($('mrec-yes').disabled ? $('mrec-no') : $('mrec-yes'));
+function openRecycleFilter() {
+  renderRecycleFilter();
+  openOverlay('panel-rfilter');
+  setFocus(document.querySelector('#rf-opts .rf-opt'));
 }
-// teto do seletor: a dezena logo acima do mítico mais forte do inventário
-const mythTop = () => Math.max(10, ...G.char.inv.filter((it) => it.rarity === MYTHIC).map((it) => Math.ceil(((it.ilvl | 0) + 1) / 10) * 10));
-function mythCutStep(d) {
-  mythCut = Math.max(10, Math.min(mythTop(), mythCut + d));
+function closeRecycleFilter() {
+  closeOverlay('panel-rfilter');
+  if (G.lastInput === 'pad') restoreFocus('#btn-recycle-filter');
+}
+function toggleRarity(i) {
+  const f = recFilter();
+  G.settings.recycle = f.includes(i) ? f.filter((r) => r !== i) : [...f, i].sort((a, b) => a - b);
+  saveSettings();
   sfx.click();
-  renderMythRecycle();
-}
-function renderMythRecycle() {
-  const list = mythRecyclable(G.char);
-  const total = list.reduce((s, it) => s + recycleValue(it), 0);
-  $('mrec-lvl').textContent = String(mythCut);
-  $('mrec-dn').innerHTML = '−10' + padKey('lb');
-  $('mrec-up').innerHTML = '+10' + padKey('rb');
-  $('mrec-sum').innerHTML = list.length
-    ? L(`<b>${list.length}</b> ${list.length === 1 ? 'mítico' : 'míticos'} → <b>+${fmt(total)}¢</b>`, `<b>${list.length}</b> ${list.length === 1 ? 'mythic' : 'mythics'} → <b>+${fmt(total)}¢</b>`)
-    : L('Nenhum mítico abaixo desse nível.', 'No mythics below this level.');
-  $('mrec-yes').disabled = !list.length;
-}
-function mythRecycle() {
-  const c = G.char;
-  const list = mythRecyclable(c);
-  if (!list.length) return;
-  const set = new Set(list);
-  const total = list.reduce((s, it) => s + recycleValue(it), 0);
-  c.inv = c.inv.filter((it) => !set.has(it));
-  c.credits += total;
-  sfx.coin();
-  toast(L(`♻ ${list.length} ${list.length === 1 ? 'mítico reciclado' : 'míticos reciclados'}: +${fmt(total)}¢`, `♻ ${list.length} ${list.length === 1 ? 'mythic' : 'mythics'} recycled: +${fmt(total)}¢`));
-  closeOverlay('panel-mrec');
-  selected = null;
   renderChar();
-  saveGame();
-  if (G.lastInput === 'pad') restoreFocus('#btn-recycle-myth');
+  renderRecycleFilter();
+  restoreFocus(`#rf-opts [data-r="${i}"]`);
+}
+function renderRecycleFilter() {
+  const c = G.char;
+  const f = recFilter();
+  $('rf-opts').innerHTML = RARITY.map((R, i) => {
+    const n = c.inv.filter((it) => it.rarity === i).length;
+    const on = f.includes(i);
+    return `<button class="rf-opt${on ? ' on' : ''}" data-nav data-r="${i}" style="--rc:${R.color}"><span class="rf-box">${on ? '✓' : ''}</span><span class="rf-name">${R.name}</span><span class="rf-n">${n}</span></button>`;
+  }).join('');
+  $('rf-opts').querySelectorAll('.rf-opt').forEach((b) => (b.onclick = () => toggleRarity(+b.dataset.r)));
+  const list = recyclable(c);
+  const total = list.reduce((s, it) => s + recycleValue(it), 0);
+  $('rf-sum').innerHTML = list.length
+    ? L(`Reciclar agora: <b>${list.length}</b> ${list.length === 1 ? 'item' : 'itens'} → <b>+${fmt(total)}¢</b>`, `Recycle now: <b>${list.length}</b> ${list.length === 1 ? 'item' : 'items'} → <b>+${fmt(total)}¢</b>`)
+    : L('Nada para reciclar com este filtro.', 'Nothing to recycle with this filter.');
+  $('rf-yes').innerHTML = L('♻ Reciclar', '♻ Recycle') + padKey('y');
+  $('rf-yes').disabled = !list.length;
 }
 
 function buyStim() {
@@ -2253,7 +2260,7 @@ function buyStim() {
 // ------------------------------------------------------------------
 // Navegação por controle (D-pad / analógico) em menus
 // ------------------------------------------------------------------
-const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-mrec', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-backup', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
+const PANEL_ORDER = ['finale', 'panel-implant', 'panel-end', 'panel-confirm', 'panel-rfilter', 'panel-ach', 'panel-opts', 'panel-help', 'panel-debug', 'panel-sync', 'panel-backup', 'panel-dead', 'panel-shop', 'panel-forge', 'panel-stash', 'panel-char', 'panel-pause', 'menu'];
 function activePanel() {
   for (const id of PANEL_ORDER) {
     const el = $(id);
@@ -2398,16 +2405,17 @@ export function uiPadUpdate() {
   // {LB}/{RB}: aba anterior/próxima (Equipamento, Habilidades, Gemas)
   const CHAR_TABS = ['equip', 'skills', 'gems'];
   const ti = CHAR_TABS.indexOf(currentTab);
-  if (Input.nav('rs') && root.id === 'panel-char' && currentTab === 'equip' && !$('btn-recycle-myth').disabled) openMythRecycle(); // {RS}: reciclar míticos
+  if (Input.nav('rs') && root.id === 'panel-char' && currentTab === 'equip') openRecycleFilter(); // {RS}: filtro da reciclagem
   if (root.id === 'panel-opts' && focused && focused.id === 'opt-abyss') {
     // {LB}/{RB}: −10/+10 no nível do Abismo
     if (Input.nav('lb')) applyAbyss(Math.max(0, abyssLvl() - 10));
     if (Input.nav('rb')) applyAbyss(abyssLvl() + 10);
   }
-  if (root.id === 'panel-mrec') {
-    // {LB}/{RB}: −10/+10 no nível sem tirar o seletor do Reciclar
-    if (Input.nav('lb')) mythCutStep(-10);
-    if (Input.nav('rb')) mythCutStep(10);
+  // {Y} no filtro: recicla agora (o seletor fica nas raridades)
+  if (Input.nav('y') && root.id === 'panel-rfilter' && !$('rf-yes').disabled) {
+    recycleAll();
+    renderRecycleFilter();
+    restoreFocus(focused && focused.dataset.r ? `#rf-opts [data-r="${focused.dataset.r}"]` : '#rf-yes');
   }
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
   else if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'gems') gemFuseAll(); // {Y}: fundir tudo
@@ -2425,8 +2433,10 @@ export function uiBack(root = activePanel()) {
     case 'panel-end':
     case 'panel-implant':
       break; // o final só fecha pelos botões
+    case 'panel-rfilter':
+      closeRecycleFilter();
+      break;
     case 'panel-confirm':
-    case 'panel-mrec':
     case 'panel-opts':
     case 'panel-help':
     case 'panel-sync':
@@ -2457,7 +2467,7 @@ export function uiBack(root = activePanel()) {
 }
 
 export function anyOverlayOpen() {
-  return ['panel-confirm', 'panel-mrec', 'panel-opts', 'panel-help', 'panel-sync', 'panel-backup', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
+  return ['panel-confirm', 'panel-rfilter', 'panel-opts', 'panel-help', 'panel-sync', 'panel-backup', 'panel-ach', 'panel-debug'].some((id) => !$(id).classList.contains('hidden'));
 }
 
 // ------------------------------------------------------------------

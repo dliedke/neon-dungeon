@@ -355,7 +355,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Orbital Laser** (strikes the strongest nearby enemy every 3 s), **Phantom Blades** (three blades orbit you and cut everything they touch),
     **Reaper** (executes enemies below 15% health and deals +25% to bosses), **Singularity** (crits can open a black hole that pulls enemies in and explodes),
     **Phoenix Protocol** (once every 90 s, a fatal blow revives you at half health) and **Neon Avatar** (every 15 kills you transform for 8 s).
-    Bosses, rifts, the Data Thief and the harder modes drop them more often. "Recycle all" never recycles mythic, divine or primordial items; the **♻ Mythics** button next to it recycles only the mythics below a level you pick (−10/+10, it shows how many and how many credits first, and keeps favorites and upgrades). Recycling a mythic, divine or primordial item pays a lot of credits, which helps fund the blacksmith.
+    Bosses, rifts, the Data Thief and the harder modes drop them more often. The inventory has a **♻ Recycle** button and a **Filter** button next to it: in the filter you tick the rarities to recycle (Common to Prototype by default; it shows how many items and credits first), and Recycle breaks them all down at once. It never recycles favorites or an item better than the one equipped in that slot. Recycling a mythic, divine or primordial item pays a lot of credits, which helps fund the blacksmith.
   - **Divine items** ⚡ (above mythic): golden drops with a lightning strike and a huge announcement, from Chaos difficulty up (rarer on Chaos, more on Apocalypse,
     Death and each Abyss level), or on Brutal and above in Nightmare/Inferno, from floor 8 onwards. They are rarer than mythics: bosses are the best source
     (about 40% of bosses drop one on Death, about 80% on Abyss X, more in Inferno). A divine item has 6 stats about 15–20% stronger than a mythic, a random mythic power
@@ -372,7 +372,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Skin of Gaia** (torso: 20% less damage taken, regenerate 1% max health per second), **Hands of Cronus** (hands: every 8 hits all skills recharge 1 s),
     **Steps of Erebus** (feet: +10% dodge, dodging leaves an exploding shadow) and **Crown of Uranus** (chip: every 12 s, 8 meteors fall on nearby enemies).
     Wearing all 6 unlocks **Genesis**: +50% damage and every skill you use releases a prismatic wave. The merchant never sells them.
-  - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with "Recycle all".
+  - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with the filtered Recycle.
   - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 50 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
     Costs grow with each level, so there is always something to spend credits on once you can't find better items.
