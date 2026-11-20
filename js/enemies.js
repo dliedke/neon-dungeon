@@ -108,7 +108,7 @@ const ELITE = {
   vampirico: { name: L('Vampírico', 'Vampiric'), color: 0xff2244, minF: 1, apply: (e) => { e.vamp = true; } },
   instavel: { name: L('Instável', 'Unstable'), color: 0xff7a1a, minF: 1, apply: (e) => { e.explodeOnDeath = true; } },
   regenerador: { name: L('Regenerador', 'Mender'), color: 0x39ff88, minF: 5, apply: (e) => { e.mender = true; auraRing(e, AURA_R, 0x39ff88); },
-    hint: L('Elite <b>Regenerador</b>: cura os inimigos ao redor. Mate-o primeiro!', '<b>Mender</b> elite: heals nearby enemies. Kill it first!') },
+    hint: L('Elite <b>Regenerador</b>: cura os inimigos comuns ao redor. Mate-o primeiro!', '<b>Mender</b> elite: heals nearby regular enemies. Kill it first!') },
   guardiao: { name: L('Guardião', 'Warden'), color: 0x4dd2ff, minF: 6, apply: (e) => { e.warden = true; auraRing(e, AURA_R, 0x4dd2ff); },
     hint: L('Elite <b>Guardião</b>: inimigos comuns dentro do anel azul recebem 50% menos dano. Derrube-o primeiro!', '<b>Warden</b> elite: regular enemies inside the blue ring take 50% less damage. Take it down first!') },
   artilheiro: { name: L('Artilheiro', 'Bombardier'), color: 0xff3a3a, minF: 8, apply: (e) => { e.artillery = true; },
@@ -149,7 +149,9 @@ function eliteAura(e, edt, p) {
       e.mendT = 1.2;
       let healed = false;
       for (const o of G.enemies) {
-        if (!o.alive || o.inert || o.boss || o.hp >= o.maxHp || Math.hypot(o.x - e.x, o.z - e.z) > AURA_R) continue;
+        // só os comuns: elites (ele mesmo incluído) não se curam entre si. No Abismo fundo quase todo elite
+        // tem 6 afixos e vem em bando; vários Regeneradores juntos curavam ~20% da vida por segundo e ninguém morria
+        if (!o.alive || o.inert || o.boss || o.elite || o.hp >= o.maxHp || Math.hypot(o.x - e.x, o.z - e.z) > AURA_R) continue;
         o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.05);
         o.hpShow = 2;
         healed = true;
@@ -1403,7 +1405,7 @@ export function updateEnemies(dt, cam) {
             for (const o of G.enemies) {
               if (!o.alive || o === e || o.inert || o.hp >= o.maxHp) continue;
               if (Math.hypot(o.x - e.x, o.z - e.z) > 5.5) continue;
-              const amt = o.maxHp * (o.boss ? 0.03 : 0.15);
+              const amt = o.maxHp * (o.boss || o.elite ? 0.03 : 0.15);
               o.hp = Math.min(o.maxHp, o.hp + amt);
               beamFx(e.x, 1.15, e.z, o.x, o.height * 0.6, o.z, 0x39ff88, 0.3);
               floatText(o.x, o.height + 0.3, o.z, `+${short(amt)}`, 'heal');

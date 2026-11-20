@@ -1447,7 +1447,7 @@ export function showEnding(info = {}) {
 
 export function showDead() {
   const c = G.char;
-  $('dead-info').innerHTML = L(`Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar e perderá 10% dos créditos.`, `Floor ${G.floor} · Level ${c.level}<br>You will be rebuilt at the start of the floor and lose 10% of your credits.`);
+  $('dead-info').innerHTML = L(`Andar ${G.floor} · Nível ${c.level}<br>Você será reconstruído no início do andar.`, `Floor ${G.floor} · Level ${c.level}<br>You will be rebuilt at the start of the floor.`);
   $('panel-dead').classList.remove('hidden');
   clearFocus();
 }

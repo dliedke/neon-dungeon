@@ -16,7 +16,7 @@ import { gemMods, gemPowers, GEM_POW } from './gems.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
-import { screenToWorld, clamp, fmt } from './utils.js';
+import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { primSkillWave } from './mythic.js';
@@ -288,9 +288,6 @@ export function playerDie() {
 
 export function respawn() {
   const p = G.player;
-  const c = G.char;
-  const lost = Math.floor(c.credits * 0.1);
-  c.credits -= lost;
   p.alive = true;
   p.hp = p.stats.maxHp;
   p.en = p.stats.maxEn;
@@ -317,8 +314,6 @@ export function respawn() {
   bossBar();
   for (const pr of G.projectiles) pr.alive = false;
   for (const h of G.hazards) h.t = 0;
-  if (lost > 0) toast(L(`Você perdeu ${fmt(lost)}¢ no resgate.`, `You lost ${fmt(lost)}¢ in the rescue.`), 'warn');
-  return lost;
 }
 
 // Morreu num andar de chefe com o chefe vivo: volta perto da arena (do lado de fora,
