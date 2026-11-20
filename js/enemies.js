@@ -449,8 +449,7 @@ export const ABYSS_RULES = [
 // efeitos somados das regras XI+ ligadas (guardado por nível: é lido em todo golpe, tiro e cura)
 const FX_MUL = ['ehp', 'edmg', 'bhp', 'bel', 'beldmg', 'espd', 'eatk', 'count', 'heal', 'shot', 'php', 'parm', 'cd', 'regen'];
 const fxCache = {};
-export function abyssFx() {
-  const n = abyssLvl();
+export function abyssFx(n = abyssLvl()) {
   if (fxCache[n]) return fxCache[n];
   const o = { elite: 0, affix: 0, enrage: 0, boom: 0 };
   for (const k of FX_MUL) o[k] = 1;
@@ -533,6 +532,19 @@ export const diffIlvl = () => {
   return Math.round(Math.min(30, Math.max(0, r - 5) * 10) + ABYSS_ILVL * abyssDepth(Math.max(0, r - 8))) + infernoIlvl();
 };
 export const ABYSS_ILVL = 1.5;
+// Do Abismo XI em diante as regras multiplicam a vida dos inimigos (ehp) e a dos elites e chefes (bel), mas o
+// nível dos itens só crescia junto com o andar: cada Abismo a mais deixava o jogador mais fraco (no CXXVI um
+// elite levava ~100x mais golpes que no X). O dano cresce com o cubo do nível do item (arma × dano% × dano
+// crítico), então os itens ganham a raiz cúbica dessas regras: com equipamento do próprio nível, o Abismo alto
+// mata no mesmo ritmo do X. Segue o nível da recompensa (sobe aos poucos, como o resto).
+export function abyssGear() {
+  const n = Math.floor(Math.max(0, rewardRank() - 8));
+  if (n <= 10) return 1;
+  const X = abyssFx(n);
+  return Math.cbrt(X.ehp * X.bel);
+}
+// nível dos itens que caem (chão, baús, eventos, vitória): base × abyssGear
+export const lootIlvl = (base) => Math.max(1, Math.round(base * abyssGear()));
 // Inferno de novo: cada vitória no Inferno (c.infWins) dá +15 no nível dos itens enquanto joga no Inferno (até +300)
 export const INF_ILVL = 15;
 export const infernoIlvl = (c = G.char) => (c && (c.tier | 0) >= MAX_TIER ? Math.min(300, INF_ILVL * (c.infWins | 0)) : 0);
@@ -2647,7 +2659,7 @@ function finalVictory() {
     if (!fl.primGift) {
       achMark('flags', 'primGift');
       const p = G.player;
-      const it = makeItem({ ilvl: G.floor + tierOf().off + diffIlvl() + 2, rarity: PRIMORDIAL, cls: ch.cls });
+      const it = makeItem({ ilvl: lootIlvl(G.floor + tierOf().off + diffIlvl() + 2), rarity: PRIMORDIAL, cls: ch.cls });
       after(3, () => spawnPickup('item', p.x, p.z, { item: it }));
     }
     achMark('flags', 'winAbyss');

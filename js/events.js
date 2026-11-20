@@ -18,7 +18,7 @@ import { glowMat, box, makePlayerModel, animWalk } from './models.js';
 import { burst, ringFx, floatText, telegraphFx, beamFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl } from './enemies.js';
+import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl, lootIlvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { explosion, damagePlayer, hitEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
 import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime, resolveCircle, randomFloorInRoom } from './dungeon.js';
@@ -1488,7 +1488,7 @@ const gamble = {
     const minR = rewardRank() >= 5 || (G.char.tier | 0) >= 2 ? 2 : 1;
     // no Abismo o prêmio máximo pode ser primordial (0,5%)
     const rarity = Math.max(minR, abyssLvl() && r < 0.005 ? PRIMORDIAL : top && r < 0.05 ? DIVINE : r < (top ? 0.075 : 0.04) ? MYTHIC : r < 0.21 ? 3 : r < 0.66 ? 2 : 1);
-    const it = makeItem({ ilvl: tierFloor() + diffIlvl() + 1, rarity, cls: G.char.cls });
+    const it = makeItem({ ilvl: lootIlvl(tierFloor() + diffIlvl() + 1), rarity, cls: G.char.cls });
     const d = G.dungeon;
     const fx = E.x + 0.8;
     const fz = E.z + 0.8;

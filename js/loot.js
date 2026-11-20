@@ -14,7 +14,7 @@ import { CLASSES } from './classes.js';
 import { L } from './i18n.js';
 import { achAdd, achMark } from './ach.js';
 import { amod, tierOf, effFloor } from './run.js';
-import { rewardK, rewardRank, diffIlvl } from './enemies.js';
+import { rewardK, rewardRank, diffIlvl, lootIlvl } from './enemies.js';
 import { GEMS, dropGems, addGem, gemName } from './gems.js';
 
 export const INV_SIZE = 100;
@@ -84,7 +84,7 @@ export function dropLoot(x, z, o = {}) {
   const find = 1 + (p.stats.findPct || 0) / 100;
   const T = tierOf();
   // dificuldades altas dão itens de nível maior (diffIlvl)
-  const ilvl = G.floor + T.off + diffIlvl() + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0);
+  const ilvl = lootIlvl(G.floor + T.off + diffIlvl() + (o.elite ? 1 : 0) + (o.boss || o.rift ? 2 : 0) + (o.chest || o.contract || o.beast ? 1 : 0));
   let items = 0;
   // dificuldade: mais itens, raridade melhor e mais créditos (ver rewardK em enemies.js)
   const lk = rewardK('loot');

@@ -107,6 +107,11 @@ export function computeStats(c) {
   const pm = { ...passiveMods(c) };
   // implantes escolhidos depois dos chefes
   for (const [k, v] of Object.entries(implantMods(c))) pm[k] = (pm[k] || 0) + v;
+  // o dano% da árvore e dos implantes multiplica à parte: somado ao dano% dos itens (dezenas de milhares no
+  // Abismo) os pontos da árvore não mudavam quase nada. As gemas seguem somando com os itens (crescem junto)
+  s.treeDmg = pm.dmgPct || 0;
+  s.dmgMul = 1 + s.treeDmg / 100;
+  delete pm.dmgPct;
   // gemas engastadas no equipamento
   for (const [k, v] of Object.entries(gemMods(c))) pm[k] = (pm[k] || 0) + v;
   for (const [k, v] of Object.entries(pm)) {

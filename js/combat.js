@@ -84,7 +84,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.giant > 0 ? 1.6 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (s.dmgMul || 1) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.giant > 0 ? 1.6 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
   let crit = false;
   if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
@@ -126,7 +126,7 @@ export function hitEnemy(e, mult, o = {}) {
 export function applyStatus(e, o) {
   if (!e.alive || e.inert) return;
   const s = G.player.stats;
-  const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100);
+  const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100) * (s.dmgMul || 1);
   if (o.burn) {
     const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100);
     e.burnT = 3;

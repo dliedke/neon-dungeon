@@ -1554,6 +1554,7 @@ export function renderChar() {
       [L('Energia', 'Energy'), fmt(s.maxEn)],
       [L('Dano da arma', 'Weapon damage'), `${fmt(s.wMin)}–${fmt(s.wMax)}`],
       [L('Bônus de dano', 'Damage bonus'), `+${fmt(s.dmgPct)}%`],
+      ...(s.treeDmg ? [[L('Árvore e implantes', 'Tree and implants'), `×${s.dmgMul.toFixed(2)}`]] : []),
       [L('Crítico', 'Critical'), `${s.crit.toFixed(0)}% · +${fmt(s.critDmg)}%`],
       [L('Vel. de ataque', 'Attack speed'), `${s.atkRate.toFixed(2)}/s`],
       [L('Blindagem', 'Armor'), `${fmt(s.armor)} (-${Math.round((1 - armorTaken(s.armor)) * 100)}%)`],
