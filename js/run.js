@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { rr, ri, chance, pick, shuffle, short } from './utils.js';
+import { rr, ri, chance, pick, shuffle, short, fmt } from './utils.js';
 import { glowMat } from './models.js';
 import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -191,7 +191,7 @@ function completeContract() {
   G.char.credits += cr;
   achAdd('contracts');
   achAdd('credits', cr);
-  banner(L('CONTRATO CUMPRIDO', 'CONTRACT COMPLETE'), L(`+${cr}¢ e um prêmio no chão`, `+${cr}¢ and a reward on the ground`));
+  banner(L('CONTRATO CUMPRIDO', 'CONTRACT COMPLETE'), L(`+${fmt(cr)}¢ e um prêmio no chão`, `+${fmt(cr)}¢ and a reward on the ground`));
   sfx.legendary();
   ringFx(p.x, p.z, 3, 0xffd23d, 0.6);
   burst(p.x, 1.2, p.z, 0xffd23d, 40, 6, 0.08, 0.8, { up: 1.5 });
@@ -526,7 +526,7 @@ function updateClear(dt) {
     achAdd('clears');
     achAdd('credits', cr);
     if (K.start >= 30) achMark('flags', 'clearBig');
-    banner(L('ANDAR LIMPO!', 'FLOOR CLEARED!'), L(`Nenhum inimigo restante · +${cr}¢`, `No enemies left · +${cr}¢`));
+    banner(L('ANDAR LIMPO!', 'FLOOR CLEARED!'), L(`Nenhum inimigo restante · +${fmt(cr)}¢`, `No enemies left · +${fmt(cr)}¢`));
     sfx.legendary();
     ringFx(p.x, p.z, 4, 0x39ff88, 0.7);
     burst(p.x, 1.2, p.z, 0x39ff88, 46, 7, 0.08, 0.9, { up: 1.6 });
@@ -587,7 +587,7 @@ function compactHud(A, C, K) {
   }
   eventMissions(list, px, pz);
   if (K && K.done) list.push({ id: 'clear', icon: '🧹', css: '#39ff88', text: L('Andar limpo', 'Floor cleared'), prog: '✔', d2: Infinity, cls: 'ri-clear done', fin: true });
-  else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) list.push({ id: 'clear', icon: '👾', css: '#39ff88', text: L(`Restam ${K.left} inimigos`, `${K.left} enemies left`), prog: `+${clearBonus()}¢`, d2: Infinity, cls: 'ri-clear' });
+  else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) list.push({ id: 'clear', icon: '👾', css: '#39ff88', text: L(`Restam ${K.left} inimigos`, `${K.left} enemies left`), prog: `+${fmt(clearBonus())}¢`, d2: Infinity, cls: 'ri-clear' });
 
   // marca quando cada missão avançou por último (a primeira vez que aparece não conta)
   if (mis.floor !== G.floor) {
@@ -641,7 +641,7 @@ export function runHud() {
     h += eventsHud();
     const K = G.clear;
     if (K && K.done) h += `<div class="ri-con ri-clear done">🧹 ${L('Andar limpo', 'Floor cleared')}<b> ✔</b></div>`;
-    else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${clearBonus()}¢</b></div>`;
+    else if (K && K.left > 0 && K.left <= 10 && K.left < K.start) h += `<div class="ri-con ri-clear">👾 ${L(`Restam ${K.left} inimigos`, `${K.left} enemies left`)}<b> +${fmt(clearBonus())}¢</b></div>`;
   }
   if (hudCache.info !== h) {
     hudCache.info = h;

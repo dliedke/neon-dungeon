@@ -16,7 +16,7 @@ import { gemMods, gemPowers, GEM_POW } from './gems.js';
 import { burst, ringFx, ghostFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, showDead, markMinimap, levelUpFx, bossBar } from './ui.js';
-import { screenToWorld, clamp } from './utils.js';
+import { screenToWorld, clamp, fmt } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { primSkillWave } from './mythic.js';
@@ -316,7 +316,7 @@ export function respawn() {
   bossBar();
   for (const pr of G.projectiles) pr.alive = false;
   for (const h of G.hazards) h.t = 0;
-  if (lost > 0) toast(L(`Você perdeu ${lost}¢ no resgate.`, `You lost ${lost}¢ in the rescue.`), 'warn');
+  if (lost > 0) toast(L(`Você perdeu ${fmt(lost)}¢ no resgate.`, `You lost ${fmt(lost)}¢ in the rescue.`), 'warn');
   return lost;
 }
 

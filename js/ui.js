@@ -1538,7 +1538,7 @@ export function renderChar() {
     $('inv-credits').textContent = fmt(c.credits);
     const price = stimPrice();
     // no celular deitado o texto longo quebraria em 2 linhas
-    $('btn-buy-stim').textContent = `${G.isTouch ? 'Stim' : L('Comprar Stim', 'Buy Stim')} · ${L('cura 60%', 'heals 60%')} · ${price}¢ · ${c.stims}/${MAX_STIMS}`;
+    $('btn-buy-stim').textContent = `${G.isTouch ? 'Stim' : L('Comprar Stim', 'Buy Stim')} · ${L('cura 60%', 'heals 60%')} · ${fmt(price)}¢ · ${c.stims}/${MAX_STIMS}`;
     $('btn-buy-stim').title = L(`Stim: cura 60% da vida na hora e mais um pouco nos 4s seguintes. Use com F, apertando o analógico esquerdo no controle ou no botão verde no toque. Leve até ${MAX_STIMS}.`, `Stim: instantly heals 60% of your health, plus a bit more over the next 4s. Use it with F, by clicking the left stick on a gamepad or with the green touch button. Carry up to ${MAX_STIMS}.`);
     $('btn-buy-stim').disabled = c.credits < price || c.stims >= MAX_STIMS;
     // no controle cada botão mostra o atalho ({Y}: reciclar pelo filtro, {RS}: filtro)
@@ -2044,7 +2044,7 @@ function renderDetail() {
   if (selected.where === 'inv') {
     const rec = it.fav
       ? `<button class="btn small danger" disabled>🔒 ${L('Favorito', 'Favorite')}</button>`
-      : `<button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${recycleValue(it)}¢)${padKey('x')}</button>`;
+      : `<button class="btn small danger" data-nav data-act="recycle">${L('Reciclar', 'Recycle')} (+${fmt(recycleValue(it))}¢)${padKey('x')}</button>`;
     actions = `<div class="detail-actions"><button class="btn small" data-nav data-act="equip">${L('Equipar', 'Equip')}${padKey('a')}</button>${fav}${rec}</div>`;
   } else {
     actions = `<div class="detail-actions"><button class="btn small ghost" data-nav data-act="unequip">${L('Desequipar', 'Unequip')}${padKey('a')}</button>${fav}</div>`;
@@ -2143,7 +2143,7 @@ function recycleItem(uid) {
   c.inv.splice(idx, 1);
   c.credits += v;
   sfx.coin();
-  toast(L(`Reciclado: +${v}¢`, `Recycled: +${v}¢`));
+  toast(L(`Reciclado: +${fmt(v)}¢`, `Recycled: +${fmt(v)}¢`));
   selected = null;
   renderChar();
   focusInvCell(idx);
@@ -2497,7 +2497,7 @@ function renderShop() {
   $('shop-credits').textContent = fmt(c.credits);
   const price = stimPrice();
   let html = `<div class="shop-row stim-row"><div><b>Stim</b> · ${L('cura 60% da vida', 'heals 60% health')} · ${c.stims}/${MAX_STIMS}</div>
-    <button class="btn small" data-nav data-buy="stim" ${c.credits < price || c.stims >= MAX_STIMS ? 'disabled' : ''}>${price}¢</button></div>`;
+    <button class="btn small" data-nav data-buy="stim" ${c.credits < price || c.stims >= MAX_STIMS ? 'disabled' : ''}>${fmt(price)}¢</button></div>`;
   // inventário cheio: o botão de comprar continua ativo (clicar avisa), e o motivo fica escrito aqui
   const full = c.inv.length >= INV_SIZE;
   if (full) html += `<div class="shop-row shop-full">⚠ ${L(`Inventário cheio (${c.inv.length}/${INV_SIZE}): recicle itens ou guarde no baú para poder comprar.`, `Inventory full (${c.inv.length}/${INV_SIZE}): recycle items or store them in the stash to buy.`)}</div>`;

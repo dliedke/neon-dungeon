@@ -14,7 +14,7 @@ import { ANOMALIES } from './run.js';
 import { toast, medalPopup, abyssUnlockedFx } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
-import { fmtPlay } from './utils.js';
+import { fmtPlay, fmt } from './utils.js';
 
 const K_DEV = 'neon-dungeon:device';
 let DEV = null;
@@ -381,7 +381,7 @@ export function achCheck() {
   if (!fresh.length) return;
   const reward = fresh.reduce((s, a) => s + TIERS[a.tier].reward, 0);
   if (G.char) G.char.credits += reward;
-  const cr = G.char ? ` · +${reward.toLocaleString()}¢` : '';
+  const cr = G.char ? ` · +${fmt(reward)}¢` : '';
   // ao abrir o jogo pela primeira vez com progresso antigo, junta tudo num aviso só
   if (fresh.length > 3 || !booted) {
     toast(`🏅 <b>${fresh.length} ${L('medalhas desbloqueadas', 'medals unlocked')}</b>${cr}`, 'leg', 'ach');

@@ -77,6 +77,27 @@ export const EVENT_INFO = {
 
 // principais do andar anterior (não repetem no seguinte)
 let lastMain = [];
+// quantas vezes cada evento principal já saiu neste aparelho (rodízio do sorteio; não é progresso, só variedade)
+const SEEN_KEY = 'neon-dungeon-evseen-v1';
+let seenMap = null;
+function evSeen() {
+  if (seenMap) return seenMap;
+  seenMap = {};
+  try {
+    const o = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+    if (o && typeof o === 'object') for (const k of MAIN_EVENTS) if (Number.isFinite(o[k]) && o[k] > 0) seenMap[k] = o[k] | 0;
+  } catch (err) {}
+  return seenMap;
+}
+function evSeenSave() {
+  // mantém os números pequenos (só a diferença entre eles importa); evento novo numa atualização começa do zero
+  // e só passa na frente até alcançar os outros
+  const min = Math.min(...MAIN_EVENTS.map((k) => seenMap[k] || 0));
+  if (min > 0) for (const k of MAIN_EVENTS) seenMap[k] = (seenMap[k] || 0) - min;
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seenMap));
+  } catch (err) {}
+}
 // continuar um andar salvo: os eventos principais que ele tinha (undefined = sorteia normalmente)
 let forcedMain;
 // modo debug (?debug na URL): o próximo andar criado tem só este evento (inclusive a Sala Secreta e a Máquina de Apostas)
@@ -178,6 +199,58 @@ function findSpot(d, rooms, hx, hz = hx, avoid) {
       const x = Math.floor(r.x + r.w / 2 + rr(-ax, ax)) + 0.5;
       const z = Math.floor(r.y + r.h / 2 + rr(-az, az)) + 0.5;
       if (spotOk(d, x, z, hx, hz, avoid)) return { x, z, r };
+    }
+  }
+  return wideSpot(d, list, hx, hz, avoid);
+}
+// segunda busca (as tentativas aleatórias falharam): varre todo ladrilho de cada sala como centro, e a peça pode
+// passar da borda do retângulo da sala se o piso continuar livre (cavernas e prados). Sem isso as peças grandes
+// quase nunca cabiam e o andar ficava sempre com os mesmos eventos pequenos.
+// Tabela de somas dos ladrilhos bloqueados (parede ou peça do bioma): testa um quadrado em O(1).
+let satBuf = null;
+function blockedSat(d) {
+  const W = d.W;
+  const H = d.H;
+  const n = (W + 1) * (H + 1);
+  if (!satBuf || satBuf.length < n) satBuf = new Int32Array(n);
+  const S = satBuf;
+  S.fill(0, 0, n);
+  for (let j = 0; j < H; j++) {
+    let row = 0;
+    for (let i = 0; i < W; i++) {
+      if (tileAt(d, i, j) !== TILE.FLOOR || d.feat[j * W + i]) row++;
+      S[(j + 1) * (W + 1) + i + 1] = S[j * (W + 1) + i + 1] + row;
+    }
+  }
+  return S;
+}
+function wideSpot(d, list, hx, hz, avoid) {
+  const W = d.W;
+  const S = blockedSat(d);
+  const W1 = W + 1;
+  let tests = 0;
+  for (const r of list) {
+    const cand = [];
+    for (let j = Math.floor(r.y); j < r.y + r.h; j++)
+      for (let i = Math.floor(r.x); i < r.x + r.w; i++) {
+        const x = i + 0.5;
+        const z = j + 0.5;
+        const i0 = Math.floor(x - hx);
+        const i1 = Math.floor(x + hx);
+        const j0 = Math.floor(z - hz);
+        const j1 = Math.floor(z + hz);
+        if (i0 < 0 || j0 < 0 || i1 >= W || j1 >= d.H) continue;
+        if (S[(j1 + 1) * W1 + i1 + 1] - S[j0 * W1 + i1 + 1] - S[(j1 + 1) * W1 + i0] + S[j0 * W1 + i0]) continue;
+        cand.push(x, z);
+      }
+    // alguns centros sorteados de cada sala (o resto do spotOk: saída, início, NPCs, outros eventos)
+    for (let t = 0; t < 12 && cand.length; t++) {
+      const k = Math.floor(rr(0, cand.length / 2)) * 2;
+      const x = cand[k];
+      const z = cand[k + 1];
+      cand.splice(k, 2);
+      if (spotOk(d, x, z, hx, hz, avoid)) return { x, z, r };
+      if (++tests >= 80) return null;
     }
   }
   return null;
@@ -4420,7 +4493,10 @@ export function setupEvents(d, floor, boss, rooms) {
   // cada tentativa começa do mesmo ponto da semente: se uma não couber, a próxima sai igual ao continuar
   // embaralha a lista inteira (mesmo número de sorteios com ou sem andar salvo)
   const rest = shuffle(MAIN_EVENTS.slice()).filter((k) => k !== first && k !== second && fresh.includes(k));
-  const order = forced !== undefined ? forced : [first, second, ...rest];
+  // rodízio: os que saíram menos vezes vêm antes (empate fica na ordem sorteada). Sem isso os eventos pequenos,
+  // que cabem em qualquer andar, pegavam as vagas e os grandes quase nunca apareciam
+  const seen = evSeen();
+  const order = forced !== undefined ? forced : [first, second, ...rest].map((k, i) => [k, i]).sort((a, b) => (seen[a[0]] || 0) - (seen[b[0]] || 0) || a[1] - b[1]).map((p) => p[0]);
   const got = [];
   for (const k of order) {
     if (forced === undefined && got.length >= want) break;
@@ -4434,7 +4510,11 @@ export function setupEvents(d, floor, boss, rooms) {
     got.push(k);
     if (CALM.has(k)) calmAround(E);
   }
-  if (forced === undefined) lastMain = got;
+  if (forced === undefined) {
+    lastMain = got;
+    for (const k of got) seen[k] = (seen[k] || 0) + 1;
+    evSeenSave();
+  }
   // pequeno: Sala Secreta (já escavada) ou Máquina de Apostas
   if (d.secret) {
     const E = secret.setup(d);
