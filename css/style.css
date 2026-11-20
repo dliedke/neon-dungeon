@@ -797,6 +797,13 @@ body.pad .pad-hints { display: block; }
   #equip-slots { grid-template-columns: repeat(6, 1fr); gap: 5px; }
   .eslot { font-size: 9px; }
   #inv-grid { grid-template-columns: repeat(5, 1fr); gap: 4px; max-height: calc(100vh - 150px); }
+  /* celular deitado: botões (stim, reciclar) em cima da grade, senão ficam fora da tela */
+  .inv-col, .gbag-col { display: flex; flex-direction: column; }
+  .inv-col .inv-head, .gbag-col .inv-head { order: -2; }
+  .inv-col .inv-actions, .gbag-col .inv-actions { order: -1; margin: 0 0 6px; gap: 6px; }
+  .inv-col .inv-actions .btn { flex: 1 1 auto; padding: 6px 8px; font-size: 12px; letter-spacing: 0.5px; min-height: 32px; }
+  .inv-col #btn-buy-stim { flex-basis: 100%; }
+  .inv-col #inv-grid { max-height: calc(100vh - 200px); }
   /* coluna estreita: equipado embaixo; o resumo ▲▼ já fica no topo */
   .cmp-wrap { display: block; }
   .cmp-new + .cmp-cur { margin-top: 8px; }
