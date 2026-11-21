@@ -11,6 +11,14 @@ import { hitEnemy } from '../js/combat.js';
 import { tierOf, effFloor, armorTaken, IMPLANTS, TIERS } from '../js/run.js';
 import { GEMS } from '../js/gems.js';
 import { seedRandom } from '../js/utils.js';
+import { SKILL_FN } from '../js/classes.js';
+import { skillCost, placePlayer } from '../js/player.js';
+import { Input } from '../js/input.js';
+import { clearPowers } from '../js/powers.js';
+import { resetMythic } from '../js/mythic.js';
+import { clearEffects } from '../js/fx.js';
+import { clearPickups } from '../js/loot.js';
+import { isWalkable } from '../js/dungeon.js';
 
 const REG = ['punk', 'soldier', 'ninja', 'shield', 'sniper', 'drone'];
 const WEAPON_GEMS = ['ruby', 'amethyst', 'topaz', 'sapphire'];
@@ -211,3 +219,278 @@ export function run(sc) {
 }
 
 export const info = () => ({ tiers: TIERS.length, gems: Object.keys(GEMS), fx500: abyssFx(500) });
+
+// ------------------------------------------------------------------
+// Combate com poderes: roda a lógica real do jogo (__dbg.sim → updatePlayer, SKILL_FN, projéteis,
+// invocações, queimaduras, míticos...) com o personagem apertando os poderes da barra. Os alvos ficam
+// presos e atordoados num ponto do mapa; a vida deles é virtual (não morrem), então dá para medir o
+// dano por segundo em cada um e converter em tempo para matar com a vida de verdade.
+// ------------------------------------------------------------------
+const BIG = 1e9; // vida falsa = vida real × BIG (sem morte e sem perder precisão)
+let arena = null;
+
+// lugar aberto no andar: um quadrado de 9×9 todo andável
+function findArena() {
+  const d = G.dungeon;
+  for (let j = 5; j < d.H - 5; j++) {
+    for (let i = 5; i < d.W - 5; i++) {
+      let ok = true;
+      for (let b = -4; b <= 4 && ok; b++) for (let a = -4; a <= 4 && ok; a++) if (!isWalkable(d, i + a + 0.5, j + b + 0.5)) ok = false;
+      if (ok) return { x: i + 0.5, z: j + 0.5 };
+    }
+  }
+  return null;
+}
+
+function dropEnemies() {
+  for (const e of G.enemies) {
+    e.alive = false;
+    if (e.model) G.world.remove(e.model.root);
+    if (e.laser) G.world.remove(e.laser);
+  }
+  G.enemies = [];
+}
+
+// monta o andar 1 (sem bioma esquisito) uma vez; os inimigos dele saem
+export async function setupArena(sc) {
+  const { startFloor } = await import('../js/main.js');
+  setScene(sc);
+  startFloor(1);
+  G.mode = 'balance';
+  dropEnemies();
+  G.anomaly = null; // sem anomalia do andar (mudaria recarga, dano...)
+  arena = findArena();
+  worldBase = new Set(G.world.children); // o que sobra além disso depois de uma luta é resto (modelos, projéteis...)
+  return !!arena;
+}
+
+let worldBase = null;
+
+function resetCombat() {
+  dropEnemies();
+  G.projectiles = [];
+  G.turrets = [];
+  G.timers = [];
+  G.hazards = [];
+  G.barriers = [];
+  G.decoy = null;
+  clearPowers();
+  resetMythic();
+  clearEffects();
+  clearPickups(); // o que caiu dos abates (execuções) se acumularia e deixaria cada luta mais lenta
+  G.boss = null;
+  G.bosses = [];
+  if (worldBase) for (let i = G.world.children.length - 1; i >= 0; i--) { const o = G.world.children[i]; if (!worldBase.has(o)) G.world.remove(o); }
+}
+
+// alvos: 1 chefe na frente e 5 comuns em volta dele
+function placeTargets() {
+  const ax = arena.x, az = arena.z + 2.6;
+  const list = [];
+  const add = (type, x, z, boss) => {
+    const e = spawnEnemy(type, x, z, {});
+    e.realHp = e.maxHp;
+    e.maxHp = e.realHp * BIG;
+    e.frac = 1; // fração virtual da vida (volta a 1 quando "morre")
+    e.hp = e.maxHp;
+    e.px = x; e.pz = z;
+    e.isBoss = boss;
+    e.dealt = 0;
+    list.push(e);
+  };
+  add(BOSS_ORDER[0], ax, az, true);
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2;
+    add(REG[k], ax + Math.cos(a) * 2.2, az + Math.sin(a) * 2.2, false);
+  }
+  return list;
+}
+
+// antes de cada passo: alvos no lugar, atordoados
+function pinTargets(list) {
+  for (const e of list) {
+    e.stun = 1;
+    e.aggro = true;
+    e.x = e.px; e.z = e.pz;
+    e.kx = e.kz = 0;
+  }
+}
+
+// depois de cada passo: quanto cada alvo perdeu, avança a vida virtual e devolve a vida falsa
+function collect(list) {
+  for (const e of list) {
+    let lost = Math.max(0, e.frac * e.maxHp - e.hp); // dano de verdade (o golpe não depende da vida do alvo)
+    // morreu: só um efeito de execução (Ceifador...) mata com a vida falsa; conta o que restava da vida real
+    // e volta o alvo para a lista (o jogo tira os mortos de G.enemies)
+    if (!e.alive || e.hp <= 0) {
+      lost = e.frac * e.realHp;
+      if (!G.enemies.includes(e)) G.enemies.push(e);
+    }
+    if (!(lost < Infinity)) { e.bad = (e.bad || 0) + 1; lost = 0; } // dano infinito/NaN: só conta quantas vezes
+    e.maxStep = Math.max(e.maxStep || 0, lost / e.realHp);
+    e.dealt += lost;
+    e.frac -= lost / e.realHp;
+    if (!(e.frac > 0)) e.frac = 1 + (e.frac % 1 || 0);
+    e.alive = true;
+    e.hp = e.frac * e.maxHp;
+  }
+}
+
+// simula `sec` segundos; use = índices de poderes na ordem de prioridade (o ataque básico fica no ⚔)
+function fight(c, use, sec, trace = null) {
+  resetCombat();
+  G.char = c;
+  // abates (execuções) dão XP e créditos: o personagem volta como estava depois da luta
+  const keepChar = { level: c.level, xp: c.xp, credits: c.credits, kills: c.kills, skillPoints: c.skillPoints };
+  c.atk = 0;
+  c.slots = use.slice(0, 7);
+  while (c.slots.length < 7) c.slots.push(null);
+  const p = G.player;
+  p.cds = CLASSES[c.cls].skills.map(() => 0);
+  p.buffs = {};
+  p.dash = p.leap = p.whirl = p.aura = null;
+  p.shield = 0;
+  p.alive = true;
+  p.invuln = 0;
+  placePlayer(arena.x, arena.z);
+  p.facing = 0;
+  p.stats = computeStats(c);
+  p.hp = p.stats.maxHp;
+  p.en = p.stats.maxEn;
+  const list = placeTargets();
+  G.lastInput = 'pad';
+  Input.move.x = Input.move.y = 0;
+  Input.aimStick.x = Input.aimStick.y = 0;
+  for (const k in Input.held) Input.held[k] = false;
+  for (const k in Input.prev) Input.prev[k] = false;
+  const keepMode = G.mode;
+  G.mode = 'play';
+  const casts = {};
+  try {
+    const wall = performance.now();
+    window.__dbg.sim(sec, (t) => {
+      // trava de segurança: um poder que gera coisas sem fim não segura o relatório inteiro
+      if (performance.now() - wall > 20000) throw new Error(`luta passou de 20s reais em ${t.toFixed(1)}s de jogo`);
+      if (t > 0) collect(list);
+      if (trace && Math.round(t / (1 / 30)) % 15 === 0) trace.push({ t: +t.toFixed(2), p: [+p.x.toFixed(2), +p.z.toFixed(2)], en: Math.round(p.en), atkT: +p.atkT.toFixed(2), aim: p.aimEnemy && p.aimEnemy.type, mode: G.mode, st: [!!p.dash, !!p.leap, !!p.npcHold, !!G.npcNear, !!G.npcPad, Input.held.primary, p.omni ? 1 : 0, Object.keys(p.buffs).join("/")].join(" "), alive: p.alive, foes: list.map((e) => [e.type, +e.x.toFixed(1), +e.z.toFixed(1), e.alive, +(e.dealt / e.realHp).toFixed(4)]), n: G.enemies.length });
+      pinTargets(list);
+      p.hp = p.stats.maxHp;
+      p.npcHold = false; // perto do baú/ferreiro o {A} abriria o NPC em vez de atacar
+      G.npcNear = null;
+      G.npcPad = false;
+      Input.held.primary = true;
+      // aperta (um passo sim, outro não) cada poder pronto e com energia, na ordem de prioridade
+      for (let k = 0; k < 7; k++) {
+        const i = c.slots[k];
+        const a = 's' + (k + 1);
+        if (Input.held[a]) { Input.held[a] = false; continue; }
+        if (i == null || i === 0) continue;
+        if (p.cds[i] <= 0 && p.en >= skillCost(i)) { Input.held[a] = true; casts[i] = (casts[i] | 0) + 1; }
+      }
+    });
+    collect(list);
+  } finally {
+    G.mode = keepMode;
+    Object.assign(c, keepChar);
+    for (const k in Input.held) Input.held[k] = false;
+  }
+  const boss = list.find((e) => e.isBoss);
+  const regs = list.filter((e) => !e.isBoss);
+  const r = {
+    bossDps: boss.dealt / sec, // dano por segundo no chefe
+    regDps: regs.reduce((a, e) => a + e.dealt, 0) / regs.length / sec, // dano por segundo em cada comum (média)
+    bossHp: boss.realHp,
+    regHp: regs.reduce((a, e) => a + e.realHp, 0) / regs.length,
+    casts,
+    bad: list.reduce((a, e) => a + (e.bad | 0), 0),
+    maxStep: Math.max(...list.map((e) => e.maxStep || 0)),
+  };
+  r.secB = r.bossHp / Math.max(1e-300, r.bossDps);
+  r.secN = r.regHp / Math.max(1e-300, r.regDps);
+  resetCombat();
+  return r;
+}
+
+// depuração: __B.debugFight(cenário, ['lunge', ...], segundos)
+export function debugFight(sc, ids = [], sec = 2) {
+  setScene(sc);
+  G.char = newCharacter(sc.cls); G.char.tier = sc.tier | 0; G.char.rwd = diffRank(); tickReward(0);
+  seedRandom(sc.seed ?? 11);
+  const { c } = buildChar(sc, { gear: true, plus: 'max', gems: 0, tree: true, implants: true });
+  seedRandom(null);
+  const sk = CLASSES[sc.cls].skills;
+  const trace = [];
+  const r = fight(c, ids.map((id) => sk.findIndex((x) => x.id === id)), sec, trace);
+  return { r, trace, arena };
+}
+
+// pontos da árvore como um jogador que escolheu a barra: poderes da barra, ataque básico e passivos
+// primeiro (em rodízio), o que sobrar vai para o resto
+function spendFocused(c, focus) {
+  const sk = CLASSES[c.cls].skills;
+  let pts = c.level * SP_PER_LEVEL;
+  c.skills = sk.map(() => 0);
+  const open = sk.map((s, i) => i).filter((i) => (sk[i].req || 1) <= c.level);
+  const first = open.filter((i) => focus.includes(i) || sk[i].passive);
+  for (const group of [first, open]) {
+    while (pts > 0) {
+      let spent = false;
+      for (const i of group) {
+        if (pts <= 0) break;
+        if (c.skills[i] < MAX_RANK) { c.skills[i]++; pts--; spent = true; }
+      }
+      if (!spent) break;
+    }
+  }
+}
+
+// escolhe a barra (testa cada poder sozinho junto com o ataque básico), refaz a árvore focada
+// e mede a rotação final; devolve também o mesmo personagem só no ataque básico
+export function skillRun(sc, o = {}) {
+  const sec = o.sec || 30;
+  const rankSec = o.rankSec || 10;
+  const full = { gear: true, plus: 'max', gems: sc.gemT ?? null, tree: true, implants: true };
+  setScene(sc);
+  G.char = newCharacter(sc.cls); G.char.tier = sc.tier | 0; G.char.rwd = diffRank(); tickReward(0);
+  if (full.gems == null) full.gems = gemDropTier();
+  const build = (opt) => { setScene(sc); seedRandom(11); const b = buildChar(sc, opt); seedRandom(null); return b.c; };
+  const sk = CLASSES[sc.cls].skills;
+  // 1) ranking: cada poder sozinho na barra (com o ataque básico) no nível que ele teria numa árvore focada
+  // em 8 poderes; nota = metade ganho no chefe + metade ganho no grupo, contra só o ataque básico
+  const c0 = build(full);
+  const actives = sk.map((x, i) => i).filter((i) => i > 0 && !sk[i].passive && (sk[i].req || 1) <= c0.level && SKILL_FN[sk[i].id]);
+  spendFocused(c0, [0, ...actives.slice(0, 7)]);
+  const R = c0.skills[0];
+  for (const i of actives) c0.skills[i] = R;
+  const b1 = fight(c0, [], rankSec), b2 = fight(c0, [], rankSec);
+  const base = { bossDps: (b1.bossDps + b2.bossDps) / 2, regDps: (b1.regDps + b2.regDps) / 2 };
+  const cand = [];
+  for (const i of actives) {
+    const t0 = performance.now();
+    let r;
+    try { r = fight(c0, [i], rankSec); } catch (err) { console.info(`[bal] ${sk[i].id}: ${err.message}`); resetCombat(); continue; }
+    console.info(`[bal] ${sk[i].id}:${((performance.now() - t0) / 1000).toFixed(1)}s`);
+    cand.push({ i, id: sk[i].id, gain: 0.5 * (r.bossDps / base.bossDps) + 0.5 * (r.regDps / base.regDps) });
+  }
+  cand.sort((a, b) => b.gain - a.gain);
+  const bar = cand.filter((x) => x.gain > 1.02).slice(0, 7).map((x) => x.i);
+  // 2) árvore focada na barra e rotação final
+  const runWith = (opt, basic) => {
+    const c = build(opt);
+    if (opt.tree) spendFocused(c, [0, ...bar]);
+    else for (const i of [0, ...bar]) c.skills[i] = 1; // sem árvore: só o nível 1 dos poderes usados
+    const res = { rot: fight(c, bar, sec), ranks: bar.map((i) => c.skills[i]) };
+    if (basic) res.basic = fight(c, [], sec);
+    return res;
+  };
+  const out = { sc, rankR: R, bar: bar.map((i) => sk[i].id), names: bar.map((i) => sk[i].name), top: cand.slice(0, 10).map((x) => ({ id: x.id, gain: x.gain })) };
+  const f = runWith(full, true);
+  out.full = f.rot; out.basic = f.basic; out.ranks = f.ranks;
+  if (o.variants) {
+    out.noForge = runWith({ ...full, plus: 0 }).rot;
+    out.noGems = runWith({ ...full, gems: -1 }).rot;
+    out.noTree = runWith({ ...full, tree: false }).rot;
+    out.noImpl = runWith({ ...full, implants: false }).rot;
+  }
+  return out;
+}

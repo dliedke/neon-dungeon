@@ -1,4 +1,6 @@
-// Relatório de balanceamento: node tools/balance.mjs [classe] [--json saida.json]
+// Relatório de balanceamento: node tools/balance.mjs [classe] [--json saida.json] [--only "Abismo 100,Inferno andar 50"] [--fast]
+//   --fast: pula o combate com poderes (só o ataque básico, bem mais rápido)
+//   --only: roda só os pontos do caminho com esses nomes (separados por vírgula)
 // Sobe um http-server e um Edge headless próprios, carrega o jogo e roda tools/balance-page.js
 // num caminho de progressão típico (Normal → Pesadelo → Inferno → Abismo I…D). Só mexe no que ele mesmo abriu.
 import { spawn, execSync } from 'node:child_process';
@@ -7,8 +9,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const args = process.argv.slice(2);
-const CLS = args.find((a) => !a.startsWith('--') && !a.endsWith('.json')) || 'blade';
-const jsonOut = args.includes('--json') ? args[args.indexOf('--json') + 1] : null;
+const opt = (k) => (args.includes(k) ? args[args.indexOf(k) + 1] : null);
+const jsonOut = opt('--json');
+const only = opt('--only') ? opt('--only').split(',').map((x) => x.trim()) : null;
+const CLS = args.find((a, i) => !a.startsWith('--') && !(i > 0 && ['--json', '--only', '--eval'].includes(args[i - 1]))) || 'blade';
+const FAST = args.includes('--fast');
+const VERBOSE = args.includes('--verbose');
 const PORT = 8124, DBG = 9334;
 const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -57,6 +63,8 @@ async function main() {
     ws.onmessage = (m) => {
       const d = JSON.parse(m.data);
       if (d.id && pend.has(d.id)) { pend.get(d.id)(d); pend.delete(d.id); }
+      // progresso da página: console.info('[bal] ...') (só com --verbose)
+      if (VERBOSE && d.method === 'Runtime.consoleAPICalled' && String(d.params.args[0]?.value).startsWith('[bal]')) process.stderr.write(` ${String(d.params.args[0].value).slice(6)}`);
       if (d.method === 'Runtime.exceptionThrown') console.error('!! exceção na página:', d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
     };
     const send = (method, params = {}) => new Promise((r) => { const i = ++id; pend.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
@@ -75,6 +83,12 @@ async function main() {
       try { if (await ev('!!window.__G')) break; } catch {}
     }
     await ev(`(async () => { const m = await import('/js/main.js'); m.startGame(${JSON.stringify(CLS)}, true); await new Promise(r => setTimeout(r, 1500)); window.__B = await import('/tools/balance-page.js'); return true; })()`);
+
+    // --eval "expr": só avalia uma expressão na página (window.__B = este módulo) e mostra o resultado
+    if (opt('--eval')) {
+      console.log(JSON.stringify(await ev(opt('--eval')), null, 1));
+      return;
+    }
 
     // ---- XP pelo caminho: amostra andares reais e integra ----
     const xpCache = {};
@@ -119,11 +133,15 @@ async function main() {
     }
     process.stderr.write('\nCenários');
     const rows = [];
-    for (const ck of checkpoints) {
+    const todo = only ? checkpoints.filter((ck) => only.includes(ck.label)) : checkpoints;
+    if (!FAST) await ev(`window.__B.setupArena(${JSON.stringify(todo[0])})`);
+    for (const ck of todo) {
       ck.level = Math.floor(await ev(`window.__B.levelFromXp(${ck.xp})`));
+      const t0 = Date.now();
       const r = await ev(`window.__B.run(${JSON.stringify(ck)})`);
+      if (!FAST) r.sk = await ev(`window.__B.skillRun(${JSON.stringify(ck)}, { variants: true })`);
       rows.push(r);
-      process.stderr.write('.');
+      process.stderr.write(` ${ck.label} (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
     }
     process.stderr.write('\n');
     if (jsonOut) writeFileSync(jsonOut, JSON.stringify(rows, null, 1));
@@ -152,7 +170,9 @@ function report(rows) {
   console.log('Golpe/DPS = só o ataque básico (os poderes multiplicam isso pelo nível do poder, coluna "Poder" abaixo).');
   console.log('"Golpes p/ morrer" = vida ÷ dano de um golpe do inimigo depois de blindagem, redução e esquiva (sem cura, sem bloqueios).\n');
 
-  console.log('## Peso de cada sistema no dano (quanto o DPS cai sem ele)\n');
+  if (rows[0].sk) skillReport(rows);
+
+  console.log('## Peso de cada sistema no dano, só ataque básico (quanto o DPS cai sem ele)\n');
   table(['Ponto', 'Itens (vs pelado)', 'Ferreiro máx', 'Gemas', 'Árvore', 'Implantes', 'Poder (nível médio)', 'Ferreiro: abates p/ pagar'],
     rows.map((r) => {
       const f = r.full;
@@ -170,6 +190,24 @@ function report(rows) {
       const f = r.full;
       return [r.sc.label, short(f.hp), short(f.armor), (f.taken * 100).toFixed(0) + '%', f.dodge.toFixed(0) + '%', short(f.nDmg * f.taken), short(f.eDmg * f.taken), short(f.bDmg * f.taken)];
     }));
+}
+
+// combate com poderes (lógica real do jogo por alguns segundos, ver skillRun em balance-page.js)
+function skillReport(rows) {
+  const pair = (r, v) => (r.sk[v] ? `${x(r.sk[v].secB / r.sk.full.secB)} / ${x(r.sk[v].secN / r.sk.full.secN)}` : '-');
+  console.log('## Com poderes (barra escolhida pelo simulador, árvore focada nela; tempo de verdade para matar)\n');
+  table(['Ponto', 'Nv', 's p/ chefe', 's p/ comum', 'Só básico: chefe / comum', 'Poderes aceleram', 'Barra (nível)'],
+    rows.map((r) => {
+      const k = r.sk;
+      const bar = k.names.map((n, i) => `${n} ${k.ranks[i]}`).join(', ') || '(nenhum poder ajuda)';
+      return [r.sc.label, r.sc.level, k.full.secB.toPrecision(3), k.full.secN.toPrecision(3), `${k.basic.secB.toPrecision(3)} / ${k.basic.secN.toPrecision(3)}`, pair(r, 'basic'), bar];
+    }));
+  console.log('s p/ chefe = vida do chefe ÷ dano por segundo nele; s p/ comum = o mesmo para um comum do grupo (5 comuns em volta do chefe).');
+  console.log('Alvos parados e atordoados, sem morrer (efeitos ao matar não contam). "Poderes aceleram" = quanto a barra acelera (chefe / grupo).\n');
+  console.log('## Com poderes: peso de cada sistema (quantas vezes mais lento sem ele, chefe / grupo)\n');
+  table(['Ponto', 'Ferreiro máx', 'Gemas', 'Árvore', 'Implantes'],
+    rows.map((r) => [r.sc.label, pair(r, 'noForge'), pair(r, 'noGems'), pair(r, 'noTree'), pair(r, 'noImpl')]));
+  console.log('Árvore = árvore focada na barra contra os mesmos poderes no nível 1.\n');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
