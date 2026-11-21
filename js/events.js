@@ -40,21 +40,25 @@ export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.k
 // o jogador anda no máximo a STEP_SPEED, senão com muita velocidade fica impossível parar na placa certa.
 // Vale para todo evento em que o objetivo é pisar em placas, ladrilhos, anéis ou portais no chão.
 // Ficam de fora os de corrida contra algo que anda (Corrida Fantasma, Circuito, Laser Giratório, Travessia de Lasers, Rebanho...).
+// Um terceiro número troca o limite: na Dança Neon as placas opostas ficam a 2,4m e a batida dura 0,72s,
+// então a 3,8 nem um robô com reação de 0,12s fazia os 18 passos; a 5,6 dá com reação de ~0,3s.
 const STEP_AREA = {
-  dance: [2.6, 2.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
+  dance: [2.6, 2.6, 5.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
   piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
 };
 export const STEP_SPEED = 3.8;
+// limite de velocidade no ponto (0 = fora de qualquer área)
 export function eventStepZone(x, z) {
   const list = G.events;
-  if (!list) return false;
+  if (!list) return 0;
+  let cap = 0;
   for (let i = 0; i < list.length; i++) {
     const E = list[i];
     const a = STEP_AREA[E.kind];
     if (!a || E.x == null || E.st === 'done' || E.st === 'failed') continue;
-    if (Math.abs(x - E.x) < a[0] + 0.8 && Math.abs(z - E.z) < a[1] + 0.8) return true;
+    if (Math.abs(x - E.x) < a[0] + 0.8 && Math.abs(z - E.z) < a[1] + 0.8) cap = Math.min(cap || Infinity, a[2] || STEP_SPEED);
   }
-  return false;
+  return cap;
 }
 export const EVENT_INFO = {
   terminals: { icon: '🖥️', css: '#00f0ff', name: L('Sequência de Terminais', 'Terminal Sequence'), short: L('Terminais', 'Terminals') },
