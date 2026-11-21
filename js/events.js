@@ -4032,6 +4032,11 @@ const totems = {
     let good = false;
     let bad = null;
     for (const t of E.list) {
+      // apagado sem alvo (o alvo some quando acende; ou algo o matou): recria
+      if (!t.lit && (!t.e || !t.e.alive)) {
+        t.e = null;
+        totems.arm(E);
+      }
       if (!t.e) continue;
       const k = hitsOf(t);
       if (!k || t.lit) continue;
@@ -4040,6 +4045,10 @@ const totems = {
     }
     if (good) {
       good.lit = true;
+      // o aceso perde o alvo: antes ele seguia vivo e invisível, a mira automática e o cursor podiam escolhê-lo
+      // e os golpes iam para ele sem fazer nada (parecia que o próximo totem não respondia)
+      killQuiet(good.e);
+      good.e = null;
       E.next++;
       E.grace = 0.6;
       sfx.seq(good.n - 1);
@@ -4059,6 +4068,7 @@ const totems = {
       E.errs++;
       E.next = 1;
       for (const t of E.list) t.lit = false;
+      totems.arm(E);
       totems.paint(E);
       sfx.deny();
       const p = G.player;

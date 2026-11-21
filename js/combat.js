@@ -412,6 +412,8 @@ export function spawnProjectile(o) {
   m.position.set(o.x, y, o.z);
   G.world.add(m);
   const pr = { ...o, y, mesh: m, life: o.life ?? 1, hit: new Set(), pierce: o.pierce || 0, alive: true, trail: 0 };
+  // tiro teleguiado mirado num alvo de evento (totem, sino...): persegue ele, não o inimigo mais perto
+  if (o.from === 'player' && o.homing && G.player && G.player.aimEnemy && G.player.aimEnemy.aimed) pr.lock = G.player.aimEnemy;
   // Abismo VII: tiros inimigos mais rápidos (o alcance continua o mesmo)
   // Abismo XXIII: mais ainda (Chuva de Balas)
   if (o.from === 'enemy' && o.speed && abyssOn(7)) {
@@ -453,7 +455,7 @@ export function updateProjectiles(dt) {
       continue;
     }
     if (pr.homing) {
-      const t = pr.from === 'player' ? nearestEnemy(pr.mesh.position.x, pr.mesh.position.z, 5, false, pr.hit) : p.alive ? p : null;
+      const t = pr.from === 'player' ? (pr.lock && pr.lock.alive && !pr.hit.has(pr.lock) ? pr.lock : nearestEnemy(pr.mesh.position.x, pr.mesh.position.z, 5, false, pr.hit)) : p.alive ? p : null;
       if (t) {
         const ang = Math.atan2(pr.dz, pr.dx);
         const want = Math.atan2(t.z - pr.mesh.position.z, t.x - pr.mesh.position.x);

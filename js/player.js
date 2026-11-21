@@ -430,8 +430,9 @@ function assistTarget(p, dx, dz, minDot) {
     if (d > AIM_RANGE || d < 0.01) continue;
     const dot = (ex * dx + ez * dz) / d;
     if (dot < minDot) continue;
-    // parede rachada: só quando não houver inimigo melhor
-    const score = dot * 0.8 - d / 3 - (e.T.prop ? 3 : 0);
+    // parede rachada: só quando não houver inimigo melhor. Alvo de evento (totem, sino...) bem na direção
+    // apontada vale como inimigo; antes, com inimigos por perto, a mira nunca ia para ele no toque/controle
+    const score = dot * 0.8 - d / 3 - (e.T.prop ? (e.aimed && dot > 0.92 ? 0 : 3) : 0);
     if (score > bs && lineOfSight(G.dungeon, p.x, p.z, e.x, e.z)) {
       bs = score;
       best = e;
