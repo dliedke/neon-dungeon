@@ -287,7 +287,7 @@ export function freeSockets(c) {
 // Nível da gema: sobe com o andar efetivo (modos, Abismo) e a dificuldade; chefes, fendas e feras dão uma acima.
 // Do chão cai no máximo Perfeita (Radiante no Abismo X+, Neon no Abismo XX+, Estelar no Abismo XL+, Quântica no LX+, Singular no LXXX+,
 // Celeste no C+, Astral no CXX+, Prismática no CXL+, Etérea no CLX+, Cósmica no CLXXX+, Sagrada no CC+, XVII no CCL+, XVIII no CCCXXV+
-// e XIX no CD+). A XX, só fundindo.
+// e XIX no CD+). A XX (Absoluta) cai do Abismo 750 em diante; antes, só fundindo.
 function dropTier(o) {
   let t = Math.floor((effFloor() + diffIlvl()) / 20);
   const r = Math.random();
@@ -295,7 +295,7 @@ function dropTier(o) {
   else if (r > 0.9) t++;
   if (o.boss || o.rift || o.beast) t++;
   const ab = abyssLvl();
-  return Math.max(0, Math.min(ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4, t));
+  return Math.max(0, Math.min(ab >= 750 ? 19 : ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4, t));
 }
 export function dropGems(x, z, o = {}) {
   const p = G.player;

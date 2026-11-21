@@ -2,7 +2,7 @@
 //   --fast: pula o combate com poderes (só o ataque básico, bem mais rápido)
 //   --only: roda só os pontos do caminho com esses nomes (separados por vírgula)
 // Sobe um http-server e um Edge headless próprios, carrega o jogo e roda tools/balance-page.js
-// num caminho de progressão típico (Normal → Pesadelo → Inferno → Abismo I…D). Só mexe no que ele mesmo abriu.
+// num caminho de progressão típico (Normal → Pesadelo → Inferno → Abismo 1…1000). Só mexe no que ele mesmo abriu.
 import { spawn, execSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -27,14 +27,14 @@ const STAGES = [
   { name: 'Pesadelo', tier: 1, diff: 'brutal', abyss: 0, floors: 50, rarity: 4 },
   { name: 'Inferno', tier: 2, diff: 'death', abyss: 0, floors: 50, rarity: 5 },
 ];
-const ABYSS_CK = [1, 5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+const ABYSS_CK = [1, 5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000];
 const FLOORS_PER_ABYSS = 3;
 
 const roman = (n) => String(n);
 const short = (v) => {
   if (!isFinite(v)) return '∞';
   const a = Math.abs(v);
-  const u = [[1e18, 'Qi'], [1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
+  const u = [[1e63, 'Vg'], [1e60, 'Nod'], [1e57, 'Ocd'], [1e54, 'Spd'], [1e51, 'Sxd'], [1e48, 'Qid'], [1e45, 'Qad'], [1e42, 'Td'], [1e39, 'Dd'], [1e36, 'Ud'], [1e33, 'Dc'], [1e30, 'No'], [1e27, 'Oc'], [1e24, 'Sp'], [1e21, 'Sx'], [1e18, 'Qi'], [1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'k']];
   for (const [d, s] of u) if (a >= d) return (v / d).toFixed(a / d >= 100 ? 0 : 1) + s;
   return a >= 100 ? Math.round(v).toString() : a >= 10 ? v.toFixed(1) : v.toFixed(2);
 };
@@ -162,10 +162,10 @@ function table(head, body) {
 
 function report(rows) {
   console.log(`\n## Classe: ${CLS}  (equipamento completo do nível que cai ali, ferreiro no máximo, gemas do nível que cai, árvore e implantes)\n`);
-  table(['Ponto', 'Nv', 'iLvl', 'Gema', 'Vida', 'Golpe', 'DPS', 'Golpes p/ matar comum', 's p/ elite', 's p/ chefe', 'Golpes p/ morrer (comum/elite/chefe)'],
+  table(['Ponto', 'Nv', 'iLvl', 'Gema', 'Vida', 'Golpe', 'DPS', 'Golpes p/ matar comum', 's p/ elite', 's p/ Behemoth', 's p/ chefe', 'Golpes p/ morrer (comum/elite/chefe)'],
     rows.map((r) => {
       const f = r.full;
-      return [r.sc.label, r.sc.level, f.ilvl, f.gemT + 1, short(f.hp), short(f.hitN), short(f.dps), f.hitsN.toFixed(2), f.secE.toFixed(2), f.secB.toFixed(1), `${short(f.dieN)} / ${short(f.dieE)} / ${short(f.dieB)}`];
+      return [r.sc.label, r.sc.level, f.ilvl, f.gemT + 1, short(f.hp), short(f.hitN), short(f.dps), f.hitsN.toFixed(2), f.secE.toFixed(2), f.secM.toFixed(2), f.secB.toFixed(1), `${short(f.dieN)} / ${short(f.dieE)} / ${short(f.dieB)}`];
     }));
   console.log('Golpe/DPS = só o ataque básico (os poderes multiplicam isso pelo nível do poder, coluna "Poder" abaixo).');
   console.log('"Golpes p/ morrer" = vida ÷ dano de um golpe do inimigo depois de blindagem, redução e esquiva (sem cura, sem bloqueios).\n');

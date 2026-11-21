@@ -5,7 +5,7 @@ import { G, gk } from './state.js';
 import { rr, chance, fmt, short } from './utils.js';
 import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
-import { burst, floatText, ringFx, beamFx, telegraphFx } from './fx.js';
+import { burst, floatText, floatDmg, ringFx, beamFx, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { dropLoot, killBounty } from './loot.js';
 import { gainXp, playerDie } from './player.js';
@@ -211,11 +211,11 @@ export function damageEnemy(e, amount, crit, o = {}) {
     // ataques contínuos: soma o dano e mostra um número a cada 0,4s
     e.qAcc = (e.qAcc || 0) + amount;
     if (G.t - (e.qT || 0) > 0.4 || crit) {
-      floatText(e.x, e.height + 0.3, e.z, e.qAcc, crit ? 'crit' : o.dot ? 'dot' : 'dmg');
+      floatDmg(e, e.qAcc, crit ? 'crit' : o.dot ? 'dot' : 'dmg');
       e.qAcc = 0;
       e.qT = G.t;
     }
-  } else floatText(e.x, e.height + 0.3, e.z, amount, crit ? 'crit' : 'dmg');
+  } else floatDmg(e, amount, crit ? 'crit' : 'dmg');
   if (crit) sfx.crit();
   else if (!o.dot && !o.quiet) sfx.hit();
   if (o.knock && !e.boss) {

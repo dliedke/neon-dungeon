@@ -10,6 +10,10 @@ More docs:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the game works inside (loop, floors, combat, saves, input, UI).
 - [docs/CONTENT.md](docs/CONTENT.md): step-by-step recipes for adding classes, skills, enemies, bosses, biomes, items, medals, sounds and more.
 
+## Progress updates
+
+**Every 10 minutes of work, send the user a short progress status** (what is done, what is running now, what is next), even in the middle of a long task (balance runs, headless tests, waiting on the Pages build). Don't go quiet until the end.
+
 ## Running
 
 ES modules need HTTP, so `file://` won't work. Serve the repo root:

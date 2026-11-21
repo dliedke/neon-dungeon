@@ -704,7 +704,8 @@ export function updateWilds(dt, p) {
     for (const e of G.enemies) {
       if (!e.alive || e.inert || e.decoy) continue;
       const f = featAt(d, e.x, e.z);
-      if (f === FEAT.MARROW && e.hp < e.maxHp) {
+      // o Behemoth não: parado na medula ele curava ~5% por segundo
+      if (f === FEAT.MARROW && e.hp < e.maxHp && !e.T.big) {
         e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012);
         burst(e.x, 0.4, e.z, 0xff4d6a, 2, 1.2, 0.05, 0.4, { grav: -2 });
       } else if (f === FEAT.RESIN && e.burnT > 0) {

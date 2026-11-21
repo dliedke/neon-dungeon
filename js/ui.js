@@ -784,7 +784,14 @@ export function updateHUD(dt) {
   }
   // recompensa atual da dificuldade (sobe aos poucos depois de aumentar)
   const crK = rewardK('cr');
-  setText('diff-rew', `¢×${crK.toFixed(crK >= 10 ? 0 : 1)} · ★×${rewardK('loot').toFixed(1)}${rewardRamping() ? ' ▲' : ''}`);
+  const lootK = rewardK('loot');
+  const rew = `¢×${crK.toFixed(crK >= 10 ? 0 : 1)} · ★×${lootK.toFixed(lootK >= 100 ? 0 : 1)}${rewardRamping() ? ' ▲' : ''}`;
+  if (cache.rew !== rew) {
+    // no Abismo fundo (¢×1007 · ★×256 ▲) o texto não cabia ao lado do nome: letra menor
+    cache.rew = rew;
+    setText('diff-rew', rew);
+    $('diff-rew').classList.toggle('long', rew.length >= 15);
+  }
   setText('stim-count', String(c.stims));
   setText('tstim-count', String(c.stims));
 

@@ -180,6 +180,7 @@ body.touch .fs-toggle { display: none !important; }
 #diff-top { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; line-height: 1.2; white-space: nowrap; }
 #diff-name { color: var(--dc); font-weight: 700; text-shadow: 0 0 6px var(--dc); }
 #diff-rew { color: #ffd23d; opacity: 0.9; }
+#diff-rew.long { font-size: 10px; letter-spacing: -0.2px; align-self: center; }
 #diff-range { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 2px 0 0; background: transparent; cursor: pointer; touch-action: none; }
 #diff-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64, #ff2bd6, #b04dff, #e8e6ff); }
 #diff-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #39ff88, #00f0ff, #ffd23d, #ff7a1a, #ff3a64, #ff2bd6, #b04dff, #e8e6ff); }

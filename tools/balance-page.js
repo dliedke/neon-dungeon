@@ -28,7 +28,7 @@ const ARMOR_GEMS = ['ruby', 'diamond', 'amethyst', 'emerald'];
 function gemDropTier() {
   const ab = G.settings.abyss | 0;
   const t = Math.floor((effFloor() + diffIlvl()) / 20);
-  const cap = ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4;
+  const cap = ab >= 750 ? 19 : ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4;
   return Math.max(0, Math.min(cap, t));
 }
 
@@ -147,13 +147,14 @@ function measure1(sc, o, seed) {
   const reg = REG.map((t) => spawn(t, false));
   const eli = REG.slice(0, 3).map((t) => spawn(t, true));
   const boss = BOSS_ORDER.map((t) => spawn(t, false));
+  const beast = spawn('behemoth', false);
   const avg = (a, f) => a.reduce((x, e) => x + f(e), 0) / a.length;
   const r = {
     ilvl: info.ilvl, gemT: info.gemT, forgeCost: info.cost, tree: info.tree,
     eff: effFloor(), gear: abyssGear(),
     hp: s.maxHp, armor: s.armor, taken, dodge: s.dodge || 0, atkRate: s.atkRate, crit: s.crit, critDmg: s.critDmg,
     dmgPct: s.dmgPct, dmgMul: s.dmgMul || 1, wAvg: (s.wMin + s.wMax) / 2,
-    hitN: avgHit(reg[0]), hitE: avgHit(eli[0]), hitB: avgHit(boss[0]),
+    hitN: avgHit(reg[0]), hitE: avgHit(eli[0]), hitB: avgHit(boss[0]), hitM: avgHit(beast), mHp: beast.maxHp,
     nHp: avg(reg, (e) => e.maxHp), eHp: avg(eli, (e) => e.maxHp), bHp: avg(boss, (e) => e.maxHp),
     nDmg: avg(reg, (e) => e.dmg), eDmg: avg(eli, (e) => e.dmg), bDmg: avg(boss, (e) => e.dmg),
   };
@@ -163,6 +164,7 @@ function measure1(sc, o, seed) {
   r.hitsN = r.nHp / r.hitN;
   r.secE = r.eHp / (r.hitE * r.atkRate);
   r.secB = r.bHp / (r.hitB * r.atkRate);
+  r.secM = r.mHp / (r.hitM * r.atkRate);
   r.dieN = (r.hp / Math.max(1, r.nDmg * taken)) * avoid;
   r.dieE = (r.hp / Math.max(1, r.eDmg * taken)) * avoid;
   r.dieB = (r.hp / Math.max(1, r.bDmg * taken)) * avoid;

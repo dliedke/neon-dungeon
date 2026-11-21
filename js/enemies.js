@@ -115,6 +115,15 @@ const ELITE = {
     hint: L('Elite <b>Artilheiro</b>: chama bombardeios onde você está. Não fique parado!', '<b>Bombardier</b> elite: calls strikes where you stand. Keep moving!') },
 };
 const AURA_R = 5.5;
+// cura de aliado (Drone Médico, elite Regenerador). O Behemoth Furioso não recebe: fera solitária com ~30x a vida de
+// um comum, com drones médicos (15% a cada 2,2s, um por drone) e Regeneradores em volta curava mais rápido do que
+// apanhava e nunca morria. E cada inimigo aceita no máximo uma cura de aliado por segundo: vários curandeiros juntos não somam
+const healable = (o) => !o.T.big && G.t - (o.healT ?? -9) >= 1;
+function allyHeal(o, amt) {
+  o.healT = G.t;
+  o.hp = Math.min(o.maxHp, o.hp + amt);
+  o.hpShow = 2;
+}
 const auraGeo = new THREE.RingGeometry(0.93, 1, 48).rotateX(-Math.PI / 2);
 // anel no chão mostrando o alcance da aura (o modelo do elite é 1,2x maior, então compensa)
 function auraRing(e, r, color) {
@@ -140,7 +149,8 @@ function eliteAura(e, edt, p) {
     if (e.wardTick <= 0) {
       e.wardTick = 0.25;
       // não protege outros elites (dois Guardiões juntos ficavam quase imortais)
-      for (const o of G.enemies) if (o !== e && o.alive && !o.inert && !o.boss && !o.elite && Math.hypot(o.x - e.x, o.z - e.z) < AURA_R) o.wardT = 0.4;
+      // nem o Behemoth (com o anel ele levava metade do dano e parecia imortal)
+      for (const o of G.enemies) if (o !== e && o.alive && !o.inert && !o.boss && !o.elite && !o.T.big && Math.hypot(o.x - e.x, o.z - e.z) < AURA_R) o.wardT = 0.4;
     }
   }
   if (e.mender) {
@@ -151,9 +161,8 @@ function eliteAura(e, edt, p) {
       for (const o of G.enemies) {
         // só os comuns: elites (ele mesmo incluído) não se curam entre si. No Abismo fundo quase todo elite
         // tem 6 afixos e vem em bando; vários Regeneradores juntos curavam ~20% da vida por segundo e ninguém morria
-        if (!o.alive || o.inert || o.boss || o.elite || o.hp >= o.maxHp || Math.hypot(o.x - e.x, o.z - e.z) > AURA_R) continue;
-        o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.05);
-        o.hpShow = 2;
+        if (!o.alive || o.inert || o.boss || o.elite || o.hp >= o.maxHp || !healable(o) || Math.hypot(o.x - e.x, o.z - e.z) > AURA_R) continue;
+        allyHeal(o, o.maxHp * 0.05);
         healed = true;
         burst(o.x, o.height * 0.8, o.z, 0x39ff88, 4, 2, 0.05, 0.4, { up: 1 });
       }
@@ -200,18 +209,18 @@ export const DIFF_ORDER = ['easy', 'normal', 'hard', 'vhard', 'brutal', 'insane'
 const diff = () => DIFFICULTY[G.settings.difficulty] || DIFFICULTY.normal;
 
 // ------------------------------------------------------------------
-// Abismo: 500 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
+// Abismo: 1000 níveis acima da Morte (só valem com a Morte escolhida, num seletor próprio).
 // Cada nível leva a masmorra mais fundo (abyssDepth: I +6 andares, depois +12 por nível) (vida, dano, elites com mais afixos,
 // inimigos que perfuram blindagem, itens de nível maior) e liga mais uma regra, que se soma às anteriores.
 // O Abismo I abre ao derrotar um chefe na Morte; cada nível seguinte, ao derrotar um chefe no anterior.
 // O progresso fica nas medalhas (conjunto 'abyss'), que a nuvem une entre aparelhos.
 // ------------------------------------------------------------------
-export const ABYSS_MAX = 500;
+export const ABYSS_MAX = 1000;
 export const ABYSS_STEP = 6;
 // andares a mais de cada nível: o Abismo I desce ABYSS_STEP e cada nível seguinte desce o dobro
-// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194 ... CC +2394 ... D +5994). Aceita nível fracionário (recompensa subindo aos poucos)
+// (I +6, II +18, III +30 ... X +114 ... L +594 ... C +1194 ... CC +2394 ... D +5994 ... M +11994). Aceita nível fracionário (recompensa subindo aos poucos)
 export const abyssDepth = (n) => (n <= 0 ? 0 : n <= 1 ? n * ABYSS_STEP : ABYSS_STEP + (n - 1) * ABYSS_STEP * 2);
-// número do Abismo como texto normal (1, 2, 3 ... 500); índice 0 fica vazio
+// número do Abismo como texto normal (1, 2, 3 ... 1000); índice 0 fica vazio
 export const ABYSS_NUM = Array.from({ length: ABYSS_MAX + 1 }, (_, n) => (n ? String(n) : ''));
 // regra do Abismo só com multiplicadores (fx): a descrição bilíngue sai do próprio fx
 const P_ = (v) => Math.round(Math.abs(v - 1) * 100);
@@ -449,6 +458,10 @@ export const ABYSS_RULES = [
 ];
 // CCI a D: 30 reinos de 10 níveis. Cada reino liga 9 regras pequenas (Reino I a IX) e fecha com a sua coroa.
 // As regras ficam mais fortes a cada 100 níveis (CCI–CCC, CCCI–CD, CDI–D) e as coroas de 50 em 50 pesam mais.
+// 501 a 1000: mais 50 reinos. Aqui a vida extra é quase toda "de inimigo" (ehp, que os itens compensam) e só um pouco
+// de chefes e elites (bel; bhp só no 1000): com as regras do CDI–D o chefe, que no D já leva ~10s com poderes,
+// passaria de uma hora no 1000. O que endurece é o dano dos inimigos (o equipamento do nível já dava mais vida e
+// blindagem do que o dano subia) e as penalidades no jogador.
 // O nível dos itens (abyssGear) acompanha a vida dos inimigos e parte da dos elites e chefes; o dano dos inimigos e as
 // penalidades no jogador não: fica mais difícil.
 function deepRules() {
@@ -483,31 +496,97 @@ function deepRules() {
     ['🕯️', 'Catedral Apagada', 'Darkened Cathedral', 'Último Sino', 'Last Bell'],
     ['⏳', 'Areias do Tempo', 'Sands of Time', 'Fim dos Tempos', 'End of Time'],
     ['👁️', 'Olho do Vazio', 'Eye of the Void', 'O Fundo Verdadeiro', 'The True Bottom'],
+    // 501 a 1000
+    ['🪐', 'Anéis de Saturno', 'Rings of Saturn', 'Guardião dos Anéis', 'Ring Warden'],
+    ['🌪️', 'Vale dos Ventos', 'Valley of Winds', 'Rei do Vento', 'Wind King'],
+    ['🧿', 'Olho Cego', 'Blind Eye', 'Vidente Cego', 'Blind Seer'],
+    ['🦂', 'Dunas Venenosas', 'Venom Dunes', 'Escorpião Imperador', 'Emperor Scorpion'],
+    ['⚱️', 'Tumba dos Reis', 'Tomb of Kings', 'Quinhentos e Cinquenta', 'Five Hundred Fifty'],
+    ['🧲', 'Campo Magnético', 'Magnetic Field', 'Polo Negro', 'Black Pole'],
+    ['🐍', 'Serpentário', 'Serpentarium', 'Serpente do Mundo', 'World Serpent'],
+    ['🏔️', 'Picos Gelados', 'Frozen Peaks', 'Gigante da Neve', 'Snow Giant'],
+    ['💎', 'Minas de Cristal', 'Crystal Mines', 'Coração de Diamante', 'Diamond Heart'],
+    ['🌘', 'Penumbra', 'Penumbra', 'Seiscentos', 'Six Hundred'],
+    ['🦇', 'Cavernas dos Morcegos', 'Bat Caverns', 'Rainha Noturna', 'Night Queen'],
+    ['🔩', 'Ferro-Velho Infinito', 'Endless Scrapyard', 'Rei da Sucata', 'Scrap King'],
+    ['🌺', 'Selva Carnívora', 'Carnivorous Jungle', 'Flor Devoradora', 'Devourer Bloom'],
+    ['📡', 'Antena Fantasma', 'Ghost Antenna', 'Último Sinal', 'Last Signal'],
+    ['🔥', 'Cinzas Vivas', 'Living Ashes', 'Seiscentos e Cinquenta', 'Six Hundred Fifty'],
+    ['🛰️', 'Órbita Morta', 'Dead Orbit', 'Satélite Caído', 'Fallen Satellite'],
+    ['🎭', 'Teatro das Máscaras', 'Theater of Masks', 'Máscara Sem Rosto', 'Faceless Mask'],
+    ['🌊', 'Maremoto', 'Tidal Wave', 'Senhor das Marés', 'Lord of Tides'],
+    ['🗡️', 'Arena dos Campeões', 'Champions Arena', 'Campeão Eterno', 'Eternal Champion'],
+    ['🌗', 'Crepúsculo', 'Twilight', 'Setecentos', 'Seven Hundred'],
+    ['🦅', 'Ninho das Tempestades', 'Storm Aerie', 'Águia de Trovão', 'Thunder Eagle'],
+    ['🧪', 'Pântano Ácido', 'Acid Swamp', 'Lodo Primordial', 'Primordial Ooze'],
+    ['🏰', 'Fortaleza Negra', 'Black Fortress', 'O Castelão', 'The Castellan'],
+    ['🕰️', 'Relógio Quebrado', 'Broken Clock', 'Hora Zero', 'Zero Hour'],
+    ['🌋', 'Coração Vulcânico', 'Volcanic Heart', 'Setecentos e Cinquenta', 'Seven Hundred Fifty'],
+    ['❄️', 'Zero Absoluto', 'Absolute Zero', 'Rainha do Gelo Eterno', 'Queen of Eternal Ice'],
+    ['🐙', 'Fossa Oceânica', 'Ocean Deep', 'Leviatã', 'Leviathan'],
+    ['🌀', 'Labirinto Sem Fim', 'Endless Maze', 'Minotauro de Neon', 'Neon Minotaur'],
+    ['🔭', 'Observatório', 'Observatory', 'Estrela Morta', 'Dead Star'],
+    ['🌕', 'Lua de Sangue', 'Blood Moon', 'Oitocentos', 'Eight Hundred'],
+    ['🦖', 'Era dos Titãs', 'Age of Titans', 'Rei Lagarto', 'Lizard King'],
+    ['🧱', 'Muralha Infinita', 'Endless Wall', 'Último Portão', 'Last Gate'],
+    ['🪦', 'Cemitério de Máquinas', 'Machine Graveyard', 'Coveiro de Aço', 'Steel Gravedigger'],
+    ['🌈', 'Prisma Partido', 'Broken Prism', 'Luz Fraturada', 'Fractured Light'],
+    ['⚡', 'Rede Elétrica', 'Power Grid', 'Oitocentos e Cinquenta', 'Eight Hundred Fifty'],
+    ['🕷️', 'Teia do Mundo', 'World Web', 'A Tecelã', 'The Weaver'],
+    ['🏯', 'Castelo Noturno', 'Night Castle', 'Conde Sem Sombra', 'Shadowless Count'],
+    ['🌑', 'Vazio Interior', 'Inner Void', 'Eco do Nada', 'Echo of Nothing'],
+    ['☀️', 'Sol Negro', 'Black Sun', 'Coroa Solar', 'Solar Crown'],
+    ['💠', 'Núcleo Cristalino', 'Crystal Core', 'Novecentos', 'Nine Hundred'],
+    ['🐲', 'Ninho Ancestral', 'Ancestral Nest', 'Dragão Ancestral', 'Ancestral Dragon'],
+    ['☠️', 'Mar dos Mortos', 'Sea of the Dead', 'Capitão Fantasma', 'Ghost Captain'],
+    ['🧠', 'Cérebro Coletivo', 'Collective Brain', 'Rainha Psíquica', 'Psychic Queen'],
+    ['🌌', 'Borda do Universo', 'Edge of the Universe', 'Horizonte Final', 'Final Horizon'],
+    ['⏳', 'Ampulheta Partida', 'Shattered Hourglass', 'Novecentos e Cinquenta', 'Nine Hundred Fifty'],
+    ['🔱', 'Trono Submerso', 'Sunken Throne', 'Rei Abissal', 'Abyssal King'],
+    ['🌠', 'Fim das Galáxias', 'End of Galaxies', 'Devorador de Estrelas', 'Star Eater'],
+    ['🕳️', 'Singularidade', 'Singularity', 'Horizonte de Eventos', 'Event Horizon'],
+    ['✴️', 'Grande Explosão', 'Big Bang', 'Primeira Luz', 'First Light'],
+    ['♾️', 'Infinito', 'Infinity', 'O Milésimo', 'The Thousandth'],
   ];
   const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
   // penalidade no jogador que roda nas casas 5 e 9 de cada reino
   const PEN = [{ heal: 0.98 }, { parm: 0.98 }, { regen: 0.95 }, { php: 0.99 }];
   const out = [];
   REALMS.forEach(([icon, pt, en, cpt, cen], b) => {
-    const k = Math.floor(b / 10); // 0 = CCI–CCC, 1 = CCCI–CD, 2 = CDI–D
+    const k = Math.floor(b / 10); // 0 = CCI–CCC, 1 = CCCI–CD, 2 = CDI–D, 3+ = 501 a 1000
     const r2 = (v) => Math.round(v * 1000) / 1000;
-    const steps = [
+    const lvl = 210 + b * 10;
+    const steps = k >= 3 ? [
+      { ehp: r2(1.05 + 0.005 * (k - 3)) },
+      { edmg: 1.03 },
+      { bel: 1.02 },
+      { ehp: r2(1.05 + 0.005 * (k - 3)) },
+      PEN[(b * 2) % 4],
+      { edmg: 1.03 },
+      { ehp: 1.04 },
+      { edmg: 1.03 },
+      PEN[(b * 2 + 1) % 4],
+    ] : [
       { ehp: r2(1.04 + 0.01 * k) },
       { edmg: r2(1.03 + 0.005 * k) },
       { bel: r2(1.05 + 0.01 * k) },
       { ehp: r2(1.04 + 0.01 * k) },
       PEN[(b * 2) % 4],
       { edmg: r2(1.03 + 0.005 * k) },
-      { bhp: r2(1.06 + 0.01 * k) },
+      // CDI–D: vida de inimigo (o equipamento acompanha) em vez de vida só de chefe. Com bhp aqui e nas coroas
+      // do CDL e do D o chefe ficava ~6× mais duro do CD ao D com o equipamento do nível e virava parede
+      k === 2 ? { ehp: 1.06 } : { bhp: r2(1.06 + 0.01 * k) },
       { beldmg: r2(1.03 + 0.005 * k) },
       PEN[(b * 2 + 1) % 4],
     ];
     steps.forEach((fx, j) => out.push(fxRule(icon, `${pt} ${ROM[j]}`, `${en} ${ROM[j]}`, fx)));
-    const lvl = 210 + b * 10;
-    const crown = lvl === 500 ? { ehp: 1.2, edmg: 1.12, bel: 1.2, bhp: 1.2 }
+    const crown = lvl === 1000 ? { ehp: 1.2, edmg: 1.12, bel: 1.1, bhp: 1.1 }
+      : k >= 3 ? (lvl % 50 === 0 ? { ehp: 1.12, edmg: 1.06, bel: 1.05, beldmg: 1.03 } : { ehp: 1.08, edmg: 1.04, beldmg: 1.01 })
+      : lvl === 500 ? { ehp: 1.3, edmg: 1.12, bel: 1.2 }
+      : lvl === 450 ? { ehp: 1.25, edmg: 1.1, bel: 1.16 }
       : lvl % 50 === 0 ? { ehp: r2(1.12 + 0.02 * k), edmg: r2(1.08 + 0.01 * k), bel: r2(1.12 + 0.02 * k), bhp: r2(1.12 + 0.02 * k) }
       : { ehp: r2(1.08 + 0.02 * k), edmg: r2(1.05 + 0.01 * k), bel: r2(1.08 + 0.02 * k) };
-    out.push(fxRule(lvl === 500 ? '👑' : '🏆', cpt, cen, crown));
+    out.push(fxRule(lvl === 500 || lvl === 1000 ? '👑' : '🏆', cpt, cen, crown));
   });
   return out;
 }
@@ -549,10 +628,11 @@ export const abyssName = (n) => `${L('Abismo', 'Abyss')} ${ABYSS_NUM[n] || ''}`;
 // XI a XX: do vermelho ao laranja-fogo; XXI a XXX: do dourado ao branco do vazio; XXXI a L: do ciano gelado ao azul elétrico;
 // LI a LXXV: do magenta ao rosa-choque; LXXVI a C: o arco-íris prismático até o branco;
 // CI a CL: do verde-água ao anil; CLI a CC: do rosa-choque ao ouro;
-// CCI a CCC: do ouro ao vermelho-brasa; CCCI a CD: do roxo ao azul-gelo; CDI a D: um arco-íris que vai desbotando até o prata
-export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : n <= 100 ? `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)` : n <= 150 ? `hsl(${160 + (n - 100) * 2}, 100%, ${62 + (n - 100) * 0.1}%)` : n <= 200 ? `hsl(${(330 + (n - 150) * 1.6) % 360}, 100%, ${62 + (n - 150) * 0.3}%)` : n <= 300 ? `hsl(${50 - (n - 200) * 0.5}, 100%, ${64 - (n - 200) * 0.06}%)` : n <= 400 ? `hsl(${280 - (n - 300) * 0.8}, 100%, ${66 + (n - 300) * 0.1}%)` : `hsl(${(n - 400) * 3.6}, ${100 - (n - 400) * 0.6}%, ${80 - (n - 400) * 0.1}%)`);
+// CCI a CCC: do ouro ao vermelho-brasa; CCCI a CD: do roxo ao azul-gelo; CDI a D: um arco-íris que vai desbotando até o prata;
+// 501–600: do ciano ao violeta; 601–700: do magenta ao laranja; 701–800: do laranja ao verde; 801–900: do verde ao azul; 901–1000: do ouro ao branco
+export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n * 1.6}%)` : n <= 20 ? `hsl(${(n - 10) * 3}, 100%, ${50 + (n - 10) * 0.6}%)` : n <= 30 ? `hsl(${30 + (n - 20) * 2.5}, 100%, ${56 + (n - 20) * 2.6}%)` : n <= 50 ? `hsl(${180 + (n - 30) * 2}, 100%, ${76 - (n - 30) * 0.3}%)` : n <= 75 ? `hsl(${300 + (n - 50) * 1.2}, 100%, ${62 + (n - 50) * 0.3}%)` : n <= 100 ? `hsl(${(n - 75) * 14.4}, 100%, ${70 + (n - 75) * 1.2}%)` : n <= 150 ? `hsl(${160 + (n - 100) * 2}, 100%, ${62 + (n - 100) * 0.1}%)` : n <= 200 ? `hsl(${(330 + (n - 150) * 1.6) % 360}, 100%, ${62 + (n - 150) * 0.3}%)` : n <= 300 ? `hsl(${50 - (n - 200) * 0.5}, 100%, ${64 - (n - 200) * 0.06}%)` : n <= 400 ? `hsl(${280 - (n - 300) * 0.8}, 100%, ${66 + (n - 300) * 0.1}%)` : n <= 500 ? `hsl(${(n - 400) * 3.6}, ${100 - (n - 400) * 0.6}%, ${80 - (n - 400) * 0.1}%)` : n <= 600 ? `hsl(${180 + (n - 500) * 1.2}, 100%, 66%)` : n <= 700 ? `hsl(${(300 + (n - 600) * 0.9) % 360}, 100%, 64%)` : n <= 800 ? `hsl(${30 + (n - 700) * 0.9}, 100%, 60%)` : n <= 900 ? `hsl(${120 + (n - 800) * 1.2}, 100%, 66%)` : `hsl(45, ${100 - (n - 900) * 0.8}%, ${70 + (n - 900) * 0.2}%)`);
 
-// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108 ... Abismo CC = 208 ... Abismo D = 508
+// posição na escada de dificuldade: Fácil = 0 ... Morte = 8, Abismo I = 9 ... Abismo L = 58 ... Abismo C = 108 ... Abismo CC = 208 ... Abismo D = 508 ... Abismo 1000 = 1008
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
@@ -562,7 +642,7 @@ export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficul
 // agora qualquer salto chega em ~2 min). Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
-// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6; Abismo D: ¢×507 e ★×130,6)
+// Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6; Abismo D: ¢×507 e ★×130,6; Abismo 1000: ¢×1007 e ★×255,6)
 for (let n = 1; n <= ABYSS_MAX; n++) {
   REWARD.cr.push(7.2 + n);
   REWARD.loot.push(5.6 + 0.25 * n);
@@ -1464,7 +1544,7 @@ export function updateEnemies(dt, cam) {
           let hurt = null;
           let worst = 0.98;
           for (const o of G.enemies) {
-            if (!o.alive || o === e || o.inert || o.T.ai === 'medic') continue;
+            if (!o.alive || o === e || o.inert || o.T.ai === 'medic' || o.T.big) continue;
             const od = Math.hypot(o.x - e.x, o.z - e.z);
             if (od > 10) continue;
             const k = o.hp / o.maxHp;
@@ -1487,10 +1567,10 @@ export function updateEnemies(dt, cam) {
             e.atkT = 2.2;
             let healed = false;
             for (const o of G.enemies) {
-              if (!o.alive || o === e || o.inert || o.hp >= o.maxHp) continue;
+              if (!o.alive || o === e || o.inert || o.hp >= o.maxHp || !healable(o)) continue;
               if (Math.hypot(o.x - e.x, o.z - e.z) > 5.5) continue;
               const amt = o.maxHp * (o.boss || o.elite ? 0.03 : 0.15);
-              o.hp = Math.min(o.maxHp, o.hp + amt);
+              allyHeal(o, amt);
               beamFx(e.x, 1.15, e.z, o.x, o.height * 0.6, o.z, 0x39ff88, 0.3);
               floatText(o.x, o.height + 0.3, o.z, `+${short(amt)}`, 'heal');
               healed = true;

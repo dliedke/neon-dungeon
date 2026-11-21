@@ -265,6 +265,8 @@ export function floatText(x, y, z, text, cls = 'dmg') {
     floaters.push(f);
   }
   f.alive = true;
+  f.owner = null;
+  f.age = 0;
   f.x = x + rr(-0.25, 0.25);
   f.y = y;
   f.z = z + rr(-0.25, 0.25);
@@ -273,6 +275,32 @@ export function floatText(x, y, z, text, cls = 'dmg') {
   f.el.className = 'floater ' + cls;
   f.el.textContent = typeof text === 'number' ? short(text) : text;
   f.el.style.display = 'block';
+  return f;
+}
+
+// número de dano preso ao inimigo: golpes no mesmo alvo dentro de meio segundo somam no mesmo número
+// (com ataque rápido saíam dezenas por segundo no mesmo lugar, um em cima do outro, e não dava para ler nenhum)
+const FL_RANK = { dot: 0, dmg: 1, crit: 2 };
+export function floatDmg(e, amount, cls = 'dmg') {
+  const f = e.fl;
+  if (f && f.alive && f.owner === e && f.age < 0.5) {
+    f.sum += amount;
+    f.t = Math.min(f.t, 0.15); // volta ao tamanho cheio e não some enquanto soma
+    if (FL_RANK[cls] > FL_RANK[f.cls]) {
+      f.cls = cls;
+      f.dur = cls === 'crit' ? 1.1 : 0.95;
+      f.el.className = 'floater ' + cls;
+    }
+    f.el.textContent = short(f.sum);
+    return;
+  }
+  const n = floatText(e.x, e.height + 0.3, e.z, amount, cls);
+  if (!n) return;
+  n.owner = e;
+  n.sum = amount;
+  n.cls = cls;
+  n.dur = cls === 'crit' ? 1.1 : 0.95;
+  e.fl = n;
 }
 
 export function updateFloaters(dt, camera) {
@@ -281,6 +309,7 @@ export function updateFloaters(dt, camera) {
   for (const f of floaters) {
     if (!f.alive) continue;
     f.t += dt;
+    f.age += dt;
     if (f.t >= f.dur) {
       f.alive = false;
       f.el.style.display = 'none';
