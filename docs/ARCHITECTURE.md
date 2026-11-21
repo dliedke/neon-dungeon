@@ -382,6 +382,16 @@ Reading the result:
 - The checker can't see canvas drawings (minimap marks, 3D labels in `#labels` that follow the world). Check those in the screenshot.
 - Re-run it with the panel or event state that the change introduces, not only the plain HUD.
 
+### Balance report
+
+`node tools/balance.mjs [class] [--json out.json]` (default class `blade`) prints a balance report in Markdown. It starts its own `http-server` (port 8124) and headless Edge (port 9334, temp profile), loads the game and runs `tools/balance-page.js` inside the page, so it always uses the real formulas (`makeItem`, `forgeItem`, `computeStats`, `spawnEnemy`, `hitEnemy`, `armorTaken`). It takes about 10–20 minutes and only kills the processes it started. Redirect the output to a file (`> report.md`) to keep it.
+
+- **Progression path** (`STAGES` / `ABYSS_CK` in `balance.mjs`): Normal mode on Normal, Nightmare on Brutal, Inferno on Death, then Abyss 1→500 in Inferno at 3 floors per Abyss level. The character level comes from the XP of real floors (`startFloor`) summed along the path (kills only, no event XP or xp% bonuses).
+- **Character at each checkpoint:** all 6 slots with items of the ilvl that drops there (`lootIlvl`) and the best usual rarity (Prototype, Mythic, Divine, Primordial), forged to max, every socket with gems of the tier that drops there, tree points spread evenly over every unlocked power, implants from the boss floors cleared. Items are averaged over 8 seeds.
+- **Tables:** kill speed (basic hits to kill a regular enemy, seconds for an elite and a boss), survival (enemy hits to die after armor, damage reduction and dodge), how much DPS each system adds (items, forge, gems, tree, implants), DPS by rarity and the defense numbers.
+- Golpe/DPS only count the basic attack (no skills, procs or summons); powers multiply it by `rankMult` of their rank, shown in the "Poder" column. Use the numbers to compare checkpoints with each other, not as exact fight times.
+- To test a change, run it before and after and compare. To try another path, edit `STAGES` / `ABYSS_CK`; to try other gear, edit the `full` config in `run()` in `balance-page.js`.
+
 ### Other checks worth doing
 
 - **Errors:** listen to `Runtime.exceptionThrown` and `Runtime.consoleAPICalled` (type `error`) during every pass.
