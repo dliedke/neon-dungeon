@@ -4568,7 +4568,7 @@ export function setupEvents(d, floor, boss, rooms) {
 // em volta deles mudam de sala, senão não dá para ver o padrão no meio da briga.
 // Os de luta (arena, ondas, guardas, caçadas) e os que atravessam o andar inteiro ficam como estão.
 const CALM = new Set(['terminals', 'lights', 'prisms', 'signal', 'pairs', 'meteor', 'vault', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'dance',
-  'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'lock', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal']);
+  'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal']);
 const CALM_GAP = 14; // distância mínima entre um evento de atenção e outro evento (ou os inimigos dele)
 const CALM_SEE = 12; // além da borda do evento: o inimigo vê o jogador a 10m (folga para quem pisa um pouco fora)
 let placingCalm = false;
@@ -4756,7 +4756,9 @@ export function eventsSnapshot() {
 }
 export function eventsRestore(list) {
   if (!Array.isArray(list)) return;
-  list.forEach((s, i) => {
+  // eventos que saíram do jogo (ex.: Cofre de Combinação) não são recriados: tira do save para os outros
+  // continuarem alinhados com G.events
+  list.filter((s) => s && KIND[s.k]).forEach((s, i) => {
     const E = G.events[i];
     if (E && s && E.kind === s.k) KIND[E.kind].load(E, s);
   });

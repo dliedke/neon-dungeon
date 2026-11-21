@@ -1855,89 +1855,6 @@ const pinata = mk({
 });
 
 // ==================================================================
-// 51. Cofre de Combinação: 3 pilares mostram um dígito de perto; gire os 3 mostradores a golpes e golpeie o cofre
-// ==================================================================
-const LK_COL = [0xff4466, 0x39ff88, 0x39a8ff];
-const lock = mk({
-  setup(d, floor, rooms) {
-    const s = findSpot(d, rooms, 5.2);
-    if (!s) return null;
-    const g = groupAt(s.x, s.z);
-    put(g, box(1.4, 1.2, 1.1), mats().metal, 0, 0.6, 0);
-    const lamp = lightMat(0xff3355, 1.5);
-    put(g, box(0.6, 0.12, 0.06), lamp, 0, 1.0, 0.57);
-    put(g, mats().ring, lightMat(0xffd23d, 1), 0, 0.03, 0, 1.3, 1, 1.3);
-    const code = [ri(1, 5), ri(1, 5), ri(1, 5)];
-    const dials = LK_COL.map((c, i) => {
-      const x = (i - 1) * 1.7;
-      put(g, mats().cyl, mats().metal, x, 0.3, 2.3, 0.5, 0.6, 0.5);
-      put(g, mats().ring, lightMat(c, 1.3), x, 0.03, 2.3, 0.8, 1, 0.8);
-      const nums = [1, 2, 3, 4, 5].map((v) => {
-        const sp = label(g, String(v), c, x, 1.25, 2.3, 0.95);
-        sp.visible = v === 1;
-        return sp;
-      });
-      return { x, nums, v: 1, e: hitTarget(s.x + x, s.z + 2.3, 0.6, 1, L('Mostrador', 'Dial')), hits: 0 };
-    });
-    const clues = [[-4.2, -1.6], [4.2, -1.6], [0, -4.2]].map(([x, z], i) => {
-      put(g, mats().cyl, mats().metal, x, 0.5, z, 0.3, 1, 0.3);
-      put(g, mats().oct, glowMat(LK_COL[i], 2), x, 1.3, z, 0.2, 0.28, 0.2);
-      put(g, mats().ring, lightMat(LK_COL[i], 0.9), x, 0.03, z, 0.8, 1, 0.8);
-      const sp = label(g, String(code[i]), LK_COL[i], x, 2.1, z, 1.2);
-      sp.visible = false;
-      return { x, z, sp };
-    });
-    const safe = { e: hitTarget(s.x, s.z, 0.9, 1.2, L('Cofre', 'Safe')), hits: 0 };
-    return { kind: 'lock', x: s.x, z: s.z, g, lamp, code, dials, clues, safe, foes: [], st: 'idle', tries: 0 };
-  },
-  update(E) {
-    const p = G.player;
-    for (const c of E.clues) c.sp.visible = Math.hypot(p.x - E.x - c.x, p.z - E.z - c.z) < 3.4;
-    E.foes = E.foes.filter((e) => e.alive);
-    const ns = hitsOf(E.safe);
-    for (const dl of E.dials) {
-      if (!hitsOf(dl)) continue;
-      dl.v = (dl.v % 5) + 1;
-      dl.nums.forEach((sp, i) => (sp.visible = i + 1 === dl.v));
-      sfx.click();
-    }
-    if (E.st === 'idle') {
-      if (near(E, 8)) E.st = 'run';
-      return;
-    }
-    if (!ns) return;
-    if (E.dials.every((dl, i) => dl.v === E.code[i])) {
-      for (const o of [E.safe, ...E.dials]) dropTarget(o);
-      setLight(E.lamp, 0x39ff88, 2);
-      sfx.legendary();
-      complete(E, 1.3, L('COFRE ABERTO!', 'SAFE OPEN!'), L('Combinação certa', 'Right combination'), E.x, E.z, { extra: true });
-      return;
-    }
-    E.tries++;
-    sfx.deny();
-    floatText(E.x, 2, E.z, L('errado!', 'wrong!'), 'hurt');
-    for (const dl of E.dials) {
-      dl.v = 1;
-      dl.nums.forEach((sp, i) => (sp.visible = i === 0));
-    }
-    if (E.foes.length < 5) ambush(E, 1, E.x, E.z, 4, 7, 0xff4466);
-    if (E.tries === 1) toast(L('🔐 Errado! Cada pilar colorido mostra o dígito do mostrador da mesma cor (chegue perto).', '🔐 Wrong! Each colored pillar shows the digit for the dial of the same color (get close).'), 'warn');
-  },
-  hud: (E) => (E.st === 'idle' ? L('ache o código', 'find the code') : `${E.dials.map((dl) => dl.v).join('-')} · ${L('bata no cofre', 'hit the safe')}`),
-  dim(E) {
-    for (const o of [E.safe, ...E.dials]) dropTarget(o);
-    setLight(E.lamp, 0x39ff88, 2);
-  },
-  reload(E) {
-    for (const o of [E.safe, ...E.dials]) {
-      o.e.hp = o.e.maxHp;
-      o.hits = 0;
-    }
-  },
-  intro: () => L('3 pilares coloridos mostram um dígito (1 a 5) quando você chega perto. Golpeie cada mostrador da mesma cor até o dígito certo e depois golpeie o cofre.', '3 colored pillars show a digit (1 to 5) when you get close. Hit each dial of the same color until it shows the right digit, then hit the safe.'),
-});
-
-// ==================================================================
 // 52. Altar dos Elementos: leve cada orbe (fogo, gelo, raio) até a tocha da mesma cor
 // ==================================================================
 const EL_COL = [0xff5a2d, 0x39d0ff, 0xffe23d];
@@ -2677,7 +2594,7 @@ const king = mk({
 // ------------------------------------------------------------------
 // eventos com relógio entre os novos (só um deles por andar, junto com os de events.js)
 export const NEW_TIMED = ['bounty2', 'beacon', 'juggle', 'king'];
-export const NEW_KIND = { sokoban, pipes, piano, scale, maze, bridge, paint: paintFloor, hide, statues, cannon, golem, fishing, dominos, bounty2, tower, bells, garden2, courier, ghosthunt, pinata, lock, elements, snake, mines, tug, beacon, juggle, sculpt, portal, king };
+export const NEW_KIND = { sokoban, pipes, piano, scale, maze, bridge, paint: paintFloor, hide, statues, cannon, golem, fishing, dominos, bounty2, tower, bells, garden2, courier, ghosthunt, pinata, elements, snake, mines, tug, beacon, juggle, sculpt, portal, king };
 export const NEW_IDS = Object.keys(NEW_KIND);
 export const NEW_INFO = {
   sokoban: { icon: '📦', css: '#ffb347', name: L('Caixas de Energia', 'Power Crates'), short: L('Caixas', 'Crates') },
@@ -2700,7 +2617,6 @@ export const NEW_INFO = {
   courier: { icon: '📦', css: '#ffa63d', name: L('Entrega', 'Delivery'), short: L('Entrega', 'Delivery') },
   ghosthunt: { icon: '👻', css: '#9ad7ff', name: L('Caça-Fantasmas', 'Ghost Hunt'), short: L('Fantasmas', 'Ghosts') },
   pinata: { icon: '🪅', css: '#ff6ad5', name: L('Piñata Gigante', 'Giant Piñata'), short: L('Piñata', 'Piñata') },
-  lock: { icon: '🔐', css: '#ffd23d', name: L('Cofre de Combinação', 'Combination Safe'), short: L('Cofre', 'Safe') },
   elements: { icon: '🔥', css: '#ff5a2d', name: L('Altar dos Elementos', 'Elements Altar'), short: L('Elementos', 'Elements') },
   snake: { icon: '🐍', css: '#7dff3d', name: L('Cobra de Luz', 'Light Snake'), short: L('Cobra', 'Snake') },
   mines: { icon: '💣', css: '#ff5a3d', name: L('Campo Minado', 'Minefield'), short: L('Minas', 'Mines') },

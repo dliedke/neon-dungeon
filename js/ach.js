@@ -314,7 +314,6 @@ export function achList() {
     courier: ['📦', 1, L('Entregador Intocável', 'Untouchable Courier'), L('Entregue o pacote sem tomar dano', 'Deliver the package without taking damage')],
     ghosthunt: ['👻', 1, L('Caça-Fantasmas', 'Ghostbuster'), L('Derrote todos os fantasmas na luz da lanterna', 'Beat all the ghosts in the lantern light')],
     pinata: ['🪅', 0, L('Festa Neon', 'Neon Party'), L('Estoure a Piñata Gigante', 'Burst the Giant Piñata')],
-    lock: ['🔐', 1, L('Arrombador', 'Safecracker'), L('Abra o Cofre de Combinação', 'Open the Combination Safe')],
     elements: ['🔥', 0, L('Mestre dos Elementos', 'Elemental Master'), L('Acenda as 3 tochas do Altar dos Elementos', 'Light the 3 torches of the Elements Altar')],
     snake: ['🐍', 1, L('Cobra Gigante', 'Giant Snake'), L('Pegue 8 orbes na Cobra de Luz', 'Grab 8 orbs in the Light Snake')],
     mines: ['💣', 0, L('Desminador', 'Deminer'), L('Atravesse o Campo Minado', 'Cross the Minefield')],
