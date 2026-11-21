@@ -933,7 +933,13 @@ body.pad .pad-hints { display: block; }
 .fr-ms { color: #ffd23d; }
 .fr-max { color: #ffd23d; font-weight: 700; }
 .forge-row .btn { flex: none; min-width: 110px; }
+/* botão "Maximizar tudo" no topo da lista do ferreiro */
+.forge-all { display: flex; align-items: center; gap: 12px; padding: 8px 10px; margin-bottom: 10px; border: 1px solid rgba(255, 176, 77, 0.55); background: rgba(255, 122, 26, 0.08); }
+.forge-all .btn { flex: none; }
+.fa-note { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
 @media (max-height: 520px), (max-width: 640px) {
+  .forge-all { padding: 5px 8px; gap: 8px; margin-bottom: 6px; }
+  .fa-note { font-size: 11px; }
   .forge-row { padding: 5px 8px; gap: 8px; margin-bottom: 5px; }
   .forge-row .cell { width: 36px; height: 36px; padding: 7px; }
   .fr-name { font-size: 14px; }

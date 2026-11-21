@@ -2380,6 +2380,7 @@ export function uiPadUpdate() {
     else aHoldOk = false;
   }
   if (Input.nav('x') && focused && focused.matches('.cell[data-where="inv"]')) recycleItem(focused.dataset.uid);
+  if (root.id === 'panel-forge' && Input.nav('y')) doForgeAll(); // {Y}: maximizar tudo
   if (root.id === 'panel-stash') {
     if (Input.nav('x') && focused && focused.matches('.cell[data-swhere="stash"]')) stashEquip(focused.dataset.uid); // {X}: equipar do baú
     if (Input.nav('rt') && focused && focused.matches('.cell[data-swhere]')) stashRecycle(focused.dataset.swhere, focused.dataset.uid); // {RT}: reciclar
@@ -2575,10 +2576,109 @@ function forgeMain(it) {
   return k ? AFFIXES[k].fmt(it.affixes[k]) : '';
 }
 
+// "Maximizar tudo": com o dinheiro que tem, sobe sempre o item com menos aprimoramento (empate: o mais barato).
+// Assim, se não der para maximizar tudo, os itens sobem por igual (um pouco de cada).
+// Um item caro demais agora continua caro demais até o fim (o dinheiro só desce), então pular ele não desequilibra os outros.
+function forgeAllStep(lv, budget) {
+  const c = G.char;
+  let best = null;
+  let bestCost = 0;
+  for (const slot of SLOTS) {
+    const it = c.equip[slot];
+    if (!it || lv[slot] >= forgeMax(it)) continue;
+    const cost = forgeCost({ ilvl: it.ilvl, rarity: it.rarity, plus: lv[slot] });
+    if (cost > budget) continue;
+    if (!best || lv[slot] < lv[best] || (lv[slot] === lv[best] && cost < bestCost)) {
+      best = slot;
+      bestCost = cost;
+    }
+  }
+  return best ? { slot: best, cost: bestCost } : null;
+}
+
+function forgeAllPlan() {
+  const c = G.char;
+  const lv = {};
+  let left = 0;
+  for (const slot of SLOTS) {
+    const it = c.equip[slot];
+    if (!it) continue;
+    lv[slot] = it.plus | 0;
+    left += Math.max(0, forgeMax(it) - lv[slot]);
+  }
+  let budget = c.credits;
+  let n = 0;
+  let cost = 0;
+  for (let s; (s = forgeAllStep(lv, budget)); ) {
+    lv[s.slot]++;
+    budget -= s.cost;
+    cost += s.cost;
+    n++;
+  }
+  // custo de maximizar tudo, mesmo sem dinheiro (para mostrar quanto falta)
+  let full = 0;
+  for (const slot of SLOTS) {
+    const it = c.equip[slot];
+    if (!it) continue;
+    for (let p = it.plus | 0; p < forgeMax(it); p++) full += forgeCost({ ilvl: it.ilvl, rarity: it.rarity, plus: p });
+  }
+  return { n, cost, left, full };
+}
+
+function forgeAllBar() {
+  const pl = forgeAllPlan();
+  if (!pl.left) return '';
+  const all = pl.n >= pl.left;
+  const y = G.lastInput === 'pad' ? padText('{Y} ') : '';
+  const label = y + (all
+    ? `⚒ ${L('Maximizar tudo', 'Max everything')} · ${fmt(pl.cost)}¢`
+    : pl.n
+      ? `⚒ ${L('Aprimorar tudo por igual', 'Upgrade all evenly')} (+${pl.n}) · ${fmt(pl.cost)}¢`
+      : `⚒ ${L('Maximizar tudo', 'Max everything')}`);
+  const note = all
+    ? L('Leva todos os itens equipados ao máximo.', 'Takes every equipped item to the max.')
+    : `${L('Maximizar tudo custa', 'Maxing everything costs')} ${fmt(pl.full)}¢. ${pl.n ? L('Com o que você tem, sobe um pouco de cada item, por igual.', 'With what you have, each item goes up a bit, evenly.') : L('Créditos insuficientes.', 'Not enough credits.')}`;
+  // botão à direita, na mesma coluna dos botões das linhas (o direcional desce do ✕ direto para ele)
+  return `<div class="forge-all">
+    <span class="fa-note">${note}</span>
+    <button class="btn small" id="forge-all" data-nav ${pl.n ? '' : 'disabled'}>${label}</button>
+  </div>`;
+}
+
+function doForgeAll() {
+  const c = G.char;
+  const lv = {};
+  for (const slot of SLOTS) if (c.equip[slot]) lv[slot] = c.equip[slot].plus | 0;
+  let n = 0;
+  let ms = 0;
+  let maxed = 0;
+  for (let s; (s = forgeAllStep(lv, c.credits)); ) {
+    const it = c.equip[s.slot];
+    c.credits -= s.cost;
+    forgeItem(it);
+    lv[s.slot] = it.plus;
+    n++;
+    if (isMilestone(it.plus)) ms++;
+    if (it.plus >= forgeMax(it)) maxed++;
+  }
+  if (!n) return sfx.deny();
+  sfx.forge(ms > 0);
+  achAdd('forges', n);
+  if (maxed) achAdd('forgeMax', maxed);
+  refreshStats();
+  const p = G.player;
+  if (p) burst(p.x, 1, p.z, 0xffb04d, 30, 4, 0.05, 0.5, { up: 1.5 });
+  toast(`⚒ ${L('Ferreiro', 'Blacksmith')}: +${n} ${n > 1 ? L('aprimoramentos', 'upgrades') : L('aprimoramento', 'upgrade')}${ms ? `<br><small>★ ${ms} ${ms > 1 ? L('atributos novos/melhorados', 'new/improved stats') : L('atributo novo/melhorado', 'new/improved stat')}</small>` : ''}`, ms ? 'up' : 'item');
+  saveGame();
+  renderForge();
+  const again = $('forge-all') || $('forge-items').querySelectorAll('[data-forge]')[0] || $('forge-close');
+  if (G.lastInput === 'pad' && again) setFocus(again);
+}
+
 function renderForge() {
   const c = G.char;
   $('forge-credits').textContent = fmt(c.credits);
-  let html = '';
+  let html = forgeAllBar();
   for (const slot of SLOTS) {
     const it = c.equip[slot];
     if (!it) continue;
@@ -2612,6 +2712,8 @@ function renderForge() {
   }
   $('forge-items').innerHTML = html;
   $('forge-items').querySelectorAll('[data-forge]').forEach((b) => (b.onclick = () => doForge(b.dataset.forge)));
+  const fa = $('forge-all');
+  if (fa) fa.onclick = doForgeAll;
 }
 
 function doForge(slot) {
