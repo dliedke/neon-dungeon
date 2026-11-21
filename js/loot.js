@@ -6,7 +6,7 @@ import { makeItem, rollRarity, RARITY, MYTHIC, MYTHICS, DIVINE, DIVINES, PRIMORD
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText, beamFx, ghostFx } from './fx.js';
 import { sfx } from './audio.js';
-import { toast, invFull, banner } from './ui.js';
+import { toast, banner } from './ui.js';
 import { MAX_STIMS } from './player.js';
 import { healPlayer, hitEnemy, nearestEnemy, enemiesInRadius, explosion } from './combat.js';
 import { spawnAlly } from './powers.js';
@@ -17,7 +17,6 @@ import { amod, tierOf, effFloor } from './run.js';
 import { rewardK, rewardRank, diffIlvl, lootIlvl } from './enemies.js';
 import { GEMS, dropGems, addGem, gemName } from './gems.js';
 
-export const INV_SIZE = 100;
 const UP_COLOR = 0x39ff88;
 const MYTH_COLOR = 0xb04dff;
 const DIV_COLOR = 0xffd84d;
@@ -524,7 +523,6 @@ function openChest(pk) {
 }
 
 const pv = new THREE.Vector3();
-let fullWarn = 0;
 
 // auras dos santuários (Tempestade, Inverno e os especiais)
 let stormT = 0;
@@ -639,7 +637,6 @@ function segDist(x, z, ax, az, bx, bz) {
 export function updatePickups(dt, camera) {
   const p = G.player;
   const c = G.char;
-  fullWarn -= dt;
   shrineAuras(dt, p);
   // quanto o personagem andou desde o último quadro (teleporte, troca de andar ou 1º quadro não contam)
   let moved = Math.hypot(p.x - lastPX, p.z - lastPZ);
@@ -770,22 +767,17 @@ export function updatePickups(dt, camera) {
           pk.dead = true;
         }
       } else if (pk.type === 'item') {
-        if (c.inv.length < INV_SIZE) {
-          c.inv.push(pk.item);
-          sfx.pickup();
-          burst(pk.x, 0.5, pk.z, pk.up ? UP_COLOR : pk.color, pk.up ? 20 : 10, 3, 0.06, 0.4);
-          const R = RARITY[pk.item.rarity];
-          if (pk.mythFx) {
-            sfx.legendary();
-            ringFx(p.x, p.z, 2.5, pk.fc, 0.5);
-          }
-          const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
-          toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${G.isTouch ? L('— toque na mochila para equipar', '— tap the bag to equip') : L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
-          pk.dead = true;
-        } else if (fullWarn <= 0) {
-          fullWarn = 3;
-          invFull();
+        c.inv.push(pk.item);
+        sfx.pickup();
+        burst(pk.x, 0.5, pk.z, pk.up ? UP_COLOR : pk.color, pk.up ? 20 : 10, 3, 0.06, 0.4);
+        const R = RARITY[pk.item.rarity];
+        if (pk.mythFx) {
+          sfx.legendary();
+          ringFx(p.x, p.z, 2.5, pk.fc, 0.5);
         }
+        const tag = pk.up ? `<b style="color:#39ff88">▲</b> ` : '';
+        toast(`${tag}<span style="color:${R.color}">${itemName(pk.item)}</span>${pk.up ? ` <small>${G.isTouch ? L('— toque na mochila para equipar', '— tap the bag to equip') : L('— abra o inventário (I) para equipar', '— open the inventory (I) to equip')}</small>` : ''}`, pk.up ? 'up' : 'item');
+        pk.dead = true;
       }
     }
   }

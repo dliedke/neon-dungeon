@@ -12,7 +12,6 @@
 import { G } from './state.js';
 import { SLOTS, itemScore } from './items.js';
 import { L } from './i18n.js';
-import { INV_SIZE } from './loot.js';
 import { ensureAch, mergeStats, mergeAch } from './ach.js';
 import { BK, progressOf, addBackup, worthKeeping, mergeBackups, applyMergedBackups } from './backup.js';
 
@@ -70,7 +69,7 @@ function mergeChar(a, b) {
     win.equip = win.equip || {};
     win.equip[slot] = clone(theirs);
     win.inv = (win.inv || []).filter((it) => it.uid !== theirs.uid);
-    if (mine && win.inv.length < INV_SIZE) win.inv.push(mine);
+    if (mine) win.inv.push(mine);
   }
   win.skillPoints = Math.max(win.skillPoints || 0, 0);
   win.wins = Math.max(a.wins || 0, b.wins || 0); // vitórias na batalha final nunca se perdem

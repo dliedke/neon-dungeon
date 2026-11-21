@@ -100,6 +100,7 @@ function loadSave() {
   G.settings.abyss = Math.max(0, ab);
 }
 
+let saveWarnAt = -1e9;
 // fromSync: gravação feita pela própria sincronização (não reenvia para a nuvem)
 export function saveGame(fromSync) {
   if (G.char) {
@@ -111,7 +112,13 @@ export function saveGame(fromSync) {
   }
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(G.save));
-  } catch (_) {}
+  } catch (_) {
+    // o inventário não tem limite: se o armazenamento do navegador encher, avisa (no máximo 1 vez por minuto)
+    if (G.char && Date.now() - saveWarnAt > 60000) {
+      saveWarnAt = Date.now();
+      toast(L('⚠ Sem espaço para salvar no navegador! Recicle itens do inventário ou do baú.', '⚠ No space left to save in the browser! Recycle items from the inventory or the stash.'), 'warn');
+    }
+  }
   // jogando, a nuvem recebe no máximo a cada 3 min (e na hora ao sair da aba, trocar de andar ou voltar ao menu)
   if (!fromSync) syncDirty(G.mode === 'play' ? 180000 : 4000);
 }

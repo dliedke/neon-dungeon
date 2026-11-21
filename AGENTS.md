@@ -102,7 +102,7 @@ Module map (`js/`):
 | `enemies2.js` | The 15 newer enemies (Mirror Drone, Gravitator, Data Reaper, Builder, Fly Swarm and the fauna of the newer biomes): `aiNew` (extra AI, called from the `default:` of the AI switch), `preDamage` / `postDamage` / `reflectShot` hooks used by `combat.js`, `tickExtras` (ink overlay `#ink`), `tickVisual`. Types with `x2: true` in `ETYPES` get the visual and damage hooks; models are `newEnemyModel` in `models.js`. |
 | `combat.js` | Damage (`hitEnemy`, `damageEnemy`, `damagePlayer`), statuses, projectiles, hazards, turrets. |
 | `items.js` | Slots, rarities, affixes, legendary and mythic powers, `makeItem`, forging, `itemScore`, item cards. |
-| `loot.js` | Ground loot, pickups, chests, shrines, `INV_SIZE`. |
+| `loot.js` | Ground loot, pickups, chests, shrines. |
 | `gems.js` | Gems: the 6 kinds and 7 tiers (`GEMS`), drops (`dropGems`), the pouch `c.gems`, sockets per equip slot `c.sockets`, fusion and `gemMods` (stats into `computeStats`). |
 | `mythic.js` | Runtime effects of mythic items (orbital laser, phantom blades, reaper, singularity, phoenix, avatar). |
 | `finale.js` | True-ending cinematic after beating the Inferno: 2D canvas in the `#finale` overlay, its own theme song (`ANTHEM` in `music.js`). |

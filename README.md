@@ -372,6 +372,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
     **Skin of Gaia** (torso: 20% less damage taken, regenerate 1% max health per second), **Hands of Cronus** (hands: every 8 hits all skills recharge 1 s),
     **Steps of Erebus** (feet: +10% dodge, dodging leaves an exploding shadow) and **Crown of Uranus** (chip: every 12 s, 8 meteors fall on nearby enemies).
     Wearing all 6 unlocks **Genesis**: +50% damage and every skill you use releases a prismatic wave. The merchant never sells them.
+  - **Unlimited inventory:** the inventory has no item limit; it grows as you pick things up (the grid scrolls).
   - **Favorites:** mark any item (in the inventory or equipped) with ★ Favorite and it can't be recycled, neither one by one nor with the filtered Recycle.
   - **Blacksmith:** on every floor, a few steps from the start, next to the stash (on floor 50 you can upgrade before the final battle). For credits he upgrades your equipped items:
     up to +4/+6/+8/+10/+12/+15 depending on rarity (recycling a forged item refunds every credit spent on it), each level adds damage or armor and boosts every stat, and every 4 levels the item gains a new stat.
@@ -391,7 +392,7 @@ Medals and their counters sync with the Google cloud save; progress from every d
   - Upgrade highlighting for items better than what you have equipped.
   - **Shared stash:** a chest a few steps from the start of every floor holds up to 1000 items in 10 tabs of 100, shared by all your characters (and synced to the cloud). It is always sorted by item level, highest first, whatever the item type (then rarity and stats); each slot shows the item level, the ▲ marks upgrades for the current character, and LB/RB switch tabs on a gamepad. **Recycle** breaks an item down right from the stash (or from your inventory while the stash is open) for credits (RT on a gamepad); favorites (★) are protected. It also stores **credits**: store half, all or a custom amount (✏️: type it, or use − / + on a gamepad) and any character can take them back (handy for funding a new class).
     Click it (or press A / tap it) to store or take items. Weapons can only be taken by their own class.
-    **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place (works even with a full inventory). **Store all mythics** sends every mythic (and divine) item in your inventory to the stash at once.
+    **Equip** wears an item straight from the stash and swaps it with what you had on, which goes into the stash in its place. **Store all mythics** sends every mythic (and divine) item in your inventory to the stash at once.
     With a gamepad connected, the buttons show which controller button does each action (A store/take, X equip, Y store all mythics, B close).
     A green ▲ marks items better than what your current character has equipped (the header counts them). Selecting an item also lists which of your other characters it would be an upgrade for.
 - **Progression:** no level cap (after level 50 each level gives half the attributes), 2 skill points per level (up to rank 100 per skill, refundable per skill), credits, stims and health orbs. At 40% health or less the screen edges flash red as a reminder to use a stim (faster at 20%).

@@ -5,7 +5,7 @@ import { Input, bindTouchButton } from './input.js';
 import { CLASSES, CLASS_ORDER, iconSvg, rankMult, MAX_RANK } from './classes.js';
 import { SLOTS, SLOT_NAMES, RARITY, MYTHIC, LEGENDARIES, MYTHICS, DIVINES, DIV_SET, PRIMORDIALS, PRIM_SET, itemCardHtml, itemDiffHtml, sortInventory, itemScore, recycleValue, slotIconSvg } from './items.js';
 import { xpNeeded, SP_PER_LEVEL, refreshStats, skillCost, skillCd, stimPrice, MAX_STIMS, respawn, MAX_LEVEL, spendPoint, assignSlot, refundSkill } from './player.js';
-import { INV_SIZE, SHRINES } from './loot.js';
+import { SHRINES } from './loot.js';
 import { DIFFICULTY, DIFF_ORDER, setDifficulty, rewardK, rewardRamping, setAbyss, abyssLvl, abyssUnlocked, abyssName, abyssColor, ABYSS_RULES, ABYSS_MAX, ABYSS_NUM } from './enemies.js';
 import { sfx, applyVolumes, initAudio, trackNames, applyTrack, playAnthem } from './audio.js';
 import { skipFinale } from './finale.js';
@@ -1014,9 +1014,9 @@ export function toast(html, cls = '', key = null) {
   setTimeout(() => el.remove(), ms + 500);
 }
 
-export function invFull() {
-  toast(L('Inventário cheio! Recicle itens (I).', 'Inventory full! Recycle items (I).'), 'warn');
-  sfx.deny();
+// inventário sem limite: os itens e mais espaços vazios até fechar a linha (pelo menos 1 vazio e 3 linhas de 10)
+function invCells(n, row) {
+  return Math.max(30, Math.ceil((n + 1) / row) * row);
 }
 
 let bannerT = null;
@@ -1523,7 +1523,8 @@ export function renderChar() {
     // inventário (sempre ordenado: melhores itens primeiro)
     sortInventory(c.inv, c.equip);
     let html = '';
-    for (let i = 0; i < INV_SIZE; i++) {
+    const cells = invCells(c.inv.length, 10); // 10 colunas no PC, 5 no celular
+    for (let i = 0; i < cells; i++) {
       const it = c.inv[i];
       if (!it) {
         html += '<div class="cell empty" data-nav></div>'; // navegável: o controle consegue descer até os botões
@@ -1535,7 +1536,7 @@ export function renderChar() {
       html += `<div class="cell r${it.rarity}${sel}${better ? ' better' : ''}" data-nav data-uid="${it.uid}" data-where="inv" data-slot="${it.slot}">${slotIconSvg(it.slot)}${up}${favMark(it)}<span class="lvl">${it.ilvl | 0}</span></div>`;
     }
     $('inv-grid').innerHTML = html;
-    $('inv-count').textContent = `${L('Inventário', 'Inventory')} ${c.inv.length}/${INV_SIZE}`;
+    $('inv-count').textContent = `${L('Inventário', 'Inventory')} · ${c.inv.length}`;
     $('inv-credits').textContent = fmt(c.credits);
     const price = stimPrice();
     // no celular deitado o texto longo quebraria em 2 linhas
@@ -2117,10 +2118,6 @@ function unequip(slot) {
     sfx.deny();
     return;
   }
-  if (c.inv.length >= INV_SIZE) {
-    invFull();
-    return;
-  }
   const it = c.equip[slot];
   if (!it) return;
   delete c.equip[slot];
@@ -2501,16 +2498,13 @@ function renderShop() {
   const price = stimPrice();
   let html = `<div class="shop-row stim-row"><div><b>Stim</b> · ${L('cura 60% da vida', 'heals 60% health')} · ${c.stims}/${MAX_STIMS}</div>
     <button class="btn small" data-nav data-buy="stim" ${c.credits < price || c.stims >= MAX_STIMS ? 'disabled' : ''}>${fmt(price)}¢</button></div>`;
-  // inventário cheio: o botão de comprar continua ativo (clicar avisa), e o motivo fica escrito aqui
-  const full = c.inv.length >= INV_SIZE;
-  if (full) html += `<div class="shop-row shop-full">⚠ ${L(`Inventário cheio (${c.inv.length}/${INV_SIZE}): recicle itens ou guarde no baú para poder comprar.`, `Inventory full (${c.inv.length}/${INV_SIZE}): recycle items or store them in the stash to buy.`)}</div>`;
   html += '<div class="shop-grid">';
   shopStock.forEach((it, k) => {
     const better = !it.sold && isUpgrade(it, c.equip);
     const tag = better ? `<div class="it-cmp" style="color:#39ff88">▲ ${L('Melhor que o equipado', 'Better than equipped')}</div>` : '';
     const btn = it.sold
       ? `<button class="btn small ghost" data-nav data-buy="${k}" disabled>${L('Vendido', 'Sold')}</button>`
-      : `<button class="btn small${full ? ' ghost' : ''}" data-nav data-buy="${k}" ${c.credits < it.price ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
+      : `<button class="btn small" data-nav data-buy="${k}" ${c.credits < it.price ? 'disabled' : ''}>${L('Comprar', 'Buy')} · ${fmt(it.price)}¢</button>`;
     html += `<div class="shop-item${better ? ' better-card' : ''}${it.sold ? ' sold' : ''}">${itemCardHtml(it, tag)}${btn}</div>`;
   });
   html += '</div>';
@@ -2529,7 +2523,6 @@ function buy(what) {
   } else {
     const it = shopStock[+what];
     if (!it || it.sold || c.credits < it.price) return sfx.deny();
-    if (c.inv.length >= INV_SIZE) return invFull();
     c.credits -= it.price;
     it.sold = true;
     const copy = { ...it };
@@ -2849,12 +2842,13 @@ function renderStash() {
   }
   $('stash-tabs').innerHTML = tabs;
   let b = '';
-  for (let i = 0; i < INV_SIZE; i++) b += stashCell(c.inv[i], 'sinv');
+  const cells = invCells(c.inv.length, 30); // 10 colunas no PC, 6 no celular
+  for (let i = 0; i < cells; i++) b += stashCell(c.inv[i], 'sinv');
   $('stash-inv').innerHTML = b;
   // quantos itens do baú são melhores que o equipado do personagem atual
   const ups = st.filter((it) => !otherClassWeapon(it) && isUpgrade(it, c.equip)).length;
   $('stash-count').innerHTML = (ups ? `<span class="stash-ups">▲ ${ups} ${ups === 1 ? L('melhor', 'upgrade') : L('melhores', 'upgrades')}</span> ` : '') + `${st.length}/${STASH_SIZE}`;
-  $('stash-inv-count').textContent = `${c.inv.length}/${INV_SIZE}`;
+  $('stash-inv-count').textContent = String(c.inv.length);
   const nm = c.inv.filter((it) => it.rarity >= MYTHIC).length;
   const pm = $('stash-put-myth');
   pm.innerHTML = `✦ ${G.isTouch ? L('Guardar míticos', 'Store mythics') : L('Guardar todos os míticos', 'Store all mythics')}${nm ? ` (${nm})` : ''}${padKey('y')}`;
@@ -2923,13 +2917,12 @@ function renderStashDetail() {
     hint = `<div><b>📦 ${L('Guardar', 'Store')}:</b> ${full ? L(`o baú está cheio (${STASH_SIZE} itens).`, `the stash is full (${STASH_SIZE} items).`) : L('manda o item para o baú, onde todos os seus personagens podem pegar.', 'sends the item to the stash, where all your characters can take it.')}</div>`;
   } else if (lock) btn = `<button class="btn small" disabled>🔒 ${CLASSES[it.cls].name}</button>`;
   else {
-    // equipar direto do baú: o item equipado agora vai para o lugar dele no baú (funciona com o inventário cheio)
+    // equipar direto do baú: o item equipado agora vai para o lugar dele no baú
     const old = c.equip[it.slot];
-    const full = c.inv.length >= INV_SIZE;
     btn = `<button class="btn small" data-nav data-sact="equip">${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}${padKey('x')}</button>`;
-    btn += `<button class="btn small" data-nav data-sact="take" ${full ? 'disabled' : ''}>${L('Pegar', 'Take')}${padKey('a')}</button>`;
+    btn += `<button class="btn small" data-nav data-sact="take">${L('Pegar', 'Take')}${padKey('a')}</button>`;
     hint = `<div><b>${old ? '⇄ ' : ''}${L('Equipar', 'Equip')}:</b> ${old ? L(`veste este item agora; o seu <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> vai para o lugar dele no baú.`, `wears this item now; your <span style="color:${RARITY[old.rarity].color}">${itemName(old)}</span> goes into its place in the stash.`) : L('veste este item agora.', 'wears this item now.')}</div>`;
-    hint += `<div><b>${L('Pegar', 'Take')}:</b> ${full ? L(`seu inventário está cheio (${INV_SIZE}/${INV_SIZE}); use Equipar ou libere espaço.`, `your inventory is full (${INV_SIZE}/${INV_SIZE}); use Equip or free up space.`) : L('leva o item para o seu inventário.', 'moves the item to your inventory.')}</div>`;
+    hint += `<div><b>${L('Pegar', 'Take')}:</b> ${L('leva o item para o seu inventário.', 'moves the item to your inventory.')}</div>`;
   }
   // reciclar direto daqui (do baú ou do inventário); favoritos ficam protegidos
   btn += it.fav
@@ -3036,7 +3029,6 @@ function stashMove(where, uid) {
       toast(onlyClassMsg(it), 'warn');
       return;
     }
-    if (c.inv.length >= INV_SIZE) return invFull();
     st.splice(idx, 1);
     delete it.st;
     if (!G.save.stashOut) G.save.stashOut = {};
