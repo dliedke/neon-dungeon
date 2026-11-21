@@ -412,12 +412,14 @@ function fight(c, use, sec, trace = null) {
 }
 
 // depuração: __B.debugFight(cenário, ['lunge', ...], segundos)
-export function debugFight(sc, ids = [], sec = 2) {
+// mod(c): muda o personagem antes da luta (ex.: tirar os poderes dos itens para ver quanto eles pesam)
+export function debugFight(sc, ids = [], sec = 2, mod = null) {
   setScene(sc);
   G.char = newCharacter(sc.cls); G.char.tier = sc.tier | 0; G.char.rwd = diffRank(); tickReward(0);
   seedRandom(sc.seed ?? 11);
   const { c } = buildChar(sc, { gear: true, plus: 'max', gems: 0, tree: true, implants: true });
   seedRandom(null);
+  if (mod) mod(c);
   const sk = CLASSES[sc.cls].skills;
   const trace = [];
   const r = fight(c, ids.map((id) => sk.findIndex((x) => x.id === id)), sec, trace);

@@ -449,7 +449,8 @@ export const ABYSS_RULES = [
 ];
 // CCI a D: 30 reinos de 10 níveis. Cada reino liga 9 regras pequenas (Reino I a IX) e fecha com a sua coroa.
 // As regras ficam mais fortes a cada 100 níveis (CCI–CCC, CCCI–CD, CDI–D) e as coroas de 50 em 50 pesam mais.
-// O nível dos itens (abyssGear) acompanha a vida; o dano dos inimigos e as penalidades no jogador não: fica mais difícil.
+// O nível dos itens (abyssGear) acompanha a vida dos inimigos e parte da dos elites e chefes; o dano dos inimigos e as
+// penalidades no jogador não: fica mais difícil.
 function deepRules() {
   const REALMS = [
     ['🌫️', 'Bruma Cinzenta', 'Grey Mist', 'Rei da Bruma', 'King of the Mist'],
@@ -600,14 +601,17 @@ export const ABYSS_ILVL = 1.5;
 // Do Abismo XI em diante as regras multiplicam a vida dos inimigos (ehp) e a dos elites e chefes (bel), mas o
 // nível dos itens só crescia junto com o andar: cada Abismo a mais deixava o jogador mais fraco (no CXXVI um
 // elite levava ~100x mais golpes que no X). O dano cresce com o cubo do nível do item (arma × dano% × dano
-// crítico), então os itens ganham a raiz cúbica dessas regras: com equipamento do próprio nível, o Abismo alto
-// mata no mesmo ritmo do X. Segue o nível da recompensa (sobe aos poucos, como o resto).
-export function abyssGear() {
-  const n = Math.floor(Math.max(0, rewardRank() - 8));
+// crítico), então os itens ganham a raiz cúbica dessas regras. Antes ganhavam ehp × bel inteiro: os comuns (sem bel)
+// e os chefes (sem ehp) ficavam cada vez mais fáceis (no D um chefe caía ~100x mais rápido que no X e os comuns ~4000x).
+// Agora os itens compensam a vida de todos (ehp, que os chefes também ganham) e só a raiz da vida extra de elites
+// e chefes (bel): com equipamento do próprio nível os elites caem no mesmo ritmo e os chefes ficam mais duros aos poucos
+// (ver tools/balance.mjs). Segue o nível da recompensa (sobe aos poucos, como o resto).
+export function abyssGearOf(n) {
   if (n <= 10) return 1;
   const X = abyssFx(n);
-  return Math.cbrt(X.ehp * X.bel);
+  return Math.cbrt(X.ehp * Math.sqrt(X.bel));
 }
+export const abyssGear = () => abyssGearOf(Math.floor(Math.max(0, rewardRank() - 8)));
 // nível dos itens que caem (chão, baús, eventos, vitória): base × abyssGear
 export const lootIlvl = (base) => Math.max(1, Math.round(base * abyssGear()));
 // Inferno de novo: cada vitória no Inferno (c.infWins) dá +15 no nível dos itens enquanto joga no Inferno (até +300)
@@ -623,7 +627,7 @@ function liveScale(e) {
   const X = abyssFx();
   const big = e.boss || e.elite;
   return {
-    hp: f.hp * (e.boss ? D.bossHp * X.bhp : X.ehp) * (ab >= 10 && big ? 1.5 : 1) * (big ? X.bel : 1),
+    hp: f.hp * X.ehp * (e.boss ? D.bossHp * X.bhp : 1) * (ab >= 10 && big ? 1.5 : 1) * (big ? X.bel : 1),
     dmg: f.dmg * (e.boss ? D.bossDmg : 1) * X.edmg * (big ? X.beldmg : 1),
     speed: !e.boss ? (ab >= 2 ? 1.15 : 1) * X.espd : 1,
     atk: !e.boss ? (ab >= 8 ? 0.8 : 1) * X.eatk : 1,
@@ -764,7 +768,8 @@ export function spawnEnemy(type, x, z, o = {}) {
     if (abyssOn(11)) {
       const X = abyssFx();
       const big = e.boss || eliteKey;
-      e.hp = e.maxHp = e.hp * (e.boss ? X.bhp : X.ehp) * (big ? X.bel : 1);
+      // "inimigos com mais vida" (ehp) vale para os chefes também; eles somam a regra própria (bhp)
+      e.hp = e.maxHp = e.hp * X.ehp * (e.boss ? X.bhp : 1) * (big ? X.bel : 1);
       e.dmg *= X.edmg * (big ? X.beldmg : 1);
       if (!e.boss) {
         e.speed *= X.espd;
