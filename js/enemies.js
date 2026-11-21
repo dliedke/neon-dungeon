@@ -556,8 +556,10 @@ export const abyssColor = (n) => (n <= 10 ? `hsl(${268 + n * 9}, 100%, ${66 - n 
 export const diffRank = () => Math.max(0, DIFF_ORDER.indexOf(G.settings.difficulty)) + abyssLvl();
 
 // Recompensa por dificuldade (créditos e qualidade dos itens), interpolada pelo nível.
-// Ao subir a dificuldade a recompensa sobe aos poucos (1 nível a cada 15s): assim não dá para
-// subir só na hora de abrir um baú e voltar. Ao baixar, cai na hora.
+// Ao subir a dificuldade a recompensa sobe aos poucos: assim não dá para subir só na hora de abrir um
+// baú e voltar. Sobe pelo menos 1 nível a cada 15s e, longe do alvo, fecha 5% da diferença por segundo
+// (antes era sempre 1 a cada 15s: voltar ao Abismo 295 levava mais de uma hora com itens de nível ~80;
+// agora qualquer salto chega em ~2 min). Ao baixar, cai na hora.
 // acima do Brutal a recompensa sobe mais devagar que a dificuldade (para não inundar de míticos)
 const REWARD = { cr: [0.7, 1, 1.6, 2.4, 3.5, 4.4, 5.3, 6.2, 7.2], loot: [0.75, 1, 1.5, 2.2, 3.2, 3.8, 4.4, 5.0, 5.6] };
 // Abismo: +1 de créditos e +0,25 de itens por nível (Abismo X: ¢×17,2 e ★×8,1; Abismo C: ¢×107 e ★×30,6; Abismo CC: ¢×207 e ★×55,6; Abismo D: ¢×507 e ★×130,6)
@@ -577,7 +579,7 @@ export function tickReward(dt) {
     rewardLvl = Math.min(r, Math.max(1, (c && +c.rwd) || 0));
   }
   if (rewardLvl < 0) rewardLvl = Math.min(r, 1);
-  rewardLvl = r < rewardLvl ? r : Math.min(r, rewardLvl + dt / 15);
+  rewardLvl = r < rewardLvl ? r : Math.min(r, rewardLvl + dt * Math.max(1 / 15, (r - rewardLvl) * 0.05));
   if (c) c.rwd = rewardLvl;
 }
 export function rewardK(kind) {
