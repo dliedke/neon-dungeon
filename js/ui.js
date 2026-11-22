@@ -1917,11 +1917,11 @@ function maxSpend(i) {
   return Math.max(0, Math.min(c.skillPoints, MAX_RANK - (c.skills[i] || 0)));
 }
 
-// Evolui o poder direto até o máximo (ou até acabarem os pontos)
-function treeMax(i) {
+// Evolui o poder várias vezes de uma vez: até o máximo (ou até acabarem os pontos) ou só `lim` pontos
+function treeMax(i, lim = Infinity) {
   treeSel = i;
   let n = 0;
-  while (spendPoint(i)) n++;
+  while (n < lim && spendPoint(i)) n++;
   if (n) {
     sfx.levelup();
     const sk = CLASSES[G.char.cls].skills[i];
@@ -2016,7 +2016,7 @@ function renderTree() {
   // no controle, cada ação mostra o botão que a faz direto do poder selecionado
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');
-  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${mx > 1 ? `<button class="btn" data-nav data-max="${i}">${pad ? pg('y') : '⇈ '}${L(`Evoluir ao máximo (+${mx})`, `Upgrade to max (+${mx})`)}</button>` : ''}${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
+  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${mx > 5 ? `<button class="btn" data-nav data-five="${i}">${L('+5 pontos', '+5 points')}</button>` : ''}${mx > 1 ? `<button class="btn" data-nav data-max="${i}">${pad ? pg('y') : '⇈ '}${L(`Evoluir ao máximo (+${mx})`, `Upgrade to max (+${mx})`)}</button>` : ''}${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
   const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {Y}: evoluir ao máximo · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {Y}: upgrade to max · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-side"><div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
@@ -2045,6 +2045,11 @@ function renderTree() {
   };
   const mb = $('skill-list').querySelector('[data-max]');
   if (mb) mb.onclick = () => treeMax(i);
+  const fb = $('skill-list').querySelector('[data-five]');
+  if (fb) fb.onclick = () => {
+    treeMax(i, 5);
+    if (document.querySelector('[data-five]')) restoreFocus('[data-five]');
+  };
   const rf = $('skill-list').querySelector('[data-refund]');
   if (rf) rf.onclick = () => treeRefund(i);
   $('skill-list').querySelectorAll('[data-slot]').forEach((b) => (b.onclick = () => {
