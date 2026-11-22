@@ -1909,6 +1909,31 @@ function treeSpend(i) {
   return ok;
 }
 
+// Quantos pontos dá para pôr de uma vez no poder (até o nível máximo ou acabar os pontos)
+function maxSpend(i) {
+  const c = G.char;
+  const req = CLASSES[c.cls].skills[i].req || 1;
+  if (c.level < req) return 0;
+  return Math.max(0, Math.min(c.skillPoints, MAX_RANK - (c.skills[i] || 0)));
+}
+
+// Evolui o poder direto até o máximo (ou até acabarem os pontos)
+function treeMax(i) {
+  treeSel = i;
+  let n = 0;
+  while (spendPoint(i)) n++;
+  if (n) {
+    sfx.levelup();
+    const sk = CLASSES[G.char.cls].skills[i];
+    toast(`${sk.name}: ${L('nível', 'level')} ${G.char.skills[i]} (+${n})`, 'up', 'tree');
+    refreshSkillBar();
+    saveGame();
+  } else sfx.deny();
+  renderChar();
+  restoreFocus(`[data-node="${i}"]`);
+  return n > 0;
+}
+
 // Devolve todos os pontos do poder (com confirmação) para reaplicar em outros
 function treeRefund(i) {
   const c = G.char;
@@ -1986,11 +2011,13 @@ function renderTree() {
   const canSpend = c.skillPoints > 0 && r < MAX_RANK && c.level >= req;
   // devolver os pontos deste poder para reaplicar em outros
   const back = r;
+  // evoluir de uma vez até o máximo (ou até acabarem os pontos)
+  const mx = maxSpend(i);
   // no controle, cada ação mostra o botão que a faz direto do poder selecionado
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');
-  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
-  const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
+  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${mx > 1 ? `<button class="btn" data-nav data-max="${i}">${pad ? pg('y') : '⇈ '}${L(`Evoluir ao máximo (+${mx})`, `Upgrade to max (+${mx})`)}</button>` : ''}${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
+  const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {Y}: evoluir ao máximo · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {Y}: upgrade to max · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-side"><div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
     <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
@@ -2016,6 +2043,8 @@ function renderTree() {
       restoreFocus('[data-spend]');
     } else sfx.deny();
   };
+  const mb = $('skill-list').querySelector('[data-max]');
+  if (mb) mb.onclick = () => treeMax(i);
   const rf = $('skill-list').querySelector('[data-refund]');
   if (rf) rf.onclick = () => treeRefund(i);
   $('skill-list').querySelectorAll('[data-slot]').forEach((b) => (b.onclick = () => {
@@ -2426,6 +2455,7 @@ export function uiPadUpdate() {
   }
   if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'equip') recycleAll(); // {Y}: reciclar tudo
   else if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'gems') gemFuseAll(); // {Y}: fundir tudo
+  else if (Input.nav('y') && root.id === 'panel-char' && currentTab === 'skills') treeMax(focused && focused.matches('[data-node]') ? +focused.dataset.node : treeSel); // {Y}: evoluir ao máximo
   else if ((Input.nav('y') || Input.nav('rb')) && root.id === 'panel-char') setTab(CHAR_TABS[(ti + 1) % 3]);
   else if (Input.nav('lb') && root.id === 'panel-char') setTab(CHAR_TABS[(ti + 2) % 3]);
   if (Input.nav('b')) uiBack(root);

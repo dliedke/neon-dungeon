@@ -201,6 +201,8 @@ export function achList() {
   add('rank100', '💯', 3, L('Ápice do Poder', 'Peak of Power'), L('Leve um poder ao nível 100', 'Take a power to rank 100'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 100);
   add('rank150', '🌟', 3, L('Além do Ápice', 'Beyond the Peak'), L('Leve um poder ao nível 150', 'Take a power to rank 150'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 150);
   add('rank200', '👑', 3, L('Poder Absoluto', 'Absolute Power'), L('Leve um poder ao nível 200', 'Take a power to rank 200'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 200);
+  add('rank300', '🔱', 3, L('Poder Lendário', 'Legendary Power'), L('Leve um poder ao nível 300', 'Take a power to rank 300'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 300);
+  add('rank500', '♾️', 3, L('Poder Infinito', 'Infinite Power'), L('Leve um poder ao nível 500', 'Take a power to rank 500'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 500);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));
   add('legend10', '🧡', 2, L('Colecionador de Protótipos', 'Prototype Collector'), L('Encontre 10 itens lendários', 'Find 10 legendary items'), () => total('legendaries'), 10);
