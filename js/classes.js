@@ -14,13 +14,13 @@ import { shrineBlink } from './loot.js';
 
 export const rankMult = (r) => 1 + 0.15 * (r - 1);
 // nível máximo de cada poder
-export const MAX_RANK = 100;
-// nível "suave" para durações e curas: do 31 ao 50 cada nível conta a metade e do 51 ao 100, um quarto
-// (o dano segue o rankMult inteiro; sem isso as defesas virariam permanentes). Nível 50 = 40, nível 100 = 52,5
-export const softRank = (r) => (r <= 30 ? r : r <= 50 ? 30 + (r - 30) / 2 : 40 + (r - 50) / 4);
-// nível dos passivos: até o 50 conta inteiro, do 51 ao 100 cada nível conta a metade (nível 100 = 75)
-// (os passivos somam atributos fixos; dobrar tudo do 50 ao 100 estouraria velocidade de ataque e vida)
-export const passiveRank = (r) => (r <= 50 ? r : 50 + (r - 50) / 2);
+export const MAX_RANK = 150;
+// nível "suave" para durações e curas: do 31 ao 50 cada nível conta a metade, do 51 ao 100 um quarto e do 101 ao 150
+// um oitavo (o dano segue o rankMult inteiro; sem isso as defesas virariam permanentes). Nível 50 = 40, 100 = 52,5, 150 = 58,75
+export const softRank = (r) => (r <= 30 ? r : r <= 50 ? 30 + (r - 30) / 2 : r <= 100 ? 40 + (r - 50) / 4 : 52.5 + (r - 100) / 8);
+// nível dos passivos: até o 50 conta inteiro, do 51 ao 100 cada nível conta a metade e do 101 ao 150 um quarto
+// (nível 100 = 75, 150 = 87,5; os passivos somam atributos fixos e dobrar tudo estouraria velocidade de ataque e vida)
+export const passiveRank = (r) => (r <= 50 ? r : r <= 100 ? 50 + (r - 50) / 2 : 75 + (r - 100) / 4);
 const pct = (v) => `${Math.round(v * 100)}%`;
 
 export const ICONS = {

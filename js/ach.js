@@ -199,6 +199,7 @@ export function achList() {
   add('ranks100', '💎', 3, L('Mestre dos Poderes', 'Master of Powers'), L('Some 100 níveis de poderes num mesmo personagem', 'Reach 100 total power ranks on one character'), () => maxOf((c) => (c.skills || []).reduce((a, r) => a + (r || 0), 0)), 100);
   add('rank10', '🔟', 1, L('Especialista', 'Specialist'), L('Leve um poder ao nível 10', 'Take a power to rank 10'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 10);
   add('rank100', '💯', 3, L('Ápice do Poder', 'Peak of Power'), L('Leve um poder ao nível 100', 'Take a power to rank 100'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 100);
+  add('rank150', '🌟', 3, L('Além do Ápice', 'Beyond the Peak'), L('Leve um poder ao nível 150', 'Take a power to rank 150'), () => maxOf((c) => Math.max(0, ...(c.skills || [0]))), 150);
   add('geared', '🛡️', 1, L('Bem Equipado', 'Well Equipped'), L('Use itens raros ou melhores em todos os espaços', 'Wear rare or better items in every slot'), () => maxOf((c) => SLOTS.filter((s) => c.equip && c.equip[s] && c.equip[s].rarity >= 2).length), SLOTS.length);
   add('legend1', '🟠', 1, L('Protótipo', 'Prototype'), L('Encontre um item lendário (protótipo)', 'Find a legendary (prototype) item'), () => total('legendaries'));
   add('legend10', '🧡', 2, L('Colecionador de Protótipos', 'Prototype Collector'), L('Encontre 10 itens lendários', 'Find 10 legendary items'), () => total('legendaries'), 10);
