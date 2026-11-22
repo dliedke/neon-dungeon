@@ -13,7 +13,7 @@ const KB = {
   Enter: 'interact', NumpadEnter: 'interact',
 };
 const ACTIONS = ['primary', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 'stim', 'inv', 'skills', 'pause', 'map', 'interact'];
-const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb', 'rt', 'rs'];
+const NAV = ['up', 'down', 'left', 'right', 'a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'rs'];
 const DIRS = ['up', 'down', 'left', 'right'];
 
 const src = { kb: {}, mouse: {}, touch: {}, pad: {} };
@@ -279,6 +279,7 @@ function update(dt) {
     padNav.y = b(3);
     padNav.lb = b(4);
     padNav.rb = b(5);
+    padNav.lt = b(6); // na árvore: +5 pontos no poder
     padNav.rt = b(7);
     padNav.rs = b(11); // analógico direito: no inventário abre o filtro da reciclagem
     const any = gp.buttons.some((x) => x.pressed) || Math.hypot(padMove.x, padMove.y) > 0 || Math.hypot(aim.x, aim.y) > 0;

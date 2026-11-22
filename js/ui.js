@@ -2016,8 +2016,8 @@ function renderTree() {
   // no controle, cada ação mostra o botão que a faz direto do poder selecionado
   const pad = G.lastInput === 'pad';
   const pg = (k) => (pad ? glyph(k) + ' ' : '');
-  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${mx > 5 ? `<button class="btn" data-nav data-five="${i}">${L('+5 pontos', '+5 points')}</button>` : ''}${mx > 1 ? `<button class="btn" data-nav data-max="${i}">${pad ? pg('y') : '⇈ '}${L(`Evoluir ao máximo (+${mx})`, `Upgrade to max (+${mx})`)}</button>` : ''}${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
-  const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {Y}: evoluir ao máximo · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {Y}: upgrade to max · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
+  let actions = `<div class="td-btns"><button class="btn" data-nav data-spend="${i}" ${canSpend ? '' : 'disabled'}>${pg('a')}${locked ? L('Desbloquear (1 ponto)', 'Unlock (1 point)') : L('+ Evoluir (1 ponto)', '+ Upgrade (1 point)')}</button>${mx > 5 ? `<button class="btn" data-nav data-five="${i}">${pg('lt')}${L('+5 pontos', '+5 points')}</button>` : ''}${mx > 1 ? `<button class="btn" data-nav data-max="${i}">${pad ? pg('y') : '⇈ '}${L(`Evoluir ao máximo (+${mx})`, `Upgrade to max (+${mx})`)}</button>` : ''}${back > 0 ? `<button class="btn ghost" data-nav data-refund="${i}">${pad ? pg('rt') : '↺ '}${L(`Devolver pontos (${back})`, `Refund points (${back})`)}</button>` : ''}</div>`;
+  const tip = pad ? padText(L('{A} no poder: desbloquear/evoluir · {LT}: +5 pontos · {Y}: evoluir ao máximo · {X}: trocar de botão · {RT}: devolver pontos', '{A} on a power: unlock/upgrade · {LT}: +5 points · {Y}: upgrade to max · {X}: change button · {RT}: refund points')) : G.isTouch ? '' : L('Dica: clique duplo no poder para desbloquear/evoluir.', 'Tip: double-click a power to unlock/upgrade.');
   html += `<div class="tree-side"><div class="tree-detail">
     <div class="td-head"><div class="sicon">${iconSvg(sk.icon)}</div><div><div class="sname">${sk.name}</div><div class="smeta">${meta}</div></div></div>
     <div class="sdesc">${sk.desc(Math.max(1, r))}</div>
@@ -2437,6 +2437,12 @@ export function uiPadUpdate() {
   }
   if (Input.nav('x') && focused && focused.matches('[data-node]')) treeCycleSlot(+focused.dataset.node);
   if (Input.nav('rt') && focused && focused.matches('[data-node]')) treeRefund(+focused.dataset.node); // {RT}: devolver os pontos do poder
+  // {LT}: +5 pontos no poder sob o seletor (ou no selecionado); segurar repete
+  if (root.id === 'panel-char' && currentTab === 'skills' && Input.navHold('lt')) {
+    const k = focused && focused.matches('[data-node]') ? +focused.dataset.node : treeSel;
+    treeMax(k, 5);
+    if (focused && focused.matches('[data-five]') && document.querySelector('[data-five]')) restoreFocus('[data-five]');
+  }
   if (Input.nav('x') && focused && focused.matches('.gsock.full')) {
     // {X}: tirar a gema do encaixe
     gemSelect(focused);

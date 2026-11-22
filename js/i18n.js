@@ -38,7 +38,7 @@ const DICT = {
   gemBag: ['Bolsa de gemas', 'Gem pouch'],
   fuseAll: ['Fundir tudo', 'Fuse all'],
   gemHelp: ['3 gemas iguais viram 1 do nível seguinte. Engaste gemas nos encaixes do equipamento: na arma elas dão um bônus, nas outras peças outro.', '3 matching gems fuse into 1 of the next tier. Socket gems into your gear: in the weapon they give one bonus, in other pieces another.'],
-  padHintsTree: ['{A} Desbloquear/Evoluir · {Y} Evoluir ao máximo · {X} Trocar de botão · {LB} {RB} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {Y} Upgrade to max · {X} Change button · {LB} {RB} Switch tab · {B} Close'],
+  padHintsTree: ['{A} Desbloquear/Evoluir · {LT} +5 pontos · {Y} Evoluir ao máximo · {X} Trocar de botão · {LB} {RB} Trocar aba · {B} Fechar', '{A} Unlock/Upgrade · {LT} +5 points · {Y} Upgrade to max · {X} Change button · {LB} {RB} Switch tab · {B} Close'],
   pause: ['PAUSA', 'PAUSED'],
   implantTitle: ['ESCOLHA UM IMPLANTE', 'CHOOSE AN IMPLANT'],
   resume: ['Continuar', 'Resume'],
