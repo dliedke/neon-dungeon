@@ -4547,8 +4547,8 @@ export function setupEvents(d, floor, boss, rooms) {
   const first = pick(fresh);
   const second = pick(fresh.filter((k) => k !== first));
   const base = floor < 4 ? 3 : floor < 8 ? 4 : 5;
-  // andar gigante: 2 eventos a mais
-  const want = boss || !free.length ? 0 : Math.min(base + (roll && floor >= 4 ? 1 : 0) + (d.huge ? 2 : 0), Math.max(1, free.length));
+  // andar gigante: 3 eventos a mais (mais variedade num andar só)
+  const want = boss || !free.length ? 0 : Math.min(base + (roll && floor >= 4 ? 1 : 0) + (d.huge ? 3 : 0), Math.max(1, free.length));
   // cada tentativa começa do mesmo ponto da semente: se uma não couber, a próxima sai igual ao continuar
   // embaralha a lista inteira (mesmo número de sorteios com ou sem andar salvo)
   const rest = shuffle(MAIN_EVENTS.slice()).filter((k) => k !== first && k !== second && fresh.includes(k));

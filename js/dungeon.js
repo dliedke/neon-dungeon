@@ -85,8 +85,8 @@ export function generateDungeon(floor) {
     layout = 'dungL';
     W = Math.min(base + 12, 96);
   } else if (!['cave', 'meadow', 'market'].includes(layout)) layout = 'plaza'; // campo aberto nos biomas de cidade: praças grandes
-  // de vez em quando (12%, do andar 3 em diante, fora dos andares de chefe): andar gigante, 45% mais largo
-  const huge = floor >= 3 && !isBossFloor(floor) && !isFinalFloor(floor) && chance(0.12);
+  // um andar em cada quatro (25%, do andar 3 em diante, fora dos andares de chefe): andar gigante, 45% mais largo e com mais eventos
+  const huge = floor >= 3 && !isBossFloor(floor) && !isFinalFloor(floor) && chance(0.25);
   if (huge) W = Math.min(Math.round(W * 1.45), 132);
   const H = W;
   for (let attempt = 0; attempt < 30; attempt++) {
