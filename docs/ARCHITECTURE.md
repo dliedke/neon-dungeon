@@ -250,6 +250,7 @@ Puzzles and challenges. Each floor gets 3 to 9 main events (`MAIN_EVENTS`: termi
 - Interactive objects are walk-over pads, so every input method works.
 - The cracked wall is an enemy with `T.prop` (`crack` in `ETYPES`). It takes 1 damage per hit and gives no XP, loot or kill medals. When it dies, `killEnemy` calls `propBroken`.
 - `hitTarget` reuses that prop as an invisible target with huge health (vault, ball); `hitsOf(E)` counts the hits since the last frame. Touching the target also counts as a hit (`touchTargets` in `updateEvents`, for players without the basic attack): once per touch, or every `rep` seconds while touching when `hitTarget` gets a 6th argument (vault, piñata, tug of war); `e.noTouch` turns it off (plasma ball). Add the event id to `TOUCH_EV` so its intro mentions it.
+- Memory/attention events (terminals, keyboard, chest shuffle, trap floor, sculpture, dance, memory pairs) call `waitFoes(E)` before showing the sequence: while an aggroed enemy is within 12m of the player and in sight, the sequence waits (or restarts from the start if it was running), the HUD line shows "clear the area (n)" (`E.foesNear`) and a toast explains it once.
 - Event damage: `eventHurt(frac, x, z, knock)` takes a share of max health, never kills, respects `p.invuln` and knocks the player away from (x, z).
 - The Mirror Duel passes its own model to `spawnEnemy(type, x, z, { model })` (a darkened `makePlayerModel` with `kind = 'humanoid'`).
 - The slot machine is an NPC prop (`type: 'gamble'`) opened through `openNpc` in `biomes.js`.

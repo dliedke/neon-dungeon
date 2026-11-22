@@ -175,6 +175,29 @@ const near = (E, r) => {
   const p = G.player;
   return p && p.alive && Math.hypot(p.x - E.x, p.z - E.z) < r;
 };
+// eventos de memória/atenção (sequências, embaralhar, piso para decorar, ritmo): a amostra só roda sem briga.
+// Conta inimigos de verdade que estão caçando o jogador, perto e à vista (atrás da parede não atrapalha ver).
+// Devolve true enquanto deve esperar; E.foesNear vale só neste quadro (updateEvents zera) e o HUD mostra o aviso.
+function waitFoes(E) {
+  const p = G.player;
+  if (!p || !p.alive) return true;
+  let n = 0;
+  for (const e of G.enemies) {
+    if (!e.alive || !e.aggro || e.aimed || e.inert || e.decoy || e.T.prop || e.T.breakable) continue;
+    const dp = Math.hypot(e.x - p.x, e.z - p.z);
+    if (dp < 12 && (e.los || dp < 5)) n++;
+  }
+  E.foesNear = n;
+  if (!n) return false;
+  if (!E.foesWas) floatText(E.x, 2.6, E.z, L('LIMPE A ÁREA', 'CLEAR THE AREA'), 'hurt');
+  // depois da explicação do evento (senão ela chega junto, por cima, e no celular só os 2 últimos aparecem)
+  if (!E.holdTold && (E.told || !KIND[E.kind].intro)) {
+    E.holdTold = true;
+    const I = EVENT_INFO[E.kind];
+    toast(L(`${I.icon} <b>${I.name}</b> espera: derrote os inimigos por perto e ele continua sem briga (a sequência só aparece com a área limpa).`, `${I.icon} <b>${I.name}</b> is waiting: defeat the nearby enemies and it goes on with no fighting (the sequence only shows once the area is clear).`), 'warn');
+  }
+  return true;
+}
 
 // console com tela (frente = +z local), virado para (tx, tz)
 function makeConsole(parent, x, z, color, tx, tz) {
@@ -403,17 +426,26 @@ const terminals = {
       if (E.litT <= 0) terminals.light(E, -1, false);
     }
     if (E.st === 'idle') {
-      if (near(E, 4.4)) {
+      // com inimigos por perto a sequência espera (e recomeça do início quando a área limpa)
+      if (near(E, 4.4) && !waitFoes(E)) {
         E.st = 'show';
         E.step = 0;
         E.t = 1;
-        toast(L(`🖥️ Observe a ordem em que os terminais acendem e depois <b>pise nas placas</b> na mesma ordem (${E.seq.length} passos).`, `🖥️ Watch the order the terminals light up, then <b>step on the pads</b> in the same order (${E.seq.length} steps).`), 'leg', 'ev');
+        if (!E.toldSeq) toast(L(`🖥️ Observe a ordem em que os terminais acendem e depois <b>pise nas placas</b> na mesma ordem (${E.seq.length} passos).`, `🖥️ Watch the order the terminals light up, then <b>step on the pads</b> in the same order (${E.seq.length} steps).`), 'leg', 'ev');
+        E.toldSeq = true;
       }
       return;
     }
     const pad = terminals.padUnder(E);
     if (E.st === 'show') {
       E.lastPad = pad; // pisar enquanto mostra não conta
+      // inimigo chegou no meio: apaga e volta a esperar (depois mostra tudo de novo, sem briga)
+      if (waitFoes(E)) {
+        E.st = 'idle';
+        terminals.light(E, -1, false);
+        E.litT = 0;
+        return;
+      }
       E.t -= dt;
       if (E.t > 0) return;
       if (E.step < E.seq.length) {
@@ -451,15 +483,16 @@ const terminals = {
     G.shake = Math.max(G.shake, 0.3);
     ringFx(E.x, E.z, 5, 0xff2244, 0.5);
     floatText(E.x, 2.2, E.z, L('ALARME!', 'ALARM!'), 'hurt');
-    toast(L('🚨 Ordem errada! O alarme chamou reforços. A sequência vai repetir: tente de novo quantas vezes precisar.', '🚨 Wrong order! The alarm called reinforcements. The sequence will repeat: try again as many times as you need.'), 'warn');
+    toast(L('🚨 Ordem errada! O alarme chamou reforços. A sequência repete quando os reforços caírem: tente de novo quantas vezes precisar.', '🚨 Wrong order! The alarm called reinforcements. The sequence replays once they are down: try again as many times as you need.'), 'warn');
     E.st = 'show';
     E.step = 0;
     E.t = 2.4;
     spawnWave(E, Math.min(8, 3 + Math.floor(G.floor / 5)), E.x, E.z, 4.5, 8, 0xff2244);
   },
   hud(E) {
-    if (E.st === 'idle') return L('vá até lá', 'go there');
+    if (E.st === 'idle' && !E.toldSeq) return L('vá até lá', 'go there');
     const x = E.err ? ` <span style="color:#ff4466">${E.err > 3 ? '✖×' + E.err : '✖'.repeat(E.err)}</span>` : '';
+    if (E.st === 'idle') return L('volte às placas', 'back to the pads') + x;
     if (E.st === 'show') return L('observe', 'watch') + x;
     return `${E.step}/${E.seq.length}${x}`;
   },
@@ -1944,8 +1977,11 @@ const pairs = {
       }
     }
     const k = pairs.under(E);
+    // brigando em cima das placas nenhuma vira (antes os passos da luta contavam como erro)
+    const hold = near(E, 6) && waitFoes(E);
     if (k === E.last) return;
     E.last = k;
+    if (hold) return;
     if (k < 0 || E.hideT > 0 || E.matched[k] || E.open.includes(k)) return;
     const t = E.tiles[k];
     E.open.push(k);
@@ -2486,8 +2522,23 @@ const shell = {
   update(E, dt) {
     if (E.st === 'done') return;
     E.t += dt;
+    // inimigo chegou enquanto mostra/embaralha: fecha tudo e volta a esperar (o sorteio recomeça sem briga)
+    if ((E.st === 'show' || E.st === 'close' || E.st === 'shuffle') && waitFoes(E)) {
+      if (E.sw) {
+        E.slot[E.sw.ka] = E.sw.b;
+        E.slot[E.sw.kb] = E.sw.a;
+        E.sw = null;
+      }
+      E.chests.forEach((c, k) => {
+        c.c.position.set(shell.sx(E.slot[k]), 0, 0);
+        c.lid.rotation.x = 0;
+      });
+      E.gem.visible = false;
+      E.st = 'idle';
+      return;
+    }
     if (E.st === 'idle') {
-      if (!near(E, 4.5)) return;
+      if (!near(E, 4.5) || waitFoes(E)) return;
       E.st = 'show';
       E.t = 0;
       E.prize = Math.floor(Math.random() * 3);
@@ -3624,8 +3675,14 @@ const trap = {
     if (E.st === 'done') return;
     const p = G.player;
     if (E.st === 'idle') {
-      if (!near(E, 6)) return;
+      if (!near(E, 6) || waitFoes(E)) return;
       trap.show(E);
+    }
+    // inimigo chegou enquanto o caminho acende: apaga e espera (depois mostra de novo, sem briga)
+    if (E.st === 'show' && waitFoes(E)) {
+      E.st = 'idle';
+      trap.paint(E);
+      return;
     }
     // mostrando: as placas do caminho acendem em ordem e depois somem
     if (E.st === 'show') {
@@ -4456,7 +4513,7 @@ const dance = {
     if (E.st === 'done' || E.st === 'failed') return;
     const p = G.player;
     if (E.st === 'idle') {
-      if (!near(E, 0.7)) return;
+      if (!near(E, 0.7) || waitFoes(E)) return;
       E.st = 'run';
       E.t = 0;
       E.i = -3;
@@ -4466,6 +4523,8 @@ const dance = {
       dance.paint(E);
       return;
     }
+    // inimigo chegou: a música pausa na batida em que está e volta quando a área limpa
+    if (waitFoes(E)) return;
     E.t += dt;
     // anel da batida atual encolhe até a hora certa
     if (E.i >= 0) {
@@ -4679,6 +4738,9 @@ export function updateEvents(dt) {
   const p = G.player;
   touchTargets();
   for (const E of G.events) {
+    // aviso de "limpe a área" (waitFoes): vale só no quadro em que o evento pediu
+    E.foesWas = E.foesNear;
+    E.foesNear = 0;
     KIND[E.kind].update(E, dt);
     // explicação de cada evento quando o jogador chega perto
     if (!E.told && E.x != null && KIND[E.kind].intro && E.st !== 'done' && E.st !== 'failed' && p.alive && Math.hypot(p.x - E.x, p.z - E.z) < Math.max(9, E.introR || 0)) {
@@ -4725,6 +4787,8 @@ export function announceEvents(floor, t) {
   return t;
 }
 
+// progresso do evento no HUD; esperando inimigos (waitFoes) mostra o aviso no lugar
+const hudOf = (E) => (E.foesNear ? `<span style="color:#ff4466">⚔ ${L('limpe a área', 'clear the area')} (${E.foesNear})</span>` : KIND[E.kind].hud(E));
 // linhas do HUD (abaixo do contrato)
 // (os já terminados ficam juntos numa linha só de ícones)
 export function eventsHud() {
@@ -4738,7 +4802,7 @@ export function eventsHud() {
       fin += `<span class="${E.st === 'done' ? 'ok' : 'ko'}">${I.icon}</span>`;
       continue;
     }
-    h += `<div class="ri-con ri-ev" style="--c:${I.css}">${I.icon}<span class="ri-nm"> ${I.short || I.name} ·</span><b> ${K.hud(E)}</b></div>`;
+    h += `<div class="ri-con ri-ev" style="--c:${I.css}">${I.icon}<span class="ri-nm"> ${I.short || I.name} ·</span><b> ${hudOf(E)}</b></div>`;
   }
   if (fin) h += `<div class="ri-con ri-evfin">${fin}</div>`;
   return h;
@@ -4774,7 +4838,7 @@ export function eventMissions(out, px, pz) {
     const K = KIND[E.kind];
     if (!K.hud || E.st === 'done' || E.st === 'failed') continue;
     const I = EVENT_INFO[E.kind];
-    out.push({ id: `ev${i}:${E.kind}`, icon: I.icon, css: I.css, text: I.short || I.name, prog: K.hud(E), d2: evDist2(E, px, pz) });
+    out.push({ id: `ev${i}:${E.kind}`, icon: I.icon, css: I.css, text: I.short || I.name, prog: hudOf(E), d2: evDist2(E, px, pz) });
   }
 }
 
@@ -4944,4 +5008,4 @@ export function eventArrows(arrow) {
 }
 
 // peças usadas por events2.js (eventos novos)
-export { mats, put, groupAt, lightMat, setLight, flatMat, near, findSpot, spotOk, freeAround, spawnWave, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, segDist, fighterType, mmss };
+export { mats, put, groupAt, lightMat, setLight, flatMat, near, waitFoes, findSpot, spotOk, freeAround, spawnWave, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, segDist, fighterType, mmss };

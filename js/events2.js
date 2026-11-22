@@ -15,7 +15,7 @@ import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
-import { mmss, mats, put, groupAt, lightMat, setLight, flatMat, near, findSpot, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, fighterType, eventCredits } from './events.js';
+import { mmss, mats, put, groupAt, lightMat, setLight, flatMat, near, waitFoes, findSpot, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, fighterType, eventCredits } from './events.js';
 
 // ------------------------------------------------------------------
 // Peças compartilhadas
@@ -333,7 +333,8 @@ const piano = mk({
     }
     const k = piano.under(E);
     if (E.st === 'idle') {
-      if (!near(E, 4.8)) return;
+      // com inimigos por perto a música espera (e recomeça do início quando a área limpa)
+      if (!near(E, 4.8) || waitFoes(E)) return;
       E.st = 'show';
       E.step = 0;
       E.t = 1;
@@ -341,6 +342,12 @@ const piano = mk({
     }
     if (E.st === 'show') {
       E.last = k;
+      if (waitFoes(E)) {
+        E.st = 'idle';
+        piano.light(E, -1);
+        E.litT = 0;
+        return;
+      }
       E.t -= dt;
       if (E.t > 0) return;
       if (E.step < E.seq.length) {
@@ -2367,17 +2374,44 @@ const sculpt = mk({
     return { kind: 'sculpt', x: s.x, z: s.z, g, blocks, foes: [], st: 'idle', show: 0, strikes: 0, broke: 0 };
   },
   paint(E) {
-    for (const b of E.blocks) if (!b.gone) setLight(b.mat, b.mark && E.show > 0 ? SCU_COL : 0x5a6a8a, b.mark && E.show > 0 ? 2.4 : 0.8);
+    const on = E.show > 0 && !E.wait;
+    for (const b of E.blocks) if (!b.gone) setLight(b.mat, b.mark && on ? SCU_COL : 0x5a6a8a, b.mark && on ? 2.4 : 0.8);
+  },
+  // blocos travados: golpes (de área, da briga) não contam
+  lock(E) {
+    for (const b of E.blocks) {
+      if (b.gone) continue;
+      b.e.hp = b.e.maxHp;
+      b.hits = 0;
+    }
   },
   update(E, dt) {
     if (E.st === 'idle') {
       if (!near(E, 8)) return;
+      // com inimigos por perto os dourados só acendem depois da briga
+      if (waitFoes(E)) {
+        sculpt.lock(E);
+        return;
+      }
       E.st = 'run';
       E.show = 5;
       sculpt.paint(E);
       banner(L('MEMORIZE!', 'MEMORIZE!'), L('Os 5 blocos dourados são os certos', 'The 5 golden blocks are the right ones'));
     }
     E.foes = E.foes.filter((e) => e.alive);
+    // inimigo por perto: blocos travados e dourados apagados. Quando a área limpa eles acendem de novo:
+    // 5s inteiros se a briga cortou a amostra, 2s de lembrete se já tinham apagado
+    const wait = waitFoes(E);
+    if (wait !== !!E.wait) {
+      E.wait = wait;
+      if (wait) E.pend = E.show > 0 ? 5 : 2;
+      else E.show = Math.max(E.show, E.pend || 0);
+      sculpt.paint(E);
+    }
+    if (wait) {
+      sculpt.lock(E);
+      return;
+    }
     if (E.show > 0) {
       E.show -= dt;
       if (E.show <= 0) sculpt.paint(E);
