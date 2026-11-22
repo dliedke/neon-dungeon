@@ -20,7 +20,7 @@ import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
 import { spawnEnemy, killQuiet, pickEnemyType, ETYPES, rewardK, diffRank, diffIlvl, rewardRank, abyssLvl, lootIlvl } from './enemies.js';
 import { dropLoot, spawnPickup, spawnChest } from './loot.js';
-import { explosion, damagePlayer, hitEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
+import { explosion, damagePlayer, hitEnemy, damageEnemy, enemiesInRadius, enemyExplosion, after } from './combat.js';
 import { isWalkable, lineOfSight, isFinalFloor, tileAt, computeFlow, findPath, routeTime, resolveCircle, randomFloorInRoom } from './dungeon.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
@@ -2023,15 +2023,38 @@ function segDist(px, pz, ax, az, bx, bz) {
   return Math.hypot(px - ax - vx * t, pz - az - vz * t);
 }
 // alvo que apanha (cofre, bola): uma "parede rachada" invisível; cada golpe tira 1 de vida (até 4 por segundo)
-function hitTarget(x, z, r, h, name) {
+// rep: encostado no alvo, repete o golpe a cada rep segundos (eventos de bater sem parar); sem rep conta só ao encostar
+function hitTarget(x, z, r, h, name, rep = 0) {
   const e = spawnEnemy('crack', x, z, {});
   e.hp = e.maxHp = 1e6;
   e.r = r;
   e.height = h;
   e.name = name;
   e.aimed = true; // só golpes de verdade contam (ver damageEnemy)
+  e.touchRep = rep;
+  // nasce "já encostado": só conta depois de afastar e encostar (alvo que aparece embaixo do jogador não conta sozinho)
+  e.touched = true;
   e.model.root.visible = false;
   return e;
+}
+// Encostar no alvo também vale golpe, para quem joga sem ataque básico (só teletransporte e poderes):
+// andando até ele, avançando por cima ou teletransportando em cima. Conta ao encostar; para contar de novo,
+// afaste um passo (ou, com e.touchRep, segue contando enquanto encosta). A Bola de Plasma já anda com o empurrão (noTouch)
+function touchTargets() {
+  const p = G.player;
+  if (!p.alive || !G.enemies) return;
+  for (const e of G.enemies) {
+    if (!e.aimed || !e.alive || e.noTouch) continue;
+    const d = Math.hypot(e.x - p.x, e.z - p.z) - e.r - p.r;
+    if (d > 0.45) {
+      e.touched = false;
+      continue;
+    }
+    if (d > 0.15 || (e.touched && !(e.touchRep && G.t - e.touchT >= e.touchRep))) continue;
+    e.touched = true;
+    e.touchT = G.t;
+    damageEnemy(e, 1, false, { kx: p.x, kz: p.z });
+  }
 }
 // golpes novos no alvo desde a última olhada
 function hitsOf(E) {
@@ -2216,7 +2239,7 @@ const vault = {
     const dial = put(door, mats().cyl, glowMat(VAULT_COL, 2), 0.52, 0.76, 0.05, 0.22, 0.05, 0.22);
     dial.rotation.x = Math.PI / 2;
     put(door, box(0.5, 0.05, 0.03), doorMat, 0.52, 0.76, 0.07);
-    const e = hitTarget(s.x, s.z, 0.8, 1.5, L('Cofre Rachado', 'Cracked Vault'));
+    const e = hitTarget(s.x, s.z, 0.8, 1.5, L('Cofre Rachado', 'Cracked Vault'), 0.27);
     return { kind: 'vault', x: s.x, z: s.z, g, door, dial, doorMat, e, st: 'idle', t: VAULT_T, hits: 0, n: 0, per: 1 };
   },
   spray(E) {
@@ -2756,6 +2779,7 @@ const ball = {
     bm.position.set(s.x, BALL_R + 0.05, s.z);
     G.world.add(bm);
     const e = hitTarget(s.x, s.z, BALL_R + 0.1, 0.9, L('Bola de Plasma', 'Plasma Ball'));
+    e.noTouch = true;
     return { kind: 'ball', x: s.x, z: s.z, g, gg, goalMat, gx: goal.x, gz: goal.z, pts: [goal], bx: s.x, bz: s.z, vx: 0, vz: 0, bm, e, st: 'idle', goals: 0, t: BALL_TIME, hits: 0, resetT: 0 };
   },
   kick(E, sp) {
@@ -4653,6 +4677,7 @@ function dropFoe(e, i) {
 export function updateEvents(dt) {
   if (!G.events || !G.events.length || !G.player) return;
   const p = G.player;
+  touchTargets();
   for (const E of G.events) {
     KIND[E.kind].update(E, dt);
     // explicação de cada evento quando o jogador chega perto
@@ -4662,9 +4687,12 @@ export function updateEvents(dt) {
     }
   }
 }
+// eventos de golpear um alvo: encostar nele também vale (ver touchTargets)
+const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt']);
 const introHtml = (E) => {
   const I = EVENT_INFO[E.kind];
-  return `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${KIND[E.kind].intro(E)}`;
+  const tip = TOUCH_EV.has(E.kind) ? ` <i>${L('Sem ataque básico? Encostar no alvo também vale golpe.', 'No basic attack? Touching the target counts as a hit too.')}</i>` : '';
+  return `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${KIND[E.kind].intro(E)}${tip}`;
 };
 
 // inimigo derrotado pelo jogador

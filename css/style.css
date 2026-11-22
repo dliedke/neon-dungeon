@@ -385,7 +385,9 @@ body.touch #interact { font-size: 16px; padding: 10px 16px; }
 
 #toasts {
   position: fixed; top: calc(110px + var(--safe-t)); left: 50%; transform: translateX(-50%); z-index: 8;
-  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; width: 90vw;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none;
+  /* avisos compridos (explicação dos eventos) quebram linha antes de chegar no minimapa */
+  width: min(90vw, calc(100vw - 400px));
 }
 /* tablet com toque: o seletor de dificuldade fica à esquerda, embaixo das barras; os avisos não passam por cima dele */
 body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(--safe-r))); }
@@ -1338,9 +1340,9 @@ body.touch #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 /* celular deitado: nada de texto cobrindo o personagem no meio da tela */
 @media (max-height: 520px), (max-width: 640px) {
-  /* avisos sobem para a faixa livre do topo (entre as barras e os botões), menores e no máximo 2 */
+  /* avisos sobem para a faixa livre do topo (entre as barras e os botões), menores e no máximo 2; à direita param antes do minimapa */
   body.touch #toasts {
-    top: calc(8px + var(--safe-t)); left: calc(272px + var(--safe-l)); right: calc(112px + var(--safe-r)); width: auto;
+    top: calc(8px + var(--safe-t)); left: calc(272px + var(--safe-l)); right: calc(126px + var(--safe-r)); width: auto;
     transform: none; gap: 3px;
   }
   body.touch .toast { font-size: 12px; padding: 3px 9px; line-height: 1.25; }

@@ -1780,7 +1780,7 @@ const pinata = mk({
     g.add(m);
     [0xff6ad5, 0xffd23d, 0x39d0ff].forEach((c, i) => put(m, box(1.1 - i * 0.12, 0.45, 0.8), glowMat(c, 1.5), 0, 0.5 + i * 0.45, 0));
     put(m, box(0.3, 0.3, 0.3), glowMat(0xffffff, 1.6), 0.3, 1.85, 0);
-    const e = hitTarget(s.x, s.z, 0.9, 1.6, L('Piñata Gigante', 'Giant Piñata'));
+    const e = hitTarget(s.x, s.z, 0.9, 1.6, L('Piñata Gigante', 'Giant Piñata'), 0.35);
     return { kind: 'pinata', x: s.x, z: s.z, g, m, e, hits: 0, st: 'idle', n: 0, ph: 0, lx: 0, lz: 0, tx: 0, tz: 0, ft: 0, wob: 0 };
   },
   update(E, dt) {
@@ -2143,7 +2143,7 @@ const tug = mk({
     put(bot, box(0.4, 0.1, 0.06), glowMat(0xff3355, 2.6), 0, 1.72, -0.27);
     bot.position.set(3.4, 0, 0);
     bot.rotation.y = -Math.PI / 2;
-    const e = hitTarget(s.x + 3.4, s.z, 0.9, 1.7, L('Robô', 'Robot'));
+    const e = hitTarget(s.x + 3.4, s.z, 0.9, 1.7, L('Robô', 'Robot'), 0.27);
     return { kind: 'tug', x: s.x, z: s.z, g, flag, bot, e, hits: 0, pos: 0, t: 0, wob: 0, nt: 9, foes: [], st: 'idle' };
   },
   update(E, dt) {
