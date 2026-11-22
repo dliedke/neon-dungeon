@@ -1607,7 +1607,7 @@ function gemsCardHtml(c, slot) {
 }
 
 // poder da gema (Neon ou melhor): nome, força e descrição
-// força 1 a 4 em estrelas; do 5 em diante (gemas XI a XX) a estrela com o número, para não estourar a linha
+// força 1 a 4 em estrelas; do 5 em diante (gemas XI a L) a estrela com o número, para não estourar a linha
 const powStars = (k) => (k <= 4 ? '✦'.repeat(k) : `✦×${k}`);
 function gemPowHtml(g, k) {
   return `<div class="gd-pow" style="--gc:${GEMS[g].css}"><b>${powStars(k)} ${gemPowName(g)}</b> ${GEM_POW[g].desc(k)}</div>`;
@@ -1658,9 +1658,13 @@ function renderGems() {
   const pk = GEM_KEYS.filter((g) => pw[g]);
   $('gem-bonus').innerHTML = (keys.length ? `<div class="gb-title">${L('Bônus das gemas', 'Gem bonuses')}</div>${keys.map((k) => `<div>${PFMT[k](m[k])}</div>`).join('')}` : '')
     + (pk.length ? `<div class="gb-title gb-pow">${L('Poderes das gemas', 'Gem powers')}</div>${pk.map((g) => gemPowHtml(g, pw[g])).join('')}` : '');
-  // bolsa: uma linha por tipo, uma coluna por nível, em blocos de 10 níveis (I–X e XI–XX: 20 colunas não cabem no celular)
+  // bolsa: uma linha por tipo, uma coluna por nível, em blocos de 10 níveis (I–X, XI–XX ... XLI–L: 20 colunas não cabem no celular).
+  // Do XXI em diante o bloco só aparece quando há gema (na bolsa ou engastada) no bloco ou no nível logo antes dele
+  let top = 0;
+  for (const g of GEM_KEYS) for (let t = GEM_TOP; t > top; t--) if (gemCount(c, g, t) > 0) top = t;
+  for (const sl of SLOTS) for (const x of slotGems(c, sl)) top = Math.max(top, x.t);
   let bh = '';
-  for (let t0 = 0; t0 < GEM_TIERS; t0 += 10) {
+  for (let t0 = 0; t0 < GEM_TIERS && (t0 < 20 || top >= t0 - 1); t0 += 10) {
     bh += `<div class="gb-head${t0 ? ' gb-next' : ''}"><span></span>${TIER_ROMAN.slice(t0, t0 + 10).map((r) => `<span>${r}</span>`).join('')}</div>`;
     for (const g of GEM_KEYS) {
       bh += `<div class="gb-row"><span class="gb-type" style="color:${GEMS[g].css}">${gemSvg(g, 2)}</span>`;
@@ -1727,7 +1731,7 @@ function renderGemDetail() {
       h += `<div class="gd-sub2">${x ? L('Trocar por', 'Swap for') : L('Engastar', 'Socket')}:</div><div class="gd-slots">${best.map(([g, t]) => `<button class="btn small ghost" data-nav data-gact="put" data-g="${g}" data-t="${t}">${gemIcon(g, t)} ${gemName(g, t)} <small>${gemEffectText(g, t, s.slot)}</small></button>`).join('')}</div>`;
     } else if (!x) h += `<div class="gd-note">${L('Sua bolsa de gemas está vazia.', 'Your gem pouch is empty.')}</div>`;
   } else {
-    h = `<div class="empty-detail">${L('Selecione uma gema da bolsa ou um encaixe.<br><br>Encaixes por raridade: 1 (Comum a Raro), 2 (Protótipo e Mítico), 3 (Divino e Primordial), +1 aprimorando o item até o máximo no ferreiro.<br><br>✦ Gemas Neon (VII) ou melhores liberam o poder do tipo, mais forte a cada nível até o XX.', 'Select a gem in the pouch or a socket.<br><br>Sockets by rarity: 1 (Common to Rare), 2 (Prototype and Mythic), 3 (Divine and Primordial), +1 by fully upgrading the item at the blacksmith.<br><br>✦ Neon (VII) or better gems unlock their type’s power, stronger with every tier up to XX.')}</div>`;
+    h = `<div class="empty-detail">${L('Selecione uma gema da bolsa ou um encaixe.<br><br>Encaixes por raridade: 1 (Comum a Raro), 2 (Protótipo e Mítico), 3 (Divino e Primordial), +1 aprimorando o item até o máximo no ferreiro.<br><br>✦ Gemas Neon (VII) ou melhores liberam o poder do tipo, mais forte a cada nível até o L.', 'Select a gem in the pouch or a socket.<br><br>Sockets by rarity: 1 (Common to Rare), 2 (Prototype and Mythic), 3 (Divine and Primordial), +1 by fully upgrading the item at the blacksmith.<br><br>✦ Neon (VII) or better gems unlock their type’s power, stronger with every tier up to L.')}</div>`;
   }
   el.innerHTML = h;
   el.querySelectorAll('[data-gact]').forEach((b) => (b.onclick = () => gemAction(b)));

@@ -970,7 +970,11 @@ body.ios #rotate .rot-ios { display: block; }
 #tab-skills.tab-body { display: block; }
 .tree-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .tree { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 0; }
-.tree .sp-info { align-self: flex-start; margin-bottom: 10px; }
+/* pontos disponíveis: ficam presos no topo enquanto a árvore rola */
+.tree .sp-info {
+  align-self: flex-start; margin-bottom: 10px; position: sticky; top: 0; z-index: 3; padding: 4px 12px;
+  background: rgba(10, 10, 26, 0.94); border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
 .tier { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
 .tier-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
 .tier-nodes { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; }

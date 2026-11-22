@@ -150,6 +150,8 @@ export const sfx = {
   // gema coletada: plim cristalino, mais alto e mais longo nos níveis altos
   gem(t = 0) {
     if (throttle('gem', 60)) return;
+    // do XX em diante o som para de crescer (a gema L não vira um apito de 3s)
+    t = Math.min(t, 19);
     const b = 1568 * Math.pow(2, Math.min(t, 6) / 12);
     tone({ type: 'sine', f: b, dur: 0.25 + t * 0.05, vol: 0.08 });
     tone({ type: 'sine', f: b * 1.5, dur: 0.3 + t * 0.05, vol: 0.05, delay: 0.05 });
@@ -158,6 +160,7 @@ export const sfx = {
   // fusão de gemas: três toques subindo e um brilho
   gemFuse(t = 0) {
     if (throttle('gemFuse', 90)) return;
+    t = Math.min(t, 19);
     [0, 0.07, 0.14].forEach((d, i) => tone({ type: 'sine', f: 988 * Math.pow(1.26, i) * (1 + t * 0.06), dur: 0.16, vol: 0.07, delay: d }));
     noise({ dur: 0.35, vol: 0.05, type: 'highpass', f: 5000, delay: 0.18 });
     tone({ type: 'triangle', f: 2637 * (1 + t * 0.06), dur: 0.5, vol: 0.06, delay: 0.22 });

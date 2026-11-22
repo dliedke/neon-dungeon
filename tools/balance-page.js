@@ -9,7 +9,7 @@ import { makeItem, forgeItem, forgeMax, forgeCost, socketsOf, SLOTS, RARITY } fr
 import { ETYPES, BOSS_ORDER, spawnEnemy, tickReward, diffIlvl, lootIlvl, diffRank, abyssGear, abyssFx, rewardK } from '../js/enemies.js';
 import { hitEnemy } from '../js/combat.js';
 import { tierOf, effFloor, armorTaken, IMPLANTS, TIERS } from '../js/run.js';
-import { GEMS } from '../js/gems.js';
+import { GEMS, gemDropCap } from '../js/gems.js';
 import { seedRandom } from '../js/utils.js';
 import { SKILL_FN } from '../js/classes.js';
 import { skillCost, placePlayer } from '../js/player.js';
@@ -28,8 +28,7 @@ const ARMOR_GEMS = ['ruby', 'diamond', 'amethyst', 'emerald'];
 function gemDropTier() {
   const ab = G.settings.abyss | 0;
   const t = Math.floor((effFloor() + diffIlvl()) / 20);
-  const cap = ab >= 750 ? 19 : ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4;
-  return Math.max(0, Math.min(cap, t));
+  return Math.max(0, Math.min(gemDropCap(ab), t));
 }
 
 function setScene(sc) {

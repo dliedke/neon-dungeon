@@ -13,8 +13,9 @@ import { diffIlvl, abyssLvl } from './enemies.js';
 import { spawnPickup } from './loot.js';
 import { achAdd, achMark } from './ach.js';
 
-// Cada gema dá um bônus na arma (w) e outro nos demais espaços (a). v: valor por nível (20 níveis).
-// A partir do nível VII (Neon) a gema também libera o PODER do tipo (GEM_POW), mais forte a cada nível até o XX.
+// Cada gema dá um bônus na arma (w) e outro nos demais espaços (a). v: valor por nível (I a XX escritos aqui,
+// XXI a L calculados por GROW logo abaixo).
+// A partir do nível VII (Neon) a gema também libera o PODER do tipo (GEM_POW), mais forte a cada nível até o L.
 // Do XI em diante os atributos com teto (recarga, roubo de vida, esquiva, redução de dano) crescem mais devagar.
 export const GEMS = {
   ruby: { pt: 'Rubi', en: 'Ruby', f: 0, css: '#ff3a5a', hex: 0xff3a5a, w: ['dmgPct', [6, 11, 18, 28, 42, 62, 90, 125, 170, 230, 290, 360, 445, 545, 660, 790, 940, 1110, 1300, 1510]], a: ['hpPct', [1.5, 2.5, 4, 5.5, 7.5, 10, 13, 17, 22, 28, 35, 43, 53, 65, 79, 95, 115, 135, 160, 185]] },
@@ -25,7 +26,23 @@ export const GEMS = {
   diamond: { pt: 'Diamante', en: 'Diamond', f: 0, css: '#bff6ff', hex: 0xbff6ff, w: ['eliteDmg', [4, 6, 10, 15, 21, 30, 42, 56, 72, 92, 115, 145, 180, 220, 265, 320, 380, 450, 525, 610]], a: ['armorPct', [2, 3, 5, 7.5, 10, 13.5, 18, 23, 29, 36, 45, 56, 69, 84, 100, 120, 145, 170, 200, 230]] },
 };
 export const GEM_KEYS = Object.keys(GEMS);
-export const GEM_TIERS = 20;
+export const GEM_TIERS = 50;
+// arredonda para um número "bonito" (de 10 em 10 ou 5 em 5 nos grandes, inteiro nos médios, meio ponto nos pequenos)
+const nice = (v) => (v >= 1000 ? Math.round(v / 10) * 10 : v >= 100 ? Math.round(v / 5) * 5 : v >= 20 ? Math.round(v) : Math.round(v * 2) / 2);
+// estende uma tabela até n valores: mul = multiplica a cada nível, add = soma a cada nível
+function extend(arr, n, mul = 1, add = 0, round = nice) {
+  let v = arr[arr.length - 1];
+  while (arr.length < n) {
+    v = v * mul + add;
+    arr.push(round(v));
+  }
+  return arr;
+}
+// níveis XXI a L: os atributos sem teto seguem multiplicando; os com teto (crítico, recarga, roubo de vida, esquiva,
+// redução de dano) só somam um pouco. Velocidade de ataque e achado de itens crescem devagar (ataque rápido demais pesa
+// no celular e achado alto demais inundaria o chão de divinos/primordiais)
+const GROW = { dmgPct: [1.12], hpPct: [1.1], critDmg: [1.1], eliteDmg: [1.1], armorPct: [1.1], findPct: [1.05], atkSpd: [1, 6], crit: [1, 5], cdr: [1, 1.5], lifeSteal: [1, 1], dodge: [1, 1], dmgRed: [1, 1] };
+for (const g of Object.keys(GEMS)) for (const w of ['w', 'a']) extend(GEMS[g][w][1], GEM_TIERS, ...GROW[GEMS[g][w][0]]);
 export const GEM_TOP = GEM_TIERS - 1;
 export const GEM_NEON = 6; // nível VII: a gema Neon (e acima) libera o poder do tipo
 // nome do nível: [masculino, feminino, inglês]
@@ -36,14 +53,32 @@ const TIER_NAMES = [
   ['Celeste', 'Celeste', 'Celestial'], ['Astral', 'Astral', 'Astral'], ['Prismático', 'Prismática', 'Prismatic'], ['Etéreo', 'Etérea', 'Ethereal'],
   ['Cósmico', 'Cósmica', 'Cosmic'], ['Sagrado', 'Sagrada', 'Sacred'], ['Eterno', 'Eterna', 'Eternal'], ['Infinito', 'Infinita', 'Infinite'],
   ['Ancestral', 'Ancestral', 'Ancestral'], ['Absoluto', 'Absoluta', 'Absolute'],
+  ['Rúnico', 'Rúnica', 'Runic'], ['Arcano', 'Arcana', 'Arcane'], ['Abissal', 'Abissal', 'Abyssal'], ['Nebular', 'Nebular', 'Nebular'],
+  ['Solar', 'Solar', 'Solar'], ['Lunar', 'Lunar', 'Lunar'], ['Galáctico', 'Galáctica', 'Galactic'], ['Supremo', 'Suprema', 'Supreme'],
+  ['Titânico', 'Titânica', 'Titanic'], ['Imperial', 'Imperial', 'Imperial'],
+  ['Glorioso', 'Gloriosa', 'Glorious'], ['Sublime', 'Sublime', 'Sublime'], ['Resplendente', 'Resplendente', 'Resplendent'], ['Imortal', 'Imortal', 'Immortal'],
+  ['Atemporal', 'Atemporal', 'Timeless'], ['Dimensional', 'Dimensional', 'Dimensional'], ['Paradoxal', 'Paradoxal', 'Paradox'], ['Supernova', 'Supernova', 'Supernova'],
+  ['Quasar', 'Quasar', 'Quasar'], ['Pulsar', 'Pulsar', 'Pulsar'],
+  ['Primevo', 'Primeva', 'Primeval'], ['Supernal', 'Supernal', 'Supernal'], ['Soberano', 'Soberana', 'Sovereign'], ['Colossal', 'Colossal', 'Colossal'],
+  ['Transcendente', 'Transcendente', 'Transcendent'], ['Onipotente', 'Onipotente', 'Omnipotent'], ['Imaculado', 'Imaculada', 'Immaculate'], ['Apoteótico', 'Apoteótica', 'Apotheotic'],
+  ['Ômega', 'Ômega', 'Omega'], ['Hiperneon', 'Hiperneon', 'Hyperneon'],
 ];
-export const TIER_ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+const roman = (n) => [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']].reduce((s, [v, r]) => {
+  while (n >= v) {
+    s += r;
+    n -= v;
+  }
+  return s;
+}, '');
+export const TIER_ROMAN = Array.from({ length: GEM_TIERS }, (_, t) => roman(t + 1));
 // custo para fundir 3 gemas do nível t em 1 do nível t+1
-// (baratinho: no andar 50 um abate rende ~100¢, então até a fusão XIX → XX custa menos de um andar)
-const FUSE_COST = [5, 10, 20, 40, 75, 125, 200, 300, 450, 650, 900, 1250, 1700, 2300, 3000, 4000, 5500, 7500, 10000];
+// (baratinho: no andar 50 um abate rende ~100¢, então até a fusão XIX → XX custa menos de um andar;
+// do XX em diante cada fusão custa 30% a mais que a anterior, XLIX → L ~20 milhões)
+const FUSE_COST = extend([5, 10, 20, 40, 75, 125, 200, 300, 450, 650, 900, 1250, 1700, 2300, 3000, 4000, 5500, 7500, 10000], GEM_TIERS - 1, 1.3, 0, (v) => Math.round(v / 1000) * 1000);
 
 // Poderes das gemas: um por tipo, ativo com pelo menos uma gema Neon (VII) ou melhor num encaixe ativo.
-// Força pelo melhor nível engastado do tipo: VII = 1, VIII = 2, IX = 3, X = 4 ... XX = 14 (índice k - 1 nas tabelas).
+// Força pelo melhor nível engastado do tipo: VII = 1, VIII = 2, IX = 3, X = 4 ... XX = 14 ... L = 44 (índice k - 1 nas tabelas;
+// do 15 em diante as tabelas são estendidas logo depois de GEM_POW).
 // A lógica fica em mythic.js (gemOnHit, gemOnKill, gemBlock) e em player.js (Seiva Viva).
 const pctx = (m) => `${Math.round(m * 100)}%`;
 export const GEM_POW = {
@@ -72,6 +107,22 @@ export const GEM_POW = {
     desc: (k) => L(`Bloqueia um golpe inteiro a cada ${GEM_POW.diamond.cd[k - 1]}s.`, `Blocks one whole hit every ${GEM_POW.diamond.cd[k - 1]}s.`),
   },
 };
+// forças 15 a 44 (gemas XXI a L): danos multiplicam 8% por nível; raio, recarga, cura, chance e saltos sobem devagar
+{
+  const P = GEM_POW;
+  const K = GEM_TIERS - 6;
+  const r2 = (v) => Math.round(v * 100) / 100;
+  extend(P.ruby.mult, K, 1.08);
+  extend(P.ruby.r, K, 1, 0.06, r2);
+  extend(P.sapphire.cd, K, 1, 0.02, r2);
+  extend(P.emerald.regen, K, 1, 0.05, r2);
+  extend(P.topaz.ch, K, 1, 0.5);
+  extend(P.topaz.jumps, K, 1, 0.3, (v) => v);
+  P.topaz.jumps.forEach((v, i) => (P.topaz.jumps[i] = Math.floor(v + 1e-9)));
+  extend(P.topaz.mult, K, 1.08);
+  extend(P.amethyst.mult, K, 1.08);
+  extend(P.diamond.cd, K, 1, -0.04, r2);
+}
 export const gemPowName = (g) => L(GEM_POW[g].pt, GEM_POW[g].en);
 // força do poder que uma gema de nível t dá (0 = nenhum)
 export const gemPowLvl = (t) => Math.max(0, t - GEM_NEON + 1);
@@ -95,8 +146,12 @@ export const gemEffectText = (g, t, slot) => {
 
 // Ícone: pedra lapidada com o brilho da cor; níveis altos ganham mais facetas e um halo
 // Estelar, Quântica e Singular: 1, 2 e 4 brilhos brancos nos cantos; do Celeste (XI) em diante um anel branco por fora
-// e um núcleo branco na pedra (mais fortes do Sagrado, XVI, em diante)
-const STARS = [[27, 5], [5, 27], [5, 5], [27, 27]].map(([x, y]) => `<path d="M${x} ${y - 3.4}L${x + 1} ${y - 1}L${x + 3.4} ${y}L${x + 1} ${y + 1}L${x} ${y + 3.4}L${x - 1} ${y + 1}L${x - 3.4} ${y}L${x - 1} ${y - 1}z" fill="#fff" stroke="none"/>`);
+// e um núcleo branco na pedra (mais fortes do Sagrado, XVI, em diante). Do Rúnico (XXI) em diante um anel tracejado
+// por dentro do halo, do Glorioso (XXXI) 4 brilhos a mais no meio das bordas, do Primevo (XLI) contorno branco na pedra
+// e no Hiperneon (L) um anel dourado
+const star = ([x, y], k = 3.4) => `<path d="M${x} ${y - k}L${x + 1} ${y - 1}L${x + k} ${y}L${x + 1} ${y + 1}L${x} ${y + k}L${x - 1} ${y + 1}L${x - k} ${y}L${x - 1} ${y - 1}z" fill="#fff" stroke="none"/>`;
+const STARS = [[27, 5], [5, 27], [5, 5], [27, 27]].map((p) => star(p));
+const STARS2 = [[16, 2.6], [16, 29.4], [2.6, 16], [29.4, 16]].map((p) => star(p, 2.4)).join('');
 export function gemSvg(g, t) {
   const c = GEMS[g].css;
   // halo: tracejado no Perfeita/Radiante/Neon, contínuo e mais grosso do Estelar em diante
@@ -104,10 +159,13 @@ export function gemSvg(g, t) {
   const facets = t >= 2 ? '<path d="M11 12l5 13 5-13" stroke-opacity="0.75"/>' : '';
   const stars = t >= 7 ? STARS.slice(0, t >= 9 ? 4 : t >= 8 ? 2 : 1).join('') : '';
   const ring = t >= 10 ? `<circle cx="16" cy="16" r="15.3" fill="none" stroke="#fff" stroke-opacity="${t >= 15 ? 0.9 : 0.5}" stroke-width="${t >= 15 ? 1.3 : 0.8}"/>` : '';
+  const inner = t >= 20 ? '<circle cx="16" cy="16" r="12.2" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="0.8" stroke-dasharray="1.6 1.6"/>' : '';
+  const gold = t >= 49 ? '<circle cx="16" cy="16" r="15.3" fill="none" stroke="#ffd23d" stroke-width="1.6"/>' : '';
+  const edge = t >= 40 ? ' stroke="#fff"' : '';
   const core = t >= 10 ? `<path d="M12.5 12h7L16 21z" fill="#fff" fill-opacity="${t >= 15 ? 0.85 : 0.55}" stroke="none"/>` : '';
   // a pedra cresce com o nível (Lascada pequena, Neon cheia; acima disso não cresce mais)
   const k = 0.72 + Math.min(t, 6) * 0.05;
-  return `<svg viewBox="0 0 32 32" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round">${halo}<g transform="translate(16 16.5) scale(${k}) translate(-16 -16.5)"><path d="M9 12l4-5h6l4 5-7 14z" fill="${c}" fill-opacity="${Math.min(0.85, 0.18 + t * 0.09)}"/><path d="M9 12h14M13 7l-2 5M19 7l2 5"/>${facets}${core}</g>${ring}${stars}</svg>`;
+  return `<svg viewBox="0 0 32 32" fill="none" stroke="${c}" stroke-width="1.8" stroke-linejoin="round">${halo}<g transform="translate(16 16.5) scale(${k}) translate(-16 -16.5)"><path d="M9 12l4-5h6l4 5-7 14z" fill="${c}" fill-opacity="${Math.min(0.85, 0.18 + t * 0.09)}"${edge}/><path d="M9 12h14M13 7l-2 5M19 7l2 5"/>${facets}${core}</g>${inner}${ring}${gold}${stars}${t >= 30 ? STARS2 : ''}</svg>`;
 }
 
 // ---------------- Bolsa e engastes no personagem ----------------
@@ -182,7 +240,9 @@ export function fuseGem(c, g, t) {
   if (t + 1 >= 4) achMark('flags', 'gemPerfect');
   if (t + 1 >= GEM_NEON) achMark('flags', 'gemNeon');
   if (t + 1 >= 9) achMark('flags', 'gemSingular');
-  if (t + 1 >= GEM_TOP) achMark('flags', 'gemApex');
+  if (t + 1 >= 19) achMark('flags', 'gemApex');
+  if (t + 1 >= 29) achMark('flags', 'gemImperial');
+  if (t + 1 >= GEM_TOP) achMark('flags', 'gemHyper');
   return true;
 }
 // Funde tudo o que der (de baixo para cima, então sobe em cascata), de um tipo ou de todos.
@@ -287,15 +347,15 @@ export function freeSockets(c) {
 // Nível da gema: sobe com o andar efetivo (modos, Abismo) e a dificuldade; chefes, fendas e feras dão uma acima.
 // Do chão cai no máximo Perfeita (Radiante no Abismo X+, Neon no Abismo XX+, Estelar no Abismo XL+, Quântica no LX+, Singular no LXXX+,
 // Celeste no C+, Astral no CXX+, Prismática no CXL+, Etérea no CLX+, Cósmica no CLXXX+, Sagrada no CC+, XVII no CCL+, XVIII no CCCXXV+
-// e XIX no CD+). A XX (Absoluta) cai do Abismo 750 em diante; antes, só fundindo.
+// e XIX no CD+). Depois do Abismo 400 sobe um nível a cada 20: XX no 420, XXX no 620, XL no 820 e XLIX no 1000. A L só fundindo.
+export const gemDropCap = (ab) => (ab >= 400 ? Math.min(GEM_TOP - 1, 18 + Math.floor((ab - 400) / 20)) : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4);
 function dropTier(o) {
   let t = Math.floor((effFloor() + diffIlvl()) / 20);
   const r = Math.random();
   if (r < 0.3) t--;
   else if (r > 0.9) t++;
   if (o.boss || o.rift || o.beast) t++;
-  const ab = abyssLvl();
-  return Math.max(0, Math.min(ab >= 750 ? 19 : ab >= 400 ? 18 : ab >= 325 ? 17 : ab >= 250 ? 16 : ab >= 200 ? 15 : ab >= 180 ? 14 : ab >= 160 ? 13 : ab >= 140 ? 12 : ab >= 120 ? 11 : ab >= 100 ? 10 : ab >= 80 ? 9 : ab >= 60 ? 8 : ab >= 40 ? 7 : ab >= 20 ? 6 : ab >= 10 ? 5 : 4, t));
+  return Math.max(0, Math.min(gemDropCap(abyssLvl()), t));
 }
 export function dropGems(x, z, o = {}) {
   const p = G.player;

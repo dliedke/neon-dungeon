@@ -174,9 +174,9 @@ Test: `G.char.inv.push(__dbg.makeItem({ ilvl: 10, rarity: 4, slot: 'chip', cls: 
 
 ## Gem
 
-1. **Never reorder or rename** `GEMS` keys in `js/gems.js`: they are save data (`c.gems`, `c.sockets`). Append a new kind at the end: `{ pt, en, f (0 masc. / 1 fem., for the tier adjective), css, hex, w: [statKey, 20 values], a: [statKey, 20 values] }, plus its power in `GEM_POW` (applied in `mythic.js`)`. `w` applies in the weapon, `a` in every other slot.
+1. **Never reorder or rename** `GEMS` keys in `js/gems.js`: they are save data (`c.gems`, `c.sockets`). Append a new kind at the end: `{ pt, en, f (0 masc. / 1 fem., for the tier adjective), css, hex, w: [statKey, 20 values], a: [statKey, 20 values] } (tiers XXI–L are filled by `GROW`, so the stat key needs an entry there), plus its power in `GEM_POW` (applied in `mythic.js`)`. `w` applies in the weapon, `a` in every other slot.
 2. The stat keys must be ones `computeStats` already reads from the mods (`dmgPct`, `hpPct`, `atkSpd`, `cdr`, `crit`, `critDmg`, `lifeSteal`, `dodge`, `findPct`, `dmgRed`, `eliteDmg`, `armorPct`); the text comes from `PFMT` in `classes.js`. Watch the caps in `computeStats`.
-3. Tier count, names and fuse costs are `GEM_TIERS`, `TIER_NAMES` and `FUSE_COST`; the pouch draws them in blocks of 10 columns (`renderGems` in `ui.js`, `.gb-head` / `.gb-row` in `css/style.css`), and the `GEM_POW` arrays need one entry per tier from Neon up.
+3. Tier count, names and fuse costs are `GEM_TIERS`, `TIER_NAMES` and `FUSE_COST`; the pouch draws them in blocks of 10 columns (`renderGems` in `ui.js`, `.gb-head` / `.gb-row` in `css/style.css`), and the `GEM_POW` arrays need 14 entries (Neon to XX; the block after `GEM_POW` extends them to L). From XXI on, a block only shows once the player owns a gem that reaches it.
 4. Docs: README "Loot and progression" (gem list).
 
 ## Anomaly, implant or shrine

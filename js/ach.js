@@ -224,7 +224,9 @@ export function achList() {
   add('gemPerfect', '🔷', 2, L('Joia Perfeita', 'Perfect Jewel'), L('Crie uma gema Perfeita', 'Create a Perfect gem'), () => (has('flags', 'gemPerfect') ? 1 : 0));
   add('gemNeon', '🌈', 3, L('Coração de Neon', 'Neon Heart'), L('Crie uma gema Neon (nível VII, libera o poder da gema)', 'Create a Neon gem (tier VII, unlocks the gem’s power)'), () => (has('flags', 'gemNeon') ? 1 : 0));
   add('gemSingular', '✴️', 3, L('Joia Singular', 'Singular Jewel'), L('Crie uma gema Singular (nível X)', 'Create a Singular gem (tier X)'), () => (has('flags', 'gemSingular') ? 1 : 0));
-  add('gemApex', '💠', 3, L('Joia Absoluta', 'Absolute Jewel'), L('Crie uma gema Absoluta, o nível máximo (XX)', 'Create an Absolute gem, the highest tier (XX)'), () => (has('flags', 'gemApex') ? 1 : 0));
+  add('gemApex', '💠', 3, L('Joia Absoluta', 'Absolute Jewel'), L('Crie uma gema Absoluta (nível XX)', 'Create an Absolute gem (tier XX)'), () => (has('flags', 'gemApex') ? 1 : 0));
+  add('gemImperial', '👑', 3, L('Joia Imperial', 'Imperial Jewel'), L('Crie uma gema Imperial (nível XXX)', 'Create an Imperial gem (tier XXX)'), () => (has('flags', 'gemImperial') ? 1 : 0));
+  add('gemHyper', '🌌', 3, L('Joia Hiperneon', 'Hyperneon Jewel'), L('Crie uma gema Hiperneon, o nível máximo (L)', 'Create a Hyperneon gem, the highest tier (L)'), () => (has('flags', 'gemHyper') ? 1 : 0));
   add('forgeMax', '🌟', 2, L('Obra-Prima', 'Masterpiece'), L('Aprimore um item até o nível máximo', 'Upgrade an item to its maximum level'), () => total('forgeMax'));
 
   // mundo
