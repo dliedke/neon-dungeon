@@ -113,6 +113,7 @@ Module map (`js/`):
 | `run.js` | Per-floor events: anomalies, contracts, challenge rifts, kill combo, floor-clear bonus, implants, tiers (Nightmare/Inferno, New Game+). |
 | `events.js` | Floor puzzles and challenges (terminals, light floor, laser prisms, upload, time bomb, wanted, shard hunt, prisoner, neon circuit, lost signal, corrupted servers, drone escort, memory pairs, secret room, slot machine). |
 | `events2.js` | The newer floor events (Energy Boxes, Plumbing, Giant Keyboard, Scales, Light Maze, Collapsing Bridge, Paint the Floor, Hide and Seek, Living Statues, Neon Cannon and the batches after them). Same `KIND` contract as `events.js`; exports `NEW_KIND`, `NEW_INFO`, `NEW_IDS`, `NEW_TIMED`, which `events.js` merges into `KIND`, `EVENT_INFO`, `MAIN_EVENTS` and `TIMED`. It imports the shared helpers back from `events.js` (circular, runtime only). |
+| `events3.js` | 30 more floor events (Musical Chairs, Neon Treadmill, Rock Paper Scissors, Block Tower, Sumo, Bowling, Quick Math, Simon Says, Light Tennis, Hot Potato, Thin Ice...). Same contract; exports `NEW3_KIND`, `NEW3_INFO`, `NEW3_IDS` (no timed ones), merged by `events.js` after the `events2.js` ones. Local helpers for updatable canvas labels (`tag` / `setTag`), plates you pick by standing still (`plate`, `dwell`) and small robots (`bot`). |
 | `pets.js` | Decorative pets that wander each biome. |
 | `models.js` | Low-poly models built from primitives (`makePlayerModel`, `makeEnemyModel`, `glowMat`, merged geometry cache). |
 | `fx.js` | Particles, rings, beams, floating numbers. |

@@ -255,7 +255,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 ### Puzzles and challenges
 
-From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself when you get close (events without a fixed place, like the bomb, are explained right away). They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals) your walking speed is capped so fast builds can still land on the right plate. Completing one pays credits and items, and each kind has its own medal.
+From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself when you get close (events without a fixed place, like the bomb, are explained right away). They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals, Rock Paper Scissors, Quick Math, Higher or Lower, Color Mixer, Tic-Tac-Toe, Spelling Bee, Thin Ice, Simon Says, Mirrored Steps, Buzz Wire) your walking speed is capped so fast builds can still land on the right plate. Completing one pays credits and items, and each kind has its own medal.
 
 | Event | What to do |
 |---|---|
@@ -321,6 +321,36 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Sculpture** | Memorize the 5 golden blocks, then break only those (3 mistakes). |
 | **Paired Portals** | Orbs are trapped in circles; step on the outer twin of the colored portal inside to get in, grab the orb and come back. |
 | **King of the Hill** (timed) | Stay on the hill for 22 s while enemies fight for it; points stop when one is inside. |
+| **Musical Chairs** | Robots dance around while the music plays; when it stops, step on one of the lit pads (one fewer than the players) before they do. Win 3 rounds. |
+| **Neon Treadmill** | The belt runs backwards: walk from the green end to the yellow one without falling off the sides, dodging crates that shove you back. |
+| **Rock Paper Scissors** | The robot counts down and flashes its move just before the end; stand on the plate that beats it. Win 3 rounds. |
+| **Block Tower** | A block slides above the tower; hit the button to drop it and whatever hangs over is cut off. Stack them all; 3 misses and it is over. |
+| **Sumo** | Hits and shoves push the robot (and it pushes you). Throw it out of the ring 3 times before it does the same to you. |
+| **Mirrored Steps** | Walk in one square while your mirrored shadow walks in the other; take the shadow to every green pad (a red one wipes the progress, 4 and it fails). |
+| **Buzz Wire** | Walk from the green circle to the pink one along the yellow path; stepping off zaps you back to the start (5 zaps and it is over). |
+| **Neon Bowling** | Hit or bump the ball from behind to roll it; knock down all 10 pins in 3 throws. |
+| **Acid Rain** | Acid falls inside the circle; stay under the wandering umbrella until the timer adds up. |
+| **The Floor is Lava** | Tiles blink and then turn into lava; stand on a dark one every wave. 3 steps in lava and it is over. |
+| **Run from the Hunter** | A hunter drone chases you while you touch the green bases one after another; 3 catches and it is over. |
+| **Fireflies** | Touch the fireflies only while they glow; dark ones dart away. |
+| **Seesaw** | The plank tilts toward where you stand; keep the ball on the green middle band long enough while gusts push it. 3 drops and it is over. |
+| **Quick Math** | Solve the sum on the board and stand still on the plate with the answer. 3 wrong answers and it is over. |
+| **Neon Traffic** | Cross 4 lanes of neon cars to the far sidewalk and come back; 5 hits and it is over. |
+| **Wheel of Fortune** | Hit the lever to spin: numbers add points, the skull wipes them. Step on the safe to cash out (more points, bigger prize). 5 spins. |
+| **Color Mixer** | Three plates switch red, green and blue lights; mix the target color in few taps. 4 colors. |
+| **Higher or Lower** | Guess whether the next number is higher (green plate) or lower (red plate). 3 wrong guesses and it is over. |
+| **Simon Says** | Read the order from the center: run to the color only when it starts with "Simon says". 3 mistakes and it is over. |
+| **Tic-Tac-Toe** | You are X: stand on an empty square to mark it and get three in a row before the robot. |
+| **Gale** | The wind pushes you where the arrow points (it blinks before changing); stay inside the green middle ring long enough. |
+| **Spelling Bee** | Stand on the letters of the word in order (decoy letters included). 3 mistakes and it is over. |
+| **Lost Pups** | Touch the lost pups so they follow you in a line and lead them to the pen; taking damage scatters the line. |
+| **Dynamo** | Run laps around the generator the way the arrows point; the wrong way zaps you. |
+| **Spy in the Crowd** | One robot glitches now and then (red eye and a jitter): hit only that one. The wrong one calls backup; catch 3 spies. |
+| **Light Tennis** | Bounce the ball off yourself back over the net; get 3 balls past the robot before it gets 3 past you. |
+| **Blind Stopwatch** | Hit the button to start the clock, which goes dark after 1 second; hit it again at exactly 5.00 s. 3 tries; the closer, the bigger the prize. |
+| **Neon Kitchen** | Memorize the recipe above the pot, then carry the ingredients from the crates in order. 3 mistakes and it is over. |
+| **Hot Potato** | Pass the bomb by touching the green robots before the fuse runs out in your hands. |
+| **Thin Ice** | Each ice tile breaks once you step off it: cross them all and finish on the gold tile. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -328,7 +358,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**241 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**271 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
@@ -457,6 +487,7 @@ js/ach.js              medals (achievements) and their counters
 js/run.js              floor anomalies, contracts, rifts, kill combo and implants
 js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, circuit, escort, secret room...)
 js/events2.js          the newer floor events (energy boxes, plumbing, giant keyboard, scales, light maze... up to King of the Hill)
+js/events3.js          30 more floor events (musical chairs, sumo, bowling, quick math, simon says, tennis, hot potato, thin ice...)
 js/mythtree.js         the 10 mythic powers per class (5 attacks + 5 defenses), built from shared archetypes
 js/mythic.js           mythic item powers
 js/finale.js           true-ending cinematic after beating the Inferno (2D canvas)

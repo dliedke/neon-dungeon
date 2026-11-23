@@ -28,9 +28,10 @@ import { tierOf, tierFloor, applyAnomalyToEnemy, runHurt } from './run.js';
 import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { NEW_KIND, NEW_INFO, NEW_IDS, NEW_TIMED } from './events2.js';
+import { NEW3_KIND, NEW3_INFO, NEW3_IDS } from './events3.js';
 
 // eventos principais (de 3 a 6 por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'].concat(NEW_IDS);
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'].concat(NEW_IDS, NEW3_IDS);
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 // eventos com contagem de tempo: só um deles por andar
 const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'].concat(NEW_TIMED);
@@ -45,6 +46,7 @@ export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.k
 const STEP_AREA = {
   dance: [2.6, 2.6, 5.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
   piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
+  rps: [2.8, 2.8], math: [3, 2], hilo: [2.5, 1.9], colors: [2.7, 2], tictac: [2.3, 2.3], spell: [4.2, 2.4], thinice: [3.5, 2.95], simon: [2.7, 2.7], mirrorwalk: [4.2, 1.9], buzz: [4.7, 2.7],
 };
 export const STEP_SPEED = 3.8;
 // limite de velocidade no ponto (0 = fora de qualquer área)
@@ -97,6 +99,7 @@ export const EVENT_INFO = {
   secret: { icon: '🧱', css: '#ffaa33', name: L('Sala Secreta', 'Secret Room') },
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
   ...NEW_INFO,
+  ...NEW3_INFO,
 };
 
 // principais do andar anterior (não repetem no seguinte)
@@ -4576,7 +4579,7 @@ const dance = {
 // ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble, ...NEW_KIND };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble, ...NEW_KIND, ...NEW3_KIND };
 
 // Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (3 no começo, 4 do andar 4,
 // 5 do andar 8, e às vezes um a mais) e o pequeno
@@ -4651,7 +4654,8 @@ export function setupEvents(d, floor, boss, rooms) {
 // em volta deles mudam de sala, senão não dá para ver o padrão no meio da briga.
 // Os de luta (arena, ondas, guardas, caçadas) e os que atravessam o andar inteiro ficam como estão.
 const CALM = new Set(['terminals', 'lights', 'prisms', 'signal', 'pairs', 'meteor', 'vault', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'dance',
-  'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal']);
+  'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal',
+  'chairs', 'treadmill', 'rps', 'stacker', 'sumo', 'mirrorwalk', 'buzz', 'bowling', 'acid', 'lava', 'hunter', 'fireflies', 'seesaw', 'math', 'frogger', 'wheel', 'colors', 'hilo', 'simon', 'tictac', 'wind', 'spell', 'spy', 'tennis', 'stopwatch', 'cook', 'potato', 'thinice']);
 const CALM_GAP = 14; // distância mínima entre um evento de atenção e outro evento (ou os inimigos dele)
 const CALM_SEE = 12; // além da borda do evento: o inimigo vê o jogador a 10m (folga para quem pisa um pouco fora)
 let placingCalm = false;
@@ -4750,7 +4754,7 @@ export function updateEvents(dt) {
   }
 }
 // eventos de golpear um alvo: encostar nele também vale (ver touchTargets)
-const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt']);
+const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt', 'stacker', 'sumo', 'bowling', 'wheel', 'spy', 'stopwatch']);
 const introHtml = (E) => {
   const I = EVENT_INFO[E.kind];
   const tip = TOUCH_EV.has(E.kind) ? ` <i>${L('Sem ataque básico? Encostar no alvo também vale golpe.', 'No basic attack? Touching the target counts as a hit too.')}</i>` : '';
