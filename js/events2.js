@@ -678,7 +678,7 @@ const bridge = mk({
 });
 
 // ==================================================================
-// 37. Pintar o Chão: pinte 85% do piso com a sua cor; inimigos pintam de vermelho por cima
+// 37. Pintar o Chão: pinte o piso inteiro com a sua cor; inimigos pintam de vermelho por cima
 // ==================================================================
 const PT_N = 6;
 const PT_C = 1.15;
@@ -720,7 +720,7 @@ const paintFloor = mk({
     if (E.st === 'idle') {
       if (!inRect(E, E.half, E.half)) return;
       E.st = 'run';
-      banner(L('PINTE O CHÃO!', 'PAINT THE FLOOR!'), L('Cubra 85% do piso; os inimigos pintam de vermelho', 'Cover 85% of the floor; enemies paint it red'));
+      banner(L('PINTE O CHÃO!', 'PAINT THE FLOOR!'), L('Pinte todos os quadrados; os inimigos pintam de vermelho', 'Paint every tile; enemies paint it red'));
       sfx.alarm();
       ambush(E, 2, E.x, E.z, E.half + 1.5, E.half + 3.5, 0xff3355);
       return;
@@ -732,18 +732,18 @@ const paintFloor = mk({
       E.wave = 1;
       ambush(E, 2, E.x, E.z, E.half + 1.5, E.half + 3.5, 0xff3355);
     }
-    const need = Math.ceil(PT_N * PT_N * 0.85);
-    if (E.blue >= need) {
+    // todos os quadrados (antes 85%: acabava faltando 4 ou 5)
+    if (E.blue >= PT_N * PT_N) {
       for (const e of E.foes) e.hp = 0;
       complete(E, 1.5, L('TUDO PINTADO!', 'ALL PAINTED!'), L(`${E.blue}/${PT_N * PT_N} quadrados`, `${E.blue}/${PT_N * PT_N} tiles`), E.x, E.z, { extra: true });
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('entre no quadro', 'step on the board') : `${E.blue}/${Math.ceil(PT_N * PT_N * 0.85)} ${L('azuis', 'blue')}`),
+  hud: (E) => (E.st === 'idle' ? L('entre no quadro', 'step on the board') : `${E.blue}/${PT_N * PT_N} ${L('azuis', 'blue')}`),
   busy: (E) => E.st === 'run',
   dim(E) {
     for (let i = 0; i < E.cells.length; i++) paintFloor.paint(E, i, E.st === 'done' ? 1 : 0);
   },
-  intro: () => L('ande sobre o quadro para pintar o piso com a sua cor. Cubra 85% dos quadrados: os inimigos que chegam pintam de vermelho por cima, então derrote-os ou repinte.', 'walk over the board to paint the floor your color. Cover 85% of the tiles: the enemies that show up paint it red, so beat them or repaint.'),
+  intro: () => L('ande sobre o quadro para pintar o piso com a sua cor. Pinte todos os quadrados: os inimigos que chegam pintam de vermelho por cima, então derrote-os ou repinte.', 'walk over the board to paint the floor your color. Paint every tile: the enemies that show up paint it red, so beat them or repaint.'),
 });
 
 // ==================================================================

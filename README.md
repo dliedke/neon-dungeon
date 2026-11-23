@@ -298,7 +298,7 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Scales** | Carry weighted orbs to the right pan until it matches the number on the left. Overshoot and everything drops. |
 | **Light Maze** | An invisible maze whose walls only light up near you. Reach the golden orb in the far corner. |
 | **Collapsing Bridge** | Cross a bridge of plates that collapse right after you step and have gaps. Falling costs some health and sends you back. You can cross from either end, but stepping off the side resets the crossing. |
-| **Paint the Floor** | Walk over the board to paint it your color and cover 85%. Enemies that show up paint it red. |
+| **Paint the Floor** | Walk over the board to paint it your color until every tile is covered. Enemies that show up paint it red. |
 | **Hide and Seek** | A thief hides in one of 6 barrels. Stand next to one to open it; an empty barrel shows HOT (the thief is next to it), WARM (diagonal) or COLD (far). Two misses are allowed, enough to always deduce the right one. |
 | **Living Statues** | Statues only move while you move. Grab 3 golden orbs in short bursts. |
 | **Neon Cannon** | Each hit on the cannon fires a shell along a sweeping aim line. Hit the 3 targets in 9 shots. |
