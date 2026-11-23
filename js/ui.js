@@ -2211,10 +2211,8 @@ function favMark(it) {
 
 // Reciclar em lote: só as raridades marcadas no filtro (G.settings.recycle).
 // Favoritos nunca, e nunca um item melhor que o equipado no mesmo espaço (nem com espaço vazio).
-const betterThanEquipped = (it, equip) => {
-  const cur = equip[it.slot];
-  return !cur || itemScore(unforged(it)) > itemScore(unforged(cur));
-};
+// Mesma regra do ▲ (isUpgrade): antes um item só 0–3% melhor ficava sem ícone mas escapava da reciclagem.
+const betterThanEquipped = (it, equip) => isUpgrade(it, equip);
 const recFilter = () => G.settings.recycle || [];
 const recyclable = (c) => {
   const f = recFilter();

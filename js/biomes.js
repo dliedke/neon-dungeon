@@ -574,18 +574,37 @@ function upgradeFor(slot, floor, minRarity) {
   const cur = c.equip[slot];
   const curScore = itemScore(unforged(cur));
   let best = null;
+  const good = (it) => itemScore(it) >= curScore * 1.1 && isUpgrade(it, c.equip);
+  const base = Math.max(floor + 1, cur ? cur.ilvl : 1);
+  // nunca abaixo da raridade equipada: com mítico oferece mítico melhor, com divino, divino melhor
+  // e com primordial, primordial melhor (sem primordial equipado a loja não vende primordial)
+  const cr = cur ? Math.min(PRIMORDIAL, cur.rarity) : 0;
   for (let t = 0; t < 80; t++) {
     // a cada tentativa sem sucesso, o nível do item sobe um pouco
-    const ilvl = Math.max(floor + 1, (cur ? cur.ilvl : 1)) + Math.floor(t / 8);
-    // nunca abaixo da raridade equipada: com mítico oferece mítico melhor, com divino, divino melhor
-    // e com primordial, primordial melhor (sem primordial equipado a loja não vende primordial)
-    const cr = cur ? Math.min(PRIMORDIAL, cur.rarity) : 0;
+    const ilvl = base + Math.floor(t / 8);
     const rarity = Math.max(minRarity, cr, Math.min(3, cr + (t > 30 ? 1 : 0)), t > 50 ? 3 : 0);
     const it = makeItem({ ilvl, rarity, slot, cls: c.cls });
     if (!best || itemScore(it) > itemScore(best)) best = it;
-    if (itemScore(it) >= curScore * 1.1 && isUpgrade(it, c.equip)) {
+    if (good(it)) {
       best = it;
       break;
+    }
+  }
+  // Nível de item alto (Abismo): +10 níveis quase não mudam nada e um equipado com ótimos atributos
+  // vencia os 80 sorteios; a loja vendia o "melhor que achou", sem ser melhoria. Agora o nível sobe
+  // em porcentagem até sair uma melhoria de verdade (todo item da loja é melhor que o equipado).
+  // (aqui basta 5% melhor: o nível sobe o mínimo possível)
+  const ok = (it) => itemScore(it) >= curScore * 1.05 && isUpgrade(it, c.equip);
+  for (let t = 1; t <= 80 && !good(best) && !ok(best); t++) {
+    const ilvl = Math.round(base * (1 + 0.02 * t)) + 10 + t;
+    const rarity = Math.max(minRarity, cr, 3);
+    for (let k = 0; k < 4; k++) {
+      const it = makeItem({ ilvl, rarity, slot, cls: c.cls });
+      if (itemScore(it) > itemScore(best)) best = it;
+      if (ok(it)) {
+        best = it;
+        break;
+      }
     }
   }
   const gain = curScore > 0 ? Math.max(0, itemScore(best) / curScore - 1) : 1;
