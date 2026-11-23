@@ -4738,7 +4738,10 @@ function dropFoe(e, i) {
 }
 
 export function updateEvents(dt) {
-  if (!G.events || !G.events.length || !G.player) return;
+  if (!G.events || !G.events.length || !G.player) {
+    hideGuide();
+    return;
+  }
   const p = G.player;
   touchTargets();
   for (const E of G.events) {
@@ -4746,19 +4749,70 @@ export function updateEvents(dt) {
     E.foesWas = E.foesNear;
     E.foesNear = 0;
     KIND[E.kind].update(E, dt);
-    // explicação de cada evento quando o jogador chega perto
-    if (!E.told && E.x != null && KIND[E.kind].intro && E.st !== 'done' && E.st !== 'failed' && p.alive && Math.hypot(p.x - E.x, p.z - E.z) < Math.max(9, E.introR || 0)) {
-      E.told = true;
-      toast(introHtml(E), 'leg');
+  }
+  // explicação do evento mais perto: um cartão que fica na tela enquanto o jogador estiver por ali
+  updateGuide(p.alive ? guideFor(p) : null, dt);
+}
+
+// cartão de instruções (#ev-guide, dentro de #toasts): aparece ao chegar perto de um evento e só some ao se afastar
+// ou quando ele termina. Na tela pequena de celular, depois do tempo de leitura, encolhe para uma linha; tocar abre de novo
+let guideE = null;
+let guideEl = null;
+let guideT = 0;
+function guideFor(p) {
+  let best = null;
+  let bd = 1e9;
+  for (const E of G.events) {
+    if (E.x == null || !KIND[E.kind].intro || E.st === 'done' || E.st === 'failed') continue;
+    // um pouco de folga para sair do que já está aberto (não pisca na borda)
+    const r = Math.max(9, E.introR || 0) + (E === guideE ? 4 : 0);
+    const d = Math.hypot(p.x - E.x, p.z - E.z);
+    if (d < r && d < bd) {
+      bd = d;
+      best = E;
     }
   }
+  return best;
+}
+const smallTouch = () => G.isTouch && matchMedia('(max-height: 520px), (max-width: 640px)').matches;
+function updateGuide(E, dt) {
+  if (!guideEl) {
+    guideEl = document.getElementById('ev-guide');
+    if (!guideEl) return;
+    guideEl.onclick = () => {
+      guideEl.classList.toggle('mini');
+      guideT = 0;
+    };
+  }
+  if (E !== guideE) {
+    guideE = E;
+    guideEl.classList.toggle('hidden', !E);
+    guideEl.parentElement.classList.toggle('guide', !!E);
+    if (!E) return;
+    E.told = true;
+    const I = EVENT_INFO[E.kind];
+    guideEl.innerHTML = `<div class="eg-head">${I.icon} <b style="color:${I.css}">${I.name}</b><span class="eg-tog"></span><span class="eg-more"> ${L('toque para ler', 'tap to read')}</span></div><div class="eg-body">${introBody(E)}</div>`;
+    guideEl.classList.remove('mini');
+    // tempo de leitura (no celular o cartão depois encolhe para não cobrir o evento)
+    guideT = smallTouch() ? Math.min(25, Math.max(10, guideEl.textContent.length * 0.07)) : 0;
+    return;
+  }
+  if (E && guideT > 0 && (guideT -= dt) <= 0) guideEl.classList.add('mini');
+}
+export function hideGuide() {
+  if (guideE) updateGuide(null, 0);
 }
 // eventos de golpear um alvo: encostar nele também vale (ver touchTargets)
 const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt', 'stacker', 'sumo', 'bowling', 'wheel', 'spy', 'stopwatch']);
+const touchTip = (E) => (TOUCH_EV.has(E.kind) ? ` <i>${L('Sem ataque básico? Encostar no alvo também vale golpe.', 'No basic attack? Touching the target counts as a hit too.')}</i>` : '');
+// texto do cartão: começa com maiúscula, sem o nome (que vai no título)
+const introBody = (E) => {
+  const t = KIND[E.kind].intro(E);
+  return t.charAt(0).toUpperCase() + t.slice(1) + touchTip(E);
+};
 const introHtml = (E) => {
   const I = EVENT_INFO[E.kind];
-  const tip = TOUCH_EV.has(E.kind) ? ` <i>${L('Sem ataque básico? Encostar no alvo também vale golpe.', 'No basic attack? Touching the target counts as a hit too.')}</i>` : '';
-  return `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${KIND[E.kind].intro(E)}${tip}`;
+  return `${I.icon} <b style="color:${I.css}">${I.name}</b>: ${KIND[E.kind].intro(E)}${touchTip(E)}`;
 };
 
 // inimigo derrotado pelo jogador

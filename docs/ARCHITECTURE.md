@@ -238,7 +238,7 @@ Puzzles and challenges. Each floor gets 3 to 9 main events (`MAIN_EVENTS`: termi
 - Each kind is an object registered in `KIND`:
   - `setup(d, floor, rooms)` builds the meshes and returns the event object, or `null` if it doesn't fit.
   - `update(E, dt)`, `hud(E)`, `save(E)` / `load(E, s)` and `intro(E)` (the explanation toast).
-- Announcements: `announceEvents` shows one summary toast with every event, then the intro of events without a fixed place (`E.x == null`) and the signal. Events with a place show their intro when the player gets within 9 m (or `E.introR`), flagged with `E.told`.
+- Announcements: `announceEvents` shows one summary toast with every event, then the intro of events without a fixed place (`E.x == null`) and the signal. Events with a place show their intro in the guide card `#ev-guide` (first child of `#toasts`, bigger text) while the player is within 9 m (or `E.introR`, +4 m to leave), flagged with `E.told`; it hides when the event ends or the player walks away (`guideFor` / `updateGuide` / `hideGuide` in `events.js`). On small touch screens it shrinks to its title line after a reading time (10–25 s) and only the newest toast shows under it; a click/tap toggles it.
 - Extra positions (race finish, ball goal) go in `E.pts` so `spotOk` keeps other events away from them.
   - Optional: `busy(E)` holds the floor-clear check (e.g. during the upload), and `kill(E, e)` reacts to kills.
 - `EVENT_INFO[kind]` has the icon, color, name and an optional `short` name for the HUD.
@@ -380,7 +380,7 @@ Paste this into `Runtime.evaluate` (as `expression`, `returnByValue: true`) afte
 Reading the result:
 
 - Wait ~3 s after `startGame` so the menu fade-out is over; otherwise the menu buttons show up as overlaps with the skill bar.
-- The floor banner (`#banner-*`) and the first intro toasts are temporary and may cross the minimap; run the check again after they fade (or ignore them). Everything else that overlaps, especially mission/event texts (`#run-info`, `#exit-prompt`, `#interact`, `#combo`, toasts) under touch buttons or the joystick, is a bug to fix.
+- The floor banner (`#banner-*`), the first intro toasts and the expanded `#ev-guide` on phones (it covers `#run-info` until it shrinks) are temporary and may cross the minimap; run the check again after they fade (or ignore them). Everything else that overlaps, especially mission/event texts (`#run-info`, `#exit-prompt`, `#interact`, `#combo`, toasts) under touch buttons or the joystick, is a bug to fix.
 - The checker can't see canvas drawings (minimap marks, 3D labels in `#labels` that follow the world). Check those in the screenshot.
 - Re-run it with the panel or event state that the change introduces, not only the plain HUD.
 

@@ -196,7 +196,7 @@ The original ones are in `js/events.js`; the newer ones live in `js/events2.js` 
    - `setup(d, floor, rooms)`: find a spot with `findSpot(d, rooms, radius)`, build the meshes in a group from `groupAt`, and return `{ kind, x, z, st, ... }` (or `null` if it doesn't fit).
    - Only draw from `rr`/`ri`/`pick`/`chance` in `setup` (it runs inside `isolateRandom`). Use `Math.random` in `update`.
    - `update(E, dt)` drives it. End with `complete(E, mult, title, sub, x, z)` or `failed(E, msg)`.
-   - `hud(E)` returns the short text after the name. `intro(E)` is the explanation toast (shown when the player gets close, or on arrival if the event has no `x`).
+   - `hud(E)` returns the short text after the name. `intro(E)` is the explanation (shown in the `#ev-guide` card while the player is close, or as a toast on arrival if the event has no `x`).
    - Damage to the player: `eventHurt(frac, x, z, knock)` (never lethal). Things to hit: `hitTarget` + `hitsOf` (touching counts too; add the id to `TOUCH_EV` in `events.js`). Something the player must watch and memorize: gate it with `if (waitFoes(E)) ...` so it only plays with no enemies around. Extra positions: `E.pts`.
    - `save(E)` / `load(E, s)` keep its progress across a resume.
 3. Register it in `KIND`. Main events also go in `MAIN_EVENTS`; a small event needs its own roll in `setupEvents`. If it has a clock (time limit or countdown), add it to `TIMED` so two timed events never share a floor.

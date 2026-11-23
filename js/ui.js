@@ -1013,10 +1013,12 @@ export function toast(html, cls = '', key = null) {
   el.className = 'toast ' + cls;
   el.innerHTML = html;
   root.appendChild(el);
-  while (root.children.length > 4) root.firstChild.remove();
+  // o cartão do evento (#ev-guide) mora aqui dentro e não conta
+  const all = root.getElementsByClassName('toast');
+  while (all.length > 4) all[0].remove();
   const long = cls === 'leg' || cls === 'myth';
   // texto comprido (explicações dos eventos) fica mais tempo para dar para ler
-  const ms = Math.max(cls === 'myth' ? 6000 : long ? 4000 : 2200, Math.min(9000, el.textContent.length * 40));
+  const ms = Math.max(cls === 'myth' ? 6000 : long ? 4000 : 2200, Math.min(long ? 16000 : 9000, el.textContent.length * (long ? 60 : 40)));
   setTimeout(() => el.classList.add('out'), ms);
   setTimeout(() => el.remove(), ms + 500);
 }
