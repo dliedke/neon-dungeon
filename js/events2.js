@@ -398,9 +398,15 @@ const scale = mk({
     const s = findSpot(d, rooms, 4.4, 2.5);
     if (!s) return null;
     const g = groupAt(s.x, s.z);
+    // pesos grandes (crescem com o andar: até 99) e todos diferentes; o alvo soma 3 ou 4 orbes
+    const lo = 3;
+    const hi = 19 + Math.min(80, floor);
     const ws = [];
-    for (let k = 0; k < 5; k++) ws.push(ri(1, 4));
-    const pick2 = shuffle(ws.slice()).slice(0, 2 + ri(0, 1));
+    while (ws.length < 7) {
+      const w = ri(lo, hi);
+      if (!ws.includes(w)) ws.push(w);
+    }
+    const pick2 = shuffle(ws.slice()).slice(0, 3 + ri(0, 1));
     const target = pick2.reduce((a, b) => a + b, 0);
     const panL = { x: -3.3, z: 0 };
     const panR = { x: 3.3, z: 0 };
@@ -415,14 +421,17 @@ const scale = mk({
     g.add(beam);
     put(beam, box(6.6, 0.14, 0.14), lightMat(SC_COL, 1.4), 0, 0, 0);
     put(g, box(0.16, 2.4, 0.16), mats().metal, 0, 1.2, 0);
-    label(g, String(target), SC_COL, panL.x, 1.3, 0, 1.4);
+    label(g, String(target), SC_COL, panL.x, 1.3, 0, 1.4, target > 99 ? 1.6 : 1.2);
     // peso fixo da esquerda
     put(g, mats().oct, glowMat(SC_COL, 2.2), panL.x, 0.65, 0, 0.5, 0.6, 0.5);
     const orbs = ws.map((w, i) => {
-      const x0 = -1.6 + (i % 5) * 0.8;
-      const z0 = (i % 2 ? 1 : -1) * (0.7 + (i % 3) * 0.35);
-      const m = put(g, mats().oct, glowMat(SC_W[w - 1], 2.2), x0, 0.55, z0, 0.2 + w * 0.05, 0.26 + w * 0.05, 0.2 + w * 0.05);
-      const lb = label(g, String(w), 0xffffff, x0, 1.25, z0, 0.6);
+      const x0 = -1.8 + i * 0.6;
+      const z0 = (i % 2 ? 1 : -1) * (0.8 + (i % 3) * 0.4);
+      // cor e tamanho pela faixa do peso (leve = vermelho/pequeno ... pesado = azul/grande)
+      const f = (w - lo) / (hi - lo + 1);
+      const sz = 0.25 + f * 0.25;
+      const m = put(g, mats().oct, glowMat(SC_W[Math.floor(f * 4)], 2.2), x0, 0.55, z0, sz, sz * 1.25, sz);
+      const lb = label(g, String(w), 0xffffff, x0, 1.25, z0, 0.6, 1.2);
       return { w, x0, z0, m, lb, st: 'field' };
     });
     return { kind: 'scale', x: s.x, z: s.z, g, panL, panR, beam, orbs, target, sum: 0, carry: null, st: 'idle', tilt: 0 };
@@ -439,7 +448,7 @@ const scale = mk({
   },
   update(E, dt) {
     const p = G.player;
-    E.tilt += ((E.target - E.sum) * 0.14 - E.tilt) * Math.min(1, dt * 5);
+    E.tilt += (((E.target - E.sum) / E.target) * 0.8 - E.tilt) * Math.min(1, dt * 5);
     E.beam.rotation.z = Math.max(-0.45, Math.min(0.45, E.tilt));
     if (!near(E, 8)) return;
     if (E.st === 'idle') E.st = 'run';
