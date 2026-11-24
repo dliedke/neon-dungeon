@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { G } from './state.js';
 import { L } from './i18n.js';
 import { ri, rr, shuffle } from './utils.js';
-import { isWalkable } from './dungeon.js';
+import { isWalkable, lineOfSight } from './dungeon.js';
 import { glowMat, box } from './models.js';
 import { burst, ringFx, floatText } from './fx.js';
 import { sfx } from './audio.js';
@@ -417,10 +417,13 @@ const treadmill = mk({
 });
 
 // ==================================================================
-// 63. Jokenpô: o robô mostra a jogada um pouco antes do fim da contagem; pise na que vence
+// 63. Jokenpô: contagem 3, 2, 1; o robô mostra a jogada e você tem um instante para pisar na placa que vence
 // ==================================================================
 const RP_COL = 0xffd23d;
 const RP_ICON = ['✊', '✋', '✌️'];
+const RP_NAME = () => [L('PEDRA', 'ROCK'), L('PAPEL', 'PAPER'), L('TESOURA', 'SCISSORS')];
+// placa i vence a jogada (i + 2) % 3: pedra > tesoura, papel > pedra, tesoura > papel
+const rpWin = (pick) => (pick + 1) % 3;
 const rps = mk({
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 2.8, 2.8);
@@ -428,25 +431,28 @@ const rps = mk({
     const g = groupAt(s.x, s.z);
     const plates = [-1.7, 0, 1.7].map((x, i) => {
       const q = plate(g, x, 1.3, 1.4, 1.4, RP_COL);
-      tag(g, RP_ICON[i], 0xffffff, x, 0.7, 1.3, 0.9);
+      tag(g, RP_ICON[i], 0xffffff, x, 1, 1.3, 0.9);
+      // dica na própria placa, embaixo do ícone: o que ela vence
+      tag(g, [[L('vence ', 'beats '), 0xffffff], [RP_ICON[(i + 2) % 3], 0xffffff]], 0xffffff, x, 0.3, 1.3, 0.44, 2.6);
       return q;
     });
     const b = bot(g, 0xff4df0, 0, -1.8, 1.1);
-    const screen = tag(g, '?', 0xffffff, 0, 2.5, -1.8, 1.2);
+    const screen = tag(g, '?', 0xffffff, 0, 2.5, -1.8, 1.2, 1.6);
     const score = tag(g, '0 × 0', RP_COL, 0, 1.9, 0.2, 0.8, 2.6);
     return { kind: 'rps', x: s.x, z: s.z, g, plates, b, screen, score, st: 'idle', me: 0, rob: 0, t: 0, phase: 'count', pick: 0 };
   },
   round(E) {
     E.phase = 'count';
-    E.t = 3;
+    E.t = 2.4;
     E.pick = Math.floor(Math.random() * 3);
     for (const q of E.plates) setLight(q.ring, RP_COL, 0.6);
+    setTag(E.score, `${E.me} × ${E.rob}`, RP_COL);
   },
   update(E, dt) {
     if (E.st === 'idle') {
       if (!near(E, 3.6) || waitFoes(E)) return;
       E.st = 'run';
-      banner(L('JO-KEN-PÔ!', 'ROCK PAPER SCISSORS!'), L('O robô mostra a jogada antes do fim: pise na que vence', 'The robot shows its move just before the end: stand on the winner'));
+      banner(L('JO-KEN-PÔ!', 'ROCK PAPER SCISSORS!'), L('Veja a jogada do robô e pise na placa que ganha dela', "See the robot's move and stand on the plate that beats it"));
       rps.round(E);
       return;
     }
@@ -455,41 +461,64 @@ const rps = mk({
       if (E.t <= 0) rps.round(E);
       return;
     }
-    const reveal = G.floor >= 20 ? 1.1 : 1.4;
-    if (E.t > reveal) setTag(E.screen, String(Math.ceil(E.t - reveal)), 0xffffff);
-    else setTag(E.screen, RP_ICON[E.pick], 0xffffff);
-    setLight(E.b.eye, E.t > reveal ? 0xff4df0 : 0xffd23d, 2.4);
     const k = plateIdx(E, E.plates, 0.1);
     E.plates.forEach((q, i) => (q.fill.opacity = i === k ? 0.45 : 0.12));
+    if (E.phase === 'count') {
+      // 3, 2, 1 (o robô balança o punho)
+      setTag(E.screen, String(Math.min(3, Math.ceil(E.t / 0.8))), 0xffffff);
+      setLight(E.b.eye, 0xff4df0, 2.4);
+      E.b.m.position.y = Math.abs(Math.sin(E.t * Math.PI * 1.25)) * 0.25;
+      if (E.t > 0) return;
+      // o robô mostra a jogada: agora dá um tempo para ir até a placa certa
+      E.phase = 'show';
+      E.t = G.floor >= 20 ? 1.6 : 2;
+      E.win = E.t;
+      E.b.m.position.y = 0;
+      setTag(E.screen, RP_ICON[E.pick], 0xffffff);
+      setLight(E.b.eye, 0xffd23d, 2.6);
+      say(E, L(`ROBÔ: ${RP_NAME()[E.pick]}!`, `ROBOT: ${RP_NAME()[E.pick]}!`), 'crit', 0, -1.8);
+      sfx.telegraph();
+      return;
+    }
+    // tempo para escolher: o placar vira uma barra que esvazia
+    const n = Math.ceil((E.t / E.win) * 8);
+    setTag(E.score, '▮'.repeat(Math.max(0, n)) + '▯'.repeat(8 - Math.max(0, n)), E.t < E.win * 0.35 ? 0xff3355 : RP_COL);
     if (E.t > 0) return;
-    // fim da contagem: vale a placa em que o jogador está
+    // fim do tempo: vale a placa em que o jogador está
     E.phase = 'res';
-    E.t = 1.5;
+    E.t = 2;
+    const w = rpWin(E.pick);
     let msg;
     if (k < 0) {
       E.rob++;
       msg = [L('SEM JOGADA!', 'NO MOVE!'), 'hurt'];
-    } else if (k === E.pick) msg = [L('EMPATE', 'DRAW'), 'up'];
-    else if ((k - E.pick + 3) % 3 === 1) {
+    } else if (k === E.pick) msg = [`${RP_ICON[k]} = ${RP_ICON[E.pick]}  ${L('EMPATE', 'DRAW')}`, 'up'];
+    else if (k === w) {
       E.me++;
-      msg = [L('VOCÊ GANHOU!', 'YOU WIN!'), 'crit'];
+      msg = [`${RP_ICON[k]} > ${RP_ICON[E.pick]}  ${L('VOCÊ GANHOU!', 'YOU WIN!')}`, 'crit'];
       sfx.coin();
     } else {
       E.rob++;
-      msg = [L('O ROBÔ GANHOU', 'ROBOT WINS'), 'hurt'];
+      msg = [`${RP_ICON[k]} < ${RP_ICON[E.pick]}  ${L('O ROBÔ GANHOU', 'ROBOT WINS')}`, 'hurt'];
       sfx.deny();
     }
-    if (k >= 0) setLight(E.plates[k].ring, msg[1] === 'hurt' ? 0xff3355 : 0x39ff88, 2.4);
+    if (k >= 0) setLight(E.plates[k].ring, msg[1] === 'hurt' ? 0xff3355 : msg[1] === 'up' ? 0xffffff : 0x39ff88, 2.4);
+    // errou: a placa certa acende em verde para ensinar
+    if (k !== w) setLight(E.plates[w].ring, 0x39ff88, 2.4);
     say(E, msg[0], msg[1]);
     setTag(E.score, `${E.me} × ${E.rob}`, RP_COL);
     if (E.me >= 3) complete(E, 1.2, L('JOKENPÔ VENCIDO!', 'ROCK PAPER SCISSORS WON!'), `${E.me} × ${E.rob}`, E.x, E.z);
     else if (E.rob >= 3) failed(E, L('O robô venceu o jokenpô.', 'The robot won rock paper scissors.'));
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue perto do robô', 'go near the robot') : `${E.me} × ${E.rob} (${L('melhor de 5', 'first to 3')})`),
+  hud: (E) => {
+    if (E.st === 'idle') return L('chegue perto do robô', 'go near the robot');
+    const tail = `${E.me} × ${E.rob} (${L('quem fizer 3', 'first to 3')})`;
+    return E.phase === 'show' ? `🤖 ${RP_ICON[E.pick]} → ? · ${E.me} × ${E.rob}` : tail;
+  },
   dim(E) {
     setTag(E.screen, E.st === 'done' ? '🏆' : '✖', 0xffffff);
   },
-  intro: () => L('conta 3, 2, 1... e um pouco antes do fim o robô mostra a jogada dele na tela. Fique na placa que vence (pedra ganha de tesoura, tesoura de papel, papel de pedra). Ganhe 3 rodadas.', 'counts 3, 2, 1... and just before the end the robot shows its move on its screen. Stand on the plate that beats it (rock beats scissors, scissors beat paper, paper beats rock). Win 3 rounds.'),
+  intro: () => L('o robô conta 3, 2, 1 e mostra a jogada na tela. Corra para a placa que vence a dele (cada placa diz o que vence). Quem fizer 3 pontos ganha.', "the robot counts 3, 2, 1 and shows its move on its screen. Run to the plate that beats it (each plate says what it beats). First to 3 points wins."),
 });
 
 // ==================================================================
@@ -1099,7 +1128,8 @@ const lava = mk({
       E.hot.fill(false);
       for (let k = 0; k < n; k++) E.hot[order[k]] = true;
       E.phase = 'warn';
-      E.t = Math.max(0.85, 1.4 - E.wave * 0.06 - G.floor * 0.004);
+      // com o limite de velocidade dos eventos de pisar (STEP_SPEED) o aviso dura um pouco mais
+      E.t = Math.max(1.05, 1.6 - E.wave * 0.06 - G.floor * 0.004);
       E.blink = 0;
       E.bt = 0;
       sfx.telegraph();
@@ -2024,6 +2054,7 @@ const tictac = mk({
 // ==================================================================
 const WI_COL = 0x9ad7ff;
 const WI_R = 3.4;
+const WI_IN = 1.5;
 const WI_NEED = 15;
 const wind = mk({
   setup(d, floor, rooms) {
@@ -2032,7 +2063,7 @@ const wind = mk({
     const g = groupAt(s.x, s.z);
     put(g, mats().ring, lightMat(WI_COL, 0.8), 0, 0.03, 0, WI_R, 1, WI_R);
     const core = lightMat(0x39ff88, 1.2);
-    put(g, mats().ring, core, 0, 0.04, 0, 1.1, 1, 1.1);
+    put(g, mats().ring, core, 0, 0.04, 0, WI_IN, 1, WI_IN);
     const arrow = new THREE.Group();
     arrow.position.y = 0.1;
     g.add(arrow);
@@ -2040,7 +2071,7 @@ const wind = mk({
     put(arrow, box(1.6, 0.04, 0.16), am, 0.2, 0, 0);
     put(arrow, mats().cone, am, 1.1, 0, 0, 3, 3, 2).rotation.y = Math.PI / 2;
     for (const a of [0, 1, 2]) put(arrow, box(0.5, 0.03, 0.06), am, -1.6 - a * 0.1, 0, (a - 1) * 0.4);
-    return { kind: 'wind', x: s.x, z: s.z, g, core, arrow, am, st: 'idle', dir: 0, next: 0, t: 2.5, tel: 0, ok: 0 };
+    return { kind: 'wind', x: s.x, z: s.z, g, core, arrow, am, st: 'idle', dir: 0, next: 0, t: 2.5, tel: 0, ok: 0, wx: 0, wz: 0 };
   },
   update(E, dt) {
     const p = G.player;
@@ -2055,7 +2086,7 @@ const wind = mk({
     }
     if (!pin) return;
     E.t -= dt;
-    if (E.t <= 0.7 && E.tel <= 0) {
+    if (E.t <= 1.1 && E.tel <= 0) {
       // aviso: a seta pisca na direção nova
       E.tel = 1;
       E.next = E.dir + (Math.random() < 0.5 ? 1 : -1) * rr(1.6, Math.PI);
@@ -2063,17 +2094,21 @@ const wind = mk({
     if (E.tel > 0) setLight(E.am, Math.floor(G.t * 8) % 2 ? 0xffffff : WI_COL, 2.4);
     if (E.t <= 0) {
       E.dir = E.next;
-      E.t = rr(2, 3.2);
+      E.t = rr(2.8, 4.2);
       E.tel = 0;
       setLight(E.am, WI_COL, 2);
       sfx.dash();
     }
     E.arrow.rotation.y = -(E.tel > 0 ? E.next : E.dir);
-    const str = (p.stats ? p.stats.speed : 5) * Math.min(0.78, 0.52 + G.floor * 0.004 + (E.ok / WI_NEED) * 0.12);
-    p.x += Math.cos(E.dir) * str * dt;
-    p.z += Math.sin(E.dir) * str * dt;
+    // força bem abaixo da velocidade do jogador; na troca de direção o vento gira aos poucos (antes virava de uma vez)
+    const str = (p.stats ? p.stats.speed : 5) * Math.min(0.5, 0.34 + G.floor * 0.0025 + (E.ok / WI_NEED) * 0.08);
+    const k = Math.min(1, dt * 2.5);
+    E.wx += (Math.cos(E.dir) - E.wx) * k;
+    E.wz += (Math.sin(E.dir) - E.wz) * k;
+    p.x += E.wx * str * dt;
+    p.z += E.wz * str * dt;
     if (Math.random() < dt * 12) burst(p.x - Math.cos(E.dir) * 1.5, 1, p.z - Math.sin(E.dir) * 1.5, WI_COL, 1, 0.5, 0.05, 0.4, { grav: 0 });
-    const inC = Math.hypot(lx, lz) < 1.1;
+    const inC = Math.hypot(lx, lz) < WI_IN;
     setLight(E.core, inC ? 0x39ff88 : 0xff3355, inC ? 2.2 : 1);
     if (inC) E.ok += dt;
     if (E.ok >= WI_NEED) complete(E, 1.3, L('PÉ NO CHÃO!', 'STOOD YOUR GROUND!'), L(`${WI_NEED}s na ventania`, `${WI_NEED}s in the gale`), E.x, E.z);
@@ -2163,13 +2198,15 @@ const pups = mk({
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 1.8);
     if (!s) return null;
+    // cada filhote à vista do cercado (sem parede no meio), fora de peças do bioma, enfeites e áreas de outros eventos;
+    // antes um podia cair atrás de uma parede, embaixo de um enfeite ou dentro de outro evento e sumia
     const spots = [];
-    for (let t = 0; t < 200 && spots.length < PU_N; t++) {
+    for (let t = 0; t < 300 && spots.length < PU_N; t++) {
       const a = rr(0, TAU);
-      const r = rr(4.5, 9);
+      const r = rr(4, 8.5);
       const x = s.x + Math.cos(a) * r;
       const z = s.z + Math.sin(a) * r;
-      if (!isWalkable(d, x, z) || !isWalkable(d, x + 0.5, z) || !isWalkable(d, x - 0.5, z) || !isWalkable(d, x, z + 0.5) || !isWalkable(d, x, z - 0.5)) continue;
+      if (!pups.free(d, x, z) || !lineOfSight(d, s.x, s.z, x, z)) continue;
       if (spots.some((q) => Math.hypot(q[0] - x, q[1] - z) < 2)) continue;
       spots.push([x, z]);
     }
@@ -2192,11 +2229,21 @@ const pups = mk({
       put(m, box(0.06, 0.14, 0.06), ear, -0.1, 0.62, 0.3);
       put(m, box(0.06, 0.14, 0.06), ear, 0.1, 0.62, 0.3);
       put(m, box(0.06, 0.06, 0.2), mat, 0, 0.34, -0.32);
+      // anel aceso embaixo de quem ainda espera, para achar os filhotes de longe
+      const mark = put(m, mats().ring, lightMat(PU_COL, 1.6), 0, 0.03, 0, 0.5, 1, 0.5);
       m.position.set(x, 0, z);
       G.world.add(m);
-      return { m, x, z, hx: x, hz: z, st: 'wait', tx: x, tz: z, ph: i };
+      return { m, mark, x, z, hx: x, hz: z, st: 'wait', tx: x, tz: z, ph: i, sc: 0 };
     });
-    return { kind: 'pups', x: s.x, z: s.z, g, list, st: 'idle', foes: [], home: 0, lastHp: 0, nt: 0, introR: 11 };
+    // pts: os outros eventos montados depois ficam longe dos filhotes (spotOk)
+    return { kind: 'pups', x: s.x, z: s.z, g, list, pts: spots.map(([x, z]) => ({ x, z })), st: 'idle', foes: [], home: 0, lastHp: 0, nt: 0, introR: 11 };
+  },
+  // ponto livre para um filhote: chão andável em volta, sem peça do bioma, longe de enfeites e de outros eventos
+  free(d, x, z) {
+    if (!isWalkable(d, x, z) || !isWalkable(d, x + 0.5, z) || !isWalkable(d, x - 0.5, z) || !isWalkable(d, x, z + 0.5) || !isWalkable(d, x, z - 0.5)) return false;
+    if (d.feat && d.feat[Math.floor(z) * d.W + Math.floor(x)]) return false;
+    if (d.props && d.props.some((q) => Math.hypot(q.x - x, q.z - z) < 1.3)) return false;
+    return !G.events.some((E) => E.x != null && Math.hypot(E.x - x, E.z - z) < 5.5);
   },
   move(o, tx, tz, sp, dt) {
     const dx = tx - o.x;
@@ -2220,8 +2267,13 @@ const pups = mk({
     // levou dano: a fila se espalha
     if (E.lastHp && p.hp < E.lastHp - 0.5 && chain.length) {
       for (const o of chain) {
-        const pt = freeAround(G.dungeon, o.x, o.z, 2.5, 4.5);
+        let pt = null;
+        for (let t = 0; t < 6 && !pt; t++) {
+          const q = freeAround(G.dungeon, o.x, o.z, 2.5, 4.5);
+          if (q && lineOfSight(G.dungeon, o.x, o.z, q.x, q.z)) pt = q;
+        }
         o.st = 'scatter';
+        o.sc = 2.5;
         o.tx = pt ? pt.x : o.x;
         o.tz = pt ? pt.z : o.z;
       }
@@ -2243,22 +2295,27 @@ const pups = mk({
         n++;
         continue;
       }
+      o.mark.visible = true;
       if (o.st === 'scatter') {
-        if (pups.move(o, o.tx, o.tz, 5, dt) < 0.1) {
+        // corre para longe; se travar numa parede para ali mesmo (antes ficava fugindo para sempre e não dava para pegar)
+        o.sc -= dt;
+        if (pups.move(o, o.tx, o.tz, 5, dt) < 0.1 || o.sc <= 0) {
           o.st = 'wait';
-          o.hx = o.x;
-          o.hz = o.z;
+          o.hx = o.tx = o.x;
+          o.hz = o.tz = o.z;
         }
-        continue;
+      } else {
+        // esperando: passeia perto de onde está
+        if (Math.hypot(o.tx - o.x, o.tz - o.z) < 0.1) {
+          o.tx = o.hx + rr(-0.8, 0.8);
+          o.tz = o.hz + rr(-0.8, 0.8);
+        }
+        pups.move(o, o.tx, o.tz, 0.7, dt);
       }
-      // esperando: passeia perto de onde está
-      if (Math.hypot(o.tx - o.x, o.tz - o.z) < 0.1) {
-        o.tx = o.hx + rr(-0.8, 0.8);
-        o.tz = o.hz + rr(-0.8, 0.8);
-      }
-      pups.move(o, o.tx, o.tz, 0.7, dt);
-      if (p.alive && Math.hypot(p.x - o.x, p.z - o.z) < 0.9) {
+      // quem acabou de fugir só deixa pegar de novo depois de um instante
+      if (p.alive && (o.st === 'wait' || o.sc < 1.5) && Math.hypot(p.x - o.x, p.z - o.z) < 0.9) {
         o.st = 'follow';
+        o.mark.visible = false;
         sfx.pickup();
         burst(o.x, 0.6, o.z, PU_COL, 10, 3, 0.06, 0.4, { up: 1 });
         if (E.st === 'idle') {
@@ -2296,6 +2353,7 @@ const pups = mk({
   hud: (E) => (E.st === 'idle' ? L('ache os filhotes', 'find the pups') : `${E.home}/${PU_N} ${L('em casa', 'home')} · ${E.list.filter((o) => o.st === 'follow').length} ${L('na fila', 'following')}`),
   dim(E) {
     for (const o of E.list) {
+      o.mark.visible = false;
       if (E.st === 'done') {
         o.st = 'home';
         o.m.position.set(E.x + Math.cos(o.ph) * 0.7, 0, E.z + Math.sin(o.ph) * 0.7);

@@ -46,9 +46,21 @@ export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.k
 const STEP_AREA = {
   dance: [2.6, 2.6, 5.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
   piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
-  rps: [2.8, 2.8], math: [3, 2], hilo: [2.5, 1.9], colors: [2.7, 2], tictac: [2.3, 2.3], spell: [4.2, 2.4], thinice: [3.5, 2.95], simon: [2.7, 2.7], mirrorwalk: [4.2, 1.9], buzz: [4.7, 2.7],
+  rps: [2.8, 2.8], math: [3, 2], hilo: [2.5, 1.9], colors: [2.7, 2], tictac: [2.3, 2.3], spell: [4.2, 2.4], thinice: [3.5, 2.95], simon: [2.7, 2.7], mirrorwalk: [4.2, 1.9], buzz: [4.7, 2.7], lava: [3.2, 3.2],
 };
 export const STEP_SPEED = 3.8;
+// o contrário: eventos de corrida contra robôs em que o jogador ganha um empurrãozinho dentro da área (meia x, meia z, fator)
+const BOOST_AREA = { chairs: [3.4, 3.4, 1.15] };
+export function eventBoost(x, z) {
+  const list = G.events;
+  if (!list) return 1;
+  for (let i = 0; i < list.length; i++) {
+    const E = list[i];
+    const a = BOOST_AREA[E.kind];
+    if (a && E.st === 'run' && Math.abs(x - E.x) < a[0] + 0.5 && Math.abs(z - E.z) < a[1] + 0.5) return a[2];
+  }
+  return 1;
+}
 // limite de velocidade no ponto (0 = fora de qualquer área)
 export function eventStepZone(x, z) {
   const list = G.events;

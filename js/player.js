@@ -20,7 +20,7 @@ import { screenToWorld, clamp } from './utils.js';
 import { L } from './i18n.js';
 import { padText } from './padglyphs.js';
 import { primSkillWave } from './mythic.js';
-import { eventStepZone } from './events.js';
+import { eventStepZone, eventBoost } from './events.js';
 
 // sem nível máximo: o personagem sobe para sempre (depois do 50 cada nível conta metade nos atributos)
 export const MAX_LEVEL = Infinity;
@@ -751,6 +751,8 @@ export function updatePlayer(dt) {
     // perto de evento de pisar em placas (Dança Neon, Piso de Luzes, Teclado...) anda devagar para dar para acertar
     const stepCap = eventStepZone(p.x, p.z);
     if (stepCap && speed > stepCap) speed = stepCap;
+    // e na Dança das Cadeiras um pouco mais rápido, para ganhar dos robôs
+    speed *= eventBoost(p.x, p.z);
     if (p.chillT > 0) {
       p.chillT -= dt;
       speed *= 0.55;
