@@ -757,6 +757,10 @@ export function updateHUD(dt) {
   updateThiefPointer();
   if (!p) return;
   runHud();
+  if ((fitT -= dt) <= 0) {
+    fitT = 0.12;
+    fitMsgs();
+  }
   const s = p.stats;
   const im = G.lastInput + G.padType;
   if (cache.inputMode !== im) {
@@ -1021,6 +1025,7 @@ export function toast(html, cls = '', key = null) {
   const ms = Math.max(cls === 'myth' ? 6000 : long ? 4000 : 2200, Math.min(long ? 16000 : 9000, el.textContent.length * (long ? 60 : 40)));
   setTimeout(() => el.classList.add('out'), ms);
   setTimeout(() => el.remove(), ms + 500);
+  fitMsgs();
 }
 
 // inventário sem limite: os itens e mais espaços vazios até fechar a linha (pelo menos 1 vazio e 3 linhas de 10)
@@ -1036,6 +1041,70 @@ export function banner(title, sub = '') {
   b.classList.add('show');
   clearTimeout(bannerT);
   bannerT = setTimeout(() => b.classList.remove('show'), 2600);
+  fitMsgs();
+}
+
+// ------------------------------------------------------------------
+// Mensagens x personagem: os avisos do topo (#toasts), o cartão do evento e a faixa (#banner) nunca descem até o personagem.
+// Esconde os avisos mais velhos que não cabem acima da cabeça dele (voltam quando sobra lugar), encolhe o cartão
+// se ele sozinho não cabe, desce a lista de missões quando os avisos a cobrem (celular) e põe a faixa no espaço livre
+// embaixo dos avisos, ou embaixo do personagem quando em cima não tem lugar
+// ------------------------------------------------------------------
+const fitV = new THREE.Vector3();
+let fitT = 0;
+function scrY(p, y) {
+  fitV.set(p.x, y, p.z).project(G.camera);
+  return ((1 - fitV.y) / 2) * innerHeight;
+}
+// quanto os avisos visíveis descem sobre o retângulo r (0 = não encostam)
+function msgOver(root, r) {
+  let dy = 0;
+  for (const el of root.children) {
+    const q = el.getBoundingClientRect();
+    if (q.height > 2 && q.right > r.left + 2 && q.left < r.right - 2 && q.bottom > r.top + 2 && q.top < r.bottom - 2) dy = Math.max(dy, q.bottom + 4 - r.top);
+  }
+  return dy;
+}
+function fitMsgs() {
+  const p = G.player;
+  const root = $('toasts');
+  const b = $('banner');
+  if (!p || !G.camera || !root || !b) return;
+  const guide = $('ev-guide');
+  const ri = $('run-info');
+  const bOn = b.classList.contains('show');
+  const head = scrY(p, 1.9) - 6; // o modelo tem ~1,4m: folga acima da cabeça
+  const busy = root.getElementsByClassName('fit-hide').length || (guide && guide.classList.contains('fit-mini')) || (ri && ri.style.transform);
+  // caso comum: nada mexido, sem faixa, tudo acima da cabeça e a lista de missões livre (só medidas, sem mexer em nada)
+  if (!busy && !bOn && root.getBoundingClientRect().bottom <= head && !(ri && msgOver(root, ri.getBoundingClientRect()))) return;
+  for (const el of [...root.getElementsByClassName('fit-hide')]) el.classList.remove('fit-hide');
+  if (guide) guide.classList.remove('fit-mini');
+  const toasts = root.getElementsByClassName('toast');
+  const bottom = () => root.getBoundingClientRect().bottom;
+  // 1) os avisos mais velhos saem primeiro
+  for (let i = 0; i < toasts.length && bottom() > head; i++) toasts[i].classList.add('fit-hide');
+  // 2) só o cartão do evento e ainda não cabe: encolhe para uma linha (tocar abre mesmo assim)
+  if (guide && !guide.classList.contains('hidden') && !guide.dataset.force && bottom() > head) guide.classList.add('fit-mini');
+  // 3) missões cobertas pelos avisos (celular: ficam embaixo da faixa deles): descem, se não for para cima do personagem
+  if (ri) {
+    ri.style.transform = '';
+    const rr = ri.getBoundingClientRect();
+    const dy = rr.height > 2 ? msgOver(root, rr) : 0;
+    if (dy > 0) {
+      const px = ((fitV.x + 1) / 2) * innerWidth;
+      if (rr.left > px + 30 || rr.right < px - 30 || rr.bottom + dy <= head) ri.style.transform = `translateY(${Math.ceil(dy)}px)`;
+    }
+  }
+  if (!bOn) return;
+  // 4) faixa: no lugar dela (34% da tela) ou logo abaixo dos avisos, se couber acima da cabeça; senão, embaixo do personagem
+  b.style.top = '';
+  const br = b.getBoundingClientRect();
+  const tb = root.getBoundingClientRect();
+  const used = tb.height > 2 ? tb.bottom + 6 : 0;
+  const top = Math.max(br.top, used);
+  if (top + br.height <= head) b.style.top = top + 'px';
+  else if (head - br.height >= Math.max(used, 40)) b.style.top = head - br.height + 'px';
+  else b.style.top = Math.min(innerHeight - br.height - 70, scrY(p, -0.2) + 20) + 'px';
 }
 
 export function levelUpFx(level) {

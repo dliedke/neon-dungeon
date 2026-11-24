@@ -4792,7 +4792,11 @@ function updateGuide(E, dt) {
     guideEl = document.getElementById('ev-guide');
     if (!guideEl) return;
     guideEl.onclick = () => {
-      guideEl.classList.toggle('mini');
+      // encolhido por falta de lugar (fitMsgs): tocar abre mesmo assim
+      if (guideEl.classList.contains('fit-mini')) {
+        guideEl.classList.remove('fit-mini', 'mini');
+        guideEl.dataset.force = '1';
+      } else guideEl.classList.toggle('mini');
       guideT = 0;
     };
   }
@@ -4803,6 +4807,7 @@ function updateGuide(E, dt) {
     if (!E) return;
     E.told = true;
     const I = EVENT_INFO[E.kind];
+    delete guideEl.dataset.force;
     guideEl.innerHTML = `<div class="eg-head">${I.icon} <b style="color:${I.css}">${I.name}</b><span class="eg-tog"></span><span class="eg-more"> ${L('toque para ler', 'tap to read')}</span></div><div class="eg-body">${introBody(E)}</div>`;
     guideEl.classList.remove('mini');
     // tempo de leitura (no celular o cartão depois encolhe para não cobrir o evento)

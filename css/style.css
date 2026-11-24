@@ -418,6 +418,8 @@ body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(-
 .toast.up { border-color: #39ff88; box-shadow: 0 0 22px rgba(57, 255, 136, 0.5); font-size: 16px; }
 .toast small { color: var(--muted); font-size: 12px; }
 .toast.out { opacity: 0; transform: translateY(-10px); }
+/* não coube acima do personagem (ver fitMsgs no ui.js): volta quando sobrar lugar */
+.toast.fit-hide { display: none; }
 /* cartão com as instruções do evento perto do jogador (fica enquanto ele estiver por ali); clicar/tocar encolhe ou abre */
 #ev-guide {
   max-width: min(100%, 700px); padding: 9px 18px 10px; background: rgba(6, 6, 20, 0.9); border: 1px solid var(--cyan);
@@ -429,10 +431,10 @@ body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(-
 #ev-guide .eg-body { margin-top: 3px; }
 #ev-guide .eg-body i { color: var(--muted); }
 #ev-guide .eg-tog::before { content: ' ▴'; color: var(--muted); font-size: 0.8em; }
-#ev-guide.mini .eg-body { display: none; }
-#ev-guide.mini .eg-tog::before { content: ' ▾'; }
+#ev-guide.mini .eg-body, #ev-guide.fit-mini .eg-body { display: none; }
+#ev-guide.mini .eg-tog::before, #ev-guide.fit-mini .eg-tog::before { content: ' ▾'; }
 #ev-guide .eg-more { display: none; color: var(--muted); font-size: 0.75em; }
-#ev-guide.mini .eg-more { display: inline; }
+#ev-guide.mini .eg-more, #ev-guide.fit-mini .eg-more { display: inline; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
 
 #banner {
@@ -1382,8 +1384,8 @@ body.touch #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   body.touch .floater.hurt { font-size: 13px; }
   body.touch .floater.dot { font-size: 10px; }
   body.touch .floater.info, body.touch .floater.up { font-size: 12px; }
-  /* faixa de andar/chefe acima do personagem */
-  body.touch #banner { top: 17%; }
+  /* faixa de andar/chefe acima do personagem; nas laterais ficam o direcional e os botões: ela quebra linha entre eles */
+  body.touch #banner { top: 17%; left: calc(140px + var(--safe-l)); right: calc(140px + var(--safe-r)); }
   body.touch #banner-title { font-size: 30px; letter-spacing: 4px; }
   body.touch #banner-sub { font-size: 12px; letter-spacing: 3px; margin-top: 2px; }
 }

@@ -296,6 +296,7 @@ sessionStorage['neon-dungeon-resume']    = class that was playing when the page 
 - All panels already exist in `index.html` and are shown and hidden with classes. `ui.js` fills them (`renderChar`, `renderClassCards`, `openShop`, `openForge`, `openAch`, …).
 - **Gamepad navigation:** `uiPadUpdate()` finds the topmost open panel (`PANEL_ORDER`), moves a `.gp-focus` highlight between `[data-nav]` elements by screen position, and maps `{A}` to click and `{B}` to back (`uiBack`). In the stash `{A}` stores or takes the item, `{X}` equips it from the stash and `{RT}` recycles it (stash items log the withdrawal in `stashOut`). In the character panel `{A}` equips or unequips, `{X}` recycles (or, in the skill tree, cycles the skill's bar slot), `{Y}` is the filtered Recycle on the equipment tab (rarities ticked in the Filter panel `panel-rfilter`, kept in `G.settings.recycle`; never favorites or items better than the equipped one), `{RS}` opens that filter, `{LB}`/`{RB}` switch tabs and `{RT}` toggles favorite.
 - Feedback: `toast(html, cls, key)` (a `key` replaces the previous toast with the same key), `banner(title, sub)`, `confirmDialog(title, text, onYes)`, `floatText`.
+- Messages never cover the player: `fitMsgs()` in `ui.js` (run by `toast`, `banner` and every 0.12 s from `updateHUD`) projects the player's head (1.9 m) to the screen. Toasts that would reach it get `.fit-hide`, oldest first (they come back when there is room); if the guide card alone is too tall it gets `.fit-mini` (a tap still opens it, `data-force`); `#run-info` slides down (`transform`) when toasts cover it and that does not land on the player; the banner goes under the toasts if it fits above the head, otherwise under the player's feet.
 - HUD: `updateHUD(dt)` (bars, skill cooldowns, buffs, minimap), `bossBar()`, `runHud()` (in touch mode it shows only the nearest mission, or the one that just progressed, and the others as icons), `mythHud()`.
 - Layout must work from phone landscape (around 640×360) up to desktop. The `max-width: 760px` and `max-height: 520px` media queries handle small screens.
 
@@ -380,7 +381,7 @@ Paste this into `Runtime.evaluate` (as `expression`, `returnByValue: true`) afte
 Reading the result:
 
 - Wait ~3 s after `startGame` so the menu fade-out is over; otherwise the menu buttons show up as overlaps with the skill bar.
-- The floor banner (`#banner-*`), the first intro toasts and the expanded `#ev-guide` on phones (it covers `#run-info` until it shrinks) are temporary and may cross the minimap; run the check again after they fade (or ignore them). Everything else that overlaps, especially mission/event texts (`#run-info`, `#exit-prompt`, `#interact`, `#combo`, toasts) under touch buttons or the joystick, is a bug to fix.
+- The floor banner (`#banner-*`), the first intro toasts and the expanded `#ev-guide` on phones are temporary and may cross the minimap; run the check again after they fade (or ignore them). Everything else that overlaps, especially mission/event texts (`#run-info`, `#exit-prompt`, `#interact`, `#combo`, toasts) under touch buttons or the joystick, is a bug to fix.
 - The checker can't see canvas drawings (minimap marks, 3D labels in `#labels` that follow the world). Check those in the screenshot.
 - Re-run it with the panel or event state that the change introduces, not only the plain HUD.
 
