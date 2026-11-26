@@ -1232,7 +1232,8 @@ const hunter = mk({
       b.x *= 1 - dt;
       b.z *= 1 - dt;
     } else if (E.stun <= 0) {
-      const sp = Math.min((p.stats ? p.stats.speed : 5) * 0.75, 2.5 + E.pts * 0.15 + G.floor * 0.01);
+      // na arena o jogador anda no máximo a 4,2 (STEP_AREA em events.js); o caçador fica abaixo disso
+      const sp = Math.min(Math.min(4.2, p.stats ? p.stats.speed : 5) * 0.78, 2.5 + E.pts * 0.15 + G.floor * 0.01);
       const dx = lx - b.x;
       const dz = lz - b.z;
       const l = Math.hypot(dx, dz) || 1;

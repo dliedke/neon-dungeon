@@ -43,7 +43,11 @@ export const eventsTimed = () => (G.events || []).some((E) => TIMED.includes(E.k
 // Ficam de fora os de corrida contra algo que anda (Corrida Fantasma, Circuito, Laser Giratório, Travessia de Lasers, Rebanho...).
 // Um terceiro número troca o limite: na Dança Neon as placas opostas ficam a 2,4m e a batida dura 0,72s,
 // então a 3,8 nem um robô com reação de 0,12s fazia os 18 passos; a 5,6 dá com reação de ~0,3s.
+// Também entram os eventos contra algo de velocidade fixa que um jogador rápido venceria sem esforço
+// (os antigos de perseguição já escalam com p.stats.speed): Sumô (robô até 2,6), Caçador, Vaga-lumes,
+// guarda-chuva da Chuva Ácida, carros do Tráfego Neon e robôs fugindo na Batata Quente.
 const STEP_AREA = {
+  sumo: [3, 3, 3], hunter: [4.2, 4.2, 4.2], fireflies: [4.3, 4.3, 4.2], acid: [4.2, 4.2, 4.5], frogger: [2.6, 4.3, 4.2], potato: [3.6, 3.6, 3.8],
   dance: [2.6, 2.6, 5.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
   piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
   rps: [2.8, 2.8], math: [3, 2], hilo: [2.5, 1.9], colors: [2.7, 2], tictac: [2.3, 2.3], spell: [4.2, 2.4], thinice: [3.5, 2.95], simon: [2.7, 2.7], mirrorwalk: [4.2, 1.9], buzz: [4.7, 2.7], lava: [3.2, 3.2],
