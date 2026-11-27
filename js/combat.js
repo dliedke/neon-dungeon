@@ -18,6 +18,7 @@ import { amod, runKill, runHurt, armorTaken } from './run.js';
 import { propBroken } from './events.js';
 import { preDamage, postDamage, reflectShot } from './enemies2.js';
 import { wildBlast, wildKill, projZone } from './wilds.js';
+import { react } from './elements.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -125,12 +126,17 @@ export function hitEnemy(e, mult, o = {}) {
 // Efeitos de status causados pelo jogador
 export function applyStatus(e, o) {
   if (!e.alive || e.inert) return;
+  // reações entre elementos (elements.js): vapor, estilhaçar, curto-circuito, congelar, explosão tóxica, incêndio
+  const rx = react(e, o);
+  if (rx === 1) return;
   const s = G.player.stats;
   const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100) * (s.dmgMul || 1);
   if (o.burn) {
-    const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100);
-    e.burnT = 3;
-    e.burnColor = G.char && G.char.cls === 'biohacker' ? 0x9dff3a : 0;
+    const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100) * (rx === 2 ? 2.5 : 1);
+    const poison = !!o.poison || (!!G.char && G.char.cls === 'biohacker');
+    e.burnT = rx === 2 ? 5 : 3;
+    e.burnKind = poison ? 'poison' : 'fire';
+    e.burnColor = poison ? 0x9dff3a : 0;
     e.burnDps = Math.max(e.burnT > 0 ? e.burnDps || 0 : 0, dps);
   }
   if (o.slow) e.slowT = Math.max(e.slowT || 0, o.slow * (e.boss ? 0.5 : 1));
@@ -310,7 +316,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
     const n = nearestEnemy(cur.x, cur.z, range, true, hit);
     if (!n) break;
     beamFx(cur.x, cur.height * 0.6, cur.z, n.x, n.height * 0.6, n.z, color);
-    hitEnemy(n, mult, { noProc: true, auto: true });
+    hitEnemy(n, mult, { noProc: true, auto: true, shock: true });
     hit.add(n);
     cur = n;
   }
@@ -318,7 +324,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
 }
 
 export function explosion(x, z, radius, mult, o = {}) {
-  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, auto: o.auto, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun });
+  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, auto: o.auto, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun, shock: o.shock });
   ringFx(x, z, radius, o.color ?? 0xff7a1a, 0.4, { from: 0.3 });
   burst(x, 0.5, z, o.color ?? 0xff7a1a, o.small ? 18 : 40, o.small ? 5 : 9, 0.09, 0.6, { up: 0.8 });
   burst(x, 0.5, z, 0xffffff, o.small ? 4 : 10, 4, 0.06, 0.3);

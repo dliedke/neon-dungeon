@@ -271,7 +271,7 @@ export function floatText(x, y, z, text, cls = 'dmg') {
   f.y = y;
   f.z = z + rr(-0.25, 0.25);
   f.t = 0;
-  f.dur = cls === 'crit' ? 1.0 : cls === 'info' ? 1.4 : 0.8;
+  f.dur = cls === 'crit' ? 1.0 : cls === 'info' || cls.startsWith('rx') ? 1.4 : 0.8;
   f.el.className = 'floater ' + cls;
   f.el.textContent = typeof text === 'number' ? short(text) : text;
   f.el.style.display = 'block';

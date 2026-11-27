@@ -135,6 +135,21 @@ Every class can also learn **Teleport** (from level 3): it blinks up to 8m towar
 **Perfect dodge:** dash, roll, leap or teleport (any power with a short moment of invulnerability) right as a hit was about to land and time slows down for a moment, and you deal +50% damage for 3 seconds (at most once every 2.5 s; damage over time like toxic floors doesn't count). Two medals go with it.
 **Hit-stop:** heavy hits on you or on a boss, elite kills and boss kills freeze the screen for an instant (bosses and the Behemoth fall in slow motion). It can be turned off in the options (Hit-stop).
 
+### Elemental reactions
+
+Enemies carry elements: **fire** (burning), **poison** (Biohacker poison, or standing on toxic sludge or radiation), **cold** (slowed, frozen, or on ice and snow), **shock** (every Valkyrie and Netrunner hit, chain lightning, lightning storms, the Storm shrine, the Huntress net), **wet** (tide, reef currents, hot springs) and **oil** (oil slicks). When a new element meets one already on the enemy, a reaction goes off (at most one per enemy every 1.5 s), so the biome floor becomes a weapon:
+
+| Reaction | Elements | Effect |
+| --- | --- | --- |
+| ♨️ Steam | fire + cold or water | A steam cloud hurts everyone around |
+| 💎 Shatter | shock + frozen | The enemy shatters and takes a huge hit |
+| ⚡ Short Circuit | shock + wet | Stuns, and the bolt jumps to up to 4 other wet enemies |
+| 🧊 Flash Freeze | cold + wet | Freezes on the spot (bosses are only slowed) |
+| ☣️ Toxic Blast | fire + poison | The poison explodes around it |
+| 🔥 Wildfire | fire + oil | Burns 2.5× harder for 5 s and spreads to everyone nearby |
+
+The first time each one happens, a message explains it. Three medals go with them.
+
 ## Controls
 
 - **Keyboard + mouse:**
@@ -516,6 +531,7 @@ js/powers.js           advanced skill-tree powers (summons, orbitals, transforma
 js/enemies.js          enemies, AI and bosses
 js/enemies2.js         the 15 newer enemies: extra AI, mirror/parry/split hooks, ink overlay
 js/combat.js           damage, statuses, projectiles and hazards
+js/elements.js         elemental reactions (steam, shatter, short circuit, flash freeze, toxic blast, wildfire)
 js/items.js            item generation
 js/loot.js             ground loot and loot caches
 js/gems.js             gems: drops, fusion, sockets and their bonuses

@@ -11,6 +11,7 @@ import { SLOTS } from './items.js';
 import { SHRINES, SUPER_SHRINES } from './loot.js';
 import { PET_KINDS } from './pets.js';
 import { ANOMALIES } from './run.js';
+import { REACTION_KINDS } from './elements.js';
 import { toast, medalPopup, abyssUnlockedFx } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
@@ -122,6 +123,9 @@ export function achList() {
   add('elite100', '✨', 2, L('Pesadelo das Elites', 'Bane of Elites'), L('Derrote 100 inimigos de elite', 'Defeat 100 elite enemies'), () => total('elites'), 100);
   add('pdodge1', '💨', 0, L('Reflexo Neon', 'Neon Reflex'), L('Faça uma esquiva perfeita (avance, role ou teleporte bem na hora do golpe)', 'Pull off a perfect dodge (dash, roll or teleport right as a hit lands)'), () => total('pdodge'));
   add('pdodge50', '🌀', 2, L('Intocável', 'Untouchable'), L('Faça 50 esquivas perfeitas', 'Pull off 50 perfect dodges'), () => total('pdodge'), 50);
+  add('react1', '⚗️', 0, L('Química de Rua', 'Street Chemistry'), L('Provoque uma reação entre elementos (vapor, estilhaçar, curto-circuito...)', 'Trigger an elemental reaction (steam, shatter, short circuit...)'), () => total('reactions'));
+  add('react200', '🧪', 2, L('Laboratório Ambulante', 'Walking Lab'), L('Provoque 200 reações entre elementos', 'Trigger 200 elemental reactions'), () => total('reactions'), 200);
+  add('reactAll', '🌈', 2, L('Tabela Periódica', 'Periodic Table'), L(`Provoque as ${REACTION_KINDS.length} reações diferentes entre elementos`, `Trigger all ${REACTION_KINDS.length} different elemental reactions`), () => count('reactions'), REACTION_KINDS.length);
 
   // chefes
   const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴' };

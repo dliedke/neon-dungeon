@@ -1355,7 +1355,7 @@ Object.assign(SKILL_FN, {
   trap(p, r) {
     const t = targetPoint(p, 9);
     lob({ x: p.x, z: p.z, tx: t.x, tz: t.z, time: 0.45, color: C_('hunter'), onLand: (x, z) => {
-      explosion(x, z, 2.6, 1.0 * rankMult(r), { color: C_('hunter'), stun: 1.6, knock: 0.5, small: true });
+      explosion(x, z, 2.6, 1.0 * rankMult(r), { color: C_('hunter'), stun: 1.6, knock: 0.5, small: true, shock: true });
       spawnHazard(x, z, 2.6, 4, 0, { faction: 'player', mult: 0.12 * rankMult(r), slow: 1.5, color: C_('hunter'), opacity: 0.3 });
       sfx.zap();
     } });

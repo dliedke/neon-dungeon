@@ -1,5 +1,6 @@
 // Tipos de inimigos, elites, IA e o chefe ARC-9.
 import * as THREE from 'three';
+import { tickElems } from './elements.js';
 import { G, gk } from './state.js';
 import { rr, pick, chance, weightedPick, shuffle, short } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
@@ -976,6 +977,7 @@ export function updateEnemies(dt, cam) {
     if (e.slowT > 0) e.slowT -= edt;
     if (e.frozenT > 0) e.frozenT -= edt;
     if (e.wardT > 0) e.wardT -= edt;
+    tickElems(e, edt); // choque, molhado, óleo e o piso embaixo (reações entre elementos)
     if (e.affixes && e.stun <= 0) eliteAura(e, edt, p);
 
     e.losT -= edt;
@@ -2036,6 +2038,8 @@ export function updateEnemies(dt, cam) {
       else if (e.frozenT > 0) mt.emissive.setRGB(0.15, 0.35, 0.7);
       else if (e.slowT > 0) mt.emissive.setRGB(0.05, 0.12, 0.3);
       else if (e.burnT > 0) mt.emissive.setRGB(0.35 + Math.sin(G.t * 20) * 0.1, 0.1, 0);
+      else if (e.shockT > 0) mt.emissive.setRGB(0, 0.2 + (Math.sin(G.t * 31 + e.phase) > 0.6 ? 0.3 : 0), 0.28);
+      else if (e.oilT > 0) mt.emissive.setRGB(0.04, 0.02, 0.08);
       else mt.emissive.setScalar(0);
     }
     // barra de vida

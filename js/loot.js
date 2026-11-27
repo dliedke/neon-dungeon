@@ -602,7 +602,7 @@ function shrineAuras(dt, p) {
     if (e) {
       beamFx(e.x + rr(-0.3, 0.3), 7, e.z + rr(-0.3, 0.3), e.x, e.height * 0.6, e.z, 0xb06bff);
       burst(e.x, 0.3, e.z, 0xc08aff, 10, 4, 0.05, 0.35, { up: 1 });
-      hitEnemy(e, 1.1, { noProc: true, kx: e.x, kz: e.z });
+      hitEnemy(e, 1.1, { noProc: true, shock: true, kx: e.x, kz: e.z });
       sfx.zap();
     }
   }
