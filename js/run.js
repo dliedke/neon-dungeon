@@ -11,10 +11,10 @@ import { burst, ringFx, floatText, telegraphFx } from './fx.js';
 import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
 import { spawnEnemy, pickEnemyType, ETYPES, abyssLvl, abyssOn, abyssDepth, abyssFx } from './enemies.js';
-import { dropLoot, spawnPickup } from './loot.js';
+import { dropLoot, spawnPickup, spawnChest } from './loot.js';
 import { after, explosion, damagePlayer, healPlayer, capHeal } from './combat.js';
 import { gainXp, refreshStats } from './player.js';
-import { isWalkable, isBossFloor, isFinalFloor } from './dungeon.js';
+import { isWalkable, isBossFloor, isFinalFloor, BOSS_EVERY } from './dungeon.js';
 import { npcNear } from './biomes.js';
 import { achAdd, achMark } from './ach.js';
 import { saveGame } from './main.js';
@@ -477,10 +477,23 @@ export function runHurt() {
   }
 }
 
-// chefe derrotado: um implante novo para escolher (uma vez por andar de chefe)
-export function bossReward() {
+// Andares de chefe que dão implante: 2 em cada 3 (16 por modo, como quando o chefe vinha a cada 3 andares); o terceiro
+// (andares 6, 12, 18...) solta um baú extra no lugar
+export const implantFloor = (f) => (f / BOSS_EVERY) % 3 !== 0;
+
+// chefe derrotado: um implante novo para escolher (uma vez por andar de chefe que dá implante) ou um baú extra
+export function bossReward(e) {
   const c = G.char;
   if (!c || G.final) return;
+  if (!implantFloor(G.floor)) {
+    const x = e ? e.x : G.player.x;
+    const z = e ? e.z : G.player.z;
+    after(1.2, () => {
+      spawnChest(x, z);
+      toast(L('🎁 Este chefe deixou um <b>baú extra</b> (o próximo chefe volta a dar implante).', '🎁 This boss left an <b>extra chest</b> (the next boss gives an implant again).'), 'leg');
+    });
+    return;
+  }
   c.implantFloors = c.implantFloors || [];
   // cada modo (Normal, Pesadelo, Inferno) tem os seus 9 implantes
   const key = G.floor + 100 * (c.tier | 0);

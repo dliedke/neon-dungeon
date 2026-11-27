@@ -4,7 +4,7 @@ import { tickElems } from './elements.js';
 import { G, gk } from './state.js';
 import { rr, pick, chance, weightedPick, shuffle, short } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
-import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor } from './dungeon.js';
+import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor, BOSS_EVERY } from './dungeon.js';
 import { spawnProjectile, damagePlayer, after, enemyExplosion, damageEnemy } from './combat.js';
 import { burst, ringFx, telegraphFx, lineTelegraph, floatText, slashFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -906,7 +906,7 @@ export function onEnemyKilled(e) {
     if (G.final) finalBossDown(e);
     else {
       banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
-      bossReward();
+      bossReward(e);
       sfx.levelup();
       G.dungeon.meshes.exit.locked = false;
     }
@@ -2670,9 +2670,11 @@ export function populateFloor(d, floor, boss) {
     spawnFinalBoss(waves[0][1], 3.5);
     G.dungeon.meshes.exit.locked = true;
   } else if (boss) {
-    const idx = Math.round(floor / 3) - 1;
+    const idx = Math.round(floor / BOSS_EVERY) - 1; // 0 no primeiro chefe (andar 2)
     const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
     const cycle = Math.floor(idx / BOSS_ORDER.length);
+    // a vida extra de cada chefe segue o andar (a mesma curva de quando era a cada 3 andares)
+    const prog = Math.max(0, (floor - 3) / 3);
     const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
     // curva dos chefes: o primeiro bate bem menos e ataca com mais calma (o jogador ainda está fraco);
     // cada chefe seguinte vem mais resistente, porque o jogador cresce mais rápido que eles
@@ -2682,9 +2684,14 @@ export function populateFloor(d, floor, boss) {
       e.hp = e.maxHp = e.maxHp * 0.9;
       e.dmg *= 0.55;
       e.tempoK = 0.6;
+    } else if (idx === 1 && !tierOf().off) {
+      // o segundo (andar 4) ainda alivia um pouco
+      e.hp = e.maxHp = e.maxHp * BOSS_HP_K;
+      e.dmg *= 0.8;
+      e.tempoK = 0.8;
     } else {
-      e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * idx);
-      e.dmg *= 1 + 0.03 * idx;
+      e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * prog);
+      e.dmg *= 1 + 0.03 * prog;
     }
     if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;

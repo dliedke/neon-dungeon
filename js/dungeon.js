@@ -56,8 +56,8 @@ export const THEMES = [
 THEMES.forEach((t) => (t.light = t.light || NEON_LIGHT));
 THEMES.forEach((t) => (t.line = '#' + new THREE.Color(t.a).getHexString()));
 
-export const BOSS_EVERY = 3;
-// (o andar final, o 50, também é de chefe, embora 50 não seja múltiplo de 3)
+// chefe a cada 2 andares (andar sim, andar não): 24 chefes até o 48, mais a batalha final no 50
+export const BOSS_EVERY = 2;
 export const isBossFloor = (f) => f % BOSS_EVERY === 0 || f === FINAL_FLOOR;
 // último andar: batalha final contra os 7 chefes (2 de cada vez); vencer termina o jogo
 export const FINAL_FLOOR = 50;
@@ -75,12 +75,11 @@ export function themeFor(floor) {
 // ------------------------------------------------------------------
 // Geração
 // ------------------------------------------------------------------
-// Formato do andar, alternando em ciclos de 3: masmorra pequena, campo aberto, masmorra grande
-// (a masmorra grande cai nos andares de chefe, com a arena no fim do caminho). `d.maze` marca as masmorras.
+// Formato do andar: os andares de chefe (pares) são a masmorra grande, com a arena no fim do caminho; os ímpares
+// alternam masmorra pequena e campo aberto (1 pequena, 3 aberto, 5 pequena...). `d.maze` marca as masmorras.
 export function floorShape(floor) {
-  if (isFinalFloor(floor)) return 'dungL'; // a batalha final sempre na masmorra grande
-  const k = (floor - 1) % 3;
-  return k === 0 ? 'dungS' : k === 1 ? 'open' : 'dungL';
+  if (isFinalFloor(floor) || isBossFloor(floor)) return 'dungL'; // a batalha final sempre na masmorra grande
+  return ((floor - 1) / 2) % 2 === 0 ? 'dungS' : 'open';
 }
 
 export function generateDungeon(floor) {

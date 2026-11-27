@@ -35,7 +35,7 @@ The game is shown in **English or Portuguese** based on your browser language.
 ## Goal
 
 Descend through 50 dungeon floors, defeat enemies, collect gear and level up your character.
-Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit (16 boss floors per run, the 7 bosses come back stronger).
+Find the glowing **elevator** on each floor to go down. Every 2 floors, a **boss** guards the exit (24 boss floors per run, the 7 bosses come back stronger).
 On **floor 50**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
@@ -190,7 +190,7 @@ Every floor changes biome (43 in total), each with its own lighting and hazards.
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Large server halls | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one, primordial for a primordial one; primordials are only sold for slots where you already wear one). Floor 22 has a merchant too |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one, primordial for a primordial one; primordials are only sold for slots where you already wear one). Floor 21 has a merchant too |
 | **Bone Forest** | Organic clearings | Giant ribs and dead trees; **bone piles** you can smash for healing marrow, but the noise draws predators. Enemies standing in marrow pools heal; stalking **bone stalkers** |
 | **Glass Desert** | Open dunes | A glass floor that cracks into cutting shards under explosions and heavy blows, crystal spires and shard storms; **glass golems** vanish into reflections, leaving fake copies behind |
 | **Fallen Star Swamp** | Organic caves | Black water and low-gravity craters where you run faster and shots slow down; creatures race you for **star fragments** (grab one for Fury, or they get empowered); exploding **star sparks** |
@@ -257,7 +257,7 @@ Enemies keep getting tougher faster on deep floors, so a strong character still 
 **Bosses** are tough: they fire aimed volleys between their attacks and become **enraged** below 30% health (faster, harder hitting and with bigger volleys).
 The first boss hits softer and attacks more slowly, since you are still weak; every boss after it gets more health.
 
-After each boss you **choose an implant** (1 of 3 random options; golden implants are worth double): permanent bonuses such as damage, health, crit, speed, cooldowns, lifesteal, dodge or extra damage to elites. They stack for the whole run.
+After two of every three bosses you **choose an implant** (1 of 3 random options; golden implants are worth double; 16 per mode, while the third boss, on floors 6, 12, 18…, drops an extra chest instead): permanent bonuses such as damage, health, crit, speed, cooldowns, lifesteal, dodge or extra damage to elites. They stack for the whole run.
 
 ## Floor events
 
