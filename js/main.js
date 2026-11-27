@@ -53,6 +53,7 @@ const raycaster = new THREE.Raycaster();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpV = new THREE.Vector3();
 const camPos = new THREE.Vector3();
+let bloomBase = 0.7;
 let useBloom = true;
 let flowT = 0;
 let autosaveT = 0;
@@ -164,7 +165,8 @@ export function applyQuality() {
   if (!renderer) return;
   const q = G.settings.quality;
   const low = q === 'low' || (q === 'auto' && G.isTouch && Math.min(screen.width, screen.height) < 500);
-  const glow = { strong: 0.75, medium: 0.5, low: 0.28, off: 0 }[G.settings.glow] ?? 0.5;
+  const glow = { strong: 0.7, medium: 0.5, low: 0.28, off: 0 }[G.settings.glow] ?? 0.5;
+  bloomBase = glow;
   bloomPass.strength = glow;
   useBloom = !low && glow > 0;
   const pr = q === 'high' ? Math.min(devicePixelRatio, 2) : low ? Math.min(devicePixelRatio, 1) : Math.min(devicePixelRatio, 1.5);
@@ -893,7 +895,11 @@ function frame() {
   updateFloaters(G.mode === 'pause' || G.mode === 'char' ? 0 : dt, camera);
   if (G.player) G.player.light.visible = true;
 
-  if (useBloom) composer.render();
+  if (useBloom) {
+    // com a tela cheia de efeitos (muitas partículas vivas) o bloom baixa até metade: a luz somada estourava em branco
+    bloomPass.strength = bloomBase * (1 - 0.5 * Math.min(1, Math.max(0, (G.fxLoad - 150) / 550)));
+    composer.render();
+  }
   else renderer.render(scene, camera);
   Input.endFrame();
 }

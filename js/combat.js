@@ -207,7 +207,12 @@ export function damageEnemy(e, amount, crit, o = {}) {
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
   if (e.T.split) postDamage(e);
-  if (!o.dot) e.flash = 0.09;
+  // piscar branco ao levar golpe: no máximo a cada 0,2s (com muitos golpes por segundo o inimigo ficava branco direto
+  // e, com o bloom, virava uma mancha que escondia o modelo e os avisos de ataque)
+  if (!o.dot && G.t - (e.flashT ?? -9) > 0.2) {
+    e.flash = 0.08;
+    e.flashT = G.t;
+  }
   e.hpShow = 4;
   if (!e.aggro) {
     e.aggro = true;
@@ -233,7 +238,11 @@ export function damageEnemy(e, amount, crit, o = {}) {
     e.kz += (dz / l) * k;
   }
   if (o.stun && !e.boss) e.stun = Math.max(e.stun, o.stun * stunK(e));
-  if (!o.dot) burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 7 : 4, 3, 0.05, 0.3);
+  // faíscas do golpe: no máximo a cada 0,1s por inimigo (críticos sempre)
+  if (!o.dot && (crit || G.t - (e.sparkT ?? -9) > 0.1)) {
+    e.sparkT = G.t;
+    burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 6 : 4, 3, 0.05, 0.3);
+  }
   // golpe forte no chefe: pausa curtinha (no máximo uma a cada 1,2s, para não travar com muitos golpes)
   if (e.boss && !o.dot && !o.auto && e.hp > 0 && amount > e.maxHp * 0.03 && G.t - bossStopT > 1.2) {
     bossStopT = G.t;

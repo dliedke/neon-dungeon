@@ -38,6 +38,7 @@ export const G = {
   hitStop: 0, // pausa no impacto: segundos (tempo real) com o jogo quase parado
   slow: 0, // câmera lenta: segundos (tempo real) com o jogo a slowK da velocidade
   slowK: 1,
+  fxLoad: 0, // partículas vivas (média suave, fx.js): escurece partículas e bloom quando a tela enche
   isTouch: false,
   lastInput: 'kb', // kb | pad | touch
   padType: null, // xbox | ps4 | ps5 | nintendo (null = nenhum controle detectado)

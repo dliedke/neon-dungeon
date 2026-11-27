@@ -57,12 +57,17 @@ export function burst(x, y, z, color, n = 10, speed = 4, size = 0.07, life = 0.4
   }
 }
 
+// Carga de partículas vivas (G.fxLoad): com muita coisa explodindo ao mesmo tempo as partículas (aditivas) somavam
+// luz até virar uma mancha branca que escondia inimigos, avisos de ataque e o personagem. Acima de ~220 vivas elas
+// escurecem aos poucos (até 45%) e o bloom do main.js também baixa
 export function updateFx(dt) {
   let any = false;
+  let live = 0;
   for (let i = 0; i < MAX; i++) {
     const p = parts[i];
     if (!p.alive) continue;
     any = true;
+    live++;
     p.life -= dt;
     if (p.life <= 0) {
       p.alive = false;
@@ -86,6 +91,8 @@ export function updateFx(dt) {
     inst.setMatrixAt(i, m4);
   }
   if (any) inst.instanceMatrix.needsUpdate = true;
+  G.fxLoad += (live - G.fxLoad) * Math.min(1, dt * 8);
+  inst.material.color.setScalar(Math.max(0.45, 1 - Math.max(0, G.fxLoad - 220) / 700));
 
   for (let i = effects.length - 1; i >= 0; i--) {
     const e = effects[i];
@@ -294,6 +301,11 @@ export function floatDmg(e, amount, cls = 'dmg') {
     f.el.textContent = short(f.sum);
     return;
   }
+  // muitos números na tela (horda + poderes em área): um golpe que não soma em nenhum número já aberto só abre número
+  // novo em elite e chefe (ou crítico, enquanto ainda há algum espaço). Sem isso a luta virava um paredão de números.
+  // O limite acompanha o tamanho da tela (celular deitado: ~11)
+  const cap = Math.max(10, Math.min(24, (innerWidth * innerHeight) / 62000));
+  if (floatLive > cap && !e.elite && !e.boss && (cls !== 'crit' || floatLive > cap * 1.4)) return;
   const n = floatText(e.x, e.height + 0.3, e.z, amount, cls);
   if (!n) return;
   n.owner = e;
@@ -303,11 +315,14 @@ export function floatDmg(e, amount, cls = 'dmg') {
   e.fl = n;
 }
 
+let floatLive = 0;
 export function updateFloaters(dt, camera) {
   const w = innerWidth;
   const h = innerHeight;
+  floatLive = 0;
   for (const f of floaters) {
     if (!f.alive) continue;
+    floatLive++;
     f.t += dt;
     f.age += dt;
     if (f.t >= f.dur) {

@@ -2034,7 +2034,7 @@ export function updateEnemies(dt, cam) {
     // flash ao tomar dano
     const fl = e.flash > 0 ? 1 : 0;
     for (const mt of m.mats) {
-      if (fl) mt.emissive.setScalar(0.9);
+      if (fl) mt.emissive.setScalar(0.55);
       else if (e.frozenT > 0) mt.emissive.setRGB(0.15, 0.35, 0.7);
       else if (e.slowT > 0) mt.emissive.setRGB(0.05, 0.12, 0.3);
       else if (e.burnT > 0) mt.emissive.setRGB(0.35 + Math.sin(G.t * 20) * 0.1, 0.1, 0);
