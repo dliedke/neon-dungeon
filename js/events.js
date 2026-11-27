@@ -4846,6 +4846,22 @@ function updateGuide(E, dt) {
       } else guideEl.classList.toggle('mini');
       guideT = 0;
     };
+    // embaixo do personagem (#toasts.low, ver fitMsgs no ui.js) o cartão deixa o toque passar para o direcional:
+    // um toque rápido sem arrastar em cima dele ainda abre/fecha
+    let tx = 0;
+    let ty = 0;
+    let tt = 0;
+    addEventListener('pointerdown', (e) => {
+      tx = e.clientX;
+      ty = e.clientY;
+      tt = performance.now();
+    }, true);
+    addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'mouse' || !guideEl.parentElement.classList.contains('low') || guideEl.classList.contains('hidden')) return;
+      if (performance.now() - tt > 500 || Math.hypot(e.clientX - tx, e.clientY - ty) > 14) return;
+      const q = guideEl.getBoundingClientRect();
+      if (e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom) guideEl.onclick();
+    }, true);
   }
   if (E !== guideE) {
     guideE = E;
@@ -4865,6 +4881,89 @@ function updateGuide(E, dt) {
 }
 export function hideGuide() {
   if (guideE) updateGuide(null, 0);
+}
+
+// Onde o evento do cartão aparece na tela: um retângulo por peça (filhos do grupo do evento e das peças com grupo próprio),
+// para o cartão e os avisos não cobrirem o evento (ver fitMsgs no ui.js). As caixas no mundo são refeitas a cada 0,5s
+// (as peças mexem) e só a projeção é feita a cada chamada. Devolve a lista de retângulos já cortados na tela (ou null)
+const gaParts = [];
+const gaTmp = new THREE.Box3();
+const gaV = new THREE.Vector3();
+const gaRects = [];
+const gaPool = [];
+let gaE = null;
+let gaT = 0;
+function gaBoxes(E) {
+  let n = 0;
+  const part = (o) => {
+    if (!o.visible) return;
+    const b = gaParts[n] || (gaParts[n] = new THREE.Box3());
+    b.makeEmpty();
+    o.updateWorldMatrix(true, true);
+    let ring = true;
+    o.traverseVisible((m) => {
+      if (m.isInstancedMesh) {
+        if (!m.count) return;
+        m.computeBoundingBox();
+        gaTmp.copy(m.boundingBox).applyMatrix4(m.matrixWorld);
+      } else if (m.geometry) {
+        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        gaTmp.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld);
+      } else return;
+      if (m.geometry.type !== 'RingGeometry') ring = false;
+      b.union(gaTmp);
+    });
+    // anel grande no chão é só a borda da área (o meio é vazio): pode ficar embaixo do cartão
+    if (ring && b.max.x - b.min.x > 6) return;
+    if (!b.isEmpty()) n++;
+  };
+  const groups = [E.g];
+  for (const k in E) {
+    const v = E[k];
+    if (Array.isArray(v)) for (const q of v) if (q && q.g && q.g.isObject3D && q.g !== E.g) groups.push(q.g);
+  }
+  for (const g of groups) if (g && g.isObject3D && g.visible) for (const c of g.children) if (n < 80) part(c);
+  gaParts.length = Math.max(gaParts.length, n);
+  return n;
+}
+let gaN = 0;
+export function guideArea() {
+  const E = guideE;
+  if (!E || !G.camera || !guideEl || guideEl.classList.contains('hidden')) return null;
+  const now = performance.now();
+  if (E !== gaE || now - gaT > 500) {
+    gaE = E;
+    gaT = now;
+    gaN = gaBoxes(E);
+  }
+  gaRects.length = 0;
+  const W = innerWidth;
+  const H = innerHeight;
+  for (let i = 0; i < gaN; i++) {
+    const b = gaParts[i];
+    let x0 = 1e9;
+    let y0 = 1e9;
+    let x1 = -1e9;
+    let y1 = -1e9;
+    for (let c = 0; c < 8; c++) {
+      gaV.set(c & 1 ? b.max.x : b.min.x, c & 2 ? b.max.y : b.min.y, c & 4 ? b.max.z : b.min.z).project(G.camera);
+      const sx = ((gaV.x + 1) / 2) * W;
+      const sy = ((1 - gaV.y) / 2) * H;
+      if (sx < x0) x0 = sx;
+      if (sx > x1) x1 = sx;
+      if (sy < y0) y0 = sy;
+      if (sy > y1) y1 = sy;
+    }
+    // fora da tela não conta
+    if (x1 < 0 || y1 < 0 || x0 > W || y0 > H) continue;
+    const r = gaPool[gaRects.length] || (gaPool[gaRects.length] = {});
+    r.left = Math.max(0, x0);
+    r.top = Math.max(0, y0);
+    r.right = Math.min(W, x1);
+    r.bottom = Math.min(H, y1);
+    gaRects.push(r);
+  }
+  return gaRects.length ? gaRects : null;
 }
 // eventos de golpear um alvo: encostar nele também vale (ver touchTargets)
 const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt', 'stacker', 'sumo', 'bowling', 'wheel', 'spy', 'stopwatch', 'whack', 'golf', 'darts', 'crane', 'balloon', 'rings', 'duel', 'sort']);

@@ -435,6 +435,9 @@ body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(-
 #ev-guide.mini .eg-tog::before, #ev-guide.fit-mini .eg-tog::before { content: ' ▾'; }
 #ev-guide .eg-more { display: none; color: var(--muted); font-size: 0.75em; }
 #ev-guide.mini .eg-more, #ev-guide.fit-mini .eg-more { display: inline; }
+/* embaixo do personagem (o evento está em cima, ver fitMsgs no ui.js): o cartão deixa passar o toque e o clique, senão
+   o direcional (metade esquerda da tela) e o clique para andar parariam nele; um toque rápido nele ainda abre/fecha (events.js) */
+#toasts.low #ev-guide { pointer-events: none; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
 
 #banner {
