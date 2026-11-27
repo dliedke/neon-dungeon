@@ -113,7 +113,8 @@ async function main() {
       const xf = await interp({ cls: CLS, tier: S.tier, diff: S.diff, abyss: 0 }, S.floors, [1, 12, 25, 38, 50]);
       for (let f = 1; f <= S.floors; f++) {
         totalXp += xf(f);
-        if (f % 3 === 0 || f === 50) implants = Math.min(implants + 1, (S.tier + 1) * 17);
+        // chefe a cada 2 andares; 2 em cada 3 dão implante (implantFloor em run.js): 16 por modo
+        if (f < 50 && f % 2 === 0 && (f / 2) % 3 !== 0) implants = Math.min(implants + 1, (S.tier + 1) * 16);
         if (f === 25 || f === 50) checkpoints.push({ label: `${S.name} andar ${f}`, cls: CLS, tier: S.tier, diff: S.diff, abyss: 0, floor: f, rarity: S.rarity, xp: totalXp, implants, infWins: 0 });
       }
       process.stderr.write('.');

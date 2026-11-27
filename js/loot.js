@@ -206,15 +206,18 @@ export function spawnPickup(type, x, z, data) {
       const dv = data.item.rarity === DIVINE;
       const fc = pr ? PRIM_COLOR : dv ? DIV_COLOR : MYTH_COLOR;
       mesh.scale.setScalar(pr ? 1.65 : dv ? 1.45 : 1.25);
-      const beam = new THREE.Mesh(mythBeamGeo, beamMat(fc, 0.5));
-      if (pr) beam.scale.set(1.9, 1.7, 1.9);
-      else if (dv) beam.scale.set(1.5, 1.4, 1.5);
+      // a coluna serve para achar o item de longe: mais fina e baixa que antes (cortava a tela de lado a lado e
+      // escondia a luta) e quase some quando o jogador chega perto (ver updatePickups)
+      const beam = new THREE.Mesh(mythBeamGeo, beamMat(fc, 0.3));
+      if (pr) beam.scale.set(1, 0.55, 1);
+      else if (dv) beam.scale.set(0.95, 0.5, 0.95);
+      else beam.scale.set(0.9, 0.45, 0.9);
       const r1 = new THREE.Mesh(upRingGeo, beamMat(fc, 0.9));
       const r2 = new THREE.Mesh(upRingGeo, beamMat(0xffffff, 0.6));
       r1.position.y = -0.3;
       r2.position.y = 0.6;
       r2.scale.setScalar(0.7);
-      const gem = new THREE.Mesh(mythGemGeo, beamMat(fc, 0.55));
+      const gem = new THREE.Mesh(mythGemGeo, beamMat(fc, 0.4));
       g.add(beam, r1, r2, gem);
       data.mythFx = { beam, r1, r2, gem };
       if (pr) {
@@ -223,7 +226,7 @@ export function spawnPickup(type, x, z, data) {
       }
       pkColor = fc;
     } else if (data.item.rarity >= 1) {
-      const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.55 : 0.25));
+      const beam = new THREE.Mesh(beamGeo, beamMat(color, data.item.rarity >= 2 ? 0.4 : 0.22));
       g.add(beam);
     }
   }
@@ -602,7 +605,7 @@ function shrineAuras(dt, p) {
     if (e) {
       beamFx(e.x + rr(-0.3, 0.3), 7, e.z + rr(-0.3, 0.3), e.x, e.height * 0.6, e.z, 0xb06bff);
       burst(e.x, 0.3, e.z, 0xc08aff, 10, 4, 0.05, 0.35, { up: 1 });
-      hitEnemy(e, 1.1, { noProc: true, kx: e.x, kz: e.z });
+      hitEnemy(e, 1.1, { noProc: true, shock: true, kx: e.x, kz: e.z });
       sfx.zap();
     }
   }
@@ -694,9 +697,11 @@ export function updatePickups(dt, camera) {
     if (pk.mythFx) {
       const f = pk.mythFx;
       const k = 0.5 + Math.sin(pk.t * 3) * 0.5;
-      f.beam.material.opacity = 0.3 + k * 0.35;
+      // perto do jogador (até 8m) a coluna quase some: o item já está à vista e a luz atrapalhava a luta
+      const near = Math.min(1, Math.max(0, (Math.hypot(pk.x - G.player.x, pk.z - G.player.z) - 4) / 4));
+      f.beam.material.opacity = (0.08 + near * 0.92) * (0.18 + k * 0.17);
       f.r1.scale.setScalar(1 + ((pk.t * 0.8) % 1) * 1.6);
-      f.r1.material.opacity = 0.9 * (1 - ((pk.t * 0.8) % 1));
+      f.r1.material.opacity = 0.7 * (1 - ((pk.t * 0.8) % 1));
       f.r2.rotation.y += dt * 3;
       f.gem.rotation.y -= dt * 1.5;
       f.gem.position.y = 0.1 + Math.sin(pk.t * 2) * 0.08;
@@ -708,7 +713,7 @@ export function updatePickups(dt, camera) {
         f.gem.material.color.setHSL((h + 0.66) % 1, 1, 0.62).multiplyScalar(gk(1.6));
         pk.fc = f.beam.material.color.getHex();
       }
-      if (Math.random() < dt * 14) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? pk.fc : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
+      if (Math.random() < dt * 6) burst(pk.x + rr(-0.4, 0.4), 0.3, pk.z + rr(-0.4, 0.4), Math.random() < 0.7 ? pk.fc : 0xffffff, 1, 0.8, 0.06, 1.1, { grav: -3 });
     }
     const bob = pk.up ? 0.5 + Math.sin(pk.t * 4) * 0.12 : 0.35 + Math.sin(pk.t * 3) * 0.06;
     pk.group.position.set(pk.x, pk.vy === 0 ? bob : pk.y, pk.z);

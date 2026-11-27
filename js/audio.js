@@ -126,6 +126,26 @@ export const sfx = {
     tone({ type: 'square', f: 1500, f2: 600, dur: 0.09, vol: 0.06 });
     noise({ dur: 0.08, vol: 0.2, type: 'bandpass', f: 2500 });
   },
+  // reação vapor: chiado
+  steam() {
+    if (throttle('steam', 120)) return;
+    noise({ dur: 0.6, vol: 0.28, type: 'highpass', f: 2500, f2: 5000 });
+    noise({ dur: 0.25, vol: 0.15, type: 'bandpass', f: 900, q: 1 });
+  },
+  // reações estilhaçar e congelar: vidro quebrando
+  shatter() {
+    if (throttle('shatter', 100)) return;
+    noise({ dur: 0.3, vol: 0.3, type: 'highpass', f: 4000 });
+    tone({ type: 'triangle', f: 2400, f2: 1800, dur: 0.12, vol: 0.07 });
+    tone({ type: 'triangle', f: 3300, f2: 2600, dur: 0.1, vol: 0.05, delay: 0.05 });
+  },
+  // esquiva perfeita: um "vuush" que sobe e um brilho no fim
+  perfect() {
+    if (throttle('perfect', 300)) return;
+    noise({ dur: 0.35, vol: 0.22, type: 'bandpass', f: 600, f2: 4200, q: 3 });
+    tone({ type: 'sine', f: 520, f2: 1560, dur: 0.3, vol: 0.1 });
+    tone({ type: 'triangle', f: 2090, dur: 0.18, vol: 0.06, delay: 0.22 });
+  },
   explode() {
     if (throttle('explode', 60)) return;
     noise({ dur: 0.7, vol: 0.55, type: 'lowpass', f: 1400, f2: 60 });

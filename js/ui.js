@@ -23,7 +23,7 @@ import { mythHud } from './mythic.js';
 import { burst } from './fx.js';
 import { GEMS, GEM_KEYS, GEM_TIERS, GEM_TOP, TIER_ROMAN, gemSvg, gemName, gemTierName, gemEffectText, gemCount, gemTotal, gemMods, slotGems, slotSockets, freeSockets, fusableCount, fuseCost, fuseAllCost, fuseGem, fuseAll, socketGem, unsocketGem, addGem, bestInPouch, GEM_POW, GEM_NEON, gemPowers, gemPowLvl, gemPowName } from './gems.js';
 import { PFMT } from './classes.js';
-import { drawEventMarks, eventArrows, EVENT_KINDS, EVENT_INFO } from './events.js';
+import { drawEventMarks, eventArrows, EVENT_KINDS, EVENT_INFO, guideArea } from './events.js';
 
 const $ = (id) => document.getElementById(id);
 let selected = null; // { where: 'inv'|'equip', uid, slot }
@@ -270,6 +270,14 @@ export function initUI() {
   $('opt-shake').onclick = () => {
     s.shake = !s.shake;
     updS();
+    saveSettings();
+  };
+  // pausa no impacto e câmera lenta (golpes fortes, abates de elite e chefe, esquiva perfeita)
+  const updI = () => ($('opt-impact').textContent = s.impact !== false ? L('Ligado', 'On') : L('Desligado', 'Off'));
+  updI();
+  $('opt-impact').onclick = () => {
+    s.impact = s.impact === false;
+    updI();
     saveSettings();
   };
   $('opt-full').onclick = toggleFullscreen;
@@ -839,6 +847,7 @@ export function updateHUD(dt) {
   if (p.buffs.mend > 0) buffs.push(`✚ ${L('Cura', 'Mend')} ${p.buffs.mend.toFixed(0)}s`);
   if (p.buffs.evade > 0) buffs.push(`${L('Esquiva', 'Evade')} ${Math.round(p.evadeK || 0)}% ${p.buffs.evade.toFixed(0)}s`);
   if (p.buffs.leech > 0) buffs.push(`${L('Roubo de vida', 'Life steal')} ${p.buffs.leech.toFixed(0)}s`);
+  if (p.buffs.perfect > 0) buffs.push(`<span style="color:#7df9ff;border-color:#7df9ff">💨 ${L('Esquiva perfeita', 'Perfect dodge')} +50% ${p.buffs.perfect.toFixed(0)}s</span>`);
   for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].icon} ${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
   for (const b of mythHud()) buffs.push(`<span style="color:#c56bff;border-color:#c56bff">✦ ${b}</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);
@@ -1048,10 +1057,15 @@ export function banner(title, sub = '') {
 // Mensagens x personagem: os avisos do topo (#toasts), o cartão do evento e a faixa (#banner) nunca descem até o personagem.
 // Esconde os avisos mais velhos que não cabem acima da cabeça dele (voltam quando sobra lugar), encolhe o cartão
 // se ele sozinho não cabe, desce a lista de missões quando os avisos a cobrem (celular) e põe a faixa no espaço livre
-// embaixo dos avisos, ou embaixo do personagem quando em cima não tem lugar
+// embaixo dos avisos, ou embaixo do personagem quando em cima não tem lugar.
+// Mensagens x evento: com o cartão de um evento na tela, os avisos também não cobrem as peças dele (a tela da sombra,
+// o placar, as placas...). Se o evento está em cima, os avisos vão para baixo do personagem (no celular, no vão entre o
+// direcional e os botões); se nem lá cabem, o cartão encolhe para uma linha no topo (tocar abre)
 // ------------------------------------------------------------------
 const fitV = new THREE.Vector3();
 let fitT = 0;
+let fitLow = false; // avisos embaixo do personagem
+let wasLow = false;
 function scrY(p, y) {
   fitV.set(p.x, y, p.z).project(G.camera);
   return ((1 - fitV.y) / 2) * innerHeight;
@@ -1065,6 +1079,61 @@ function msgOver(root, r) {
   }
   return dy;
 }
+// algum aviso visível em cima de uma peça do evento?
+function msgOnArea(root, area) {
+  if (!area) return false;
+  for (const r of area) if (msgOver(root, r) > 8) return true;
+  return false;
+}
+// um retângulo em cima de uma peça do evento (com folga "pad")?
+function rectOnArea(q, area, pad) {
+  for (const r of area) {
+    if (q.right > r.left - pad + 2 && q.left < r.right + pad - 2 && q.bottom > r.top - pad + 8 && q.top < r.bottom + pad - 2) return true;
+  }
+  return false;
+}
+// avisos embaixo do personagem: da altura dos pés (e abaixo das peças do evento que estão ali) até a barra de poderes;
+// no toque, entre o direcional e os botões. Devolve até onde os avisos podem descer, ou false (sem mexer) se ali não há lugar
+function placeLow(root, area, p) {
+  const W = innerWidth;
+  const H = innerHeight;
+  let y = scrY(p, -0.05) + 12;
+  let x0 = 0;
+  let x1 = W;
+  if (G.isTouch) {
+    const joy = $('joy');
+    const jr = joy && !joy.classList.contains('active') ? joy.getBoundingClientRect() : null;
+    x0 = (jr && jr.height > 2 ? jr.right : 0) + 8;
+    for (const el of document.querySelectorAll('#touch .tbtn')) {
+      const q = el.getBoundingClientRect();
+      if (q.height > 2 && q.bottom > y) x1 = Math.min(x1, q.left - 8);
+    }
+  }
+  const cx0 = G.isTouch ? x0 : (W - root.offsetWidth) / 2;
+  const cx1 = G.isTouch ? x1 : (W + root.offsetWidth) / 2;
+  if (cx1 - cx0 < 220) return false;
+  // peças do evento que passam dos pés (o personagem está dentro do evento): os avisos ficam embaixo delas
+  for (let k = 0; k < 3; k++) for (const r of area) if (r.bottom > y && r.top < y + 40 && r.right > cx0 && r.left < cx1) y = r.bottom + 6;
+  // fim: a barra de poderes, o aviso do elevador e os botões de toque
+  let end = H - 8;
+  for (const id of ['skillbar', 'exit-prompt', 'xp-bar']) {
+    const el = $(id);
+    const q = el && !el.classList.contains('hidden') ? el.getBoundingClientRect() : null;
+    if (q && q.height > 2 && q.right > cx0 && q.left < cx1 && q.top > y) end = Math.min(end, q.top - 6);
+  }
+  if (end - y < 30) return false;
+  root.style.top = Math.round(y) + 'px';
+  if (G.isTouch) {
+    root.style.left = Math.round(x0) + 'px';
+    root.style.right = Math.round(W - x1) + 'px';
+    root.style.width = 'auto';
+    root.style.transform = 'none';
+  }
+  return end;
+}
+function clearLow(root) {
+  root.style.top = root.style.left = root.style.right = root.style.width = root.style.transform = '';
+}
 function fitMsgs() {
   const p = G.player;
   const root = $('toasts');
@@ -1074,37 +1143,81 @@ function fitMsgs() {
   const ri = $('run-info');
   const bOn = b.classList.contains('show');
   const head = scrY(p, 1.9) - 6; // o modelo tem ~1,4m: folga acima da cabeça
-  const busy = root.getElementsByClassName('fit-hide').length || (guide && guide.classList.contains('fit-mini')) || (ri && ri.style.transform);
-  // caso comum: nada mexido, sem faixa, tudo acima da cabeça e a lista de missões livre (só medidas, sem mexer em nada)
-  if (!busy && !bOn && root.getBoundingClientRect().bottom <= head && !(ri && msgOver(root, ri.getBoundingClientRect()))) return;
-  for (const el of [...root.getElementsByClassName('fit-hide')]) el.classList.remove('fit-hide');
-  if (guide) guide.classList.remove('fit-mini');
+  const area = guideArea();
+  const busy = fitLow || root.getElementsByClassName('fit-hide').length || (guide && guide.classList.contains('fit-mini')) || (ri && ri.style.transform);
+  // caso comum: nada mexido, sem faixa, tudo acima da cabeça, fora do evento e a lista de missões livre (só medidas, sem mexer em nada)
+  if (!busy && !bOn && root.getBoundingClientRect().bottom <= head && !msgOnArea(root, area) && !(ri && msgOver(root, ri.getBoundingClientRect()))) return;
   const toasts = root.getElementsByClassName('toast');
   const bottom = () => root.getBoundingClientRect().bottom;
-  // 1) os avisos mais velhos saem primeiro
-  for (let i = 0; i < toasts.length && bottom() > head; i++) toasts[i].classList.add('fit-hide');
-  // 2) só o cartão do evento e ainda não cabe: encolhe para uma linha (tocar abre mesmo assim)
-  if (guide && !guide.classList.contains('hidden') && !guide.dataset.force && bottom() > head) guide.classList.add('fit-mini');
+  const guideOn = guide && !guide.classList.contains('hidden');
+  const force = guideOn && guide.dataset.force;
+  for (const el of [...root.getElementsByClassName('fit-hide')]) el.classList.remove('fit-hide');
+  if (guide) guide.classList.remove('fit-mini');
+  clearLow(root);
+  // onde fica o cartão (os avisos seguem embaixo dele): em cima é o normal; embaixo do personagem quando em cima cobre
+  // o evento; se nenhum dos dois cabe, encolhe para uma linha e tenta de novo. Quem está embaixo só volta para cima com
+  // folga (não fica pulando quando o personagem anda na beirada). Só o cartão é medido aqui, sem esconder avisos
+  let lim = head;
+  fitLow = false;
+  if (guideOn && area) {
+    const gOk = (l, pad) => {
+      const q = guide.getBoundingClientRect();
+      return q.bottom <= l - pad && !rectOnArea(q, area, pad);
+    };
+    const tryLow = () => {
+      const end = placeLow(root, area, p);
+      if (end && gOk(end, 0)) {
+        lim = end;
+        fitLow = true;
+        return true;
+      }
+      clearLow(root);
+      return false;
+    };
+    if (!gOk(head, wasLow ? 30 : 0) && !tryLow() && !force) {
+      guide.classList.add('fit-mini');
+      if (!gOk(head, 0)) tryLow();
+    }
+  }
+  wasLow = fitLow;
+  // os avisos mais velhos saem primeiro até tudo caber sem cobrir o evento; em cima, se só o cartão ainda não cabe,
+  // ele encolhe para uma linha (tocar abre mesmo assim)
+  const ok = () => bottom() <= lim && !msgOnArea(root, area);
+  for (let i = 0; i < toasts.length && !ok(); i++) toasts[i].classList.add('fit-hide');
+  if (!fitLow && guideOn && !force && bottom() > head) guide.classList.add('fit-mini');
+  root.classList.toggle('low', fitLow);
   // 3) missões cobertas pelos avisos (celular: ficam embaixo da faixa deles): descem, se não for para cima do personagem
   if (ri) {
     ri.style.transform = '';
     const rr = ri.getBoundingClientRect();
     const dy = rr.height > 2 ? msgOver(root, rr) : 0;
     if (dy > 0) {
+      scrY(p, 1.9);
       const px = ((fitV.x + 1) / 2) * innerWidth;
       if (rr.left > px + 30 || rr.right < px - 30 || rr.bottom + dy <= head) ri.style.transform = `translateY(${Math.ceil(dy)}px)`;
     }
   }
   if (!bOn) return;
   // 4) faixa: no lugar dela (34% da tela) ou logo abaixo dos avisos, se couber acima da cabeça; senão, embaixo do personagem
+  // (e dos avisos, quando eles estão lá embaixo)
   b.style.top = '';
   const br = b.getBoundingClientRect();
   const tb = root.getBoundingClientRect();
-  const used = tb.height > 2 ? tb.bottom + 6 : 0;
-  const top = Math.max(br.top, used);
-  if (top + br.height <= head) b.style.top = top + 'px';
-  else if (head - br.height >= Math.max(used, 40)) b.style.top = head - br.height + 'px';
-  else b.style.top = Math.min(innerHeight - br.height - 70, scrY(p, -0.2) + 20) + 'px';
+  const used = tb.height > 2 && !fitLow ? tb.bottom + 6 : 0;
+  const tp = Math.max(br.top, used);
+  // a faixa também não fica em cima das peças do evento (largura: a do título)
+  const bt = $('banner-title').getBoundingClientRect();
+  const hx = Math.max(60, bt.width / 2);
+  const onEv = (t) => !!area && area.some((r) => r.right > innerWidth / 2 - hx && r.left < innerWidth / 2 + hx && r.bottom > t + 6 && r.top < t + br.height - 6);
+  // nunca atrás dos avisos (que podem estar embaixo do personagem)
+  const free = (t) => !(tb.height > 2 && t < tb.bottom && t + br.height > tb.top);
+  const below = Math.max(scrY(p, -0.2) + 20, fitLow && tb.height > 2 ? tb.bottom + 6 : 0);
+  const cands = [];
+  if (tp + br.height <= head) cands.push(tp);
+  if (head - br.height >= Math.max(used, 40)) cands.push(head - br.height);
+  if (below + br.height <= innerHeight - 70) cands.push(below);
+  const t = cands.find((v) => free(v) && !onEv(v)) ?? cands.find(free) ?? Math.min(innerHeight - br.height - 70, below);
+  b.style.top = t + 'px';
 }
 
 export function levelUpFx(level) {

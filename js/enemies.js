@@ -1,9 +1,11 @@
 // Tipos de inimigos, elites, IA e o chefe ARC-9.
 import * as THREE from 'three';
+import { tickElems } from './elements.js';
+import { updateBoss2, clearBoss2 } from './bosses2.js';
 import { G, gk } from './state.js';
 import { rr, pick, chance, weightedPick, shuffle, short } from './utils.js';
 import { makeEnemyModel, makeHpBar, addShadow, animWalk, glowMat } from './models.js';
-import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor } from './dungeon.js';
+import { resolveCircle, lineOfSight, flowDir, isWalkable, isWalkableTile, isFinalFloor, BOSS_EVERY, themeFor } from './dungeon.js';
 import { spawnProjectile, damagePlayer, after, enemyExplosion, damageEnemy } from './combat.js';
 import { burst, ringFx, telegraphFx, lineTelegraph, floatText, slashFx } from './fx.js';
 import { sfx } from './audio.js';
@@ -42,6 +44,17 @@ export const ETYPES = {
   gunship: { name: L('Nave de Ataque', 'Assault Gunship'), boss: true, fly: true, hp: 540, dmg: 10, speed: 4.5, r: 1.4, h: 3.4, xp: 600, minFloor: 99, weight: 0, ai: 'gunship', heavy: true, blood: 0x00f0ff },
   hacker: { name: L('Hacker Supremo', 'Grand Hacker'), boss: true, hp: 430, dmg: 12, speed: 3.2, r: 0.6, h: 2.2, xp: 600, minFloor: 99, weight: 0, ai: 'hackerboss', heavy: true, blood: 0x39ff14 },
   omega: { name: L('Núcleo OMEGA', 'OMEGA Core'), boss: true, hp: 650, dmg: 13, speed: 0, r: 1.5, h: 3.4, xp: 700, minFloor: 99, weight: 0, ai: 'omega', heavy: true, static: true, blood: 0xff2244 },
+  // chefes dos biomas (bosses2.js): um por família de biomas
+  rootcol: { name: L('Colosso de Raízes', 'Root Colossus'), boss: true, hp: 560, dmg: 11, speed: 2.2, r: 1.2, h: 3.4, xp: 520, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x7dff6a },
+  leviathan: { name: L('Leviatã do Esgoto', 'Sewer Leviathan'), boss: true, hp: 560, dmg: 12, speed: 2.6, r: 1.2, h: 3.0, xp: 540, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x9dff3a },
+  cgolem: { name: L('Golem de Cristal', 'Crystal Golem'), boss: true, hp: 620, dmg: 12, speed: 2.0, r: 1.3, h: 3.4, xp: 560, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x9fe8ff },
+  wyrm: { name: L('Serpe Glacial', 'Glacial Wyrm'), boss: true, hp: 560, dmg: 12, speed: 3.0, r: 1.3, h: 2.9, xp: 560, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x7fc8ff },
+  stoneking: { name: L('Escorpião de Pedra', 'Stone Scorpion'), boss: true, hp: 580, dmg: 12, speed: 2.8, r: 1.3, h: 2.4, xp: 560, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0xffc46a },
+  stormlord: { name: L('Senhor da Tempestade', 'Storm Lord'), boss: true, hp: 520, dmg: 12, speed: 3.0, r: 0.9, h: 3.4, xp: 580, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x66f0ff },
+  magma: { name: L('Titã de Magma', 'Magma Titan'), boss: true, hp: 640, dmg: 13, speed: 2.0, r: 1.3, h: 3.5, xp: 600, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0xff6a1a },
+  toyking: { name: L('Rei dos Brinquedos', 'Toy King'), boss: true, hp: 560, dmg: 12, speed: 2.6, r: 1.1, h: 3.8, xp: 580, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0xff4fd8 },
+  clockmaster: { name: L('Relojoeiro', 'Clockmaster'), boss: true, hp: 540, dmg: 12, speed: 2.8, r: 0.9, h: 3.4, xp: 600, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0xffd23d },
+  kraken: { name: L('Kraken Neon', 'Neon Kraken'), boss: true, hp: 620, dmg: 13, speed: 2.0, r: 1.5, h: 3.0, xp: 600, minFloor: 99, weight: 0, ai: 'boss2', heavy: true, blood: 0x3dc7ff },
   // fauna dos biomas naturais/espaço (só aparecem no bioma deles)
   ghost: { name: L('Fantasma', 'Ghost'), fly: true, phase: true, hp: 28, dmg: 9, speed: 3.0, r: 0.38, h: 1.7, xp: 10, minFloor: 99, weight: 0, ai: 'ghost', atkCd: 1.0, blood: 0xbfffff },
   wisp: { name: L('Fogo-Fátuo', 'Wisp'), fly: true, hp: 12, dmg: 12, speed: 4.8, r: 0.26, h: 1.2, xp: 6, minFloor: 99, weight: 0, ai: 'wisp', blood: 0x7affc8 },
@@ -898,6 +911,10 @@ export function onEnemyKilled(e) {
     e.laser.material.dispose();
     e.laser = null;
   }
+  if (e.T.ai === 'boss2') {
+    clearBoss2(e);
+    e.model.root.visible = true;
+  }
   if (e.boss) {
     G.bosses = G.bosses.filter((b) => b !== e);
     G.boss = G.bosses[0] || null;
@@ -905,7 +922,7 @@ export function onEnemyKilled(e) {
     if (G.final) finalBossDown(e);
     else {
       banner(L('ALVO NEUTRALIZADO', 'TARGET NEUTRALIZED'), L('O elevador foi liberado', 'The elevator is unlocked'));
-      bossReward();
+      bossReward(e);
       sfx.levelup();
       G.dungeon.meshes.exit.locked = false;
     }
@@ -976,6 +993,7 @@ export function updateEnemies(dt, cam) {
     if (e.slowT > 0) e.slowT -= edt;
     if (e.frozenT > 0) e.frozenT -= edt;
     if (e.wardT > 0) e.wardT -= edt;
+    tickElems(e, edt); // choque, molhado, óleo e o piso embaixo (reações entre elementos)
     if (e.affixes && e.stun <= 0) eliteAura(e, edt, p);
 
     e.losT -= edt;
@@ -1587,8 +1605,9 @@ export function updateEnemies(dt, cam) {
         case 'gunship':
         case 'hackerboss':
         case 'omega':
-        case 'pylon': {
-          const fn = { scrap: updateScrap, reaper: updateReaper, gunship: updateGunship, hackerboss: updateHackerBoss, omega: updateOmega, pylon: updatePylon }[e.T.ai];
+        case 'pylon':
+        case 'boss2': {
+          const fn = { scrap: updateScrap, reaper: updateReaper, gunship: updateGunship, hackerboss: updateHackerBoss, omega: updateOmega, pylon: updatePylon, boss2: updateBoss2 }[e.T.ai];
           const r = fn(e, edt, dist, ux, uz);
           mvx = r.x;
           mvz = r.z;
@@ -1972,6 +1991,7 @@ export function updateEnemies(dt, cam) {
       m.head.rotation.y = e.facing ? 0 : 0;
       m.head.position.y = 0.72 + (e.atkT > e.T.atkCd - 0.7 ? Math.sin(G.t * 50) * 0.02 : 0);
     } else if (m.kind === 'bigboss') {
+      if (m.anim) m.anim(e, m, dt); // chefes dos biomas
       if (m.rotors) m.rotors.forEach((r) => (r.rotation.y += dt * 25));
       if (m.float) m.body.position.y = 0.2 + Math.sin(G.t * 2.5) * 0.15;
       if (m.rings) m.rings.forEach((r, k) => (r.rotation.y += dt * (0.6 + k * 0.4) * (k % 2 ? -1 : 1)));
@@ -2032,10 +2052,12 @@ export function updateEnemies(dt, cam) {
     // flash ao tomar dano
     const fl = e.flash > 0 ? 1 : 0;
     for (const mt of m.mats) {
-      if (fl) mt.emissive.setScalar(0.9);
+      if (fl) mt.emissive.setScalar(0.55);
       else if (e.frozenT > 0) mt.emissive.setRGB(0.15, 0.35, 0.7);
       else if (e.slowT > 0) mt.emissive.setRGB(0.05, 0.12, 0.3);
       else if (e.burnT > 0) mt.emissive.setRGB(0.35 + Math.sin(G.t * 20) * 0.1, 0.1, 0);
+      else if (e.shockT > 0) mt.emissive.setRGB(0, 0.2 + (Math.sin(G.t * 31 + e.phase) > 0.6 ? 0.3 : 0), 0.28);
+      else if (e.oilT > 0) mt.emissive.setRGB(0.04, 0.02, 0.08);
       else mt.emissive.setScalar(0);
     }
     // barra de vida
@@ -2224,7 +2246,36 @@ const BOSS_SUB = {
   gunship: L('Fica vulnerável quando pousa para recarregar', 'Vulnerable when it lands to reload'),
   hacker: L('Fique fora dos quadrados vermelhos', 'Stay off the red tiles'),
   omega: L('Destrua os pilares para derrubar o escudo', 'Destroy the pylons to drop its shield'),
+  rootcol: L('Raízes saem do chão em linha: saia da faixa', 'Roots burst out in lines: step off the strip'),
+  leviathan: L('Ele mergulha no lodo e sai embaixo de você', 'It dives into the sludge and comes up under you'),
+  cgolem: L('As ondas de cristal têm brechas: passe por elas', 'The crystal waves have gaps: go through them'),
+  wyrm: L('O sopro gelado congela: saia do cone', 'Its icy breath freezes: get out of the cone'),
+  stoneking: L('Ele se enterra: fuja do círculo antes que saia', 'It burrows: leave the circle before it bursts out'),
+  stormlord: L('Raios caem onde o chão acende; o vento empurra', 'Lightning falls where the floor lights up; the wind pushes'),
+  magma: L('Meteoros deixam lava no chão', 'Meteors leave lava on the floor'),
+  toyking: L('Bonecos, bombas e um pião que avança', 'Toy soldiers, bombs and a charging spinning top'),
+  clockmaster: L('Os ponteiros giram: fique fora da linha', 'The clock hands spin: stay off the line'),
+  kraken: L('Tentáculos caem em volta e ele puxa você para perto', 'Tentacles slam around and it pulls you in'),
 };
+// Chefe de cada bioma (andares pares). Os biomas que não estão aqui (tecnológicos) usam os 7 chefes clássicos
+export const BOSS_BY_THEME = {
+  forest: 'rootcol', jungle: 'rootcol', meadow: 'queen', garden: 'rootcol', mushroom: 'rootcol', uprain: 'stormlord',
+  sewer: 'leviathan', hive: 'queen', starswamp: 'leviathan',
+  glass: 'cgolem', crystalcave: 'cgolem', salt: 'stoneking', desert: 'stoneking', stonesea: 'stoneking', tomb: 'stoneking', bones: 'stoneking',
+  cryo: 'wyrm', snow: 'wyrm', aurora: 'wyrm', ashwinter: 'wyrm',
+  storm: 'stormlord', mountain: 'stormlord', titan: 'magma',
+  volcano: 'magma', lavafall: 'magma',
+  candy: 'toyking', carnival: 'toyking', toybox: 'clockmaster', arcade: 'toyking',
+  library: 'clockmaster', clock: 'clockmaster', atelier: 'clockmaster',
+  coral: 'kraken', springs: 'kraken', mirrorlake: 'reaper',
+  armory: 'boss', space: 'gunship', junkyard: 'scrap', station: 'hacker', data: 'omega', factory: 'boss', neon: 'hacker', market: 'scrap',
+};
+export const BIOME_BOSSES = ['rootcol', 'leviathan', 'cgolem', 'wyrm', 'stoneking', 'stormlord', 'magma', 'toyking', 'clockmaster', 'kraken'];
+// chefe do andar: o do bioma; sem bioma na tabela, a rotação dos 7 clássicos
+function bossForFloor(f) {
+  const t = themeFor(f);
+  return BOSS_BY_THEME[t && t.id] || BOSS_ORDER[(Math.round(f / BOSS_EVERY) - 1) % BOSS_ORDER.length];
+}
 export const BOSS_ORDER = ['boss', 'queen', 'scrap', 'reaper', 'gunship', 'hacker', 'omega'];
 
 function startBoss(e) {
@@ -2666,9 +2717,13 @@ export function populateFloor(d, floor, boss) {
     spawnFinalBoss(waves[0][1], 3.5);
     G.dungeon.meshes.exit.locked = true;
   } else if (boss) {
-    const idx = Math.round(floor / 3) - 1;
-    const kind = BOSS_ORDER[idx % BOSS_ORDER.length];
-    const cycle = Math.floor(idx / BOSS_ORDER.length);
+    const idx = Math.round(floor / BOSS_EVERY) - 1; // 0 no primeiro chefe (andar 2)
+    const kind = bossForFloor(floor);
+    // quantas vezes esse chefe já apareceu antes neste modo (II, III...)
+    let cycle = 0;
+    for (let f = BOSS_EVERY; f < floor; f += BOSS_EVERY) if (bossForFloor(f) === kind) cycle++;
+    // a vida extra de cada chefe segue o andar (a mesma curva de quando era a cada 3 andares)
+    const prog = Math.max(0, (floor - 3) / 3);
     const e = spawnEnemy(kind, d.exit.x, kind === 'omega' ? d.exit.z : d.exit.z - 2.5);
     // curva dos chefes: o primeiro bate bem menos e ataca com mais calma (o jogador ainda está fraco);
     // cada chefe seguinte vem mais resistente, porque o jogador cresce mais rápido que eles
@@ -2678,9 +2733,14 @@ export function populateFloor(d, floor, boss) {
       e.hp = e.maxHp = e.maxHp * 0.9;
       e.dmg *= 0.55;
       e.tempoK = 0.6;
+    } else if (idx === 1 && !tierOf().off) {
+      // o segundo (andar 4) ainda alivia um pouco
+      e.hp = e.maxHp = e.maxHp * BOSS_HP_K;
+      e.dmg *= 0.8;
+      e.tempoK = 0.8;
     } else {
-      e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * idx);
-      e.dmg *= 1 + 0.03 * idx;
+      e.hp = e.maxHp = e.maxHp * (BOSS_HP_K + 0.1 * prog);
+      e.dmg *= 1 + 0.03 * prog;
     }
     if (kind === 'boss') e.name = cycle ? `Executor ARC-${9 + cycle}` : 'Executor ARC-9';
     else if (cycle) e.name = `${e.name} ${['', 'II', 'III', 'IV', 'V'][cycle] || cycle + 1}`;

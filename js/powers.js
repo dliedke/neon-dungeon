@@ -520,7 +520,7 @@ export function chainLightningFrom(p, jumps, mult, color, range = 7) {
   let cur = first;
   for (let k = 0; k < jumps && cur; k++) {
     beamFx(from.x, from.y, from.z, cur.x, cur.height * 0.6, cur.z, color, 0.25, 6);
-    hitEnemy(cur, mult, { stun: 0.3, noProc: true, auto: true });
+    hitEnemy(cur, mult, { stun: 0.3, noProc: true, auto: true, shock: true });
     hit.add(cur);
     from = { x: cur.x, y: cur.height * 0.6, z: cur.z };
     cur = nearestEnemy(cur.x, cur.z, 5, true, hit);
@@ -552,7 +552,7 @@ function updateStorms(dt) {
       if (!cands.length) continue;
       const e = pick(cands);
       skyBolt(e.x, e.z, s.color);
-      for (const o of enemiesInRadius(e.x, e.z, 1.3)) hitEnemy(o, s.mult, { stun: 0.4, noProc: true, auto: true, kx: e.x, kz: e.z, quiet: o !== e });
+      for (const o of enemiesInRadius(e.x, e.z, 1.3)) hitEnemy(o, s.mult, { stun: 0.4, noProc: true, auto: true, shock: true, kx: e.x, kz: e.z, quiet: o !== e });
       sfx.zap();
     }
     if (s.t <= 0) G.storms.splice(i, 1);

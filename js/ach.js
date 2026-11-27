@@ -4,13 +4,14 @@
 // Conjuntos (biomas vistos, tipos abatidos, chefes...) ficam em stats.sets e se unem.
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { ETYPES, BOSS_ORDER, diffRank, abyssLvl, abyssUnlocked, abyssBest } from './enemies.js';
+import { ETYPES, BOSS_ORDER, BIOME_BOSSES, diffRank, abyssLvl, abyssUnlocked, abyssBest } from './enemies.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
 import { SHRINES, SUPER_SHRINES } from './loot.js';
 import { PET_KINDS } from './pets.js';
 import { ANOMALIES } from './run.js';
+import { REACTION_KINDS } from './elements.js';
 import { toast, medalPopup, abyssUnlockedFx } from './ui.js';
 import { sfx } from './audio.js';
 import { sync } from './sync.js';
@@ -120,14 +121,20 @@ export function achList() {
   add('elite1', '⭐', 0, L('Caçador de Elite', 'Elite Hunter'), L('Derrote um inimigo de elite', 'Defeat an elite enemy'), () => total('elites'));
   add('elite25', '🌟', 1, L('Elite da Elite', 'Elite of the Elite'), L('Derrote 25 inimigos de elite', 'Defeat 25 elite enemies'), () => total('elites'), 25);
   add('elite100', '✨', 2, L('Pesadelo das Elites', 'Bane of Elites'), L('Derrote 100 inimigos de elite', 'Defeat 100 elite enemies'), () => total('elites'), 100);
+  add('pdodge1', '💨', 0, L('Reflexo Neon', 'Neon Reflex'), L('Faça uma esquiva perfeita (avance, role ou teleporte bem na hora do golpe)', 'Pull off a perfect dodge (dash, roll or teleport right as a hit lands)'), () => total('pdodge'));
+  add('pdodge50', '🌀', 2, L('Intocável', 'Untouchable'), L('Faça 50 esquivas perfeitas', 'Pull off 50 perfect dodges'), () => total('pdodge'), 50);
+  add('react1', '⚗️', 0, L('Química de Rua', 'Street Chemistry'), L('Provoque uma reação entre elementos (vapor, estilhaçar, curto-circuito...)', 'Trigger an elemental reaction (steam, shatter, short circuit...)'), () => total('reactions'));
+  add('react200', '🧪', 2, L('Laboratório Ambulante', 'Walking Lab'), L('Provoque 200 reações entre elementos', 'Trigger 200 elemental reactions'), () => total('reactions'), 200);
+  add('reactAll', '🌈', 2, L('Tabela Periódica', 'Periodic Table'), L(`Provoque as ${REACTION_KINDS.length} reações diferentes entre elementos`, `Trigger all ${REACTION_KINDS.length} different elemental reactions`), () => count('reactions'), REACTION_KINDS.length);
 
   // chefes
-  const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴' };
-  for (const b of BOSS_ORDER) {
+  const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴', rootcol: '🌳', leviathan: '🐍', cgolem: '💎', wyrm: '🐉', stoneking: '🦂', stormlord: '🌩️', magma: '🌋', toyking: '🤡', clockmaster: '🕰️', kraken: '🐙' };
+  for (const b of [...BOSS_ORDER, ...BIOME_BOSSES]) {
     add(`boss_${b}`, BOSS_ICON[b] || '👑', b === 'omega' ? 2 : 1, L(`Derrubou: ${ETYPES[b].name}`, `Took down: ${ETYPES[b].name}`), L(`Derrote ${ETYPES[b].name}`, `Defeat ${ETYPES[b].name}`), () => (has('bossTypes', b) ? 1 : 0));
   }
   add('bosses10', '👑', 2, L('Matador de Chefes', 'Boss Slayer'), L('Derrote 10 chefes', 'Defeat 10 bosses'), () => total('bosses'), 10);
   add('bosses25', '🏆', 3, L('Rei do Submundo', 'King of the Underworld'), L('Derrote 25 chefes', 'Defeat 25 bosses'), () => total('bosses'), 25);
+  add('bossesAll', '🗺️', 3, L('Caçador de Chefes', 'Boss Hunter'), L(`Derrote os ${BOSS_ORDER.length + BIOME_BOSSES.length} chefes diferentes`, `Defeat all ${BOSS_ORDER.length + BIOME_BOSSES.length} different bosses`), () => [...BOSS_ORDER, ...BIOME_BOSSES].filter((b) => has('bossTypes', b)).length, BOSS_ORDER.length + BIOME_BOSSES.length);
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
   add('chaosBoss', '🌀', 2, L('Senhor do Caos', 'Lord of Chaos'), L('Derrote um chefe no Caos ou acima', 'Defeat a boss on Chaos or above'), () => (has('flags', 'chaosBoss') ? 1 : 0));
   add('deathBoss', '⚰️', 3, L('Dança com a Morte', 'Dance with Death'), L('Derrote um chefe no Morte', 'Defeat a boss on Death'), () => (has('flags', 'deathBoss') ? 1 : 0));

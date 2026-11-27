@@ -1,7 +1,7 @@
 import { formMods, timeFactor, shieldCatch } from './powers.js';
 // Dano, projéteis, explosões, torres e temporizadores.
 import * as THREE from 'three';
-import { G, gk } from './state.js';
+import { G, gk, hitStop, slowMo } from './state.js';
 import { rr, chance, fmt, short } from './utils.js';
 import { isWalkable, lineOfSight, blocksSight } from './dungeon.js';
 import { glowMat, makeTurretModel } from './models.js';
@@ -12,12 +12,13 @@ import { gainXp, playerDie } from './player.js';
 import { onEnemyKilled, abyssOn, abyssFx } from './enemies.js';
 import { hurtFlash, toast, banner } from './ui.js';
 import { mythDmgMult, mythOnHit, mythOnKill, mythSave, divOnHit, divBlock, divAmbrosia, primDmgMult, primOnHit, primDodge, gemOnHit, gemOnKill, gemBlock } from './mythic.js';
-import { achKill } from './ach.js';
+import { achKill, achAdd, achTotal } from './ach.js';
 import { L } from './i18n.js';
 import { amod, runKill, runHurt, armorTaken } from './run.js';
 import { propBroken } from './events.js';
 import { preDamage, postDamage, reflectShot } from './enemies2.js';
 import { wildBlast, wildKill, projZone } from './wilds.js';
+import { react } from './elements.js';
 
 // ---------------- temporizadores ----------------
 export function after(t, fn) {
@@ -84,7 +85,7 @@ export function playerDamageRoll(mult, forceCrit) {
   const p = G.player;
   const s = p.stats;
   const fm = formMods(p);
-  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (s.dmgMul || 1) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.giant > 0 ? 1.6 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * amod('pdmg');
+  let d = rr(s.wMin, s.wMax) * mult * (1 + s.dmgPct / 100) * (s.dmgMul || 1) * (fm ? fm.dmg : 1) * (p.buffs.fury > 0 ? 1.5 : 1) * (p.buffs.giant > 0 ? 1.6 : 1) * (p.buffs.avatar > 0 ? 1.5 : 1) * (p.buffs.perfect > 0 ? 1.5 : 1) * amod('pdmg');
   let crit = false;
   if (forceCrit || Math.random() < (s.crit + (p.buffs.crit > 0 ? 25 : 0)) / 100) {
     crit = true;
@@ -125,12 +126,17 @@ export function hitEnemy(e, mult, o = {}) {
 // Efeitos de status causados pelo jogador
 export function applyStatus(e, o) {
   if (!e.alive || e.inert) return;
+  // reações entre elementos (elements.js): vapor, estilhaçar, curto-circuito, congelar, explosão tóxica, incêndio
+  const rx = react(e, o);
+  if (rx === 1) return;
   const s = G.player.stats;
   const avg = ((s.wMin + s.wMax) / 2) * (1 + s.dmgPct / 100) * (s.dmgMul || 1);
   if (o.burn) {
-    const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100);
-    e.burnT = 3;
-    e.burnColor = G.char && G.char.cls === 'biohacker' ? 0x9dff3a : 0;
+    const dps = avg * o.burn * (1 + (s.burnPct || 0) / 100) * (rx === 2 ? 2.5 : 1);
+    const poison = !!o.poison || (!!G.char && G.char.cls === 'biohacker');
+    e.burnT = rx === 2 ? 5 : 3;
+    e.burnKind = poison ? 'poison' : 'fire';
+    e.burnColor = poison ? 0x9dff3a : 0;
     e.burnDps = Math.max(e.burnT > 0 ? e.burnDps || 0 : 0, dps);
   }
   if (o.slow) e.slowT = Math.max(e.slowT || 0, o.slow * (e.boss ? 0.5 : 1));
@@ -201,7 +207,12 @@ export function damageEnemy(e, amount, crit, o = {}) {
   amount = Math.max(1, Math.round(amount));
   e.hp -= amount;
   if (e.T.split) postDamage(e);
-  if (!o.dot) e.flash = 0.09;
+  // piscar branco ao levar golpe: no máximo a cada 0,2s (com muitos golpes por segundo o inimigo ficava branco direto
+  // e, com o bloom, virava uma mancha que escondia o modelo e os avisos de ataque)
+  if (!o.dot && G.t - (e.flashT ?? -9) > 0.2) {
+    e.flash = 0.08;
+    e.flashT = G.t;
+  }
   e.hpShow = 4;
   if (!e.aggro) {
     e.aggro = true;
@@ -227,11 +238,21 @@ export function damageEnemy(e, amount, crit, o = {}) {
     e.kz += (dz / l) * k;
   }
   if (o.stun && !e.boss) e.stun = Math.max(e.stun, o.stun * stunK(e));
-  if (!o.dot) burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 7 : 4, 3, 0.05, 0.3);
+  // faíscas do golpe: no máximo a cada 0,1s por inimigo (críticos sempre)
+  if (!o.dot && (crit || G.t - (e.sparkT ?? -9) > 0.1)) {
+    e.sparkT = G.t;
+    burst(e.x, e.height * 0.6, e.z, crit ? 0xffee55 : e.bloodColor, crit ? 6 : 4, 3, 0.05, 0.3);
+  }
+  // golpe forte no chefe: pausa curtinha (no máximo uma a cada 1,2s, para não travar com muitos golpes)
+  if (e.boss && !o.dot && !o.auto && e.hp > 0 && amount > e.maxHp * 0.03 && G.t - bossStopT > 1.2) {
+    bossStopT = G.t;
+    hitStop(0.045);
+  }
   if (e.hp <= 0) killEnemy(e);
   return amount;
 }
 
+let bossStopT = -9;
 export function killEnemy(e) {
   if (!e.alive) return;
   e.alive = false;
@@ -240,6 +261,13 @@ export function killEnemy(e) {
   sfx.die();
   if (!e.selfDestruct && !e.decoy && !e.T.prop && !e.T.breakable) achKill(e);
   burst(e.x, e.height * 0.5, e.z, e.bloodColor, e.boss ? 80 : e.elite ? 30 : 16, e.boss ? 9 : 5, 0.08, 0.7);
+  // pausa no impacto: chefe e Behemoth caem em câmera lenta; elite, uma pausa curtinha
+  if (!e.decoy && !e.T.prop && !e.T.breakable) {
+    if (e.boss || e.T.big) {
+      hitStop(0.12);
+      slowMo(1, 0.3);
+    } else if (e.elite) hitStop(0.06);
+  }
   if (e.T.prop) {
     // parede da Sala Secreta
     propBroken(e);
@@ -297,7 +325,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
     const n = nearestEnemy(cur.x, cur.z, range, true, hit);
     if (!n) break;
     beamFx(cur.x, cur.height * 0.6, cur.z, n.x, n.height * 0.6, n.z, color);
-    hitEnemy(n, mult, { noProc: true, auto: true });
+    hitEnemy(n, mult, { noProc: true, auto: true, shock: true });
     hit.add(n);
     cur = n;
   }
@@ -305,7 +333,7 @@ export function chainFrom(from, jumps, mult, range, color, noProc = false) {
 }
 
 export function explosion(x, z, radius, mult, o = {}) {
-  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, auto: o.auto, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun });
+  for (const e of enemiesInRadius(x, z, radius)) hitEnemy(e, mult, { knock: o.knock ?? 3, kx: x, kz: z, noProc: o.noProc, auto: o.auto, burn: o.burn, slow: o.slow, freeze: o.freeze, stun: o.stun, shock: o.shock });
   ringFx(x, z, radius, o.color ?? 0xff7a1a, 0.4, { from: 0.3 });
   burst(x, 0.5, z, o.color ?? 0xff7a1a, o.small ? 18 : 40, o.small ? 5 : 9, 0.09, 0.6, { up: 0.8 });
   burst(x, 0.5, z, 0xffffff, o.small ? 4 : 10, 4, 0.06, 0.3);
@@ -325,9 +353,32 @@ export function enemyExplosion(x, z, radius, dmg, color) {
 }
 
 // ---------------- dano no jogador ----------------
-export function damagePlayer(amount) {
+// Esquiva perfeita: um golpe que pegaria o jogador chega logo depois de ele usar um poder de movimento (avanço,
+// rolamento, salto, teleporte: os que dão uma invulnerabilidade curta, até 0,9s). Câmera lenta e +50% de dano por 3s.
+// Dano contínuo (chão tóxico, veneno, poças) não conta, e no máximo uma a cada 2,5s
+function perfectDodge(p) {
+  const fresh = p.invuln > (p.invPrev || 0) + 0.02; // ganhou a invulnerabilidade agora, antes do jogador atualizar
+  const t0 = fresh ? G.t : p.invT ?? -9;
+  const grant = fresh ? p.invuln : p.invGrant || 9;
+  if (grant > 0.9 || G.t - t0 > 0.45 || G.t - (p.pdodgeT ?? -9) < 2.5) return;
+  p.pdodgeT = G.t;
+  p.buffs.perfect = 3;
+  slowMo(0.6, 0.3);
+  floatText(p.x, 2.2, p.z, L('ESQUIVA PERFEITA!', 'PERFECT DODGE!'), 'info');
+  ringFx(p.x, p.z, 1.6, 0x7df9ff, 0.35, { from: 0.4 });
+  burst(p.x, 1, p.z, 0x7df9ff, 14, 4, 0.06, 0.4);
+  sfx.perfect();
+  if (!achTotal('pdodge')) toast(L('💨 <b>Esquiva perfeita!</b> Avançar, rolar, saltar ou teleportar bem na hora em que um golpe ia pegar deixa tudo em câmera lenta e dá +50% de dano por 3s.', '💨 <b>Perfect dodge!</b> Dashing, rolling, leaping or teleporting right as a hit was about to land slows everything down and gives +50% damage for 3s.'), 'leg');
+  achAdd('pdodge', 1);
+}
+
+export function damagePlayer(amount, o) {
   const p = G.player;
-  if (!p || !p.alive || p.invuln > 0 || G.mode !== 'play') return;
+  if (!p || !p.alive || G.mode !== 'play') return;
+  if (p.invuln > 0) {
+    if (!(o && o.tick)) perfectDodge(p);
+    return;
+  }
   // esquiva (poder passivo)
   const dodge = (p.stats.dodge || 0) + (p.buffs.evade > 0 ? p.evadeK || 0 : 0);
   if (dodge && Math.random() * 100 < dodge) {
@@ -359,6 +410,7 @@ export function damagePlayer(amount) {
     if (amount <= 0) return;
   }
   p.hp -= amount;
+  if (amount > p.stats.maxHp * 0.2) hitStop(0.07); // golpe pesado no jogador
   runHurt();
   p.hurtT = 0.12;
   floatText(p.x, 1.8, p.z, `-${short(amount)}`, 'hurt');
@@ -642,7 +694,7 @@ export function updateHazards(dt) {
         for (const e of enemiesInRadius(h.x, h.z, h.r)) hitEnemy(e, h.mult, { noProc: true, auto: true, burn: h.burn, slow: h.slow, kx: h.x, kz: h.z });
       } else if (p.alive && Math.hypot(p.x - h.x, p.z - h.z) < h.r + p.r * 0.5) {
         h.tick = 0.5;
-        damagePlayer(h.dps * 0.5);
+        damagePlayer(h.dps * 0.5, { tick: true });
       }
     }
     if (h.t <= 0) {

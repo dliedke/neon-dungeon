@@ -326,6 +326,14 @@ body.touch #skillbar { display: none; }
 .floater.info { color: var(--accent); font-size: 14px; }
 .floater.cr { color: #ffd84d; font-size: 13px; text-shadow: 0 0 6px #b8860b, 0 2px 2px #000; }
 .floater.up { color: #39ff88; font-size: 16px; text-shadow: 0 0 10px #39ff88, 0 2px 2px #000; }
+/* reações entre elementos (elements.js) */
+.floater.rx { font-family: Orbitron, sans-serif; font-weight: 900; font-size: 15px; letter-spacing: 1px; text-shadow: 0 0 8px currentColor, 0 2px 2px #000; }
+.floater.rx-steam { color: #e8f6ff; }
+.floater.rx-shatter { color: #9fe8ff; }
+.floater.rx-short { color: #66f0ff; }
+.floater.rx-freeze { color: #7fc8ff; }
+.floater.rx-toxic { color: #9dff3a; }
+.floater.rx-blaze { color: #ff8a2a; }
 /* mercador/ferreiro/baú: aviso clicável em cima deles quando o jogador está perto */
 #interact {
   position: fixed; left: 0; top: 0; z-index: 6; pointer-events: auto; cursor: pointer; white-space: nowrap; will-change: transform;
@@ -435,6 +443,9 @@ body.touch #toasts { width: min(90vw, calc(100vw - 480px - var(--safe-l) - var(-
 #ev-guide.mini .eg-tog::before, #ev-guide.fit-mini .eg-tog::before { content: ' ▾'; }
 #ev-guide .eg-more { display: none; color: var(--muted); font-size: 0.75em; }
 #ev-guide.mini .eg-more, #ev-guide.fit-mini .eg-more { display: inline; }
+/* embaixo do personagem (o evento está em cima, ver fitMsgs no ui.js): o cartão deixa passar o toque e o clique, senão
+   o direcional (metade esquerda da tela) e o clique para andar parariam nele; um toque rápido nele ainda abre/fecha (events.js) */
+#toasts.low #ev-guide { pointer-events: none; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
 
 #banner {
@@ -1384,6 +1395,7 @@ body.touch #stash-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   body.touch .floater.hurt { font-size: 13px; }
   body.touch .floater.dot { font-size: 10px; }
   body.touch .floater.info, body.touch .floater.up { font-size: 12px; }
+  body.touch .floater.rx { font-size: 12px; }
   /* faixa de andar/chefe acima do personagem; nas laterais ficam o direcional e os botões: ela quebra linha entre eles */
   body.touch #banner { top: 17%; left: calc(140px + var(--safe-l)); right: calc(140px + var(--safe-r)); }
   body.touch #banner-title { font-size: 30px; letter-spacing: 4px; }

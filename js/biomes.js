@@ -345,7 +345,7 @@ export function placeFeatures(d, theme) {
 }
 
 // Mercador na maior sala (fora a da saída), que vira sala segura
-const EXTRA_SHOP_FLOORS = [22, 31, 43];
+const EXTRA_SHOP_FLOORS = [21, 31, 43]; // andares ímpares (os pares são de chefe)
 function placeMerchant(d, rooms) {
   const r = rooms.filter((x) => x !== d.exitRoom && !x.hall && !x.plaza).sort((a, b) => b.w * b.h - a.w * a.h)[0] || rooms[0];
   if (!r) return;

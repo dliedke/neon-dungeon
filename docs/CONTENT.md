@@ -105,16 +105,20 @@ Add an entry to `ELITE` (`enemies.js`): `{ name, color, minF, apply: (e) => { ..
 
 ## Boss
 
+**Biome boss (the quick way):** add a type in `ETYPES` with `ai: 'boss2'` (same fields as below), a model function in `MODELS` and a definition in `DEFS` in `js/bosses2.js` (`color`, `move: 'walk'` or `'keep'` with `keep: [min, max]`, `atk` and `atk2` lists of attack names from `A`, the phase 2 message `p2`, and flags such as `chill`, `poison`, `strike`, `pool`), optional per-attack arguments in `ARGS`, then point the biomes at it in `BOSS_BY_THEME` (`enemies.js`), add it to `BIOME_BOSSES`, a `BOSS_SUB` hint and a `BOSS_ICON`. The shared state machine `updateBoss2` handles phase 2 at half health, charge, burrow, pull and gust; ring waves and spinning hands are cleaned up by `clearBoss2` when it dies. Test with `__dbg.startFloor(f)` on an even floor whose biome maps to it.
+
+**Hand-made boss:**
+
 1. **Type** in `ETYPES` with `boss: true, minFloor: 99, weight: 0, ai: 'newboss'`, high `hp` and `xp`, `heavy: true`.
 2. **Update function** `updateNewboss(e, dt, dist, ux, uz)` in `enemies.js` that returns `{ x, z, speed }` (desired movement). Add it to the boss dispatch (the `case 'scrap': case 'reaper': ...` block that maps `ai` → function). Use phases based on `e.hp / e.maxHp`, telegraphs, `spawnProjectile({ from: 'enemy', ... })`, `enemyExplosion` and summons via `spawnEnemy`. Respect `e.tempoK` (the first boss attacks more slowly).
 3. **Subtitle:** add a gameplay hint to `BOSS_SUB`.
-4. **Order:** add the id to `BOSS_ORDER`. The boss on floor `f` is `BOSS_ORDER[(round(f / 3) - 1) % length]`, and the final battle (floor 50) spawns all of them in waves of 2, with the last pair arriving last (keep `omega` at the end). Changing the order moves which boss appears on which floor for everyone.
+4. **Order:** add the id to `BOSS_ORDER` (or map a biome to it in `BOSS_BY_THEME`). The boss on floor `f` is `BOSS_BY_THEME[themeFor(f).id]`, falling back to `BOSS_ORDER[(round(f / 2) - 1) % length]` (`bossForFloor`), and the final battle (floor 50) spawns all of them in waves of 2, with the last pair arriving last (keep `omega` at the end). Changing the order moves which boss appears on which floor for everyone.
 5. **Model:** a `case` in `makeEnemyModel` plus `decorate()`. Bosses are big, so check that the camera framing and the health bar look right.
 6. **Medals:** `boss_<id>` is automatic. Add an emoji in `BOSS_ICON` (`ach.js`).
 7. **Hardcoded "7":** the banner in `startFloor` (`main.js`), the help text in `i18n.js` (`DICT`), the README goal text, and Portuguese comments in `dungeon.js` / `enemies.js`.
 8. **Docs:** README "Bosses" table, `index.html` meta ("7 chefes"), `og-image.png` and AGENTS.md.
 
-Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `__dbg.startFloor(30)` for the final battle. On desktop and mobile: the boss bar (and the second bar, if any) fits next to the minimap and over the missions without covering them, and the name is not cut in `?lang=pt`.
+Test: `__dbg.startFloor(2)` (or any even floor that maps to the boss), then `__dbg.startFloor(30)` for the final battle. On desktop and mobile: the boss bar (and the second bar, if any) fits next to the minimap and over the missions without covering them, and the name is not cut in `?lang=pt`.
 
 ## Biome
 
@@ -129,7 +133,7 @@ Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `
 
    - Outdoor biomes add `ground` (`soil`, `snow`, `grass`, `rock`, `sand`, `ash`, `deck`), `walls: 'natural'`, `wallH: [min, max]`, `cap` (top color) and `natural: true` (prefers fauna, fewer robots).
    - `light` is optional (defaults to `NEON_LIGHT`). Bright outdoor biomes need a light fog color and a stronger `hemi`.
-2. **Layout:** use an existing one (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`) or add a generator in `dungeon.js` and a branch in `tryGenerate`. The map must stay connected from `start` to `exit` (the generator retries otherwise). The `layout` only applies on open-field floors: every third floor starting at 1 is a small dungeon and every third starting at 3 is a large dungeon, whatever the biome (`floorShape`). Your features must also work in dungeons (3-wide corridors, `hall` rooms, the `plaza` room that must stay clear), and anything carved as `PIT` must go through the `reachable()` check in `carvePits` so no tile that was reachable gets cut off.
+2. **Layout:** use an existing one (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`) or add a generator in `dungeon.js` and a branch in `tryGenerate`. The map must stay connected from `start` to `exit` (the generator retries otherwise). The `layout` only applies on open-field floors: every even floor is a boss floor in a large dungeon, and the odd floors alternate a small dungeon (1, 5, 9…) and the open field (3, 7, 11…), whatever the biome (`floorShape`). Your features must also work in dungeons (3-wide corridors, `hall` rooms, the `plaza` room that must stay clear), and anything carved as `PIT` must go through the `reachable()` check in `carvePits` so no tile that was reachable gets cut off.
 3. **Order:** the array position sets where it appears in the floor rotation (`themeFor`). Appending is safe. The final floor always uses `data`.
 4. **Pets:** optionally add the biome to `BY_THEME` in `pets.js`.
 5. **Medals:** `biomesAll` counts `THEMES.length` automatically.

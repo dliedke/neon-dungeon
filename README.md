@@ -35,7 +35,7 @@ The game is shown in **English or Portuguese** based on your browser language.
 ## Goal
 
 Descend through 50 dungeon floors, defeat enemies, collect gear and level up your character.
-Find the glowing **elevator** on each floor to go down. Every 3 floors, a **boss** guards the exit (16 boss floors per run, the 7 bosses come back stronger).
+Find the glowing **elevator** on each floor to go down. Every 2 floors, a **boss** guards the exit (24 boss floors per run, the 7 bosses come back stronger).
 On **floor 50**, the final battle pits you against all 7 bosses in waves: two at a time, and when both fall the next two arrive. Defeat them all to win the game, see your class's ending and earn the final-battle medals.
 Items marked with **▲** and a green glow are better than what you have equipped.
 
@@ -132,6 +132,24 @@ Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 
+**Perfect dodge:** dash, roll, leap or teleport (any power with a short moment of invulnerability) right as a hit was about to land and time slows down for a moment, and you deal +50% damage for 3 seconds (at most once every 2.5 s; damage over time like toxic floors doesn't count). Two medals go with it.
+**Hit-stop:** heavy hits on you or on a boss, elite kills and boss kills freeze the screen for an instant (bosses and the Behemoth fall in slow motion). It can be turned off in the options (Hit-stop).
+
+### Elemental reactions
+
+Enemies carry elements: **fire** (burning), **poison** (Biohacker poison, or standing on toxic sludge or radiation), **cold** (slowed, frozen, or on ice and snow), **shock** (every Valkyrie and Netrunner hit, chain lightning, lightning storms, the Storm shrine, the Huntress net), **wet** (tide, reef currents, hot springs) and **oil** (oil slicks). When a new element meets one already on the enemy, a reaction goes off (at most one per enemy every 1.5 s), so the biome floor becomes a weapon:
+
+| Reaction | Elements | Effect |
+| --- | --- | --- |
+| ♨️ Steam | fire + cold or water | A steam cloud hurts everyone around |
+| 💎 Shatter | shock + frozen | The enemy shatters and takes a huge hit |
+| ⚡ Short Circuit | shock + wet | Stuns, and the bolt jumps to up to 4 other wet enemies |
+| 🧊 Flash Freeze | cold + wet | Freezes on the spot (bosses are only slowed) |
+| ☣️ Toxic Blast | fire + poison | The poison explodes around it |
+| 🔥 Wildfire | fire + oil | Burns 2.5× harder for 5 s and spreads to everyone nearby |
+
+The first time each one happens, a message explains it. Three medals go with them.
+
 ## Controls
 
 - **Keyboard + mouse:**
@@ -172,7 +190,7 @@ Every floor changes biome (43 in total), each with its own lighting and hazards.
 | **Radioactive Wasteland** | Open dunes | Radioactive pools, cacti and sandstorms; poisonous **rad scorpions** |
 | **Volcano** | Ash caves | Lava rivers that burn, erupting geysers and drifting embers; fire-spitting **magma salamanders** and **magma golems** that leave burning trails |
 | **Data Core** | Large server halls | Laser grids that switch on and off |
-| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one, primordial for a primordial one; primordials are only sold for slots where you already wear one). Floor 22 has a merchant too |
+| **Night Market** | Large open plazas | Market stalls, lanterns and a **merchant** who always sells upgrades, at least as rare as what you wear (mythic for a mythic slot, divine for a divine one, primordial for a primordial one; primordials are only sold for slots where you already wear one). Floor 21 has a merchant too |
 | **Bone Forest** | Organic clearings | Giant ribs and dead trees; **bone piles** you can smash for healing marrow, but the noise draws predators. Enemies standing in marrow pools heal; stalking **bone stalkers** |
 | **Glass Desert** | Open dunes | A glass floor that cracks into cutting shards under explosions and heavy blows, crystal spires and shard storms; **glass golems** vanish into reflections, leaving fake copies behind |
 | **Fallen Star Swamp** | Organic caves | Black water and low-gravity craters where you run faster and shots slow down; creatures race you for **star fragments** (grab one for Fury, or they get empowered); exploding **star sparks** |
@@ -239,7 +257,7 @@ Enemies keep getting tougher faster on deep floors, so a strong character still 
 **Bosses** are tough: they fire aimed volleys between their attacks and become **enraged** below 30% health (faster, harder hitting and with bigger volleys).
 The first boss hits softer and attacks more slowly, since you are still weak; every boss after it gets more health.
 
-After each boss you **choose an implant** (1 of 3 random options; golden implants are worth double): permanent bonuses such as damage, health, crit, speed, cooldowns, lifesteal, dodge or extra damage to elites. They stack for the whole run.
+After two of every three bosses you **choose an implant** (1 of 3 random options; golden implants are worth double; 16 per mode, while the third boss, on floors 6, 12, 18…, drops an extra chest instead): permanent bonuses such as damage, health, crit, speed, cooldowns, lifesteal, dodge or extra damage to elites. They stack for the whole run.
 
 ## Floor events
 
@@ -265,7 +283,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 ### Puzzles and challenges
 
-From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself in a bigger instruction card that stays on screen while you are near it and goes away when it ends or you walk off (on phones it shrinks to one line after a reading time and a tap opens it again); events without a fixed place, like the bomb, are explained right away. They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals, Rock Paper Scissors, Quick Math, Higher or Lower, Color Mixer, Tic-Tac-Toe, Spelling Bee, Thin Ice, Simon Says, Mirrored Steps, Buzz Wire, The Floor is Lava) your walking speed is capped so fast builds can still land on the right plate, while in Musical Chairs you run a little faster than usual to beat the robots to a pad. Completing one pays credits and items, and each kind has its own medal. An event that has not started yet waits while enemies are hunting you nearby (the HUD says "clear the area"), so it never begins in the middle of a fight; only fight events and the floor-wide ones (bomb, shards, circuit, signal) skip that rule. The games where you can make mistakes allow 5 of them.
+From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself in a bigger instruction card that stays on screen while you are near it and goes away when it ends or you walk off (it never covers the event: when the event is above you, the card and the messages move below your character; on phones it shrinks to one line after a reading time and a tap opens it again); events without a fixed place, like the bomb, are explained right away. They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals, Rock Paper Scissors, Quick Math, Higher or Lower, Color Mixer, Tic-Tac-Toe, Spelling Bee, Thin Ice, Simon Says, Mirrored Steps, Buzz Wire, The Floor is Lava) your walking speed is capped so fast builds can still land on the right plate, while in Musical Chairs you run a little faster than usual to beat the robots to a pad. Completing one pays credits and items, and each kind has its own medal. An event that has not started yet waits while enemies are hunting you nearby (the HUD says "clear the area"), so it never begins in the middle of a fight; only fight events and the floor-wide ones (bomb, shards, circuit, signal) skip that rule. The games where you can make mistakes allow 5 of them.
 
 | Event | What to do |
 |---|---|
@@ -398,7 +416,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**301 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**317 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
@@ -414,6 +432,23 @@ Medals and their counters sync with the Google cloud save; progress from every d
 | **Assault Gunship** | Circles the arena with bombing runs; vulnerable when it lands |
 | **Grand Hacker** | Corrupts floor tiles in patterns and sends firewalls with a gap |
 | **OMEGA Core** | Immune until its shield pylons are destroyed; rotating laser beams |
+
+Most boss floors belong to a **biome boss**, one per family of biomes (the tech biomes keep the 7 classic bosses above, who also make up the final battle). They come back stronger (II, III) when their family shows up again:
+
+| Boss | Biomes | Mechanics |
+| --- | --- | --- |
+| **Root Colossus** | Forest, jungle, garden, mushrooms | Roots burst out in lines, thorn circles, forest helpers; in phase 2 seismic waves with gaps and spore pools |
+| **Sewer Leviathan** | Sewers, star swamp | Dives into the sludge and bursts out under you, acid breath cone, sludge pools |
+| **Crystal Golem** | Glass desert, singing cave | Shard volleys, crystal spikes, resonance waves with gaps; in phase 2 shard spirals and spinning beams |
+| **Glacial Wyrm** | Cryo lab, snow, aurora, ash winter | Freezing breath cone (slows you), falling icicles, sliding charge |
+| **Stone Scorpion** | Salt flats, petrified sea, deserts, tomb | Burrows and bursts out under you, tail laser lines, charge |
+| **Storm Lord** | Storm plateau, upside-down rain, mountain pass | Lightning where the floor lights up, a wind gust that pushes you away, blinks around |
+| **Magma Titan** | Volcano, lava falls, sleeping god | Meteors that leave lava, fire waves with a gap, lava pools and fissures |
+| **Toy King** | Candy factory, haunted park, arcade | Toy soldiers, jack-in-the-box bombs, a spinning-top charge, confetti spirals |
+| **Clockmaster** | Library, clock factory, paint studio, toy room | Clock hands that spin around him, time bombs, blinks |
+| **Neon Kraken** | Reef, hot springs | Tentacles slam around you, a whirlpool pull, ink that blinds the screen |
+
+Every boss has a medal, plus **Boss Hunter** for defeating all 17.
 
 ## Loot and progression
 
@@ -513,6 +548,7 @@ js/powers.js           advanced skill-tree powers (summons, orbitals, transforma
 js/enemies.js          enemies, AI and bosses
 js/enemies2.js         the 15 newer enemies: extra AI, mirror/parry/split hooks, ink overlay
 js/combat.js           damage, statuses, projectiles and hazards
+js/elements.js         elemental reactions (steam, shatter, short circuit, flash freeze, toxic blast, wildfire)
 js/items.js            item generation
 js/loot.js             ground loot and loot caches
 js/gems.js             gems: drops, fusion, sockets and their bonuses
