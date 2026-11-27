@@ -132,6 +132,9 @@ Two more rows close the tree: **five mythic attacks** (levels 104, 112, 120, 128
 
 Every class can also learn **Teleport** (from level 3): it blinks up to 8m toward the cursor (or the stick/move direction), grants a moment of invulnerability and releases a damaging pulse where you land. It works for escaping too.
 
+**Perfect dodge:** dash, roll, leap or teleport (any power with a short moment of invulnerability) right as a hit was about to land and time slows down for a moment, and you deal +50% damage for 3 seconds (at most once every 2.5 s; damage over time like toxic floors doesn't count). Two medals go with it.
+**Hit-stop:** heavy hits on you or on a boss, elite kills and boss kills freeze the screen for an instant (bosses and the Behemoth fall in slow motion). It can be turned off in the options (Hit-stop).
+
 ## Controls
 
 - **Keyboard + mouse:**

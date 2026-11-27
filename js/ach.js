@@ -120,6 +120,8 @@ export function achList() {
   add('elite1', '⭐', 0, L('Caçador de Elite', 'Elite Hunter'), L('Derrote um inimigo de elite', 'Defeat an elite enemy'), () => total('elites'));
   add('elite25', '🌟', 1, L('Elite da Elite', 'Elite of the Elite'), L('Derrote 25 inimigos de elite', 'Defeat 25 elite enemies'), () => total('elites'), 25);
   add('elite100', '✨', 2, L('Pesadelo das Elites', 'Bane of Elites'), L('Derrote 100 inimigos de elite', 'Defeat 100 elite enemies'), () => total('elites'), 100);
+  add('pdodge1', '💨', 0, L('Reflexo Neon', 'Neon Reflex'), L('Faça uma esquiva perfeita (avance, role ou teleporte bem na hora do golpe)', 'Pull off a perfect dodge (dash, roll or teleport right as a hit lands)'), () => total('pdodge'));
+  add('pdodge50', '🌀', 2, L('Intocável', 'Untouchable'), L('Faça 50 esquivas perfeitas', 'Pull off 50 perfect dodges'), () => total('pdodge'), 50);
 
   // chefes
   const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴' };

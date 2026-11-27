@@ -839,9 +839,21 @@ function logic(dt) {
 
 function frame() {
   requestAnimationFrame(frame);
-  let dt = Math.min(clock.getDelta(), 0.05);
+  const rdt = Math.min(clock.getDelta(), 0.05); // tempo real do quadro
+  // pausa no impacto e câmera lenta (state.js): só o tempo do jogo anda mais devagar; câmera, HUD e controles seguem no real
+  let dt = rdt;
+  if (G.mode === 'play' && (G.hitStop > 0 || G.slow > 0)) {
+    if (G.hitStop > 0) {
+      G.hitStop -= rdt;
+      dt = rdt * 0.03;
+    } else {
+      G.slow -= rdt;
+      dt = rdt * G.slowK;
+      if (G.slow <= 0) G.slowK = 1;
+    }
+  } else if (G.mode !== 'play') G.hitStop = G.slow = 0;
   G.t += dt;
-  Input.update(dt);
+  Input.update(rdt);
   handleGlobalInput();
   uiPadUpdate();
   updateOrientation();
@@ -855,19 +867,19 @@ function frame() {
   if (playing && G.player) {
     logic(dt);
     if (G.mode === 'play' && G.char) {
-      G.char.playTime = (G.char.playTime || 0) + dt; // tempo total de jogo do personagem
-      achAdd('play', dt); // e da conta toda (medalhas de tempo de jogo)
+      G.char.playTime = (G.char.playTime || 0) + rdt; // tempo total de jogo do personagem
+      achAdd('play', rdt); // e da conta toda (medalhas de tempo de jogo)
     }
   }
   if (G.player && G.mode !== 'menu') {
-    updateHUD(dt);
+    updateHUD(rdt);
     // a câmera olha levemente à frente da mira
     const p = G.player;
     const lead = G.lastInput === 'kb' && G.mouseWorld.ok ? 0.12 : 0;
     const fx = p.x + (G.mouseWorld.x - p.x) * lead;
     const fz = p.z + (G.mouseWorld.z - p.z) * lead;
-    updateCamera(dt, clamp(fx, p.x - 3, p.x + 3), clamp(fz, p.z - 3, p.z + 3));
-    updateWalls(G.dungeon, p.x, p.z, dt);
+    updateCamera(rdt, clamp(fx, p.x - 3, p.x + 3), clamp(fz, p.z - 3, p.z + 3));
+    updateWalls(G.dungeon, p.x, p.z, rdt);
   } else if (G.dungeon) {
     // câmera do menu passeando pela masmorra
     const d = G.dungeon;

@@ -272,6 +272,14 @@ export function initUI() {
     updS();
     saveSettings();
   };
+  // pausa no impacto e câmera lenta (golpes fortes, abates de elite e chefe, esquiva perfeita)
+  const updI = () => ($('opt-impact').textContent = s.impact !== false ? L('Ligado', 'On') : L('Desligado', 'Off'));
+  updI();
+  $('opt-impact').onclick = () => {
+    s.impact = s.impact === false;
+    updI();
+    saveSettings();
+  };
   $('opt-full').onclick = toggleFullscreen;
   // desktop: botão pequeno de tela cheia no menu principal e no HUD
   $('menu-full').onclick = $('btn-full').onclick = (e) => {
@@ -839,6 +847,7 @@ export function updateHUD(dt) {
   if (p.buffs.mend > 0) buffs.push(`✚ ${L('Cura', 'Mend')} ${p.buffs.mend.toFixed(0)}s`);
   if (p.buffs.evade > 0) buffs.push(`${L('Esquiva', 'Evade')} ${Math.round(p.evadeK || 0)}% ${p.buffs.evade.toFixed(0)}s`);
   if (p.buffs.leech > 0) buffs.push(`${L('Roubo de vida', 'Life steal')} ${p.buffs.leech.toFixed(0)}s`);
+  if (p.buffs.perfect > 0) buffs.push(`<span style="color:#7df9ff;border-color:#7df9ff">💨 ${L('Esquiva perfeita', 'Perfect dodge')} +50% ${p.buffs.perfect.toFixed(0)}s</span>`);
   for (const k in SHRINES) if (p.buffs[k] > 0) buffs.push(`<span style="color:${SHRINES[k].css};border-color:${SHRINES[k].css}">${SHRINES[k].icon} ${SHRINES[k].name} ${p.buffs[k].toFixed(0)}s</span>`);
   for (const b of mythHud()) buffs.push(`<span style="color:#c56bff;border-color:#c56bff">✦ ${b}</span>`);
   if (p.spin > 0.05) buffs.push(`${L('Giro', 'Spin')} ${Math.round(100 + p.spin * 200)}%`);

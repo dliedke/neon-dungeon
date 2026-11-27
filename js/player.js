@@ -526,7 +526,13 @@ export function updatePlayer(dt) {
   // temporizadores
   const cdt = dt * (p.buffs.chrono > 0 ? 2 : 1) * (p.buffs.surge > 0 ? 4 : 1); // Santuários de Cronos e Superpoderes
   for (let i = 0; i < p.cds.length; i++) p.cds[i] = Math.max(0, p.cds[i] - cdt);
+  // esquiva perfeita (combat.js): quando o jogador ganhou uma invulnerabilidade (avanço, rolamento, salto, teleporte...)
+  if (p.invuln > (p.invPrev || 0) + 0.02) {
+    p.invT = G.t;
+    p.invGrant = p.invuln;
+  }
   p.invuln = Math.max(0, p.invuln - dt);
+  p.invPrev = p.invuln;
   p.stimCd = Math.max(0, p.stimCd - dt);
   p.shieldCd = Math.max(0, p.shieldCd - dt);
   p.atkT -= dt;
@@ -762,7 +768,7 @@ export function updatePlayer(dt) {
       p.sludgeT = (p.sludgeT || 0) - dt;
       if (p.sludgeT <= 0) {
         p.sludgeT = 0.5;
-        damagePlayer((2 + G.floor * 0.8) * (ge.mult || 1));
+        damagePlayer((2 + G.floor * 0.8) * (ge.mult || 1), { tick: true });
       }
       if (Math.random() < dt * 8) burst(p.x, 0.2, p.z, ge.hurt, 1, 1, 0.05, 0.4, { grav: -1 });
     }
@@ -772,7 +778,7 @@ export function updatePlayer(dt) {
       p.poisonTick = (p.poisonTick || 0) - dt;
       if (p.poisonTick <= 0) {
         p.poisonTick = 0.5;
-        damagePlayer(1.5 + G.floor * 0.6);
+        damagePlayer(1.5 + G.floor * 0.6, { tick: true });
       }
       if (Math.random() < dt * 10) burst(p.x, 1.2, p.z, 0x9dff3a, 1, 1, 0.05, 0.4, { grav: -2 });
     }

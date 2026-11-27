@@ -67,6 +67,8 @@ const DICT = {
   stashInv: ['Inventário', 'Inventory'],
   shopSub: ['"Peças fresquinhas, direto do caminhão da corporação. Não pergunte de onde vieram."', '"Fresh parts, straight off a corporate truck. Don\'t ask where they came from."'],
   shake: ['Tremor de tela', 'Screen shake'],
+  impact: ['Pausa no impacto', 'Hit-stop'],
+  impactTitle: ['Golpes fortes, abates de elite e de chefe e a esquiva perfeita congelam a tela por um instante ou deixam tudo em câmera lenta', 'Heavy hits, elite and boss kills and perfect dodges freeze the screen for an instant or slow everything down'],
   fullscreen: ['Tela cheia', 'Fullscreen'],
   toggle: ['Alternar', 'Toggle'],
   back: ['Voltar', 'Back'],
