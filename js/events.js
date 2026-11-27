@@ -29,9 +29,10 @@ import { makeItem, MYTHIC, DIVINE, PRIMORDIAL, RARITY, itemName } from './items.
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { NEW_KIND, NEW_INFO, NEW_IDS, NEW_TIMED } from './events2.js';
 import { NEW3_KIND, NEW3_INFO, NEW3_IDS } from './events3.js';
+import { NEW4_KIND, NEW4_INFO, NEW4_IDS } from './events4.js';
 
 // eventos principais (de 3 a 6 por andar) e os pequenos (Sala Secreta ou Máquina de Apostas)
-export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'].concat(NEW_IDS, NEW3_IDS);
+export const MAIN_EVENTS = ['terminals', 'lights', 'prisms', 'upload', 'bomb', 'wanted', 'shards', 'prisoner', 'relay', 'signal', 'servers', 'escort', 'pairs', 'meteor', 'vault', 'arena', 'pandora', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'idol', 'dance'].concat(NEW_IDS, NEW3_IDS, NEW4_IDS);
 export const EVENT_KINDS = [...MAIN_EVENTS, 'secret', 'gamble'];
 // eventos com contagem de tempo: só um deles por andar
 const TIMED = ['bomb', 'shards', 'relay', 'meteor', 'vault', 'ball', 'race', 'gallery', 'dance', 'upload', 'purge', 'escort'].concat(NEW_TIMED);
@@ -50,6 +51,9 @@ const STEP_AREA = {
   sumo: [3, 3, 3], hunter: [4.2, 4.2, 4.2], fireflies: [4.3, 4.3, 4.2], acid: [4.2, 4.2, 4.5], frogger: [2.6, 4.3, 4.2], potato: [3.6, 3.6, 3.8],
   dance: [2.6, 2.6, 5.6], lights: [3.2, 4.5], trap: [3.4, 4.6], pairs: [3.4, 2.6], terminals: [3, 3], prisms: [4.1, 2.6], purge: [3.6, 3.6],
   piano: [4.6, 2.2], mines: [3.8, 4.5], sokoban: [3.5, 2.5], dominos: [4.9, 2.4], paint: [3.65, 3.65], bridge: [5.3, 2.1], maze: [4.2, 4.2], hide: [3.6, 2.3], portal: [5.6, 5.6],
+  pac: [3.3, 3.3, 4.2], fire: [2.6, 2.6, 4.2], keeper: [2.7, 3.1, 4.2], block: [2.85, 2.85, 4.2], stealth: [3.5, 3.1, 4.2],
+  wires: [3.1, 3.1], shadow: [3, 1.8], count: [3, 3], truth: [2.2, 1.9], hanoi: [3.2, 3.2], slide: [2.8, 2.8], code: [3.5, 3.5], nim: [3.3, 3.3], where: [2.9, 2.2], knight: [2.8, 2.8],
+  ladders: [3.6, 3.6], pattern: [3, 1.8], navy: [2.7, 2.7], copy: [3.3, 3.3], tilt: [2.6, 2.6, 3.8],
   rps: [2.8, 2.8], math: [3, 2], hilo: [2.5, 1.9], colors: [2.7, 2], tictac: [2.3, 2.3], spell: [4.2, 2.4], thinice: [3.5, 2.95], simon: [2.7, 2.7], mirrorwalk: [4.2, 1.9], buzz: [4.7, 2.7], lava: [3.2, 3.2],
 };
 export const STEP_SPEED = 3.8;
@@ -116,6 +120,7 @@ export const EVENT_INFO = {
   gamble: { icon: '🎰', css: '#ff2bd6', name: L('Máquina de Apostas', 'Slot Machine') },
   ...NEW_INFO,
   ...NEW3_INFO,
+  ...NEW4_INFO,
 };
 
 // principais do andar anterior (não repetem no seguinte)
@@ -4595,7 +4600,7 @@ const dance = {
 // ------------------------------------------------------------------
 // Ganchos chamados pelo resto do jogo
 // ------------------------------------------------------------------
-const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble, ...NEW_KIND, ...NEW3_KIND };
+const KIND = { terminals, lights, prisms, upload, bomb, wanted, shards, prisoner, relay, signal, servers, escort, pairs, meteor, vault, arena, pandora, shell, mirror, ball, watcher, race, spinner, herd, trap, lasers, purge, runner, totems, altar, gallery, idol, dance, secret, gamble, ...NEW_KIND, ...NEW3_KIND, ...NEW4_KIND };
 
 // Andar novo (etapa 5, com a semente do andar): sorteia os eventos principais (3 no começo, 4 do andar 4,
 // 5 do andar 8, e às vezes um a mais) e o pequeno
@@ -4671,7 +4676,8 @@ export function setupEvents(d, floor, boss, rooms) {
 // Os de luta (arena, ondas, guardas, caçadas) e os que atravessam o andar inteiro ficam como estão.
 const CALM = new Set(['terminals', 'lights', 'prisms', 'signal', 'pairs', 'meteor', 'vault', 'shell', 'mirror', 'ball', 'watcher', 'race', 'spinner', 'herd', 'trap', 'lasers', 'purge', 'runner', 'totems', 'altar', 'gallery', 'dance',
   'sokoban', 'pipes', 'piano', 'scale', 'maze', 'bridge', 'hide', 'statues', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'elements', 'snake', 'mines', 'tug', 'beacon', 'juggle', 'sculpt', 'portal',
-  'chairs', 'treadmill', 'rps', 'stacker', 'sumo', 'mirrorwalk', 'buzz', 'bowling', 'acid', 'lava', 'hunter', 'fireflies', 'seesaw', 'math', 'frogger', 'wheel', 'colors', 'hilo', 'simon', 'tictac', 'wind', 'spell', 'spy', 'tennis', 'stopwatch', 'cook', 'potato', 'thinice']);
+  'chairs', 'treadmill', 'rps', 'stacker', 'sumo', 'mirrorwalk', 'buzz', 'bowling', 'acid', 'lava', 'hunter', 'fireflies', 'seesaw', 'math', 'frogger', 'wheel', 'colors', 'hilo', 'simon', 'tictac', 'wind', 'spell', 'spy', 'tennis', 'stopwatch', 'cook', 'potato', 'thinice',
+  ...NEW4_IDS]);
 const CALM_GAP = 14; // distância mínima entre um evento de atenção e outro evento (ou os inimigos dele)
 const CALM_SEE = 12; // além da borda do evento: o inimigo vê o jogador a 10m (folga para quem pisa um pouco fora)
 let placingCalm = false;
@@ -4764,10 +4770,47 @@ export function updateEvents(dt) {
     // aviso de "limpe a área" (waitFoes): vale só no quadro em que o evento pediu
     E.foesWas = E.foesNear;
     E.foesNear = 0;
+    if (startGate(E)) continue;
     KIND[E.kind].update(E, dt);
   }
   // explicação do evento mais perto: um cartão que fica na tela enquanto o jogador estiver por ali
   updateGuide(p.alive ? guideFor(p) : null, dt);
+}
+
+// Nenhum evento começa no meio da briga: enquanto ele ainda não começou (st 'idle') e há inimigos caçando o jogador
+// por perto, o evento fica parado esperando (o HUD mostra "limpe a área"). Ficam de fora os eventos de luta, em que
+// os inimigos fazem parte do desafio, e os que valem para o andar inteiro.
+const NO_GATE = new Set(['arena', 'ghosthunt', 'golem', 'king', 'tower', 'bounty2', 'mirror', 'pandora', 'upload', 'escort', 'idol', 'courier', 'servers', 'wanted', 'prisoner', 'paint', 'garden2', 'shards', 'relay', 'signal', 'bomb', 'secret', 'gamble']);
+let gateTold = -1;
+function startGate(E) {
+  if (E.st !== 'idle' || E.x == null || NO_GATE.has(E.kind)) return false;
+  const p = G.player;
+  if (!p.alive || Math.hypot(p.x - E.x, p.z - E.z) > Math.max(9, E.introR || 0) + 3) return false;
+  let n = 0;
+  for (const e of G.enemies) {
+    if (!e.alive || !e.aggro || e.aimed || e.inert || e.decoy || e.T.prop || e.T.breakable) continue;
+    const dp = Math.hypot(e.x - p.x, e.z - p.z);
+    if (dp < 13 && (e.los || dp < 6)) n++;
+  }
+  if (!n) return false;
+  E.foesNear = n;
+  // golpes no alvo enquanto espera não contam depois (senão o evento começaria sozinho ao limpar a área)
+  const sync = (o) => {
+    if (o && typeof o === 'object' && o.e && o.e.aimed) o.hits = Math.round(o.e.maxHp - o.e.hp);
+  };
+  sync(E);
+  for (const k in E) {
+    const v = E[k];
+    if (Array.isArray(v)) v.forEach(sync);
+    else sync(v);
+  }
+  if (!E.foesWas) floatText(E.x, 2.6, E.z, L('LIMPE A ÁREA', 'CLEAR THE AREA'), 'hurt');
+  if (gateTold !== G.floor) {
+    gateTold = G.floor;
+    const I = EVENT_INFO[E.kind];
+    toast(L(`${I.icon} <b>${I.name}</b> só começa sem briga: derrote os inimigos que estão caçando você por perto.`, `${I.icon} <b>${I.name}</b> only starts with no fighting: defeat the enemies hunting you nearby.`), 'warn');
+  }
+  return true;
 }
 
 // cartão de instruções (#ev-guide, dentro de #toasts): aparece ao chegar perto de um evento e só some ao se afastar
@@ -4824,7 +4867,7 @@ export function hideGuide() {
   if (guideE) updateGuide(null, 0);
 }
 // eventos de golpear um alvo: encostar nele também vale (ver touchTargets)
-const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt', 'stacker', 'sumo', 'bowling', 'wheel', 'spy', 'stopwatch']);
+const TOUCH_EV = new Set(['vault', 'totems', 'gallery', 'pipes', 'cannon', 'fishing', 'dominos', 'bells', 'pinata', 'tug', 'beacon', 'juggle', 'sculpt', 'stacker', 'sumo', 'bowling', 'wheel', 'spy', 'stopwatch', 'whack', 'golf', 'darts', 'crane', 'balloon', 'rings', 'duel', 'sort']);
 const touchTip = (E) => (TOUCH_EV.has(E.kind) ? ` <i>${L('Sem ataque básico? Encostar no alvo também vale golpe.', 'No basic attack? Touching the target counts as a hit too.')}</i>` : '');
 // texto do cartão: começa com maiúscula, sem o nome (que vai no título)
 const introBody = (E) => {

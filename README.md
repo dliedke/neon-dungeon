@@ -156,7 +156,7 @@ The merchant, the blacksmith and the shared stash only open when you ask: **clic
 
 Floors cycle through three shapes: a **small dungeon** (rooms and corridors), an **open field** and a **large dungeon** (the boss floor). Mission timers are based on the real walking route, so they stay fair inside the dungeons.
 
-Every floor changes biome (23 in total), each with its own lighting and hazards. The layout below is used on open-field floors:
+Every floor changes biome (43 in total), each with its own lighting and hazards. The layout below is used on open-field floors:
 
 | Biome | Layout | Environment |
 | --- | --- | --- |
@@ -193,6 +193,16 @@ Every floor changes biome (23 in total), each with its own lighting and hazards.
 | **Floating Library** | Plazas and wide streets | Bookshelves and floating books; stepping on a loose **page** springs a trap that snaps shut like a book after a short warning |
 | **Lavafalls** | Organic caves | Basalt columns; **lava columns** erupt from the ground after a red warning and burn whoever stays on top |
 | **Cyber Zen Garden** | Open fields | Raked sand, bamboo and **lanterns**: walk up to light one, and lit lanterns heal whoever stays nearby |
+| **Candy Factory** | Plazas and wide streets | Candy canes; **caramel** sticks to enemies far more than to you; **jellies** launch you the way you walk (and toss enemies around); **gumball machines** give health orbs and credits |
+| **Magnetic Junkyard** | Organic caves | Scrap heaps and slippery **oil**; giant **magnets** switch on after a warning and pull everything in, and the scrap crushes the enemies dragged under them |
+| **Singing Cavern** | Organic caves | Dark geode caves; walk up to (or attack next to) a **singing crystal** and its wave stuns and hurts enemies, echoing through the crystals nearby |
+| **Haunted Carnival** | Open fields | Tents and lanterns; on a **carousel** you get haste and enemies get flung off; pop **balloons** for a surprise bonus (haste, fury, regen or a shield) |
+| **Hot Springs** | Open fields | Blue **hot springs** heal you while you stand in them and slow enemies; **steam jets** erupt after a warning, hurting enemies and giving you haste |
+| **Cable Jungle** | Organic caves | **Tall grass** hides you (distant enemies lose track of you); **snapping plants** bite whoever comes close, so lead enemies to them; **fruit bushes** heal |
+| **Neon Train Station** | Plazas and wide streets | Vending machines; when the **tracks** flash red a train speeds through, hurting you and wrecking any enemy left on them |
+| **Pharaoh's Tomb** | Plazas and wide streets | Obelisks; **quicksand** pulls you to the middle; a **fire plate** lights flames around it a moment after someone steps on it (step and run, the enemies behind you burn); **golden scarabs** drop credits |
+| **Paint Atelier** | Plazas and wide streets | Easels; red **paint** gives fury, blue gives haste and green heals; kick a **paint bucket** to splash a new pool and hurt and slow the enemies in it |
+| **Giant Toy Room** | Plazas and wide streets | Toy blocks; a **jack-in-the-box** plays a little tune when you get close and then pops, blasting and stunning enemies; kick the **giant balls** into enemies |
 
 Tech biomes also have explosive barrels; every biome has golden loot caches.
 
@@ -255,7 +265,7 @@ After each boss you **choose an implant** (1 of 3 random options; golden implant
 
 ### Puzzles and challenges
 
-From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself in a bigger instruction card that stays on screen while you are near it and goes away when it ends or you walk off (on phones it shrinks to one line after a reading time and a tap opens it again); events without a fixed place, like the bomb, are explained right away. They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals, Rock Paper Scissors, Quick Math, Higher or Lower, Color Mixer, Tic-Tac-Toe, Spelling Bee, Thin Ice, Simon Says, Mirrored Steps, Buzz Wire, The Floor is Lava) your walking speed is capped so fast builds can still land on the right plate, while in Musical Chairs you run a little faster than usual to beat the robots to a pad. Completing one pays credits and items, and each kind has its own medal.
+From floor 2 on, every floor except boss floors gets several **main events** (3 at first, 4 from floor 4 and 5 from floor 8, sometimes one more, and three more on huge floors). Anything that runs against a clock (bomb, shards, circuit, meteors, vault, ball, race, gallery, dance, upload, purge, escort, and the timed contracts) never shares a floor with another one, so you never juggle two clocks at once (the bomb clock only starts when you get near a console), and some also get a **small event**. A summary lists them when you arrive, and each one explains itself in a bigger instruction card that stays on screen while you are near it and goes away when it ends or you walk off (on phones it shrinks to one line after a reading time and a tap opens it again); events without a fixed place, like the bomb, are explained right away. They show in the HUD (finished ones collapse into a row of icons) and on the map, with an arrow at the minimap edge. Every event only needs walking and attacking, so it plays the same on keyboard and mouse, gamepad and touch. Near an unfinished precision stepping puzzle (Neon Dance, Light Floor, Trap Floor, Memory Pairs, Terminal Sequence, Laser Prisms, Giant Keyboard, Minefield, Power Crates, Dominoes, Purge, Paint the Floor, Collapsing Bridge, Light Maze, Hide and Seek, Paired Portals, Rock Paper Scissors, Quick Math, Higher or Lower, Color Mixer, Tic-Tac-Toe, Spelling Bee, Thin Ice, Simon Says, Mirrored Steps, Buzz Wire, The Floor is Lava) your walking speed is capped so fast builds can still land on the right plate, while in Musical Chairs you run a little faster than usual to beat the robots to a pad. Completing one pays credits and items, and each kind has its own medal. An event that has not started yet waits while enemies are hunting you nearby (the HUD says "clear the area"), so it never begins in the middle of a fight; only fight events and the floor-wide ones (bomb, shards, circuit, signal) skip that rule. The games where you can make mistakes allow 5 of them.
 
 | Event | What to do |
 |---|---|
@@ -351,6 +361,36 @@ From floor 2 on, every floor except boss floors gets several **main events** (3 
 | **Neon Kitchen** | Memorize the recipe above the pot, then carry the ingredients from the crates in order. 3 mistakes and it is over. |
 | **Hot Potato** | Pass the bomb by touching the green robots before the fuse runs out in your hands. |
 | **Thin Ice** | Each ice tile breaks once you step off it: cross them all and finish on the gold tile. |
+| **Whack-a-Mole** | Moles pop out of 9 holes for a moment: hit or touch 12 before they hide. From floor 8 some are red-eyed bombs you must not hit. |
+| **Mini Golf** | Hit the ball away from you; its strength is the power bar that rises and falls above it. Sink it past the pink walls in up to 6 strokes. |
+| **Muncher** | Eat every pellet in the arena while two ghosts chase you; the big corner pellets turn them blue so you can eat them. 5 lives. |
+| **Cut the Wire** | A bomb with 4 numbered wires and a clue ("the wire numbered right after the blue one", "the last red wire"...). Stand on the right wire's plate; defuse 3 bombs, 25s each. |
+| **Whose Shadow?** | The screen shows a silhouette: stand on the plate of the object that casts it. 5 right answers. |
+| **Headcount** | Drones of 3 colors fly around for a few seconds (only with the area clear); then say how many there were of one color. 4 right answers. |
+| **True or False** | Read a fun fact and stand on T or F. 6 right answers. |
+| **Tower of Hanoi** | Stand on a peg to pick up its top disc and on another to drop it; move the whole tower to the green peg without ever placing a big disc on a smaller one. |
+| **Sliding Puzzle** | Stand on a tile next to the hole to slide it; put tiles 1 to 8 in order. Tiles in the right spot glow green. |
+| **Secret Code** | Find a 3-color code: each guess answers ● for a right color in the right spot and ○ for a right color in the wrong spot. |
+| **Stick Game** | Take 1, 2 or 3 sticks per turn against a robot; whoever takes the last one loses. |
+| **Neon Darts** | Hit the launcher to throw a dart where the wandering aim is; score 120 points with 8 darts. |
+| **Claw Machine** | One hit stops the claw on X, another on Z, then it drops; grab 3 plushies with 6 coins (aim at the middle or it slips). |
+| **Put Out the Fire** | Flames spread across the tiles for 30s: stand on each one to put it out before 12 tiles burn at once. |
+| **Tilt Table** | The table tilts toward where you stand; roll the ball into the green hole 3 times, avoiding the red ones. |
+| **Sort the Colors** | Push (walk into) or kick each orb into the pen of its color. |
+| **Where Was It?** | Six objects show on the plates and hide; stand on the plate where the asked object was. 4 right answers. |
+| **Knight's Jump** | Move the chess knight in L-jumps (stand on a green square) and grab the 3 stars within the jump limit. |
+| **Goalkeeper** | A robot aims (yellow line) and shoots at the goal: get in front of the ball. 10 saves. |
+| **Traffic Cop** | Stand on the 🚦 plate to switch which street has the green light; avoid crashes in the crossing and queues stuck for 7s. Let 16 cars through. |
+| **Color Rush** | A color is called with a countdown: be on a tile of that color when the others vanish. 8 rounds. |
+| **Blow Up the Balloon** | Hit the pump to fill the balloon (it slowly deflates) and stand on the 🎀 plate to tie it when the bar is green; over 100% it pops. 3 balloons. |
+| **Bubbles in Order** | Numbered bubbles float around: touch them from the lowest to the highest number. |
+| **Snakes and Ladders** | On your turn pick one of two dice by standing on its plate; reach 25 before the robot. |
+| **What Comes Next?** | Complete the sequence (numbers, colors, moon phases or clocks). 5 right answers. |
+| **Aligned Rings** | Each lever turns two of the 3 rings a quarter turn: line up all three gaps with the arrow. |
+| **Battleship** | Stand on a square to fire; sink the 3 hidden ships with 17 shots. |
+| **High Noon Duel** | Hit the gong only after "FIRE!" shows, before the robot shoots (hitting early, or on "FIREWORK!", is a foul). 3 wins. |
+| **Security Cameras** | Cross the room to the golden vault without stepping into the sweeping camera cones. |
+| **Copy the Drawing** | Memorize the drawing on the board, paint the same squares on the floor and stand on ✔ to check. |
 | **Secret Room** *(small)* | A wall with glowing cracks. Hit it a few times to open a hidden room with a chest. |
 | **Slot Machine** *(small)* | Pay credits for a random item (it can even be mythic, divine from Apocalypse up, or primordial in the Abyss). Each bet costs more than the last. |
 
@@ -358,7 +398,7 @@ Thieves, shrines and rifts show up on the minimap once explored. Click or tap th
 
 ## Medals
 
-**271 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
+**301 achievements** in four tiers (Bronze, Silver, Gold and Platinum), shared across all classes. Each medal pays out credits.
 They cover kills, elites, every boss, depth, levels, playing every class, biomes, a bestiary, Data Thieves, shrines, critters, contracts, rifts, combos, anomalies, implants, loot caches, every kind of floor event,
 legendaries, mythics, divine and primordial items, the blacksmith, gems, credits, deaths, total play time and more. The medals screen also shows your total play time. Open them from the 🏅 button on the main menu or in the pause menu.
 Medals and their counters sync with the Google cloud save; progress from every device adds up.
@@ -466,6 +506,7 @@ js/dungeon.js          procedural map layouts, collision and pathfinding
 js/biomes.js           biome hazards, mechanisms, decoration, merchant and blacksmith
 js/wilds.js            the 10 wild biomes: glass that shatters, tides, updrafts, hive sentinels, breathing mountain...
 js/wilds2.js           the third wave of wild biomes: aurora strips, reef currents, clock gears and hands, mirror floor, pinball bumpers, bouncy mushrooms, lightning, trap pages, lava columns, lanterns...
+js/wilds3.js           the fourth wave of wild biomes: caramel and jellies, junkyard magnets, singing crystals, carousels and balloons, hot springs, tall grass and snapping plants, train tracks, quicksand and fire plates, paint buckets, jack-in-the-boxes and giant balls
 js/player.js           player character and progression
 js/classes.js          classes, skill trees and skills
 js/powers.js           advanced skill-tree powers (summons, orbitals, transformations)
@@ -488,6 +529,7 @@ js/run.js              floor anomalies, contracts, rifts, kill combo and implant
 js/events.js           floor puzzles and challenges (terminals, lasers, bomb, wanted, circuit, escort, secret room...)
 js/events2.js          the newer floor events (energy boxes, plumbing, giant keyboard, scales, light maze... up to King of the Hill)
 js/events3.js          30 more floor events (musical chairs, sumo, bowling, quick math, simon says, tennis, hot potato, thin ice...)
+js/events4.js          30 more floor events (whack-a-mole, mini golf, muncher, cut the wire, tower of Hanoi, battleship, duel, security cameras...)
 js/mythtree.js         the 10 mythic powers per class (5 attacks + 5 defenses), built from shared archetypes
 js/mythic.js           mythic item powers
 js/finale.js           true-ending cinematic after beating the Inferno (2D canvas)

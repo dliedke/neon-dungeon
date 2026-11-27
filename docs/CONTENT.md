@@ -133,7 +133,7 @@ Test: `__dbg.startFloor(3)` (or any multiple of 3 that maps to the boss), then `
 3. **Order:** the array position sets where it appears in the floor rotation (`themeFor`). Appending is safe. The final floor always uses `data`.
 4. **Pets:** optionally add the biome to `BY_THEME` in `pets.js`.
 5. **Medals:** `biomesAll` counts `THEMES.length` automatically.
-6. **Docs:** README "Biomes" table, `index.html` meta ("33 biomas"), `og-image.png` and AGENTS.md.
+6. **Docs:** README "Biomes" table, `index.html` meta ("43 biomas"), `og-image.png` and AGENTS.md.
 
 Test: find a floor that maps to the new biome with `themeFor(n)`, or temporarily return it from `themeFor`, then `__dbg.startFloor(n)`. Check it on phone quality settings too (fog and lights matter more there): screenshot it at 740×360 in touch mode and confirm the floor, walls and hazards stay readable behind the touch buttons, and the frame rate holds.
 
@@ -147,7 +147,7 @@ Features are string keys in a theme's `features` list, implemented in `js/biomes
 
 Then add the key to one or more themes and update that biome's `hint` and the README "Biomes" row.
 
-The 10 wild biomes keep their features in `js/wilds.js` (and the third wave in `js/wilds2.js`) instead (`placeWild`, `buildWilds`, `updateWilds`, `wildGround`); `placeFeatures` falls through to `placeWild` for keys it doesn't know. Follow the same three steps there, using `FEAT` values from 15 up (add new walkable ones to `SAFE_FEAT` in `player.js` if the player may spawn on them).
+The 10 wild biomes keep their features in `js/wilds.js` (the third wave in `js/wilds2.js` and the fourth in `js/wilds3.js`, which `wilds2.js` delegates to) instead (`placeWild`, `buildWilds`, `updateWilds`, `wildGround`); `placeFeatures` falls through to `placeWild` for keys it doesn't know. Follow the same three steps there, using `FEAT` values from 15 up (add new walkable ones to `SAFE_FEAT` in `player.js` if the player may spawn on them).
 
 ## Item affix
 
@@ -189,7 +189,7 @@ All in `js/run.js` except shrines (`js/loot.js`).
 
 ## Floor event (puzzle or challenge)
 
-The original ones are in `js/events.js`; the newer ones live in `js/events2.js` (a `mk({...})` factory plus an entry in `NEW_KIND`, `NEW_INFO` and, if it has a clock, `NEW_TIMED`; `events.js` merges them) and `js/events3.js` (`NEW3_KIND`, `NEW3_INFO`; add new ones there). Stepping puzzles also need an entry in `STEP_AREA` (so do events against something with a fixed speed, e.g. Sumo or Hunter, with a lower cap as the third number, so a fast build cannot trivialize them; races against robots can get a speed boost in `BOOST_AREA` instead), calm ones in `CALM` and hit-to-play ones in `TOUCH_EV` (all in `events.js`), plus a medal in `evMedals` (`ach.js`). See [Floor events](ARCHITECTURE.md#floor-events-eventsjs) for how they run.
+The original ones are in `js/events.js`; the newer ones live in `js/events2.js` (a `mk({...})` factory plus an entry in `NEW_KIND`, `NEW_INFO` and, if it has a clock, `NEW_TIMED`; `events.js` merges them) `js/events3.js` (`NEW3_KIND`, `NEW3_INFO`) and `js/events4.js` (`NEW4_KIND`, `NEW4_INFO`; add new ones there). Stepping puzzles also need an entry in `STEP_AREA` (so do events against something with a fixed speed, e.g. Sumo or Hunter, with a lower cap as the third number, so a fast build cannot trivialize them; races against robots can get a speed boost in `BOOST_AREA` instead), calm ones in `CALM` and hit-to-play ones in `TOUCH_EV` (all in `events.js`), plus a medal in `evMedals` (`ach.js`). See [Floor events](ARCHITECTURE.md#floor-events-eventsjs) for how they run.
 
 1. Add `EVENT_INFO[kind]` with `{ icon, css, name }` (plus `short` if the name is long for the HUD).
 2. Write the kind object:
@@ -272,6 +272,6 @@ Test: open it on desktop (1600×1000 and 1280×720), on phone landscape (740×36
 When content counts change, update:
 
 - `README.md`: the tables (Classes, Biomes, Enemies, Bosses, Floor events, Medals, Loot) and the counts in the text.
-- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 33 biomas, 50 andares").
+- `index.html`: `description`, `og:description` and `twitter:description` ("10 classes …, 7 chefes, 43 biomas, 50 andares").
 - `img/og-image.png`: the counts are baked into the image, so regenerate it.
 - `AGENTS.md` (module map, counts) and these docs if a recipe changed.

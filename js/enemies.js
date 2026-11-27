@@ -982,7 +982,8 @@ export function updateEnemies(dt, cam) {
     if (e.losT <= 0) {
       e.losT = 0.25;
       e.los = dist < 16 && lineOfSight(d, e.x, e.z, tgt.x, tgt.z);
-      if (!e.aggro && (e.los || e.T.phase) && dist < (e.boss ? 9 : 10)) {
+      // no capim alto (Selva de Cabos) só quem está bem perto vê o jogador
+      if (!e.aggro && (e.los || e.T.phase) && dist < (e.boss ? 9 : 10) && !(tgt === p && p.hideT > 0 && dist > 3.5 && !e.boss)) {
         e.aggro = true;
         e.alerted = true;
       }

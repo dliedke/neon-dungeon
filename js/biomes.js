@@ -22,7 +22,10 @@ export const FEAT = { NONE: 0, SLUDGE: 1, ICE: 2, CONV: 3, THORN: 7, RAD: 8, STA
   // biomas selvagens (wilds.js): 15..20, 26 e 27 são pisos; 21..25 e 28 são obstáculos
   MARROW: 15, GLASS: 16, SHARD: 17, RESIN: 18, VEIN: 19, EMBER: 20, BONE: 21, CRYSTAL: 22, WAVE: 23, BLADETREE: 24, STATUE: 25, GRAV: 26, TIDE: 27, WRECK: 28,
   // terceira leva (wilds2.js): pisos 29, 30, 41, 42, 43; obstáculos 31..40
-  AURORA: 29, MIRROR: 30, SPIRE: 31, CORAL: 32, COG: 33, MIRSHARD: 34, CABINET: 35, SHROOM: 36, ROD: 37, SHELF: 38, BASALT: 39, BAMBOO: 40, PAGE: 41, RAKED: 42, CURRENT: 43 };
+  AURORA: 29, MIRROR: 30, SPIRE: 31, CORAL: 32, COG: 33, MIRSHARD: 34, CABINET: 35, SHROOM: 36, ROD: 37, SHELF: 38, BASALT: 39, BAMBOO: 40, PAGE: 41, RAKED: 42, CURRENT: 43,
+  // quarta leva (wilds3.js): pisos 44..52; obstáculos 53..62
+  CARAMEL: 44, SPRING: 45, GRASS2: 46, QSAND: 47, PAINTR: 48, PAINTB: 49, PAINTG: 50, TRACK: 51, OIL: 52,
+  CANE: 53, SCRAP: 54, GEODE: 55, TENT: 56, MOSSROCK: 57, CABLETREE: 58, VENDING: 59, OBELISK: 60, EASEL: 61, TOYBLOCK: 62 };
 const isConv = (f) => f >= 3 && f <= 6;
 const CONV_DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 

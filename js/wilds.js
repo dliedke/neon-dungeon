@@ -17,8 +17,9 @@ import { spawnEnemy, killQuiet } from './enemies.js';
 import { spawnPickup, dropLoot } from './loot.js';
 import { toast } from './ui.js';
 import { placeWild2, wildGround2, buildWilds2, updateWilds2, obstStyle2, OBST_STYLES2 } from './wilds2.js';
+import { OBST_STYLES3 } from './wilds3.js';
 
-export const WILD_IDS = ['bones', 'glass', 'starswamp', 'hive', 'stonesea', 'armory', 'titan', 'ashwinter', 'uprain', 'salt', 'aurora', 'coral', 'clock', 'mirrorlake', 'arcade', 'mushroom', 'storm', 'library', 'lavafall', 'garden'];
+export const WILD_IDS = ['bones', 'glass', 'starswamp', 'hive', 'stonesea', 'armory', 'titan', 'ashwinter', 'uprain', 'salt', 'aurora', 'coral', 'clock', 'mirrorlake', 'arcade', 'mushroom', 'storm', 'library', 'lavafall', 'garden', 'candy', 'junkyard', 'crystalcave', 'carnival', 'springs', 'jungle', 'station', 'tomb', 'atelier', 'toybox'];
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 export const planeGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
 export const discGeo = new THREE.CircleGeometry(1, 28).rotateX(-Math.PI / 2);
@@ -353,7 +354,7 @@ function buildObstacles(d, theme, group) {
   }
   for (const st in by) {
     const list = by[st];
-    for (const [geo, mat0] of (OBST_STYLES[st] || OBST_STYLES2[st])()) {
+    for (const [geo, mat0] of (OBST_STYLES[st] || OBST_STYLES2[st] || OBST_STYLES3[st])()) {
       const mat = typeof mat0 === 'string' ? glowMat(Number(mat0.slice(5)), 2.4) : mat0;
       const im = new THREE.InstancedMesh(geo, mat, list.length);
       list.forEach((p, n) => {

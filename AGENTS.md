@@ -94,8 +94,9 @@ Module map (`js/`):
 |---|---|
 | `main.js` | Entry point. Renderer, bloom, camera, game loop (`frame` → `logic(dt)`), floor lifecycle (`buildFloor` / `startFloor` / `nextFloor`), `startGame`, `sanitizeChar`, save/load, `boot()`. |
 | `state.js` | The shared global object `G`, `TILE`, `GLOW` and `gk()`. |
-| `dungeon.js` | `THEMES` (33 biomes), `themeFor(floor)`, `BOSS_EVERY` / `FINAL_FLOOR`, layout generators (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`), floor/wall meshes, collision, flow field, A*. |
+| `dungeon.js` | `THEMES` (43 biomes), `themeFor(floor)`, `BOSS_EVERY` / `FINAL_FLOOR`, layout generators (`rooms`, `cave`, `meadow`, `sewer`, `grid`, `market`), floor/wall meshes, collision, flow field, A*. |
 | `biomes.js` | Biome features (`FEAT` floor tiles, hazards, mechanisms, decoration), the merchant and the blacksmith. |
+| `wilds3.js` | The fourth wave of wild biomes (candy, junkyard, crystalcave, carnival, springs, jungle, station, tomb, atelier, toybox): caramel and jellies, gumball machines, magnets, oil, singing crystals, carousels and balloons, hot springs and steam jets, tall grass that hides you, snapping plants, fruit, train tracks, quicksand, fire plates, scarabs, paint pools and buckets, jack-in-the-boxes and giant balls. Called from `wilds2.js` (`placeWild3`, `wildGround3`, `buildWilds3`, `updateWilds3`, `obstStyle3`). |
 | `wilds2.js` | The third wave of wild biomes (aurora, coral, clock, mirrorlake, arcade, mushroom, storm, library, lavafall, garden): strips of aurora light, reef currents and bubbles, gears and clock hands, mirror floor, pinball bumpers, bouncy mushrooms and spores, lightning and rods, trap pages, lava columns, healing lanterns. `wilds.js` delegates to it (`placeWild2`, `wildGround2`, `buildWilds2`, `updateWilds2`) and exports the shared helpers (`blobs`, `spots`, `layer`, `lam`, `basic`...). |
 | `wilds.js` | The 10 "wild" biomes (bones, glass, starswamp, hive, stonesea, armory, titan, ashwinter, uprain, salt): their floor tiles (`FEAT` 15+), placement, instanced meshes, breakable props, and runtime rules (shattering glass, tides, updrafts, sentinels, breath/heartbeat, gusts). |
 | `classes.js` | `CLASSES` (10 classes), `CLASS_ORDER`, passives, the shared Teleport skill, `SKILL_FN` (skill logic) and the inline-SVG `ICONS`. |
@@ -114,6 +115,7 @@ Module map (`js/`):
 | `events.js` | Floor puzzles and challenges (terminals, light floor, laser prisms, upload, time bomb, wanted, shard hunt, prisoner, neon circuit, lost signal, corrupted servers, drone escort, memory pairs, secret room, slot machine). |
 | `events2.js` | The newer floor events (Energy Boxes, Plumbing, Giant Keyboard, Scales, Light Maze, Collapsing Bridge, Paint the Floor, Hide and Seek, Living Statues, Neon Cannon and the batches after them). Same `KIND` contract as `events.js`; exports `NEW_KIND`, `NEW_INFO`, `NEW_IDS`, `NEW_TIMED`, which `events.js` merges into `KIND`, `EVENT_INFO`, `MAIN_EVENTS` and `TIMED`. It imports the shared helpers back from `events.js` (circular, runtime only). |
 | `events3.js` | 30 more floor events (Musical Chairs, Neon Treadmill, Rock Paper Scissors, Block Tower, Sumo, Bowling, Quick Math, Simon Says, Light Tennis, Hot Potato, Thin Ice...). Same contract; exports `NEW3_KIND`, `NEW3_INFO`, `NEW3_IDS` (no timed ones), merged by `events.js` after the `events2.js` ones. Local helpers for updatable canvas labels (`tag` / `setTag`), plates you pick by standing still (`plate`, `dwell`) and small robots (`bot`). |
+| `events4.js` | 30 more floor events (Whack-a-Mole, Mini Golf, Muncher, Cut the Wire, Whose Shadow, Headcount, True or False, Tower of Hanoi, Sliding Puzzle, Secret Code, Stick Game, Darts, Claw Machine, Put Out the Fire, Tilt Table, Sort the Colors, Where Was It, Knight's Jump, Goalkeeper, Traffic Cop, Color Rush, Balloon, Bubbles in Order, Snakes and Ladders, What Comes Next, Aligned Rings, Battleship, High Noon Duel, Security Cameras, Copy the Drawing). Same contract; exports `NEW4_KIND`, `NEW4_INFO`, `NEW4_IDS`. Own helpers: boards turned 45° to match the screen (`scrGroup`, `loc`, `toW`), multi-line world text (`note`/`setNote`), `dwell` plates. |
 | `pets.js` | Decorative pets that wander each biome. |
 | `models.js` | Low-poly models built from primitives (`makePlayerModel`, `makeEnemyModel`, `glowMat`, merged geometry cache). |
 | `fx.js` | Particles, rings, beams, floating numbers. |
@@ -156,6 +158,6 @@ Module map (`js/`):
 - **Commit messages are in Portuguese:** a short summary of the player-visible change (see `git log`).
 - **Keep public docs in sync with content changes.** When you add or remove classes, bosses, biomes, enemies or features, update:
   - `README.md` (English) tables and counts.
-  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 33 biomas, 50 andares").
+  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 43 biomas, 50 andares").
   - The counts baked into `img/og-image.png` (needs regenerating).
   - `docs/ARCHITECTURE.md` and `docs/CONTENT.md` if the structure or a recipe changed.

@@ -12,6 +12,7 @@ import { L } from './i18n.js';
 import { glowMat, merged } from './models.js';
 import { FEAT, featAt } from './biomes.js';
 import { forDisc, blobs, spots, layer, planeGeo, discGeo, ringGeo, lam, basic } from './wilds.js';
+import { placeWild3, wildGround3, buildWilds3, updateWilds3, obstStyle3 } from './wilds3.js';
 
 export const WILD2_IDS = ['aurora', 'coral', 'clock', 'mirrorlake', 'arcade', 'mushroom', 'storm', 'library', 'lavafall', 'garden'];
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -36,7 +37,7 @@ export function wildGround2(d, f, x, z) {
     case FEAT.CURRENT:
       return (d.curGe && d.curGe.get(Math.floor(z) * d.W + Math.floor(x))) || null;
   }
-  return null;
+  return wildGround3(d, f, x, z);
 }
 
 // ------------------------------------------------------------------
@@ -62,7 +63,7 @@ function strip(d, h, r, feat, width, onTile) {
   return horiz;
 }
 // obstáculos isolados que nunca fecham a passagem (mesma regra das árvores do biomes.js)
-function obstacles(d, h, kind, dens, max = 9999) {
+export function obstacles(d, h, kind, dens, max = 9999) {
   const placed = [];
   const { W, H, grid } = d;
   const plazas = d.rooms.filter((r) => r.plaza);
@@ -199,6 +200,8 @@ export function placeWild2(d, theme, f, h) {
     case 'bumpers':
       spots(d, h, rooms, 0.8, 1, 3, (pt) => d.props.push({ type: 'bumper', x: pt.x, z: pt.z, cd: 0, hit: 0 }));
       break;
+    default:
+      placeWild3(d, theme, f, h);
   }
 }
 
@@ -206,7 +209,7 @@ export function placeWild2(d, theme, f, h) {
 // Obstáculos (instanciados): kind -> estilo
 // ------------------------------------------------------------------
 // (montado na hora: FEAT ainda não existe quando o módulo carrega)
-export const obstStyle2 = (kind) => ({ [FEAT.SPIRE]: 'spire', [FEAT.CORAL]: 'coral', [FEAT.COG]: 'cog', [FEAT.MIRSHARD]: 'mirshard', [FEAT.CABINET]: 'cabinet', [FEAT.SHROOM]: 'shroom', [FEAT.ROD]: 'rod', [FEAT.SHELF]: 'shelf', [FEAT.BASALT]: 'basalt', [FEAT.BAMBOO]: 'bamboo' })[kind] || null;
+export const obstStyle2 = (kind) => ({ [FEAT.SPIRE]: 'spire', [FEAT.CORAL]: 'coral', [FEAT.COG]: 'cog', [FEAT.MIRSHARD]: 'mirshard', [FEAT.CABINET]: 'cabinet', [FEAT.SHROOM]: 'shroom', [FEAT.ROD]: 'rod', [FEAT.SHELF]: 'shelf', [FEAT.BASALT]: 'basalt', [FEAT.BAMBOO]: 'bamboo' })[kind] || obstStyle3(kind);
 export const OBST_STYLES2 = {
   shroom: () => [
     [merged('w2_sh0', (b, a) => {
@@ -347,6 +350,7 @@ export function buildWilds2(d, theme, group, B, W) {
   W.page = add(layer(d, FEAT.PAGE, basic(0xf4e8c8, 1.0, 0.5, false), 0.024));
   W.raked = add(layer(d, FEAT.RAKED, basic(0xffffff, 1.0, 0.1, true), 0.022));
   W.current = add(layer(d, FEAT.CURRENT, basic(0x3ad8ff, 1.3, 0.34, true), 0.022));
+  buildWilds3(d, theme, group, B, W);
 
   for (const p of d.props) {
     const g = p.group;
@@ -487,6 +491,7 @@ const nearCam = (x, z, r) => Math.abs(x - G.camFocus.x) < r && Math.abs(z - G.ca
 const dmgBase = (p) => p.stats.maxHp * 0.08 + G.floor * 1.5;
 
 export function updateWilds2(d, dt, p, W) {
+  updateWilds3(d, dt, p, W);
   const alive = p && p.alive;
   const id = G.theme && G.theme.id;
   const cx = G.camFocus.x;

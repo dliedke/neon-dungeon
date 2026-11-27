@@ -165,6 +165,8 @@ function hitsOn(o) {
 }
 const clampAbs = (v, m) => Math.max(-m, Math.min(m, v));
 const wrapAng = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+// chances dos jogos de errar e tentar de novo (antes eram 3 e o evento acabava rápido demais)
+const TRIES = 5;
 
 // ==================================================================
 // 61. Dança das Cadeiras: quando a música para, corra para uma placa acesa antes dos robôs
@@ -424,6 +426,9 @@ const RP_ICON = ['✊', '✋', '✌️'];
 const RP_NAME = () => [L('PEDRA', 'ROCK'), L('PAPEL', 'PAPER'), L('TESOURA', 'SCISSORS')];
 // placa i vence a jogada (i + 2) % 3: pedra > tesoura, papel > pedra, tesoura > papel
 const rpWin = (pick) => (pick + 1) % 3;
+// você precisa de 3 vitórias; o robô, de 5
+const RP_ROB = 5;
+const RP_COUNT = 3.3;
 const rps = mk({
   setup(d, floor, rooms) {
     const s = findSpot(d, rooms, 2.8, 2.8);
@@ -443,7 +448,7 @@ const rps = mk({
   },
   round(E) {
     E.phase = 'count';
-    E.t = 2.4;
+    E.t = RP_COUNT;
     E.pick = Math.floor(Math.random() * 3);
     for (const q of E.plates) setLight(q.ring, RP_COL, 0.6);
     setTag(E.score, `${E.me} × ${E.rob}`, RP_COL);
@@ -465,13 +470,13 @@ const rps = mk({
     E.plates.forEach((q, i) => (q.fill.opacity = i === k ? 0.45 : 0.12));
     if (E.phase === 'count') {
       // 3, 2, 1 (o robô balança o punho)
-      setTag(E.screen, String(Math.min(3, Math.ceil(E.t / 0.8))), 0xffffff);
+      setTag(E.screen, String(Math.min(3, Math.ceil(E.t / (RP_COUNT / 3)))), 0xffffff);
       setLight(E.b.eye, 0xff4df0, 2.4);
       E.b.m.position.y = Math.abs(Math.sin(E.t * Math.PI * 1.25)) * 0.25;
       if (E.t > 0) return;
       // o robô mostra a jogada: agora dá um tempo para ir até a placa certa
       E.phase = 'show';
-      E.t = G.floor >= 20 ? 1.6 : 2;
+      E.t = G.floor >= 20 ? 2.8 : 3.4;
       E.win = E.t;
       E.b.m.position.y = 0;
       setTag(E.screen, RP_ICON[E.pick], 0xffffff);
@@ -508,17 +513,17 @@ const rps = mk({
     say(E, msg[0], msg[1]);
     setTag(E.score, `${E.me} × ${E.rob}`, RP_COL);
     if (E.me >= 3) complete(E, 1.2, L('JOKENPÔ VENCIDO!', 'ROCK PAPER SCISSORS WON!'), `${E.me} × ${E.rob}`, E.x, E.z);
-    else if (E.rob >= 3) failed(E, L('O robô venceu o jokenpô.', 'The robot won rock paper scissors.'));
+    else if (E.rob >= RP_ROB) failed(E, L('O robô venceu o jokenpô.', 'The robot won rock paper scissors.'));
   },
   hud: (E) => {
     if (E.st === 'idle') return L('chegue perto do robô', 'go near the robot');
-    const tail = `${E.me} × ${E.rob} (${L('quem fizer 3', 'first to 3')})`;
+    const tail = `${E.me} × ${E.rob} (${L(`você 3, robô ${RP_ROB}`, `you 3, robot ${RP_ROB}`)})`;
     return E.phase === 'show' ? `🤖 ${RP_ICON[E.pick]} → ? · ${E.me} × ${E.rob}` : tail;
   },
   dim(E) {
     setTag(E.screen, E.st === 'done' ? '🏆' : '✖', 0xffffff);
   },
-  intro: () => L('o robô conta 3, 2, 1 e mostra a jogada na tela. Corra para a placa que vence a dele (cada placa diz o que vence). Quem fizer 3 pontos ganha.', "the robot counts 3, 2, 1 and shows its move on its screen. Run to the plate that beats it (each plate says what it beats). First to 3 points wins."),
+  intro: () => L(`o robô conta 3, 2, 1 e mostra a jogada na tela. Corra para a placa que vence a dele (cada placa diz o que vence). Faça 3 pontos antes que o robô faça ${RP_ROB}.`, `the robot counts 3, 2, 1 and shows its move on its screen. Run to the plate that beats it (each plate says what it beats). Score 3 points before the robot scores ${RP_ROB}.`),
 });
 
 // ==================================================================
@@ -540,7 +545,7 @@ const stacker = mk({
     const mov = put(g, box(1, SB_H, 1), lightMat(SB_COLS[1], 1.4), 0, SB_H * 1.5, -0.7);
     mov.scale.x = 1.6;
     const e = hitTarget(s.x, s.z + 1.6, 0.55, 1.1, L('Botão', 'Button'));
-    return { kind: 'stacker', x: s.x, z: s.z, g, btn, mov, e, hits: 0, st: 'idle', lvl: 0, w: 1.6, cx: 0, ph: 0, lives: 3, cool: 0, blocks: [] };
+    return { kind: 'stacker', x: s.x, z: s.z, g, btn, mov, e, hits: 0, st: 'idle', lvl: 0, w: 1.6, cx: 0, ph: 0, lives: TRIES, cool: 0, blocks: [] };
   },
   update(E, dt) {
     E.cool -= dt;
@@ -606,7 +611,7 @@ const stacker = mk({
     E.e.hp = E.e.maxHp;
     E.hits = 0;
   },
-  intro: () => L(`um bloco desliza de um lado para o outro em cima da torre. Bata no botão vermelho para soltá-lo: o pedaço que passar da torre é cortado. Empilhe ${SB_N}; 3 erros e acabou.`, `a block slides back and forth above the tower. Hit the red button to drop it: whatever hangs over the tower is cut off. Stack ${SB_N}; 3 misses and it is over.`),
+  intro: () => L(`um bloco desliza de um lado para o outro em cima da torre. Bata no botão vermelho para soltá-lo: o pedaço que passar da torre é cortado. Empilhe ${SB_N}; ${TRIES} erros e acabou.`, `a block slides back and forth above the tower. Hit the red button to drop it: whatever hangs over the tower is cut off. Stack ${SB_N}; ${TRIES} misses and it is over.`),
 });
 
 // ==================================================================
@@ -694,7 +699,7 @@ const sumo = mk({
       E.rob++;
       sfx.deny();
       say(E, L('VOCÊ SAIU!', 'YOU WERE PUSHED OUT!'), 'hurt');
-      if (E.rob >= 3) {
+      if (E.rob >= TRIES) {
         dropTarget(E);
         failed(E, L('O robô venceu a luta de sumô.', 'The robot won the sumo match.'));
         return;
@@ -713,7 +718,7 @@ const sumo = mk({
     E.e.hp = E.e.maxHp;
     E.hits = 0;
   },
-  intro: () => L('golpes e encostões empurram o robô; ele também empurra você. Jogue-o para fora do ringue 3 vezes antes de ser jogado para fora 3 vezes.', 'hits and shoves push the robot; it pushes you too. Throw it out of the ring 3 times before you are pushed out 3 times.'),
+  intro: () => L(`golpes e encostões empurram o robô; ele também empurra você. Jogue-o para fora do ringue 3 vezes antes de ser jogado para fora ${TRIES} vezes.`, `hits and shoves push the robot; it pushes you too. Throw it out of the ring 3 times before you are pushed out ${TRIES} times.`),
 });
 
 // ==================================================================
@@ -1158,10 +1163,10 @@ const lava = mk({
         E.hits++;
         eventHurt(0.08);
         burst(G.player.x, 0.4, G.player.z, 0xff5a2d, 16, 4, 0.07, 0.5, { up: 1.5 });
-        if (E.hits >= 3) {
+        if (E.hits >= TRIES) {
           E.hot.fill(false);
           lava.paint(E, 'calm');
-          failed(E, L('Pisou na lava 3 vezes.', 'Stepped in the lava 3 times.'));
+          failed(E, L(`Pisou na lava ${TRIES} vezes.`, `Stepped in the lava ${TRIES} times.`));
           return;
         }
       }
@@ -1177,12 +1182,12 @@ const lava = mk({
       if (E.wave >= LV_WAVES) complete(E, 1.3, L('PÉS DE AMIANTO!', 'FIREPROOF FEET!'), L(`${LV_WAVES} ondas de lava`, `${LV_WAVES} lava waves`), E.x, E.z);
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('suba no tabuleiro', 'step on the board') : `${E.wave}/${LV_WAVES} · ${E.hits}/3 🔥`),
+  hud: (E) => (E.st === 'idle' ? L('suba no tabuleiro', 'step on the board') : `${E.wave}/${LV_WAVES} · ${E.hits}/${TRIES} 🔥`),
   dim(E) {
     E.hot.fill(false);
     lava.paint(E, 'calm');
   },
-  intro: () => L(`no tabuleiro, alguns quadrados piscam laranja e logo viram lava. Fique num quadrado escuro em cada onda. Sobreviva a ${LV_WAVES} ondas; 3 pisadas na lava e acabou.`, `on the board some tiles blink orange and then turn into lava. Stand on a dark tile each wave. Survive ${LV_WAVES} waves; step in the lava 3 times and it is over.`),
+  intro: () => L(`no tabuleiro, alguns quadrados piscam laranja e logo viram lava. Fique num quadrado escuro em cada onda. Sobreviva a ${LV_WAVES} ondas; ${TRIES} pisadas na lava e acabou.`, `on the board some tiles blink orange and then turn into lava. Stand on a dark tile each wave. Survive ${LV_WAVES} waves; step in the lava ${TRIES} times and it is over.`),
 });
 
 // ==================================================================
@@ -1249,9 +1254,9 @@ const hunter = mk({
         b.x = lx > 0 ? -HU_H + 0.8 : HU_H - 0.8;
         b.z = lz > 0 ? -HU_H + 0.8 : HU_H - 0.8;
         sfx.zap();
-        say(E, L(`PEGO! (${E.caught}/3)`, `CAUGHT! (${E.caught}/3)`), 'hurt', lx, lz);
-        if (E.caught >= 3) {
-          failed(E, L('O caçador pegou você 3 vezes.', 'The hunter caught you 3 times.'));
+        say(E, L(`PEGO! (${E.caught}/${TRIES})`, `CAUGHT! (${E.caught}/${TRIES})`), 'hurt', lx, lz);
+        if (E.caught >= TRIES) {
+          failed(E, L(`O caçador pegou você ${TRIES} vezes.`, `The hunter caught you ${TRIES} times.`));
           return;
         }
       }
@@ -1271,12 +1276,12 @@ const hunter = mk({
       hunter.next(E);
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('entre na arena', 'enter the arena') : `${E.pts}/${HU_N} · ${E.caught}/3 ✋`),
+  hud: (E) => (E.st === 'idle' ? L('entre na arena', 'enter the arena') : `${E.pts}/${HU_N} · ${E.caught}/${TRIES} ✋`),
   dim(E) {
     for (const q of E.bases) setLight(q.mat, 0x445066, 0.4);
     if (E.st === 'done') E.b.m.visible = false;
   },
-  intro: () => L(`um drone caçador persegue você na arena. Toque na base verde: outra acende. Some ${HU_N} bases; se ele pegar você 3 vezes, acabou.`, `a hunter drone chases you around the arena. Touch the green base and another one lights up. Reach ${HU_N} bases; if it catches you 3 times, it is over.`),
+  intro: () => L(`um drone caçador persegue você na arena. Toque na base verde: outra acende. Some ${HU_N} bases; se ele pegar você ${TRIES} vezes, acabou.`, `a hunter drone chases you around the arena. Touch the green base and another one lights up. Reach ${HU_N} bases; if it catches you ${TRIES} times, it is over.`),
 });
 
 // ==================================================================
@@ -1411,21 +1416,21 @@ const seesaw = mk({
       burst(E.x + E.b, 0.7, E.z, 0xffd23d, 16, 4, 0.07, 0.5);
       E.b = 0;
       E.v = 0;
-      if (E.drops >= 3) {
-        failed(E, L('A bola caiu da gangorra 3 vezes.', 'The ball fell off the seesaw 3 times.'));
+      if (E.drops >= TRIES) {
+        failed(E, L(`A bola caiu da gangorra ${TRIES} vezes.`, `The ball fell off the seesaw ${TRIES} times.`));
         return;
       }
-      say(E, L(`CAIU! (${E.drops}/3)`, `DROPPED! (${E.drops}/3)`), 'hurt');
+      say(E, L(`CAIU! (${E.drops}/${TRIES})`, `DROPPED! (${E.drops}/${TRIES})`), 'hurt');
     }
     if (on && Math.abs(E.b) < 1) E.ok += dt;
     if (E.ok >= SS_NEED) complete(E, 1.3, L('EQUILIBRISTA!', 'BALANCING ACT!'), L(`${SS_NEED}s no meio`, `${SS_NEED}s in the middle`), E.x, E.z);
   },
-  hud: (E) => (E.st === 'idle' ? L('suba na gangorra', 'step on the seesaw') : `${Math.floor(E.ok)}/${SS_NEED}s · ${E.drops}/3 ●`),
+  hud: (E) => (E.st === 'idle' ? L('suba na gangorra', 'step on the seesaw') : `${Math.floor(E.ok)}/${SS_NEED}s · ${E.drops}/${TRIES} ●`),
   dim(E) {
     E.plank.rotation.z = 0;
     E.ball.visible = E.st !== 'failed';
   },
-  intro: () => L(`a prancha desce para o lado em que você fica e a bola rola para lá. Ande na prancha para manter a bola na faixa verde do meio por ${SS_NEED}s (o vento atrapalha). 3 quedas e acabou.`, `the plank dips toward the side you stand on and the ball rolls that way. Walk on the plank to keep the ball on the green middle band for ${SS_NEED}s (gusts get in the way). 3 drops and it is over.`),
+  intro: () => L(`a prancha desce para o lado em que você fica e a bola rola para lá. Ande na prancha para manter a bola na faixa verde do meio por ${SS_NEED}s (o vento atrapalha). ${TRIES} quedas e acabou.`, `the plank dips toward the side you stand on and the ball rolls that way. Walk on the plank to keep the ball on the green middle band for ${SS_NEED}s (gusts get in the way). ${TRIES} drops and it is over.`),
 });
 
 // ==================================================================
@@ -1508,14 +1513,14 @@ const math = mk({
       say(E, L(`ERRADO: ${E.ans}`, `WRONG: ${E.ans}`), 'hurt');
     }
     if (E.ok >= MA_NEED) complete(E, 1.2, L('GÊNIO DA MATEMÁTICA!', 'MATH WHIZ!'), L(`${E.ok} acertos`, `${E.ok} right`), E.x, E.z);
-    else if (E.miss >= 3) failed(E, L('Três respostas erradas.', 'Three wrong answers.'));
+    else if (E.miss >= TRIES) failed(E, L('Cinco respostas erradas.', 'Five wrong answers.'));
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue no quadro', 'reach the board') : `${E.ok}/${MA_NEED} ✔ · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue no quadro', 'reach the board') : `${E.ok}/${MA_NEED} ✔ · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     setTag(E.board, E.st === 'done' ? '✔' : '✖', 0xffd23d);
     for (const t of E.labels) t.visible = false;
   },
-  intro: () => L(`resolva a conta do quadro e fique parado um instante na placa com a resposta (passar por cima não conta). ${MA_NEED} acertos; 3 erros e acabou.`, `solve the sum on the board and stand still for a moment on the plate with the answer (walking over does not count). ${MA_NEED} right answers; 3 wrong and it is over.`),
+  intro: () => L(`resolva a conta do quadro e fique parado um instante na placa com a resposta (passar por cima não conta). ${MA_NEED} acertos; ${TRIES} erros e acabou.`, `solve the sum on the board and stand still for a moment on the plate with the answer (walking over does not count). ${MA_NEED} right answers; ${TRIES} wrong and it is over.`),
 });
 
 // ==================================================================
@@ -1782,12 +1787,12 @@ const colors = mk({
     if (E.moves <= 0) {
       E.miss++;
       sfx.deny();
-      say(E, L(`ERROU A MISTURA (${E.miss}/3)`, `WRONG MIX (${E.miss}/3)`), 'hurt', 0, -1.3);
-      if (E.miss >= 3) failed(E, L('Três misturas erradas.', 'Three wrong mixes.'));
+      say(E, L(`ERROU A MISTURA (${E.miss}/${TRIES})`, `WRONG MIX (${E.miss}/${TRIES})`), 'hurt', 0, -1.3);
+      if (E.miss >= TRIES) failed(E, L('Cinco misturas erradas.', 'Five wrong mixes.'));
       else colors.target(E);
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue nas luzes', 'reach the lights') : `${E.round}/4 · ${E.moves} ${L('toques', 'taps')} · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue nas luzes', 'reach the lights') : `${E.round}/4 · ${E.moves} ${L('toques', 'taps')} · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     E.on = [0, 0, 0];
     colors.paint(E);
@@ -1850,11 +1855,11 @@ const hilo = mk({
     }
     say(E, right ? L('ACERTOU!', 'RIGHT!') : L('ERROU!', 'WRONG!'), right ? 'crit' : 'hurt');
     if (E.ok >= HL_NEED) complete(E, 1.2, L('INTUIÇÃO AFIADA!', 'SHARP HUNCH!'), L(`${E.ok} acertos`, `${E.ok} right`), E.x, E.z);
-    else if (E.miss >= 3) failed(E, L('Três palpites errados.', 'Three wrong guesses.'));
+    else if (E.miss >= TRIES) failed(E, L('Cinco palpites errados.', 'Five wrong guesses.'));
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue na tela', 'reach the screen') : `${E.ok}/${HL_NEED} ✔ · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue na tela', 'reach the screen') : `${E.ok}/${HL_NEED} ✔ · ${E.miss}/${TRIES} ✖`),
   dim() {},
-  intro: () => L(`a tela mostra um número. Fique parado na placa verde se acha que o próximo será maior, ou na vermelha se será menor. ${HL_NEED} acertos; 3 erros e acabou.`, `the screen shows a number. Stand still on the green plate if you think the next one is higher, or on the red one if lower. ${HL_NEED} right; 3 wrong and it is over.`),
+  intro: () => L(`a tela mostra um número. Fique parado na placa verde se acha que o próximo será maior, ou na vermelha se será menor. ${HL_NEED} acertos; ${TRIES} erros e acabou.`, `the screen shows a number. Stand still on the green plate if you think the next one is higher, or on the red one if lower. ${HL_NEED} right; ${TRIES} wrong and it is over.`),
 });
 
 // ==================================================================
@@ -1897,7 +1902,7 @@ const simon = mk({
     setTag(E.cmd, L('volte ao centro', 'back to the center'), 0xaaaaaa);
     setLight(E.mid, 0xffffff, 1.4);
     if (E.ok >= SI_NEED) complete(E, 1.2, L('OBEDIENTE... QUANDO PRECISA!', 'OBEDIENT... WHEN IT COUNTS!'), L(`${E.ok} ordens`, `${E.ok} commands`), E.x, E.z);
-    else if (E.miss >= 3) failed(E, L('Três ordens erradas.', 'Three wrong moves.'));
+    else if (E.miss >= TRIES) failed(E, L('Cinco ordens erradas.', 'Five wrong moves.'));
   },
   update(E, dt) {
     const k = simon.padAt(E);
@@ -1932,11 +1937,11 @@ const simon = mk({
       if (E.t <= 0) simon.result(E, true, L('BOA, FICOU PARADO!', 'NICE, YOU STAYED!'));
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue no círculo', 'reach the circle') : `${E.ok}/${SI_NEED} ✔ · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue no círculo', 'reach the circle') : `${E.ok}/${SI_NEED} ✔ · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     setTag(E.cmd, '', 0xffffff);
   },
-  intro: () => L(`fique no centro e leia a ordem. Se começar com "O mestre mandou", corra para a cor; se não, não saia do lugar. ${SI_NEED} acertos; 3 erros e acabou.`, `stand in the center and read the order. If it starts with "Simon says", run to that color; otherwise stay put. ${SI_NEED} right; 3 wrong and it is over.`),
+  intro: () => L(`fique no centro e leia a ordem. Se começar com "O mestre mandou", corra para a cor; se não, não saia do lugar. ${SI_NEED} acertos; ${TRIES} erros e acabou.`, `stand in the center and read the order. If it starts with "Simon says", run to that color; otherwise stay put. ${SI_NEED} right; ${TRIES} wrong and it is over.`),
 });
 
 // ==================================================================
@@ -2179,15 +2184,15 @@ const spell = mk({
     sfx.deny();
     setLight(q.ring, 0xff3355, 2.4);
     setTimeout(() => !q.used && setLight(q.ring, SP_COL, 0.6), 600);
-    say(E, L(`LETRA ERRADA (${E.miss}/3)`, `WRONG LETTER (${E.miss}/3)`), 'hurt', q.x, q.z);
-    if (E.miss >= 3) failed(E, L(`Três letras erradas em ${E.word}.`, `Three wrong letters in ${E.word}.`));
+    say(E, L(`LETRA ERRADA (${E.miss}/${TRIES})`, `WRONG LETTER (${E.miss}/${TRIES})`), 'hurt', q.x, q.z);
+    if (E.miss >= TRIES) failed(E, L(`Cinco letras erradas em ${E.word}.`, `Five wrong letters in ${E.word}.`));
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue nas letras', 'reach the letters') : `${E.word.slice(0, E.i)}${'_'.repeat(E.word.length - E.i)} · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue nas letras', 'reach the letters') : `${E.word.slice(0, E.i)}${'_'.repeat(E.word.length - E.i)} · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     E.i = E.st === 'done' ? E.word.length : 0;
     spell.show(E);
   },
-  intro: () => L('a palavra aparece no painel. Fique parado um instante em cada letra, na ordem certa (passar por cima não conta). Há letras de enfeite; 3 erros e acabou.', 'the word shows on the panel. Stand still for a moment on each letter in the right order (walking over does not count). Some letters are decoys; 3 mistakes and it is over.'),
+  intro: () => L(`a palavra aparece no painel. Fique parado um instante em cada letra, na ordem certa (passar por cima não conta). Há letras de enfeite; ${TRIES} erros e acabou.`, `the word shows on the panel. Stand still for a moment on each letter in the right order (walking over does not count). Some letters are decoys; ${TRIES} mistakes and it is over.`),
 });
 
 // ==================================================================
@@ -2552,9 +2557,9 @@ const spy = mk({
     }
     E.miss++;
     sfx.deny();
-    say(E, L(`ROBÔ ERRADO! (${E.miss}/3)`, `WRONG ROBOT! (${E.miss}/3)`), 'hurt');
+    say(E, L(`ROBÔ ERRADO! (${E.miss}/${TRIES})`, `WRONG ROBOT! (${E.miss}/${TRIES})`), 'hurt');
     ambush(E, 2, E.x, E.z, SY_R + 1, SY_R + 4, 0xff3355);
-    if (E.miss >= 3) {
+    if (E.miss >= TRIES) {
       for (const o of E.bots) dropTarget(o);
       failed(E, L('O espião escapou na multidão.', 'The spy slipped away in the crowd.'));
       return;
@@ -2562,7 +2567,7 @@ const spy = mk({
     spy.shuffleBots(E);
   },
   busy: (E) => E.st === 'run' && E.foes.length > 0,
-  hud: (E) => (E.st === 'idle' ? L('entre na roda', 'enter the crowd') : `${E.round}/3 🕵 · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('entre na roda', 'enter the crowd') : `${E.round}/3 🕵 · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     for (const o of E.bots) {
       dropTarget(o);
@@ -2615,7 +2620,7 @@ const tennis = mk({
     say(E, me ? L('PONTO SEU!', 'YOUR POINT!') : L('PONTO DO ROBÔ', 'ROBOT POINT'), me ? 'crit' : 'hurt');
     (me ? sfx.coin : sfx.deny)();
     if (E.me >= 3) complete(E, 1.3, L('MATCH POINT!', 'MATCH POINT!'), `${E.me} × ${E.rob}`, E.x, E.z);
-    else if (E.rob >= 3) failed(E, L('O robô venceu a partida de tênis.', 'The robot won the tennis match.'));
+    else if (E.rob >= TRIES) failed(E, L('O robô venceu a partida de tênis.', 'The robot won the tennis match.'));
     else tennis.serve(E);
   },
   update(E, dt) {
@@ -2668,7 +2673,7 @@ const tennis = mk({
   dim(E) {
     E.ball.visible = false;
   },
-  intro: () => L('fique na sua metade da quadra: a bola volta quando bate em você e sai torta se bater de lado. Passe 3 bolas pelo robô antes que ele passe 3 por você (atravessar a rede dá ponto para ele).', 'stay on your half of the court: the ball bounces off you, angled if it hits your side. Get 3 balls past the robot before it gets 3 past you (crossing the net gives it the point).'),
+  intro: () => L(`fique na sua metade da quadra: a bola volta quando bate em você e sai torta se bater de lado. Passe 3 bolas pelo robô antes que ele passe ${TRIES} por você (atravessar a rede dá ponto para ele).`, `stay on your half of the court: the ball bounces off you, angled if it hits your side. Get 3 balls past the robot before it gets ${TRIES} past you (crossing the net gives it the point).`),
 });
 
 // ==================================================================
@@ -2687,7 +2692,7 @@ const stopwatch = mk({
     const screen = tag(g, '5.00', 0xffd23d, 0, 1.75, -0.4, 1, 3);
     const e = hitTarget(s.x, s.z + 0.6, 0.55, 1, L('Cronômetro', 'Stopwatch'));
     const tol = floor >= 20 ? 0.25 : 0.35;
-    return { kind: 'stopwatch', x: s.x, z: s.z, g, screen, e, hits: 0, st: 'idle', phase: 'ready', t: 0, tries: 3, tol, best: 9 };
+    return { kind: 'stopwatch', x: s.x, z: s.z, g, screen, e, hits: 0, st: 'idle', phase: 'ready', t: 0, tries: TRIES, tol, best: 9 };
   },
   update(E, dt) {
     const n = hitsOf(E);
@@ -2744,7 +2749,7 @@ const stopwatch = mk({
     E.e.hp = E.e.maxHp;
     E.hits = 0;
   },
-  intro: () => L('golpeie (ou encoste em) o botão para ligar o cronômetro. O visor some depois de 1 segundo: conte de cabeça e golpeie de novo em 5,00s. 3 tentativas.', 'hit (or touch) the button to start the stopwatch. The display goes dark after 1 second: count in your head and hit it again at 5.00s. 3 tries.'),
+  intro: () => L(`golpeie (ou encoste em) o botão para ligar o cronômetro. O visor some depois de 1 segundo: conte de cabeça e golpeie de novo em 5,00s. ${TRIES} tentativas.`, `hit (or touch) the button to start the stopwatch. The display goes dark after 1 second: count in your head and hit it again at 5.00s. ${TRIES} tries.`),
 });
 
 // ==================================================================
@@ -2778,7 +2783,7 @@ const cook = mk({
   recipe(E) {
     E.rec = shuffle([0, 1, 2, 3, 4, 5]).slice(0, E.sizes[E.round]);
     E.got = [];
-    cook.show(E, 3 + E.rec.length * 0.4);
+    cook.show(E, 5 + E.rec.length * 1);
   },
   show(E, t) {
     E.phase = 'show';
@@ -2836,20 +2841,20 @@ const cook = mk({
     E.miss++;
     sfx.deny();
     burst(E.x, 1, E.z, 0x555555, 16, 3, 0.08, 0.6, { up: 2 });
-    say(E, L(`ECA! INGREDIENTE ERRADO (${E.miss}/3)`, `YUCK! WRONG INGREDIENT (${E.miss}/3)`), 'hurt');
-    if (E.miss >= 3) {
+    say(E, L(`ECA! INGREDIENTE ERRADO (${E.miss}/${TRIES})`, `YUCK! WRONG INGREDIENT (${E.miss}/${TRIES})`), 'hurt');
+    if (E.miss >= TRIES) {
       E.hold.visible = false;
       failed(E, L('A sopa desandou.', 'The soup is ruined.'));
       return;
     }
-    cook.show(E, 2);
+    cook.show(E, 4 + E.rec.length * 0.5);
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue na panela', 'reach the pot') : `${L('receita', 'recipe')} ${Math.min(E.round + 1, E.sizes.length)}/${E.sizes.length} · ${E.got.length}/${E.rec.length} · ${E.miss}/3 ✖`),
+  hud: (E) => (E.st === 'idle' ? L('chegue na panela', 'reach the pot') : `${L('receita', 'recipe')} ${Math.min(E.round + 1, E.sizes.length)}/${E.sizes.length} · ${E.got.length}/${E.rec.length} · ${E.miss}/${TRIES} ✖`),
   dim(E) {
     E.hold.visible = false;
     setTag(E.board, E.st === 'done' ? '🍲' : '💨', 0xffffff);
   },
-  intro: () => L('a receita aparece em cima da panela por alguns segundos e some. Encoste numa caixa para pegar o ingrediente e leve à panela. Ingrediente errado mostra a receita de novo; 3 erros e acabou.', 'the recipe shows above the pot for a few seconds, then hides. Touch a crate to pick up that ingredient and carry it to the pot. A wrong one shows the recipe again; 3 mistakes and it is over.'),
+  intro: () => L(`a receita aparece em cima da panela por alguns segundos e some. Encoste numa caixa para pegar o ingrediente e leve à panela. Ingrediente errado mostra a receita de novo; ${TRIES} erros e acabou.`, `the recipe shows above the pot for a few seconds, then hides. Touch a crate to pick up that ingredient and carry it to the pot. A wrong one shows the recipe again; ${TRIES} mistakes and it is over.`),
 });
 
 // ==================================================================
@@ -2957,9 +2962,9 @@ const potato = mk({
     ringFx(G.player.x, G.player.z, 2, PO_COL, 0.4);
     burst(G.player.x, 1.5, G.player.z, PO_COL, 30, 6, 0.09, 0.6, { up: 1.5 });
     eventHurt(0.12);
-    if (E.booms >= 2) {
+    if (E.booms >= 3) {
       E.bomb.visible = false;
-      failed(E, L('A bomba estourou na sua mão duas vezes.', 'The bomb went off in your hands twice.'));
+      failed(E, L('A bomba estourou na sua mão três vezes.', 'The bomb went off in your hands three times.'));
       return;
     }
     say(E, L('BUM! (1/2)', 'BOOM! (1/2)'), 'hurt');
@@ -3140,3 +3145,6 @@ export const NEW3_INFO = {
   potato: { icon: '💣', css: '#ff5a2d', name: L('Batata Quente', 'Hot Potato'), short: L('Batata', 'Potato') },
   thinice: { icon: '🧊', css: '#9ad7ff', name: L('Gelo Fino', 'Thin Ice'), short: L('Gelo', 'Ice') },
 };
+
+// peças usadas por events4.js (quarta leva)
+export { tag, setTag, frame, inRect, lpos, say, plate, plateIdx, dwell, dwellHold, bot, face, hitsOn, sphere, hex, TAU, TRIES };

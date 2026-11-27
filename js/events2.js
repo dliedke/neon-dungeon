@@ -17,6 +17,9 @@ import { sfx } from './audio.js';
 import { toast, banner } from './ui.js';
 import { mmss, mats, put, groupAt, lightMat, setLight, flatMat, near, waitFoes, findSpot, complete, failed, eventHurt, hitTarget, hitsOf, dropTarget, ambush, fighterType, eventCredits } from './events.js';
 
+// chances dos jogos de errar e tentar de novo (antes eram 3)
+const TRIES = 5;
+
 // ------------------------------------------------------------------
 // Peças compartilhadas
 // ------------------------------------------------------------------
@@ -283,7 +286,7 @@ const pipes = mk({
 });
 
 // ==================================================================
-// 33. Teclado Gigante: 5 teclas no chão tocam uma melodia; repita pisando nas teclas (3 erros no máximo)
+// 33. Teclado Gigante: 5 teclas no chão tocam uma melodia; repita pisando nas teclas (5 erros no máximo)
 // ==================================================================
 const PK_COL = [0xff4d6d, 0xffb347, 0x39ff88, 0x3dc7ff, 0xc77bff];
 const piano = mk({
@@ -371,21 +374,21 @@ const piano = mk({
     }
     E.miss++;
     sfx.deny();
-    if (E.miss >= 3) {
-      failed(E, L('Desafinou 3 vezes: o teclado desligou.', 'Three wrong notes: the keyboard shut down.'));
+    if (E.miss >= TRIES) {
+      failed(E, L(`Desafinou ${TRIES} vezes: o teclado desligou.`, `${TRIES} wrong notes: the keyboard shut down.`));
       piano.light(E, -1);
       return;
     }
-    toast(L(`🎹 Nota errada! Ouça de novo (${E.miss}/3 erros).`, `🎹 Wrong note! Listen again (${E.miss}/3 mistakes).`), 'warn');
+    toast(L(`🎹 Nota errada! Ouça de novo (${E.miss}/${TRIES} erros).`, `🎹 Wrong note! Listen again (${E.miss}/${TRIES} mistakes).`), 'warn');
     E.st = 'show';
     E.step = 0;
     E.t = 1.1;
   },
-  hud: (E) => (E.st === 'idle' ? L('chegue no teclado', 'reach the keyboard') : E.st === 'show' ? L('ouça...', 'listen...') : `${E.step}/${E.seq.length} · ${E.miss}/3 ${L('erros', 'miss')}`),
+  hud: (E) => (E.st === 'idle' ? L('chegue no teclado', 'reach the keyboard') : E.st === 'show' ? L('ouça...', 'listen...') : `${E.step}/${E.seq.length} · ${E.miss}/${TRIES} ${L('erros', 'miss')}`),
   dim(E) {
     piano.light(E, -1);
   },
-  intro: () => L('um teclado gigante no chão. Ele toca uma melodia acendendo as teclas: depois pise nas teclas na mesma ordem. Três erros e ele desliga.', 'a giant keyboard on the floor. It plays a tune by lighting its keys: then step on the keys in the same order. Three mistakes and it shuts down.'),
+  intro: () => L(`um teclado gigante no chão. Ele toca uma melodia acendendo as teclas: depois pise nas teclas na mesma ordem. ${TRIES} erros e ele desliga.`, `a giant keyboard on the floor. It plays a tune by lighting its keys: then step on the keys in the same order. ${TRIES} mistakes and it shuts down.`),
 });
 
 // ==================================================================
@@ -1153,7 +1156,7 @@ const golem = mk({
 });
 
 // ==================================================================
-// 42. Pesca de Dados: fique no píer e golpeie a boia só quando o peixe morder (3 escapadas e acabou)
+// 42. Pesca de Dados: fique no píer e golpeie a boia só quando o peixe morder (5 escapadas e acabou)
 // ==================================================================
 const FI_COL = 0x39d0ff;
 const FI_NEED = 5;
@@ -1219,9 +1222,9 @@ const fishing = mk({
         E.wait = 1.8 + Math.random() * 2;
         sfx.deny();
         floatText(E.x + 2.2, 1.5, E.z, L('escapou!', 'it got away!'), 'hurt');
-        if (E.miss >= 3) {
+        if (E.miss >= TRIES) {
           dropTarget(E);
-          failed(E, L('Os peixes escaparam: 3 vezes.', 'The fish got away 3 times.'));
+          failed(E, L(`Os peixes escaparam ${TRIES} vezes.`, `The fish got away ${TRIES} times.`));
         }
       }
       return;
@@ -1234,7 +1237,7 @@ const fishing = mk({
       burst(E.x + 2.2, 0.2, E.z, FI_COL, 16, 3, 0.07, 0.5, { up: 2.5 });
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('suba no píer', 'step on the pier') : `${E.fish}/${FI_NEED} ${L('peixes', 'fish')} · ${E.miss}/3 ${L('erros', 'miss')}`),
+  hud: (E) => (E.st === 'idle' ? L('suba no píer', 'step on the pier') : `${E.fish}/${FI_NEED} ${L('peixes', 'fish')} · ${E.miss}/${TRIES} ${L('erros', 'miss')}`),
   dim(E) {
     dropTarget(E);
   },
@@ -1242,7 +1245,7 @@ const fishing = mk({
     E.e.hp = E.e.maxHp;
     E.hits = 0;
   },
-  intro: () => L('suba no píer e espere: quando a boia afundar com um "!" e espirrar água, golpeie ela rápido. Pegue 5 peixes; 3 escapadas e acabou.', 'step on the pier and wait: when the float sinks with a "!" and a splash, hit it fast. Catch 5 fish; 3 escapes and it ends.'),
+  intro: () => L(`suba no píer e espere: quando a boia afundar com um "!" e espirrar água, golpeie ela rápido. Pegue 5 peixes; ${TRIES} escapadas e acabou.`, `step on the pier and wait: when the float sinks with a "!" and a splash, hit it fast. Catch 5 fish; ${TRIES} escapes and it ends.`),
 });
 
 // ==================================================================
@@ -1984,7 +1987,7 @@ const snake = mk({
     }
     const orb = put(g, mats().oct, glowMat(0xffd23d, 2.4), 0, 0.7, 0, 0.25, 0.35, 0.25);
     orb.visible = false;
-    return { kind: 'snake', x: s.x, z: s.z, g, pool, orb, pts: [], got: 0, lives: 3, ox: 0, oz: 0, st: 'idle' };
+    return { kind: 'snake', x: s.x, z: s.z, g, pool, orb, pts: [], got: 0, lives: TRIES, ox: 0, oz: 0, st: 'idle' };
   },
   newOrb(E) {
     for (let t = 0; t < 14; t++) {
@@ -2025,7 +2028,7 @@ const snake = mk({
         floatText(p.x, 2, p.z, L('encostou!', 'touched!'), 'hurt');
         if (E.lives <= 0) {
           E.orb.visible = false;
-          failed(E, L('Você se enroscou no próprio rastro 3 vezes.', 'You tangled in your own trail 3 times.'));
+          failed(E, L(`Você se enroscou no próprio rastro ${TRIES} vezes.`, `You tangled in your own trail ${TRIES} times.`));
           return;
         }
         break;
@@ -2057,7 +2060,7 @@ const snake = mk({
     E.orb.visible = false;
     for (const m of E.pool) m.visible = false;
   },
-  intro: () => L('dentro da arena você deixa um rastro de luz que cresce a cada orbe. Pegue 8 orbes sem encostar no próprio rastro. 3 toques e acabou.', 'inside the arena you leave a light trail that grows with every orb. Grab 8 orbs without touching your own trail. 3 touches and it ends.'),
+  intro: () => L(`dentro da arena você deixa um rastro de luz que cresce a cada orbe. Pegue 8 orbes sem encostar no próprio rastro. ${TRIES} toques e acabou.`, `inside the arena you leave a light trail that grows with every orb. Grab 8 orbs without touching your own trail. ${TRIES} touches and it ends.`),
 });
 
 // ==================================================================
@@ -2281,7 +2284,7 @@ const beacon = mk({
 });
 
 // ==================================================================
-// 57. Malabares (com relógio): 3 bolas no ar; golpeie cada uma quando ela estiver descendo (3 quedas e acabou)
+// 57. Malabares (com relógio): 3 bolas no ar; golpeie cada uma quando ela estiver descendo (5 quedas e acabou)
 // ==================================================================
 const JG_COL = [0xffd23d, 0x39d0ff, 0xff4df0];
 const JG_T = 32;
@@ -2301,7 +2304,7 @@ const juggle = mk({
       const m = put(g, mats().oct, glowMat(c, 2.4), x, 0.4, z, 0.3, 0.3, 0.3);
       return { x, z, m, ring, c, p: i * 0.33, e: hitTarget(s.x + x, s.z + z, 0.8, 1.5, L('Bola', 'Ball')), hits: 0 };
     });
-    return { kind: 'juggle', x: s.x, z: s.z, g, balls, st: 'idle', t: JG_T, lives: 3, catches: 0 };
+    return { kind: 'juggle', x: s.x, z: s.z, g, balls, st: 'idle', t: JG_T, lives: TRIES, catches: 0 };
   },
   update(E, dt) {
     if (E.st === 'idle') {
@@ -2334,7 +2337,7 @@ const juggle = mk({
     }
     if (E.lives <= 0) {
       for (const b of E.balls) dropTarget(b);
-      failed(E, L('As bolas caíram 3 vezes.', 'The balls dropped 3 times.'));
+      failed(E, L(`As bolas caíram ${TRIES} vezes.`, `The balls dropped ${TRIES} times.`));
     } else if (E.t <= 0) {
       for (const b of E.balls) dropTarget(b);
       complete(E, 1.3, L('MALABARISTA!', 'JUGGLER!'), L(`${E.catches} defesas`, `${E.catches} catches`), E.x, E.z);
@@ -2354,11 +2357,11 @@ const juggle = mk({
       b.hits = 0;
     }
   },
-  intro: () => L('3 bolas sobem e descem. Quando o anel do chão ficar verde (a bola está descendo), golpeie a bola para lançar de novo. 3 quedas e acabou. Aguente 32s.', '3 balls go up and down. When the ring on the floor turns green (the ball is coming down), hit the ball to launch it again. 3 drops and it ends. Last 32s.'),
+  intro: () => L(`3 bolas sobem e descem. Quando o anel do chão ficar verde (a bola está descendo), golpeie a bola para lançar de novo. ${TRIES} quedas e acabou. Aguente 32s.`, `3 balls go up and down. When the ring on the floor turns green (the ball is coming down), hit the ball to launch it again. ${TRIES} drops and it ends. Last 32s.`),
 });
 
 // ==================================================================
-// 58. Escultura: memorize os 5 blocos dourados e quebre só eles (3 erros e acabou)
+// 58. Escultura: memorize os 5 blocos dourados e quebre só eles (5 erros e acabou)
 // ==================================================================
 const SCU_COL = 0xffd23d;
 const sculpt = mk({
@@ -2446,12 +2449,12 @@ const sculpt = mk({
     }
     if (E.broke >= 5) {
       complete(E, 1.2, L('OBRA-PRIMA!', 'MASTERPIECE!'), L('Só os blocos certos', 'Only the right blocks'), E.x, E.z);
-    } else if (E.strikes >= 3) {
+    } else if (E.strikes >= TRIES) {
       for (const b of E.blocks) dropTarget(b);
-      failed(E, L('Você quebrou 3 blocos errados.', 'You broke 3 wrong blocks.'));
+      failed(E, L(`Você quebrou ${TRIES} blocos errados.`, `You broke ${TRIES} wrong blocks.`));
     }
   },
-  hud: (E) => (E.st === 'idle' ? L('quebre só os dourados', 'break only the golden ones') : `${E.broke}/5 · ${E.strikes}/3 ${L('erros', 'miss')}${E.show > 0 ? ' · 👁' : ''}`),
+  hud: (E) => (E.st === 'idle' ? L('quebre só os dourados', 'break only the golden ones') : `${E.broke}/5 · ${E.strikes}/${TRIES} ${L('erros', 'miss')}${E.show > 0 ? ' · 👁' : ''}`),
   dim(E) {
     for (const b of E.blocks) {
       dropTarget(b);
@@ -2465,7 +2468,7 @@ const sculpt = mk({
       b.hits = 0;
     }
   },
-  intro: () => L('12 blocos; 5 deles brilham em dourado por 5 segundos. Depois todos ficam iguais: golpeie só os 5 certos. Errar mostra os dourados de novo. 3 erros e acabou.', '12 blocks; 5 of them glow gold for 5 seconds. Then they all look the same: hit only the 5 right ones. A mistake shows the golden ones again. 3 mistakes and it ends.'),
+  intro: () => L(`12 blocos; 5 deles brilham em dourado por 5 segundos. Depois todos ficam iguais: golpeie só os 5 certos. Errar mostra os dourados de novo. ${TRIES} erros e acabou.`, `12 blocks; 5 of them glow gold for 5 seconds. Then they all look the same: hit only the 5 right ones. A mistake shows the golden ones again. ${TRIES} mistakes and it ends.`),
 });
 
 // ==================================================================
