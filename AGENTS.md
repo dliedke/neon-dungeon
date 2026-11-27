@@ -106,6 +106,7 @@ Module map (`js/`):
 | `enemies.js` | `ETYPES` (enemy types), AI, elites and affixes, `DIFFICULTY`, `populateFloor`, bosses (`BOSS_ORDER`, one update function per boss) and the final battle. |
 | `enemies2.js` | The 15 newer enemies (Mirror Drone, Gravitator, Data Reaper, Builder, Fly Swarm and the fauna of the newer biomes): `aiNew` (extra AI, called from the `default:` of the AI switch), `preDamage` / `postDamage` / `reflectShot` hooks used by `combat.js`, `tickExtras` (ink overlay `#ink`), `tickVisual`. Types with `x2: true` in `ETYPES` get the visual and damage hooks; models are `newEnemyModel` in `models.js`. |
 | `combat.js` | Damage (`hitEnemy`, `damageEnemy`, `damagePlayer`), statuses, projectiles, hazards, turrets. |
+| `bosses2.js` | The 10 biome bosses (Root Colossus, Sewer Leviathan, Crystal Golem, Glacial Wyrm, Stone Scorpion, Storm Lord, Magma Titan, Toy King, Clockmaster, Neon Kraken): models (`bossModel2`, called by `makeEnemyModel`), one shared state machine (`updateBoss2`, AI `'boss2'`) and an attack library (lines, circles, ring waves with gaps, volleys, spirals, charge, burrow, cone, spinning hands, pull, gust, pools, summons, blink, ink). Types live in `ETYPES`; which floor gets which boss is `BOSS_BY_THEME` in `enemies.js`. |
 | `elements.js` | Elemental reactions on enemies (steam, shatter, short circuit, flash freeze, toxic blast, wildfire): `react` (called by `applyStatus`), `tickElems` (shock/wet/oil timers and the floor tags under each enemy), `REACTIONS`. |
 | `items.js` | Slots, rarities, affixes, legendary and mythic powers, `makeItem`, forging, `itemScore`, item cards. |
 | `loot.js` | Ground loot, pickups, chests, shrines. |
@@ -159,6 +160,6 @@ Module map (`js/`):
 - **Commit messages are in Portuguese:** a short summary of the player-visible change (see `git log`).
 - **Keep public docs in sync with content changes.** When you add or remove classes, bosses, biomes, enemies or features, update:
   - `README.md` (English) tables and counts.
-  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 7 chefes, 43 biomas, 50 andares").
+  - The meta/og/twitter descriptions in `index.html` (they say "10 classes ... 17 chefes, 43 biomas, 50 andares").
   - The counts baked into `img/og-image.png` (needs regenerating).
   - `docs/ARCHITECTURE.md` and `docs/CONTENT.md` if the structure or a recipe changed.

@@ -4,7 +4,7 @@
 // Conjuntos (biomas vistos, tipos abatidos, chefes...) ficam em stats.sets e se unem.
 import { G } from './state.js';
 import { L } from './i18n.js';
-import { ETYPES, BOSS_ORDER, diffRank, abyssLvl, abyssUnlocked, abyssBest } from './enemies.js';
+import { ETYPES, BOSS_ORDER, BIOME_BOSSES, diffRank, abyssLvl, abyssUnlocked, abyssBest } from './enemies.js';
 import { CLASSES, CLASS_ORDER } from './classes.js';
 import { THEMES } from './dungeon.js';
 import { SLOTS } from './items.js';
@@ -128,12 +128,13 @@ export function achList() {
   add('reactAll', '🌈', 2, L('Tabela Periódica', 'Periodic Table'), L(`Provoque as ${REACTION_KINDS.length} reações diferentes entre elementos`, `Trigger all ${REACTION_KINDS.length} different elemental reactions`), () => count('reactions'), REACTION_KINDS.length);
 
   // chefes
-  const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴' };
-  for (const b of BOSS_ORDER) {
+  const BOSS_ICON = { boss: '🤖', queen: '🕷️', scrap: '🧲', reaper: '👻', gunship: '🚁', hacker: '💻', omega: '🔴', rootcol: '🌳', leviathan: '🐍', cgolem: '💎', wyrm: '🐉', stoneking: '🦂', stormlord: '🌩️', magma: '🌋', toyking: '🤡', clockmaster: '🕰️', kraken: '🐙' };
+  for (const b of [...BOSS_ORDER, ...BIOME_BOSSES]) {
     add(`boss_${b}`, BOSS_ICON[b] || '👑', b === 'omega' ? 2 : 1, L(`Derrubou: ${ETYPES[b].name}`, `Took down: ${ETYPES[b].name}`), L(`Derrote ${ETYPES[b].name}`, `Defeat ${ETYPES[b].name}`), () => (has('bossTypes', b) ? 1 : 0));
   }
   add('bosses10', '👑', 2, L('Matador de Chefes', 'Boss Slayer'), L('Derrote 10 chefes', 'Defeat 10 bosses'), () => total('bosses'), 10);
   add('bosses25', '🏆', 3, L('Rei do Submundo', 'King of the Underworld'), L('Derrote 25 chefes', 'Defeat 25 bosses'), () => total('bosses'), 25);
+  add('bossesAll', '🗺️', 3, L('Caçador de Chefes', 'Boss Hunter'), L(`Derrote os ${BOSS_ORDER.length + BIOME_BOSSES.length} chefes diferentes`, `Defeat all ${BOSS_ORDER.length + BIOME_BOSSES.length} different bosses`), () => [...BOSS_ORDER, ...BIOME_BOSSES].filter((b) => has('bossTypes', b)).length, BOSS_ORDER.length + BIOME_BOSSES.length);
   add('fastBoss', '⏱️', 2, L('Speedrun', 'Speedrun'), L('Derrote um chefe em menos de 60 segundos', 'Defeat a boss in under 60 seconds'), () => (has('flags', 'fastBoss') ? 1 : 0));
   add('chaosBoss', '🌀', 2, L('Senhor do Caos', 'Lord of Chaos'), L('Derrote um chefe no Caos ou acima', 'Defeat a boss on Chaos or above'), () => (has('flags', 'chaosBoss') ? 1 : 0));
   add('deathBoss', '⚰️', 3, L('Dança com a Morte', 'Dance with Death'), L('Derrote um chefe no Morte', 'Defeat a boss on Death'), () => (has('flags', 'deathBoss') ? 1 : 0));

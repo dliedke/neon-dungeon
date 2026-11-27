@@ -1,6 +1,7 @@
 import { gk } from './state.js';
 // Modelos low-poly construídos com primitivas (sem arquivos externos).
 import * as THREE from 'three';
+import { bossModel2 } from './bosses2.js';
 
 const geoCache = {};
 const glowCache = {};
@@ -1672,6 +1673,7 @@ export function makeEnemyModel(type, eliteColor) {
       break;
     }
   }
+  if (!m) m = bossModel2(type); // chefes dos biomas (bosses2.js)
   if (!m) m = newEnemyModel(type);
   decorate(type, m);
   if (eliteColor) {

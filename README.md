@@ -433,6 +433,23 @@ Medals and their counters sync with the Google cloud save; progress from every d
 | **Grand Hacker** | Corrupts floor tiles in patterns and sends firewalls with a gap |
 | **OMEGA Core** | Immune until its shield pylons are destroyed; rotating laser beams |
 
+Most boss floors belong to a **biome boss**, one per family of biomes (the tech biomes keep the 7 classic bosses above, who also make up the final battle). They come back stronger (II, III) when their family shows up again:
+
+| Boss | Biomes | Mechanics |
+| --- | --- | --- |
+| **Root Colossus** | Forest, jungle, garden, mushrooms | Roots burst out in lines, thorn circles, forest helpers; in phase 2 seismic waves with gaps and spore pools |
+| **Sewer Leviathan** | Sewers, star swamp | Dives into the sludge and bursts out under you, acid breath cone, sludge pools |
+| **Crystal Golem** | Glass desert, singing cave | Shard volleys, crystal spikes, resonance waves with gaps; in phase 2 shard spirals and spinning beams |
+| **Glacial Wyrm** | Cryo lab, snow, aurora, ash winter | Freezing breath cone (slows you), falling icicles, sliding charge |
+| **Stone Scorpion** | Salt flats, petrified sea, deserts, tomb | Burrows and bursts out under you, tail laser lines, charge |
+| **Storm Lord** | Storm plateau, upside-down rain, mountain pass | Lightning where the floor lights up, a wind gust that pushes you away, blinks around |
+| **Magma Titan** | Volcano, lava falls, sleeping god | Meteors that leave lava, fire waves with a gap, lava pools and fissures |
+| **Toy King** | Candy factory, haunted park, arcade | Toy soldiers, jack-in-the-box bombs, a spinning-top charge, confetti spirals |
+| **Clockmaster** | Library, clock factory, paint studio, toy room | Clock hands that spin around him, time bombs, blinks |
+| **Neon Kraken** | Reef, hot springs | Tentacles slam around you, a whirlpool pull, ink that blinds the screen |
+
+Every boss has a medal, plus **Boss Hunter** for defeating all 17.
+
 ## Loot and progression
 
 - **Loot:**
